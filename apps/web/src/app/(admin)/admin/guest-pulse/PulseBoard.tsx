@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
+import { CustomSelect } from '@/components/admin/CustomSelect';
 import type { EnrichedInsight, PulseOwnerOption } from '@/lib/admin/dashboard-data';
 import { dismissInsight } from '@/lib/admin/insight-actions';
 import { InsightDetailPanel } from '../InsightDetailPanel';
@@ -143,40 +144,42 @@ export function PulseBoard({ ownerUpdates, houseActions, propertyOptions, ownerO
       {(propertyOptions.length > 1 || ownerOptions.length > 0) && (
         <div className={styles.filterBar}>
           {propertyOptions.length > 1 && (
-            <select
-              className={styles.filterSelect}
-              value={filterProperty}
-              onChange={(e) => { setFilterProperty(e.target.value); setFilterOwner(''); }}
-            >
-              <option value="">All properties</option>
-              {propertyOptions.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <div className={styles.filterSelectWrap}>
+              <CustomSelect
+                value={filterProperty}
+                onChange={(v) => { setFilterProperty(v); setFilterOwner(''); }}
+                options={[
+                  { value: '', label: 'All properties' },
+                  ...propertyOptions.map((p) => ({ value: p.id, label: p.name })),
+                ]}
+              />
+            </div>
           )}
           {ownerOptions.length > 0 && (
-            <select
-              className={styles.filterSelect}
-              value={filterOwner}
-              onChange={(e) => { setFilterOwner(e.target.value); setFilterProperty(''); }}
-            >
-              <option value="">All owners</option>
-              {ownerOptions.map((o) => (
-                <option key={o.id} value={o.id}>{o.name}</option>
-              ))}
-            </select>
+            <div className={styles.filterSelectWrap}>
+              <CustomSelect
+                value={filterOwner}
+                onChange={(v) => { setFilterOwner(v); setFilterProperty(''); }}
+                options={[
+                  { value: '', label: 'All owners' },
+                  ...ownerOptions.map((o) => ({ value: o.id, label: o.name })),
+                ]}
+              />
+            </div>
           )}
-          <select
-            className={styles.filterSelect}
-            value={filterSeverity}
-            onChange={(e) => setFilterSeverity(e.target.value)}
-          >
-            <option value="">All severities</option>
-            <option value="critical">Critical</option>
-            <option value="warning">Warning</option>
-            <option value="recommendation">Recommendation</option>
-            <option value="info">Info</option>
-          </select>
+          <div className={styles.filterSelectWrap}>
+            <CustomSelect
+              value={filterSeverity}
+              onChange={setFilterSeverity}
+              options={[
+                { value: '', label: 'All severities' },
+                { value: 'critical', label: 'Critical' },
+                { value: 'warning', label: 'Warning' },
+                { value: 'recommendation', label: 'Recommendation' },
+                { value: 'info', label: 'Info' },
+              ]}
+            />
+          </div>
         </div>
       )}
 

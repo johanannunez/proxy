@@ -21,6 +21,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { DotsSixVertical, X, Plus } from '@phosphor-icons/react';
 import { createTaskFromInsight, fetchAssignableProfiles, type AssignableProfile } from '@/lib/admin/insight-actions';
+import { CustomSelect } from '@/components/admin/CustomSelect';
+import { DatePickerInput } from '@/components/admin/DatePickerInput';
 import styles from './CreateTaskModal.module.css';
 
 type SubtaskItem = { id: string; text: string };
@@ -222,25 +224,22 @@ export function CreateTaskModal({
           <div className={styles.fieldRow}>
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Assigned to</label>
-              <select
-                className={styles.select}
+              <CustomSelect
                 value={assigneeId ?? ''}
-                onChange={(e) => setAssigneeId(e.target.value || null)}
-              >
-                <option value="">Unassigned</option>
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>{p.fullName ?? 'Unknown'}</option>
-                ))}
-              </select>
+                onChange={(v) => setAssigneeId(v || null)}
+                options={[
+                  { value: '', label: 'Unassigned' },
+                  ...profiles.map((p) => ({ value: p.id, label: p.fullName ?? 'Unknown' })),
+                ]}
+              />
             </div>
 
             <div className={styles.fieldGroup}>
               <label className={styles.fieldLabel}>Due date</label>
-              <input
-                type="date"
-                className={styles.input}
+              <DatePickerInput
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={setDueDate}
+                placeholder="No due date"
               />
             </div>
           </div>

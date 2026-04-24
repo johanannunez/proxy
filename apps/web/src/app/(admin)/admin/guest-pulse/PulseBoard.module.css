@@ -6,17 +6,10 @@
   flex-wrap: wrap;
 }
 
-.filterSelect {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  font-size: 12.5px;
-  color: #374151;
-  cursor: pointer;
-  font-family: inherit;
+.filterSelectWrap {
+  width: 180px;
+  flex-shrink: 0;
 }
-.filterSelect:focus { outline: 2px solid rgba(2,170,235,0.3); border-color: #02AAEB; }
 
 .cols {
   display: grid;

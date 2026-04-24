@@ -109,19 +109,6 @@
 
 .fieldGroup { display: flex; flex-direction: column; }
 
-.select {
-  padding: 9px 12px;
-  border-radius: 9px;
-  border: 1px solid #e5e7eb;
-  font-size: 13.5px;
-  color: #374151;
-  font-family: inherit;
-  background: #fff;
-  cursor: pointer;
-  transition: border-color 120ms;
-}
-.select:focus { outline: none; border-color: #02AAEB; }
-
 .subtaskList { display: flex; flex-direction: column; gap: 6px; }
 
 .subtaskRow {
