@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { EnrichedInsight, PulseOwnerOption } from '@/lib/admin/dashboard-data';
 import { dismissInsight } from '@/lib/admin/insight-actions';
@@ -77,7 +78,7 @@ function InsightCard({
           onClick={(e) => { e.stopPropagation(); onDismiss(); }}
           aria-label="Dismiss"
         >
-          &#x2715;
+          <X size={11} weight="bold" />
         </button>
       </div>
       <div className={styles.cardTitle}>{insight.title}</div>
@@ -213,7 +214,7 @@ export function PulseBoard({ ownerUpdates, houseActions, propertyOptions, ownerO
           propertyId={activeInsight.propertyId}
           propertyName={activeInsight.propertyName}
           onClose={() => setActiveInsight(null)}
-          onDismiss={() => handleDismiss(activeInsight)}
+          onDismiss={() => executeDismiss(activeInsight.id)}
           onComplete={() => {
             setDismissed((prev) => new Set([...prev, activeInsight.id]));
             setActiveInsight(null);

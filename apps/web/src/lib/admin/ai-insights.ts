@@ -1,3 +1,4 @@
+import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 
 export type InsightSeverity = 'info' | 'recommendation' | 'warning' | 'success';

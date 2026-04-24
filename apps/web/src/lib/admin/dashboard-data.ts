@@ -245,6 +245,7 @@ export async function fetchPulsePageData(): Promise<{
 
   const propIds = propertyRefs.map((p) => p.id);
 
+  // property_owners is not in the generated Supabase types yet; cast until types are regenerated.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: links } = (await (supabase as any)
     .from('property_owners')

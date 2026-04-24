@@ -19,6 +19,7 @@ export async function dismissInsight(insightId: string): Promise<void> {
   if (error) throw error;
   revalidatePath('/admin');
   revalidatePath('/admin/guest-pulse');
+  revalidatePath('/admin/properties', 'layout');
 }
 
 export async function completeInsight(insightId: string): Promise<void> {
@@ -30,6 +31,7 @@ export async function completeInsight(insightId: string): Promise<void> {
   if (error) throw error;
   revalidatePath('/admin');
   revalidatePath('/admin/guest-pulse');
+  revalidatePath('/admin/properties', 'layout');
 }
 
 export async function createTaskFromInsight(params: {

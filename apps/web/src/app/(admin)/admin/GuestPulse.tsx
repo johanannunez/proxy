@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { ArrowsClockwise } from '@phosphor-icons/react';
+import { ArrowsClockwise, X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { EnrichedInsight } from '@/lib/admin/dashboard-data';
 import { dismissInsight, triggerGuestIntelligenceSync } from '@/lib/admin/insight-actions';
@@ -78,7 +78,7 @@ function InsightCard({
           onClick={(e) => { e.stopPropagation(); onDismiss(); }}
           aria-label="Dismiss"
         >
-          ✕
+          <X size={11} weight="bold" />
         </button>
       </div>
       <div className={styles.cardTitle}>{insight.title}</div>
@@ -217,7 +217,7 @@ export function GuestPulse({ ownerUpdates, houseActions }: Props) {
           propertyId={activeInsight.propertyId}
           propertyName={activeInsight.propertyName}
           onClose={() => setActiveInsight(null)}
-          onDismiss={() => handleDismiss(activeInsight)}
+          onDismiss={() => executeDismiss(activeInsight.id)}
           onComplete={() => {
             setDismissed((prev) => new Set([...prev, activeInsight.id]));
             setActiveInsight(null);
