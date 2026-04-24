@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { InsightPayload } from '@/lib/admin/insight-types';
 import type { Insight } from '@/lib/admin/ai-insights';
 import { dismissInsight, completeInsight, createTaskFromInsight } from '@/lib/admin/insight-actions';
+import { CreateTaskModal } from './CreateTaskModal';
 import styles from './InsightDetailPanel.module.css';
 
 type Props = {
@@ -55,6 +56,8 @@ export function InsightDetailPanel({
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [confirmDismiss, setConfirmDismiss] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
   const isCritical = Boolean(payload.isCritical);
   const needsConfirm = isCritical || insight.severity === 'warning';
 
@@ -64,6 +67,11 @@ export function InsightDetailPanel({
       onComplete?.();
       onClose();
     });
+  };
+
+  const handleCompleteConfirm = () => {
+    setConfirmingComplete(false);
+    handleComplete();
   };
 
   const handleCreateTask = () => {
@@ -173,18 +181,39 @@ export function InsightDetailPanel({
           </div>
 
           <div className={styles.footer}>
-            <button
-              type="button"
-              className={styles.btnPrimary}
-              onClick={handleComplete}
-              disabled={isPending}
-            >
-              {isPending ? 'Saving…' : 'Mark complete'}
-            </button>
+            {confirmingComplete ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.btnConfirmComplete}
+                  onClick={handleCompleteConfirm}
+                  disabled={isPending}
+                >
+                  {isPending ? 'Saving…' : '✓ Yes, mark done'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnCancelComplete}
+                  onClick={() => setConfirmingComplete(false)}
+                  disabled={isPending}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={() => setConfirmingComplete(true)}
+                disabled={isPending}
+              >
+                Mark complete
+              </button>
+            )}
             <button
               type="button"
               className={styles.btnSecondary}
-              onClick={handleCreateTask}
+              onClick={() => setShowTaskModal(true)}
               disabled={isPending}
             >
               {payload.suggestedFixes.length > 1 ? 'Create task + subtasks' : 'Create task'}
@@ -210,6 +239,20 @@ export function InsightDetailPanel({
         variant="danger"
         onConfirm={() => { setConfirmDismiss(false); executeDismiss(); }}
         onCancel={() => setConfirmDismiss(false)}
+      />
+
+      <CreateTaskModal
+        open={showTaskModal}
+        insightId={insight.id}
+        propertyId={propertyId}
+        initialTitle={insight.title}
+        initialDescription={insight.body}
+        initialSubtasks={payload.suggestedFixes}
+        onClose={() => setShowTaskModal(false)}
+        onSuccess={() => {
+          onComplete?.();
+          onClose();
+        }}
       />
     </>
   );

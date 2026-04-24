@@ -224,3 +224,32 @@
 }
 .btnTertiary:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
 .btnTertiary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnConfirmComplete {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 140ms;
+  flex: 1;
+}
+.btnConfirmComplete:hover { background: #15803d; }
+.btnConfirmComplete:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnCancelComplete {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: background 140ms, color 140ms;
+}
+.btnCancelComplete:hover { background: #f3f4f6; color: #374151; }
+.btnCancelComplete:disabled { opacity: 0.5; cursor: not-allowed; }
