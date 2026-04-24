@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useId } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   DndContext,
   closestCenter,
@@ -23,6 +24,16 @@ import { createTaskFromInsight, fetchAssignableProfiles, type AssignableProfile 
 import styles from './CreateTaskModal.module.css';
 
 type SubtaskItem = { id: string; text: string };
+
+const overlayVariants = {
+  hidden: { opacity: 0, transition: { duration: 0.14, ease: 'easeIn' as const } },
+  visible: { opacity: 1, transition: { duration: 0.16, ease: 'easeOut' as const } },
+};
+
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.96, y: 8, transition: { duration: 0.14, ease: 'easeIn' as const } },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 26 } },
+};
 
 type Props = {
   open: boolean;
@@ -116,6 +127,15 @@ export function CreateTaskModal({
     return () => { isMounted = false; };
   }, [open, initialTitle, initialDescription, initialSubtasks]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -150,13 +170,27 @@ export function CreateTaskModal({
     }
   };
 
-  if (!open) return null;
-
   const subtaskCount = subtasks.filter((s) => s.text.trim().length > 0).length;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <AnimatePresence>
+      {open && (
+      <motion.div
+        className={styles.overlay}
+        variants={overlayVariants}
+        initial="hidden"
+        animate="visible"
+        exit="hidden"
+        onClick={onClose}
+      >
+        <motion.div
+          className={styles.modal}
+          variants={modalVariants}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Create task</h2>
           <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
@@ -171,6 +205,7 @@ export function CreateTaskModal({
               className={styles.input}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              autoFocus
             />
           </div>
 
@@ -275,7 +310,9 @@ export function CreateTaskModal({
               : 'Create task'}
           </button>
         </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

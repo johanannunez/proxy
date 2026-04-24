@@ -76,7 +76,7 @@ export async function createTaskFromInsight(params: {
       status: 'todo',
       created_by: user.id,
       ...(params.assigneeId ? { assignee_id: params.assigneeId } : {}),
-      ...(params.dueDate ? { due_at: new Date(params.dueDate + 'T00:00:00').toISOString() } : {}),
+      ...(params.dueDate ? { due_at: params.dueDate + 'T00:00:00Z' } : {}),
     })
     .select('id')
     .single();
@@ -92,7 +92,8 @@ export async function createTaskFromInsight(params: {
       status: 'todo' as const,
       created_by: user.id,
     }));
-    await supabase.from('tasks').insert(subtasks);
+    const { error: subtaskErr } = await supabase.from('tasks').insert(subtasks);
+    if (subtaskErr) throw subtaskErr;
   }
 
   revalidatePath('/admin');

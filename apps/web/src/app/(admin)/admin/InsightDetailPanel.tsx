@@ -3,7 +3,7 @@
 
 import { useState, useTransition } from 'react';
 import { motion } from 'motion/react';
-import { X } from '@phosphor-icons/react';
+import { Check, X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { InsightPayload } from '@/lib/admin/insight-types';
 import type { Insight } from '@/lib/admin/ai-insights';
@@ -182,7 +182,7 @@ export function InsightDetailPanel({
                   onClick={handleCompleteConfirm}
                   disabled={isPending}
                 >
-                  {isPending ? 'Saving…' : '✓ Yes, mark done'}
+                  {isPending ? 'Saving…' : <><Check size={13} weight="bold" /> Yes, mark done</>}
                 </button>
                 <button
                   type="button"
@@ -209,7 +209,7 @@ export function InsightDetailPanel({
               onClick={() => setShowTaskModal(true)}
               disabled={isPending}
             >
-              {payload.suggestedFixes.length > 1 ? 'Create task + subtasks' : 'Create task'}
+              {payload.suggestedFixes.length > 0 ? 'Create task + subtasks' : 'Create task'}
             </button>
             <button
               type="button"
