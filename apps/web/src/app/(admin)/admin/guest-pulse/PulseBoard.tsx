@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { EnrichedInsight, PulseOwnerOption } from '@/lib/admin/dashboard-data';
@@ -207,20 +208,23 @@ export function PulseBoard({ ownerUpdates, houseActions, propertyOptions, ownerO
         })}
       </div>
 
-      {activeInsight && (
-        <InsightDetailPanel
-          insight={activeInsight}
-          payload={activeInsight.payload}
-          propertyId={activeInsight.propertyId}
-          propertyName={activeInsight.propertyName}
-          onClose={() => setActiveInsight(null)}
-          onDismiss={() => executeDismiss(activeInsight.id)}
-          onComplete={() => {
-            setDismissed((prev) => new Set([...prev, activeInsight.id]));
-            setActiveInsight(null);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {activeInsight && (
+          <InsightDetailPanel
+            key={activeInsight.id}
+            insight={activeInsight}
+            payload={activeInsight.payload}
+            propertyId={activeInsight.propertyId}
+            propertyName={activeInsight.propertyName}
+            onClose={() => setActiveInsight(null)}
+            onDismiss={() => executeDismiss(activeInsight.id)}
+            onComplete={() => {
+              setDismissed((prev) => new Set([...prev, activeInsight.id]));
+              setActiveInsight(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <ConfirmModal
         open={confirmTarget !== null}

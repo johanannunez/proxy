@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { motion } from 'motion/react';
 import { X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { InsightPayload } from '@/lib/admin/insight-types';
@@ -32,6 +33,16 @@ function badgeLabel(severity: Insight['severity'], isCritical: boolean): string 
   if (severity === 'recommendation') return 'Recommendation';
   return 'Info';
 }
+
+const overlayVariants = {
+  hidden: { opacity: 0, transition: { duration: 0.16, ease: 'easeIn' as const } },
+  visible: { opacity: 1, transition: { duration: 0.18, ease: 'easeOut' as const } },
+};
+
+const panelVariants = {
+  hidden: { x: '100%', transition: { type: 'tween' as const, duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } },
+  visible: { x: 0, transition: { type: 'spring' as const, stiffness: 280, damping: 24 } },
+};
 
 export function InsightDetailPanel({
   insight,
@@ -86,8 +97,22 @@ export function InsightDetailPanel({
 
   return (
     <>
-      <div className={styles.overlay} onClick={onClose}>
-        <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+      <motion.div
+        className={styles.overlay}
+        variants={overlayVariants}
+        initial="hidden"
+        animate="visible"
+        exit="hidden"
+        onClick={onClose}
+      >
+        <motion.div
+          className={styles.panel}
+          variants={panelVariants}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className={styles.header}>
             <div className={styles.headerLeft}>
               <div className={styles.severityRow}>
@@ -173,8 +198,8 @@ export function InsightDetailPanel({
               Dismiss
             </button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       <ConfirmModal
         open={confirmDismiss}

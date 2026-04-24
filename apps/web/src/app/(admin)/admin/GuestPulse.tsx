@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { AnimatePresence } from 'motion/react';
 import { ArrowsClockwise, X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { EnrichedInsight } from '@/lib/admin/dashboard-data';
@@ -210,20 +211,23 @@ export function GuestPulse({ ownerUpdates, houseActions }: Props) {
         />
       </div>
 
-      {activeInsight && (
-        <InsightDetailPanel
-          insight={activeInsight}
-          payload={activeInsight.payload}
-          propertyId={activeInsight.propertyId}
-          propertyName={activeInsight.propertyName}
-          onClose={() => setActiveInsight(null)}
-          onDismiss={() => executeDismiss(activeInsight.id)}
-          onComplete={() => {
-            setDismissed((prev) => new Set([...prev, activeInsight.id]));
-            setActiveInsight(null);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {activeInsight && (
+          <InsightDetailPanel
+            key={activeInsight.id}
+            insight={activeInsight}
+            payload={activeInsight.payload}
+            propertyId={activeInsight.propertyId}
+            propertyName={activeInsight.propertyName}
+            onClose={() => setActiveInsight(null)}
+            onDismiss={() => executeDismiss(activeInsight.id)}
+            onComplete={() => {
+              setDismissed((prev) => new Set([...prev, activeInsight.id]));
+              setActiveInsight(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <ConfirmModal
         open={confirmTarget !== null}
