@@ -125,7 +125,7 @@ function Column({
         )}
         {overflow > 0 && (
           <Link href="/admin/guest-pulse" className={styles.viewAllLink}>
-            +{overflow} more — View all
+            +{overflow} more. View all
           </Link>
         )}
       </div>
