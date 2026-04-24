@@ -7,7 +7,7 @@ import { X } from '@phosphor-icons/react';
 import ConfirmModal from '@/components/admin/ConfirmModal';
 import type { InsightPayload } from '@/lib/admin/insight-types';
 import type { Insight } from '@/lib/admin/ai-insights';
-import { dismissInsight, completeInsight, createTaskFromInsight } from '@/lib/admin/insight-actions';
+import { dismissInsight, completeInsight } from '@/lib/admin/insight-actions';
 import { CreateTaskModal } from './CreateTaskModal';
 import styles from './InsightDetailPanel.module.css';
 
@@ -61,11 +61,17 @@ export function InsightDetailPanel({
   const isCritical = Boolean(payload.isCritical);
   const needsConfirm = isCritical || insight.severity === 'warning';
 
+  const handleClose = () => {
+    setConfirmingComplete(false);
+    setShowTaskModal(false);
+    onClose();
+  };
+
   const handleComplete = () => {
     startTransition(async () => {
       await completeInsight(insight.id);
       onComplete?.();
-      onClose();
+      handleClose();
     });
   };
 
@@ -74,24 +80,11 @@ export function InsightDetailPanel({
     handleComplete();
   };
 
-  const handleCreateTask = () => {
-    startTransition(async () => {
-      await createTaskFromInsight({
-        insightId: insight.id,
-        propertyId,
-        title: insight.title,
-        body: insight.body,
-        suggestedFixes: payload.suggestedFixes,
-      });
-      onClose();
-    });
-  };
-
   const executeDismiss = () => {
     startTransition(async () => {
       await dismissInsight(insight.id);
       onDismiss?.();
-      onClose();
+      handleClose();
     });
   };
 
@@ -111,7 +104,7 @@ export function InsightDetailPanel({
         initial="hidden"
         animate="visible"
         exit="hidden"
-        onClick={onClose}
+        onClick={handleClose}
       >
         <motion.div
           className={styles.panel}
@@ -134,7 +127,7 @@ export function InsightDetailPanel({
               <h2 className={styles.panelTitle}>{insight.title}</h2>
               {propertyName && <p className={styles.panelPropName}>{propertyName}</p>}
             </div>
-            <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
+            <button type="button" className={styles.closeBtn} onClick={handleClose} aria-label="Close">
               <X size={16} />
             </button>
           </div>
