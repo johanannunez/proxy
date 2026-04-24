@@ -34,12 +34,33 @@ export async function completeInsight(insightId: string): Promise<void> {
   revalidatePath('/admin/properties', 'layout');
 }
 
+export type AssignableProfile = {
+  id: string;
+  fullName: string | null;
+};
+
+export async function fetchAssignableProfiles(): Promise<AssignableProfile[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .order('full_name', { ascending: true, nullsFirst: false })
+    .limit(50);
+  if (error) {
+    console.error('[insight-actions] fetchAssignableProfiles error:', error.message);
+    return [];
+  }
+  return (data ?? []).map((p) => ({ id: p.id, fullName: p.full_name }));
+}
+
 export async function createTaskFromInsight(params: {
   insightId: string;
   propertyId: string;
   title: string;
   body: string;
   suggestedFixes: string[];
+  assigneeId?: string | null;
+  dueDate?: string | null;
 }): Promise<{ taskId: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,6 +75,8 @@ export async function createTaskFromInsight(params: {
       description: params.body,
       status: 'todo',
       created_by: user.id,
+      ...(params.assigneeId ? { assignee_id: params.assigneeId } : {}),
+      ...(params.dueDate ? { due_at: new Date(params.dueDate + 'T00:00:00').toISOString() } : {}),
     })
     .select('id')
     .single();
