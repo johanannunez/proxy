@@ -18,6 +18,18 @@ export async function dismissInsight(insightId: string): Promise<void> {
     .eq('id', insightId);
   if (error) throw error;
   revalidatePath('/admin');
+  revalidatePath('/admin/guest-pulse');
+}
+
+export async function completeInsight(insightId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('ai_insights')
+    .update({ completed_at: new Date().toISOString() })
+    .eq('id', insightId);
+  if (error) throw error;
+  revalidatePath('/admin');
+  revalidatePath('/admin/guest-pulse');
 }
 
 export async function createTaskFromInsight(params: {

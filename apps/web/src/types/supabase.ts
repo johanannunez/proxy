@@ -61,6 +61,7 @@ export type Database = {
           action_payload: Json | null
           agent_key: string
           body: string
+          completed_at: string | null
           created_at: string
           dismissed_at: string | null
           expires_at: string | null
@@ -75,6 +76,7 @@ export type Database = {
           action_payload?: Json | null
           agent_key: string
           body: string
+          completed_at?: string | null
           created_at?: string
           dismissed_at?: string | null
           expires_at?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           action_payload?: Json | null
           agent_key?: string
           body?: string
+          completed_at?: string | null
           created_at?: string
           dismissed_at?: string | null
           expires_at?: string | null
