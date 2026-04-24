@@ -109,8 +109,12 @@ export function CreateTaskModal({
     setAssigneeId(null);
     setDueDate('');
     setError(null);
-    fetchAssignableProfiles().then(setProfiles).catch(console.error);
-  }, [open]);
+    let isMounted = true;
+    fetchAssignableProfiles()
+      .then((data) => { if (isMounted) setProfiles(data); })
+      .catch(console.error);
+    return () => { isMounted = false; };
+  }, [open, initialTitle, initialDescription, initialSubtasks]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
