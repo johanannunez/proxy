@@ -5,7 +5,7 @@ import { fetchDashboardTasks } from '@/lib/admin/dashboard-tasks';
 import { PropertyHealthGrid } from './PropertyHealthGrid';
 import { AttentionQueue } from './AttentionQueue';
 import { DashboardTaskSurface } from './DashboardTaskSurface';
-import { GuestIntelligence } from './GuestIntelligence';
+import { GuestPulse } from './GuestPulse';
 import styles from './page.module.css';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -17,7 +17,11 @@ export default async function AdminDashboardPage() {
     fetchDashboardTasks(),
   ]);
 
-  const propertyRefs = propertyCards.map((c) => ({ id: c.id, name: c.name }));
+  // Use address_line1 as the display label; fall back to property name
+  const propertyRefs = propertyCards.map((c) => ({
+    id: c.id,
+    name: c.address ?? c.name,
+  }));
   const { ownerUpdates, houseActions } = await fetchGuestIntelligenceInsights(propertyRefs);
 
   return (
@@ -28,8 +32,8 @@ export default async function AdminDashboardPage() {
       </div>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Guest Intelligence</h2>
-        <GuestIntelligence ownerUpdates={ownerUpdates} houseActions={houseActions} />
+        <h2 className={styles.sectionTitle}>Guest Pulse</h2>
+        <GuestPulse ownerUpdates={ownerUpdates} houseActions={houseActions} />
       </section>
 
       <section className={styles.section}>

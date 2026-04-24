@@ -23,6 +23,7 @@ import {
   Briefcase,
   Bell,
   CalendarBlank,
+  Pulse,
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { AdminSidebarFooter } from "@/components/admin/AdminSidebarFooter";
@@ -65,6 +66,7 @@ type NavEntry = NavItem | NavGroup;
 
 const navEntries: NavEntry[] = [
   { kind: "item", href: "/admin", label: "Dashboard", icon: <House size={18} weight="duotone" /> },
+  { kind: "item", href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={18} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
   { kind: "item", href: "/admin/inbox", label: "Inbox", icon: <ChatCircle size={18} weight="duotone" />, matchPrefix: "/admin/inbox" },
   { kind: "item", href: "/admin/tasks", label: "Tasks", icon: <ListChecks size={18} weight="duotone" />, matchPrefix: "/admin/tasks" },
   { kind: "item", href: "/admin/calendar", label: "Calendar", icon: <CalendarBlank size={18} weight="duotone" />, matchPrefix: "/admin/calendar" },
@@ -625,6 +627,7 @@ export function AdminTopBar({
     if (pathname.startsWith("/admin/treasury")) return "Treasury";
     if (pathname.startsWith("/admin/calendar")) return "Calendar";
     if (pathname.startsWith("/admin/timeline")) return "Timeline";
+    if (pathname.startsWith("/admin/guest-pulse")) return "Guest Pulse";
     return "";
   })();
 
@@ -718,6 +721,7 @@ const adminRailItems: Array<{
   matchPrefix?: string;
 }> = [
   { href: "/admin", icon: <House size={20} weight="duotone" />, label: "Dashboard" },
+  { href: "/admin/guest-pulse", icon: <Pulse size={20} weight="duotone" />, label: "Pulse", matchPrefix: "/admin/guest-pulse" },
   { href: "/admin/inbox", icon: <ChatCircle size={20} weight="duotone" />, label: "Inbox", matchPrefix: "/admin/inbox" },
   { href: "/admin/tasks", icon: <ListChecks size={20} weight="duotone" />, label: "Tasks", matchPrefix: "/admin/tasks" },
   { href: "/admin/calendar", icon: <CalendarBlank size={20} weight="duotone" />, label: "Calendar", matchPrefix: "/admin/calendar" },
