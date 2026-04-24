@@ -1,0 +1,277 @@
+'use client';
+
+import { useState, useEffect, useId } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { DotsSixVertical, X, Plus } from '@phosphor-icons/react';
+import { createTaskFromInsight, fetchAssignableProfiles, type AssignableProfile } from '@/lib/admin/insight-actions';
+import styles from './CreateTaskModal.module.css';
+
+type SubtaskItem = { id: string; text: string };
+
+type Props = {
+  open: boolean;
+  insightId: string;
+  propertyId: string;
+  initialTitle: string;
+  initialDescription: string;
+  initialSubtasks: string[];
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+function SortableRow({
+  item,
+  onChange,
+  onDelete,
+}: {
+  item: SubtaskItem;
+  onChange: (text: string) => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div ref={setNodeRef} style={style} className={styles.subtaskRow}>
+      <button
+        type="button"
+        className={styles.dragHandle}
+        aria-label="Drag to reorder"
+        {...attributes}
+        {...listeners}
+      >
+        <DotsSixVertical size={14} />
+      </button>
+      <input
+        className={styles.subtaskInput}
+        value={item.text}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Subtask…"
+      />
+      <button
+        type="button"
+        className={styles.subtaskDelete}
+        aria-label="Remove subtask"
+        onClick={onDelete}
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
+
+export function CreateTaskModal({
+  open,
+  insightId,
+  propertyId,
+  initialTitle,
+  initialDescription,
+  initialSubtasks,
+  onClose,
+  onSuccess,
+}: Props) {
+  const listId = useId();
+  const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription);
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState('');
+  const [subtasks, setSubtasks] = useState<SubtaskItem[]>([]);
+  const [profiles, setProfiles] = useState<AssignableProfile[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle(initialTitle);
+    setDescription(initialDescription);
+    setSubtasks(initialSubtasks.map((text) => ({ id: crypto.randomUUID(), text })));
+    setAssigneeId(null);
+    setDueDate('');
+    setError(null);
+    fetchAssignableProfiles().then(setProfiles).catch(console.error);
+  }, [open]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSubtasks((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) { setError('Title is required.'); return; }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await createTaskFromInsight({
+        insightId,
+        propertyId,
+        title: title.trim(),
+        body: description,
+        suggestedFixes: subtasks.map((s) => s.text).filter((t) => t.trim().length > 0),
+        assigneeId,
+        dueDate: dueDate || null,
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create task.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!open) return null;
+
+  const subtaskCount = subtasks.filter((s) => s.text.trim().length > 0).length;
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Create task</h2>
+          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className={styles.modalBody}>
+          <div>
+            <label className={styles.fieldLabel}>Title</label>
+            <input
+              className={styles.input}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className={styles.fieldLabel}>Description</label>
+            <textarea
+              className={styles.textarea}
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.fieldRow}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Assigned to</label>
+              <select
+                className={styles.select}
+                value={assigneeId ?? ''}
+                onChange={(e) => setAssigneeId(e.target.value || null)}
+              >
+                <option value="">Unassigned</option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>{p.fullName ?? 'Unknown'}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}>Due date</label>
+              <input
+                type="date"
+                className={styles.input}
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={styles.fieldLabel}>Subtasks</label>
+            <DndContext
+              id={listId}
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={subtasks.map((s) => s.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className={styles.subtaskList}>
+                  {subtasks.map((item) => (
+                    <SortableRow
+                      key={item.id}
+                      item={item}
+                      onChange={(text) =>
+                        setSubtasks((prev) =>
+                          prev.map((s) => (s.id === item.id ? { ...s, text } : s))
+                        )
+                      }
+                      onDelete={() =>
+                        setSubtasks((prev) => prev.filter((s) => s.id !== item.id))
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+            <button
+              type="button"
+              className={styles.addSubtaskBtn}
+              onClick={() =>
+                setSubtasks((prev) => [...prev, { id: crypto.randomUUID(), text: '' }])
+              }
+            >
+              <Plus size={13} /> Add subtask
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          {error && <span className={styles.errorMsg}>{error}</span>}
+          <button
+            type="button"
+            className={styles.btnCancel}
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={styles.btnConfirm}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? 'Creating…'
+              : subtaskCount > 0
+              ? `Create task + ${subtaskCount} subtask${subtaskCount !== 1 ? 's' : ''}`
+              : 'Create task'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
