@@ -83,7 +83,7 @@ export async function createTaskFromInsight(params: {
 
   if (taskErr || !task) throw taskErr ?? new Error('Failed to create task');
 
-  if (params.suggestedFixes.length > 1) {
+  if (params.suggestedFixes.length > 0) {
     const subtasks = params.suggestedFixes.map((fix) => ({
       parent_type: 'property' as const,
       parent_id: params.propertyId,
