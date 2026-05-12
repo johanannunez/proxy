@@ -55,6 +55,36 @@ Login fires a real `logTimelineEvent({ eventType: "login" })`. These show up in 
 
 ---
 
+## See any page in one call (`pnpm see`)
+
+After `pnpm dev-login`, any agent can capture the full state of a route with:
+
+```bash
+pnpm see /admin/inbox
+pnpm see /portal/dashboard
+pnpm see /portal/setup/basics --label before-fix
+```
+
+What it produces under `/tmp/agent-see/<slug>/`:
+
+- `mobile.png` (375x812), `tablet.png` (768x1024), `desktop.png` (1280x800)
+- `console.txt` browser console output
+- `network.txt` recent network requests with status codes
+- `server-log.txt` last 200 lines from `apps/web/.next/dev/logs/next-development.log`
+- `summary.json` with paths and counts of console errors, network failures, server log errors and warnings
+
+If the daemon is not signed in, `pnpm see` signs in first (same flow as `pnpm dev-login`). Idempotent.
+
+### Live dev server output
+
+```bash
+pnpm dev-log
+```
+
+Tails `apps/web/.next/dev/logs/next-development.log`. Useful for watching server-action errors, RSC compilation, and HMR rebuilds in real time. The file persists across dev-server restarts; the `pnpm see` summary always pulls the last 200 lines.
+
+---
+
 ## Other rules
 
 For project structure, gotchas, the property_forms pattern, UI interaction standards, anti-generic design rules, browse commands, code quality, verification, and Trigger.dev v4 rules, see your kickoff doc at `.agent-kickoffs/AGENT_<X>_<ROLE>.md` and the workspace CLAUDE.md.
