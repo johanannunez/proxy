@@ -10,7 +10,9 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
-    "lint": "pnpm --filter web lint"
+    "lint": "pnpm --filter web lint",
+    "dev-login": "doppler run --project parcel --config dev -- node apps/web/scripts/dev-login.mjs",
+    "dev-agent-bootstrap": "doppler run --project parcel --config dev -- node apps/web/scripts/bootstrap-dev-agent.mjs"
   },
   "devDependencies": {
     "pixelmatch": "^7.1.0",
