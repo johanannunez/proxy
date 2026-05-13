@@ -18,15 +18,15 @@ import type { Database } from "@/types/supabase";
  *
  * The env var is read at call time, not module init, so code that
  * imports this file but doesn't call createServiceClient() will
- * still build even when SUPABASE_SERVICE_ROLE_KEY is unset.
+ * still build even when SUPABASE_SECRET_KEY is unset.
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.SUPABASE_SECRET_KEY;
 
   if (!url || !key) {
     throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. " +
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY. " +
         "The service role client can only be used on the server with " +
         "these env vars set.",
     );

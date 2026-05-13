@@ -2,4 +2,8 @@ node_modules
 .next
 *.tsbuildinfo
 temporary screenshots
+.env
+.env.*
 .env*.local
+.env*.backup*
+.env.local.backup*

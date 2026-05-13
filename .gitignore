@@ -14,7 +14,10 @@ dist/
 
 # Environment variables and secrets
 .env
+.env.*
 .env*.local
+.env*.backup*
+.env.local.backup*
 .doppler.yaml
 
 # Vercel
