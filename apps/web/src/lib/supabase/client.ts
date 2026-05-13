@@ -5,7 +5,7 @@ import type { Database } from "@/types/supabase";
  * Browser-side Supabase client.
  *
  * Use this in Client Components and client-side code that runs in
- * the user's browser. It reads the anon (public) key from the env
+ * the user's browser. It reads the publishable key from the env
  * at call time and handles session cookies automatically.
  *
  * Do NOT use this on the server. For Server Components, Server
@@ -15,6 +15,6 @@ import type { Database } from "@/types/supabase";
 export function createClient() {
   return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
   );
 }
