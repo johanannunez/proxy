@@ -53,7 +53,7 @@ export default async function LoginPage({
           <h2
             style={{
               fontFamily: "var(--font-lora), Georgia, serif",
-              fontSize: "32px",
+              fontSize: "30px",
               fontWeight: 700,
               color: "#1a1a1a",
               textAlign: "center",
@@ -65,14 +65,14 @@ export default async function LoginPage({
           </h2>
           <p
             style={{
-              fontSize: "13.5px",
+              fontSize: "13px",
               color: "#6b7280",
               textAlign: "center",
-              marginBottom: "28px",
+              marginBottom: "24px",
               lineHeight: 1.5,
             }}
           >
-            Log in to your Parcel owner portal.
+            Login to your workspace.
           </p>
 
           <LoginForm redirectTo={redirect ?? "/portal/dashboard"} />
@@ -81,13 +81,13 @@ export default async function LoginPage({
             style={{
               border: "none",
               borderTop: "1px solid #f0f4f8",
-              margin: "24px 0 0",
+              margin: "22px 0 0",
             }}
           />
           <p
             style={{
               textAlign: "center",
-              marginTop: "16px",
+              marginTop: "14px",
               fontSize: "13px",
               color: "#6b7280",
             }}
