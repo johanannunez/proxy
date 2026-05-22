@@ -12,7 +12,7 @@ interface CustomSelectProps {
   /** Uncontrolled initial value. Use for plain HTML form submission. */
   defaultValue?: string;
   onChange?: (value: string) => void;
-  /** For plain HTML form submission — renders a hidden input with this name. */
+  /** For plain HTML form submission. Renders a hidden input with this name. */
   name?: string;
   id?: string;
   /** Flat list of options. Provide either options or groups, not both. */
@@ -23,6 +23,12 @@ interface CustomSelectProps {
   hasError?: boolean;
   disabled?: boolean;
   required?: boolean;
+  /** "md" (default, h-10) for forms. "sm" (h-7) for compact toolbars. */
+  size?: "sm" | "md";
+  /** Fixed trigger width. Useful inside toolbars where label width varies. */
+  width?: number | string;
+  /** Optional override for the trigger background (transparent for toolbar use). */
+  transparentTrigger?: boolean;
   /** Pass through for accessibility (aria-invalid). */
   "aria-invalid"?: boolean;
   /** Pass through for accessibility (aria-describedby). */
@@ -31,15 +37,6 @@ interface CustomSelectProps {
 
 function flattenGroups(groups: SelectGroup[]): SelectOption[] {
   return groups.flatMap((g) => g.options);
-}
-
-function findLabel(
-  value: string,
-  options?: SelectOption[],
-  groups?: SelectGroup[],
-): string {
-  const flat = options ?? (groups ? flattenGroups(groups) : []);
-  return flat.find((o) => o.value === value)?.label ?? value;
 }
 
 export function CustomSelect({
@@ -54,6 +51,9 @@ export function CustomSelect({
   hasError,
   disabled,
   required,
+  size = "md",
+  width,
+  transparentTrigger = false,
   "aria-describedby": ariaDescribedby,
 }: CustomSelectProps) {
   const isControlled = controlledValue !== undefined;
@@ -87,14 +87,26 @@ export function CustomSelect({
     setOpen(false);
   }
 
-  const displayLabel = current
-    ? findLabel(current, options, groups)
-    : placeholder;
-
   const allOptions = options ?? (groups ? flattenGroups(groups) : []);
+  const matchedOption = allOptions.find((o) => o.value === current);
+  const displayLabel = matchedOption ? matchedOption.label : current ? current : placeholder;
+
+  const isSmall = size === "sm";
+  const triggerHeight = isSmall ? "1.75rem" : "2.5rem";
+  const triggerPaddingX = isSmall ? "0.5rem" : "0.75rem";
+  const triggerFontSize = isSmall ? "0.75rem" : "0.875rem";
+  const triggerRadius = isSmall ? "0.375rem" : "0.5rem";
+  const triggerBorder = isSmall && transparentTrigger ? "none" : "1px solid";
+
+  let triggerBackground: string;
+  if (transparentTrigger) {
+    triggerBackground = open ? "rgba(2, 170, 235, 0.08)" : "transparent";
+  } else {
+    triggerBackground = open ? "rgba(2, 170, 235, 0.04)" : "var(--color-white)";
+  }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative" style={width !== undefined ? { width } : undefined}>
       {/* Hidden input for plain HTML form submission */}
       {name ? (
         <input type="hidden" name={name} value={current} required={required} />
@@ -109,18 +121,22 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-describedby={ariaDescribedby}
-        className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border px-3 text-left text-sm transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-between gap-2 text-left transition-[background-color,border-color,box-shadow,color] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
         style={{
-          backgroundColor: open
-            ? "rgba(2, 170, 235, 0.04)"
-            : "var(--color-white)",
+          height: triggerHeight,
+          paddingLeft: triggerPaddingX,
+          paddingRight: triggerPaddingX,
+          fontSize: triggerFontSize,
+          borderRadius: triggerRadius,
+          border: triggerBorder,
+          backgroundColor: triggerBackground,
           borderColor: hasError
             ? "#ef4444"
             : open
               ? "var(--color-brand)"
               : "var(--color-warm-gray-200)",
           color: current ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
-          boxShadow: open ? "0 0 0 3px rgba(2, 170, 235, 0.12)" : "none",
+          boxShadow: open && !transparentTrigger ? "0 0 0 3px rgba(2, 170, 235, 0.12)" : "none",
         }}
       >
         <span className="truncate">{displayLabel}</span>
