@@ -50,6 +50,8 @@
   flex-shrink: 0;
 }
 .closeBtn:hover { background: #e5e7eb; }
+.closeBtn:active { background: #d1d5db; }
+.closeBtn:focus-visible { outline: 2px solid #02AAEB; outline-offset: 2px; }
 
 .modalBody {
   flex: 1;
@@ -159,6 +161,7 @@
   flex-shrink: 0;
 }
 .subtaskDelete:hover { color: #6b7280; }
+.subtaskDelete:focus-visible { outline: 2px solid #02AAEB; outline-offset: 2px; border-radius: 3px; }
 
 .addSubtaskBtn {
   display: flex;
@@ -176,6 +179,7 @@
   width: fit-content;
 }
 .addSubtaskBtn:hover { border-color: #9ca3af; color: #374151; }
+.addSubtaskBtn:focus-visible { outline: 2px solid #02AAEB; outline-offset: 2px; }
 
 .modalFooter {
   padding: 16px 24px;
@@ -207,6 +211,8 @@
   transition: background 120ms;
 }
 .btnCancel:hover { background: #e5e7eb; }
+.btnCancel:active { background: #d1d5db; }
+.btnCancel:focus-visible { outline: 2px solid #02AAEB; outline-offset: 2px; }
 .btnCancel:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnConfirm {
@@ -222,4 +228,6 @@
   transition: background 140ms;
 }
 .btnConfirm:hover { background: #1B77BE; }
+.btnConfirm:active { background: #155d96; }
+.btnConfirm:focus-visible { outline: 2px solid #02AAEB; outline-offset: 2px; }
 .btnConfirm:disabled { opacity: 0.5; cursor: not-allowed; }

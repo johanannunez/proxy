@@ -130,7 +130,10 @@ export function PulseBoard({ ownerUpdates, houseActions, propertyOptions, ownerO
   const executeDismiss = (id: string) => {
     setDismissed((prev) => new Set([...prev, id]));
     if (activeInsight?.id === id) setActiveInsight(null);
-    dismissInsight(id).catch(console.error);
+    dismissInsight(id).catch((err) => {
+      console.error(err);
+      setDismissed((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    });
   };
 
   const columns = [

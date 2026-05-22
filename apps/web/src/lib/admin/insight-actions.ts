@@ -54,7 +54,6 @@ export async function fetchAssignableProfiles(): Promise<AssignableProfile[]> {
 }
 
 export async function createTaskFromInsight(params: {
-  insightId: string;
   propertyId: string;
   title: string;
   body: string;

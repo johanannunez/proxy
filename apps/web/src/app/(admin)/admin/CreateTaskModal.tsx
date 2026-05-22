@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useId } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   DndContext,
@@ -100,6 +100,13 @@ export function CreateTaskModal({
   onSuccess,
 }: Props) {
   const listId = useId();
+  const prevOpenRef = useRef(false);
+  const initTitleRef = useRef(initialTitle);
+  const initDescRef = useRef(initialDescription);
+  const initSubtasksRef = useRef(initialSubtasks);
+  initTitleRef.current = initialTitle;
+  initDescRef.current = initialDescription;
+  initSubtasksRef.current = initialSubtasks;
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
@@ -115,10 +122,12 @@ export function CreateTaskModal({
   );
 
   useEffect(() => {
-    if (!open) return;
-    setTitle(initialTitle);
-    setDescription(initialDescription);
-    setSubtasks(initialSubtasks.map((text) => ({ id: crypto.randomUUID(), text })));
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (!justOpened) return;
+    setTitle(initTitleRef.current);
+    setDescription(initDescRef.current);
+    setSubtasks(initSubtasksRef.current.map((text) => ({ id: crypto.randomUUID(), text })));
     setAssigneeId(null);
     setDueDate('');
     setError(null);
@@ -127,7 +136,7 @@ export function CreateTaskModal({
       .then((data) => { if (isMounted) setProfiles(data); })
       .catch(console.error);
     return () => { isMounted = false; };
-  }, [open, initialTitle, initialDescription, initialSubtasks]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -155,7 +164,6 @@ export function CreateTaskModal({
     setError(null);
     try {
       await createTaskFromInsight({
-        insightId,
         propertyId,
         title: title.trim(),
         body: description,

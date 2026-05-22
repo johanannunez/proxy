@@ -186,7 +186,11 @@ export async function fetchGuestIntelligenceInsights(
     const guestInsights = insights.filter((i) => i.agentKey.startsWith('guest_intelligence:'));
     for (const ins of guestInsights) {
       const payload = ins.actionPayload as InsightPayload | null;
-      if (!payload) continue;
+      if (
+        !payload ||
+        !Array.isArray(payload.suggestedFixes) ||
+        !Array.isArray(payload.sourceExcerpts)
+      ) continue;
       const enriched: EnrichedInsight = {
         id: ins.id,
         parentType: ins.parentType,
