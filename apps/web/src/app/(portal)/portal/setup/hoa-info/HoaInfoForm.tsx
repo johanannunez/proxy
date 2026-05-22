@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useId } from "react";
-import { WarningCircle } from "@phosphor-icons/react";
+import { useActionState, useId, useRef, useState } from "react";
+import { WarningCircle, Paperclip, ArrowSquareOut, X } from "@phosphor-icons/react";
 import { StepSaveBar } from "@/components/portal/setup/StepShell";
 import { saveHoaInfo, type SaveHoaInfoState } from "./actions";
 
@@ -106,6 +106,15 @@ export function HoaInfoForm({
             error={err("key_restrictions")}
           />
         </div>
+      </Section>
+
+      <Section title="CC&amp;Rs document">
+        <FileUpload
+          name="ccrs_pdf"
+          existingUrl={initial.ccrs_pdf_url as string | undefined}
+          label="Upload your HOA's CC&Rs or rules document (optional)"
+          hint="PDF, JPG, or PNG — max 10 MB"
+        />
       </Section>
 
       <StepSaveBar pending={pending} isEditing={isEditing} />
@@ -283,6 +292,93 @@ function RadioGroup({
           border-color: var(--color-text-primary);
         }
       `}</style>
+    </div>
+  );
+}
+
+function FileUpload({
+  name,
+  existingUrl,
+  label,
+  hint,
+}: {
+  name: string;
+  existingUrl?: string;
+  label: string;
+  hint?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [picked, setPicked] = useState<File | null>(null);
+  const [cleared, setCleared] = useState(false);
+
+  const hasExisting = existingUrl && !cleared;
+  const existingName = existingUrl
+    ? decodeURIComponent(existingUrl.split("/").pop() ?? "document").replace(/^\d+-/, "")
+    : null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{label}</p>
+
+      {hasExisting && !picked ? (
+        <div
+          className="flex items-center gap-3 rounded-xl border px-4 py-3"
+          style={{ borderColor: "var(--color-warm-gray-200)", backgroundColor: "var(--color-surface-elevated)" }}
+        >
+          <Paperclip size={16} style={{ color: "var(--color-brand)", flexShrink: 0 }} />
+          <span className="flex-1 truncate text-sm" style={{ color: "var(--color-text-primary)" }}>
+            {existingName}
+          </span>
+          <a
+            href={existingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs font-medium"
+            style={{ color: "var(--color-brand)" }}
+          >
+            View <ArrowSquareOut size={13} />
+          </a>
+          <button
+            type="button"
+            onClick={() => setCleared(true)}
+            className="ml-1 rounded p-0.5 hover:opacity-60"
+            aria-label="Remove document"
+          >
+            <X size={14} style={{ color: "var(--color-text-tertiary)" }} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center hover:opacity-80"
+          style={{ borderColor: "var(--color-warm-gray-300)", backgroundColor: "var(--color-surface-elevated)" }}
+        >
+          <Paperclip size={20} style={{ color: "var(--color-text-tertiary)" }} />
+          {picked ? (
+            <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+              {picked.name}
+            </span>
+          ) : (
+            <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Click to upload
+            </span>
+          )}
+          {hint && !picked ? (
+            <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>{hint}</span>
+          ) : null}
+        </button>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        name={name}
+        accept=".pdf,.jpg,.jpeg,.png"
+        className="sr-only"
+        onChange={(e) => setPicked(e.target.files?.[0] ?? null)}
+      />
+      <input type="hidden" name={`existing_${name}_url`} value={cleared ? "" : (existingUrl ?? "")} />
     </div>
   );
 }

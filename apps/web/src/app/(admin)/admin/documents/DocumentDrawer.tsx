@@ -19,6 +19,7 @@ import {
   Circle,
   Phone,
   EnvelopeSimple,
+  ArrowSquareOut,
 } from "@phosphor-icons/react";
 import {
   SECURE_DOC_TYPES,
@@ -65,10 +66,12 @@ function FieldRow({
   label,
   value,
   mono,
+  href,
 }: {
   label: string;
   value: string | null | undefined;
   mono?: boolean;
+  href?: string;
 }) {
   const display = value ?? null;
   return (
@@ -77,8 +80,22 @@ function FieldRow({
       <div
         className={`${styles.fieldValue} ${mono ? styles.fieldValueMono : ""} ${!display ? styles.fieldValueEmpty : ""}`}
       >
-        {display ?? "—"}
-        {display && <CopyBtn value={display} />}
+        {href && display ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:underline"
+            style={{ color: "var(--color-brand)" }}
+          >
+            View document <ArrowSquareOut size={13} />
+          </a>
+        ) : (
+          <>
+            {display ?? "—"}
+            {display && <CopyBtn value={display} />}
+          </>
+        )}
       </div>
     </div>
   );
@@ -303,17 +320,24 @@ function FormBody({ docKey, owner }: { docKey: FormKey; owner: DocHubOwner }) {
     <div>
       <div className={styles.sectionLabel}>Form Responses</div>
       <div className={styles.fieldGrid}>
-        {fields.map(([label, value]) => (
-          <FieldRow
-            key={label}
-            label={label}
-            value={value}
-            mono={
-              label.toLowerCase().includes("password") ||
-              label.toLowerCase().includes("ssid")
-            }
-          />
-        ))}
+        {fields.map(([label, value]) => {
+          const isUrl = label.endsWith("_url") && typeof value === "string" && value.startsWith("http");
+          const displayLabel = label.replace(/_url$/, "").replace(/_/g, " ");
+          return (
+            <FieldRow
+              key={label}
+              label={displayLabel}
+              value={isUrl ? value : (value as string)}
+              href={isUrl ? (value as string) : undefined}
+              mono={
+                !isUrl && (
+                  label.toLowerCase().includes("password") ||
+                  label.toLowerCase().includes("ssid")
+                )
+              }
+            />
+          );
+        })}
         {fields.length === 0 && (
           <div className={styles.fieldRow}>
             <div className={styles.fieldLabel}>—</div>

@@ -1,10 +1,13 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+
+const BUCKET = "property-documents";
 
 const schema = z.object({
   property_id: z.string().uuid("Property ID is required."),
@@ -14,6 +17,7 @@ const schema = z.object({
   issue_date: z.string().trim().max(500).optional().default(""),
   expiration_date: z.string().trim().max(500).optional().default(""),
   notes: z.string().trim().max(2000).optional().default(""),
+  existing_permit_pdf_url: z.string().optional().default(""),
 });
 
 export type SaveStrPermitState = {
@@ -25,7 +29,9 @@ export async function saveStrPermit(
   _prev: SaveStrPermitState,
   formData: FormData,
 ): Promise<SaveStrPermitState> {
-  const raw = Object.fromEntries(formData.entries());
+  const raw = Object.fromEntries(
+    [...formData.entries()].filter(([, v]) => typeof v === "string"),
+  );
   const parsed = schema.safeParse(raw);
 
   if (!parsed.success) {
@@ -44,6 +50,31 @@ export async function saveStrPermit(
   if (!user) return { error: "You must be signed in." };
 
   const v = parsed.data;
+  const svc = createServiceClient();
+
+  // Handle file upload
+  let permitPdfUrl = v.existing_permit_pdf_url;
+  const file = formData.get("permit_pdf") as File | null;
+  if (file && file.size > 0) {
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      return { error: "Only PDF, JPG, and PNG files are allowed." };
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { error: "File must be under 10 MB." };
+    }
+    const ext = file.name.split(".").pop() ?? "pdf";
+    const safeName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9-_]/g, "-").slice(0, 60);
+    const entropy = randomBytes(4).toString("hex");
+    const path = `${v.property_id}/str_permit/${Date.now()}-${entropy}-${safeName}.${ext}`;
+    const bytes = await file.arrayBuffer();
+    const { error: uploadErr } = await svc.storage
+      .from(BUCKET)
+      .upload(path, Buffer.from(bytes), { contentType: file.type, upsert: false });
+    if (uploadErr) return { error: "Document upload failed. Please try again." };
+    const { data: urlData } = svc.storage.from(BUCKET).getPublicUrl(path);
+    permitPdfUrl = urlData.publicUrl;
+  }
 
   const { error } = await (supabase as any)
     .from("property_forms")
@@ -58,6 +89,7 @@ export async function saveStrPermit(
           issue_date: v.issue_date,
           expiration_date: v.expiration_date,
           notes: v.notes,
+          permit_pdf_url: permitPdfUrl,
         },
         completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -67,7 +99,6 @@ export async function saveStrPermit(
 
   if (error) return { error: error.message };
 
-  const svc = createServiceClient();
   svc
     .from("activity_log" as any)
     .insert({
@@ -77,10 +108,7 @@ export async function saveStrPermit(
       actor_id: user.id,
       metadata: { field_name: "str_permit", description: "STR permit saved" },
     })
-    .then(
-      () => {},
-      () => {},
-    );
+    .then(() => {}, () => {});
 
   revalidatePath("/portal/setup");
   redirect(`/portal/setup/hoa-info?property=${v.property_id}`);

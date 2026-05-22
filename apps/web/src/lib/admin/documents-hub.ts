@@ -348,10 +348,10 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.str_permit = {
         submitted: true,
         data: {
-          "Market":         d.market          ?? null,
-          "Permit Required": d.permit_required ?? null,
-          "Permit Number":  d.permit_number   ?? null,
-          "Expires":        d.expiration_date ?? null,
+          "Permit Required": d.is_permit_required ?? null,
+          "Permit Number":   d.permit_number      ?? null,
+          "Issuing Authority": d.issuing_authority ?? null,
+          "Expires":         d.expiration_date    ?? null,
         },
       };
     }
