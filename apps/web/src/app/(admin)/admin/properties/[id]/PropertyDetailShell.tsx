@@ -20,12 +20,13 @@ type PropertyRow = {
   created_at: string;
 };
 
-type TabKey = "overview" | "tasks" | "maintenance";
-const TAB_ORDER: TabKey[] = ["overview", "tasks", "maintenance"];
+type TabKey = "overview" | "tasks" | "maintenance" | "pulse";
+const TAB_ORDER: TabKey[] = ["overview", "tasks", "maintenance", "pulse"];
 const TAB_LABEL: Record<TabKey, string> = {
   overview: "Overview",
   tasks: "Tasks",
   maintenance: "Maintenance",
+  pulse: "Pulse",
 };
 
 export function PropertyDetailShell({

@@ -6,12 +6,13 @@ import { fetchRecentActivity } from "@/lib/admin/detail-rail";
 import { TasksTab } from "@/components/admin/tasks/TasksTab";
 import { MaintenanceTemplatesPanelServer } from "@/components/admin/properties/MaintenanceTemplatesPanelServer";
 import { PropertyDetailShell } from "./PropertyDetailShell";
+import { PulseTab } from "./PulseTab";
 
 export const metadata: Metadata = { title: "Property Detail" };
 export const dynamic = "force-dynamic";
 
-type TabKey = "overview" | "tasks" | "maintenance";
-const KNOWN_TABS: readonly TabKey[] = ["overview", "tasks", "maintenance"];
+type TabKey = "overview" | "tasks" | "maintenance" | "pulse";
+const KNOWN_TABS: readonly TabKey[] = ["overview", "tasks", "maintenance", "pulse"];
 
 export default async function PropertyDetailPage({
   params,
@@ -56,6 +57,11 @@ export default async function PropertyDetailPage({
         <div style={{ padding: "24px" }}>
           <MaintenanceTemplatesPanelServer propertyId={property.id} />
         </div>
+      ) : tab === "pulse" ? (
+        <PulseTab
+          propertyId={property.id}
+          propertyAddress={property.address_line1 ?? property.name ?? 'Property'}
+        />
       ) : (
         <div
           style={{

@@ -186,7 +186,11 @@ export async function fetchGuestIntelligenceInsights(
     const guestInsights = insights.filter((i) => i.agentKey.startsWith('guest_intelligence:'));
     for (const ins of guestInsights) {
       const payload = ins.actionPayload as InsightPayload | null;
-      if (!payload) continue;
+      if (
+        !payload ||
+        !Array.isArray(payload.suggestedFixes) ||
+        !Array.isArray(payload.sourceExcerpts)
+      ) continue;
       const enriched: EnrichedInsight = {
         id: ins.id,
         parentType: ins.parentType,
@@ -218,4 +222,65 @@ export async function fetchGuestIntelligenceInsights(
     ownerUpdates: ownerUpdates.sort(sortFn),
     houseActions: houseActions.sort(sortFn),
   };
+}
+
+export type PulseOwnerOption = {
+  id: string;
+  name: string;
+  propertyIds: string[];
+};
+
+export async function fetchPulsePageData(): Promise<{
+  propertyRefs: Array<{ id: string; name: string }>;
+  ownerOptions: PulseOwnerOption[];
+}> {
+  const supabase = await createClient();
+
+  const { data: properties } = await supabase
+    .from('properties')
+    .select('id, address_line1, name')
+    .eq('active', true)
+    .order('address_line1', { ascending: true, nullsFirst: false });
+
+  const propertyRefs = (properties ?? []).map((p) => ({
+    id: p.id,
+    name: p.address_line1?.trim() ?? p.name?.trim() ?? '(unnamed)',
+  }));
+
+  const propIds = propertyRefs.map((p) => p.id);
+
+  // property_owners is not in the generated Supabase types yet; cast until types are regenerated.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: links } = (await (supabase as any)
+    .from('property_owners')
+    .select('owner_id, property_id')
+    .in('property_id', propIds)) as {
+    data: Array<{ owner_id: string; property_id: string }> | null;
+  };
+
+  const ownerIds = [...new Set((links ?? []).map((l) => l.owner_id))];
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', ownerIds);
+
+  const profileMap = new Map<string, string>();
+  for (const p of profiles ?? []) {
+    profileMap.set(p.id, p.full_name ?? 'Unknown');
+  }
+
+  const ownerMap = new Map<string, { name: string; propertyIds: string[] }>();
+  for (const link of links ?? []) {
+    const ownerId = link.owner_id;
+    const ownerName = profileMap.get(ownerId) ?? 'Unknown';
+    if (!ownerMap.has(ownerId)) ownerMap.set(ownerId, { name: ownerName, propertyIds: [] });
+    ownerMap.get(ownerId)!.propertyIds.push(link.property_id);
+  }
+
+  const ownerOptions: PulseOwnerOption[] = Array.from(ownerMap.entries())
+    .map(([id, { name, propertyIds }]) => ({ id, name, propertyIds }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { propertyRefs, ownerOptions };
 }

@@ -39,13 +39,12 @@ import { OpenInvoicesWidget } from './OpenInvoicesWidget';
 import { RecurringMaintenanceWidget } from './RecurringMaintenanceWidget';
 import { ProjectBoardWidget } from './ProjectBoardWidget';
 import { WinbackQueueWidget } from './WinbackQueueWidget';
-import { GuestIntelligence } from './GuestIntelligence';
+import { GuestPulse } from './GuestPulse';
 import { DashboardClientShell } from './DashboardClientShell';
 import { CommunicationsPanel } from '@/components/admin/CommunicationsPanel';
 
 // Property health types
 import type { PropertyHealthCard, CategoryHealth } from '@/lib/admin/dashboard-data';
-
 import styles from './page.module.css';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -107,24 +106,22 @@ export default async function AdminDashboardPage() {
     fetchCommunicationsDashboard().catch(() => ({ recentActionItems: [], unresolvedCallers: [] })),
   ]);
 
-  // Guest Intelligence — needs property list from fetchDashboardData
-  const guestInsights = await fetchGuestIntelligenceInsights(
-    propertyCards.map((c) => ({ id: c.id, name: c.name })),
-  ).catch(() => ({ ownerUpdates: [], houseActions: [] }));
-
-  // AI briefing — generated last since it synthesizes all the above
-  const briefing = await fetchDailyBriefing(stripData, {
-    coldLeadsCount: coldData.total,
-    onboardingCount: onboardingData.total,
-    criticalInsights: riskData.criticalCount,
-    warningInsights: riskData.warningCount,
-    maintenanceOverdue: maintenanceData.overdueCount,
-    maintenanceDueSoon: maintenanceData.dueSoonCount,
-    projectsBlocked: projectsData.blocked,
-    winbackCount: winbackData.total,
-    invoicesOverdue: invoicesData.overdueCount,
-    allocationStatus: allocationData.overallStatus,
-  }).catch(() => null);
+  const propertyRefs = propertyCards.map((c) => ({ id: c.id, name: c.address ?? c.name }));
+  const [guestInsights, briefing] = await Promise.all([
+    fetchGuestIntelligenceInsights(propertyRefs).catch(() => ({ ownerUpdates: [], houseActions: [] })),
+    fetchDailyBriefing(stripData, {
+      coldLeadsCount: coldData.total,
+      onboardingCount: onboardingData.total,
+      criticalInsights: riskData.criticalCount,
+      warningInsights: riskData.warningCount,
+      maintenanceOverdue: maintenanceData.overdueCount,
+      maintenanceDueSoon: maintenanceData.dueSoonCount,
+      projectsBlocked: projectsData.blocked,
+      winbackCount: winbackData.total,
+      invoicesOverdue: invoicesData.overdueCount,
+      allocationStatus: allocationData.overallStatus,
+    }).catch(() => null),
+  ]);
 
   const revenueCollectedTotal = revenueTrend.reduce((sum, p) => sum + p.value, 0);
 
@@ -204,7 +201,7 @@ export default async function AdminDashboardPage() {
         {/* Zone E: Guest Intelligence */}
         <div className={styles.guestIntelRow} data-widget="guestIntelligence">
           <div className={styles.sectionLabel}>Guest Intelligence</div>
-          <GuestIntelligence
+          <GuestPulse
             ownerUpdates={guestInsights.ownerUpdates}
             houseActions={guestInsights.houseActions}
           />

@@ -22,6 +22,7 @@ import {
   CaretDown,
   CalendarDots,
   Receipt,
+  Pulse,
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { AdminSidebarFooter } from "@/components/admin/AdminSidebarFooter";
@@ -64,6 +65,7 @@ type NavEntry = NavItem | NavGroup;
 
 const navEntries: NavEntry[] = [
   { kind: "item", href: "/admin", label: "Dashboard", icon: <Gauge size={18} weight="duotone" /> },
+  { kind: "item", href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={18} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
   { kind: "item", href: "/admin/inbox", label: "Inbox", icon: <ChatsCircle size={18} weight="duotone" />, matchPrefix: "/admin/inbox" },
   { kind: "item", href: "/admin/tasks", label: "Tasks", icon: <ListChecks size={18} weight="duotone" />, matchPrefix: "/admin/tasks" },
   { kind: "item", href: "/admin/meetings", label: "Meetings", icon: <CalendarDots size={18} weight="duotone" />, matchPrefix: "/admin/meetings" },
@@ -596,6 +598,7 @@ export function AdminTopBar({
     if (pathname.startsWith("/admin/meetings")) return "Meetings";
     if (pathname.startsWith("/admin/billing")) return "Billing";
     if (pathname.startsWith("/admin/timeline")) return "Timeline";
+    if (pathname.startsWith("/admin/guest-pulse")) return "Guest Pulse";
     return "";
   })();
 
@@ -690,6 +693,7 @@ const adminRailItems: Array<{
   matchPrefixes?: string[];
 }> = [
   { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Dashboard" },
+  { href: "/admin/guest-pulse", icon: <Pulse size={20} weight="duotone" />, label: "Pulse", matchPrefix: "/admin/guest-pulse" },
   { href: "/admin/inbox", icon: <ChatsCircle size={20} weight="duotone" />, label: "Inbox", matchPrefix: "/admin/inbox" },
   { href: "/admin/tasks", icon: <ListChecks size={20} weight="duotone" />, label: "Tasks", matchPrefix: "/admin/tasks" },
   { href: "/admin/meetings", icon: <CalendarDots size={20} weight="duotone" />, label: "Meetings", matchPrefix: "/admin/meetings" },
