@@ -62,27 +62,28 @@ export async function uploadW9Action(
     return { status: "error", message: `Upload failed: ${uploaded.error}` };
   }
 
-  // Record the document. RLS lets owners insert their own rows.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: docError } = await (client as any).from("documents").insert({
-    owner_id: userId,
-    title: legalName ? `W-9 (${legalName})` : "W-9",
-    doc_type: "w9",
-    file_url: `documents://${uploaded.storagePath}`,
-    status: "pending",
-    scope: "all",
-    uploaded_by: userId,
-  });
+  const { data: docRow, error: docError } = await (client as any)
+    .from("documents")
+    .insert({
+      owner_id: userId,
+      title: legalName ? `W-9 (${legalName})` : "W-9",
+      doc_type: "w9",
+      file_url: `documents://${uploaded.storagePath}`,
+      status: "pending",
+      scope: "all",
+      uploaded_by: userId,
+    })
+    .select("id")
+    .single();
   if (docError) {
+    await client.storage.from("documents").remove([uploaded.storagePath]);
     return {
       status: "error",
       message: `Storage succeeded but the document record could not be created: ${docError.message}`,
     };
   }
 
-  // Bump tax_profile to 'submitted'. The owner can complete legal
-  // name and the structured fields later; SSN / EIN entry comes
-  // through a separate form once compliance opens that path.
   try {
     await upsertTaxProfile(client, userId, {
       legalName,
@@ -90,6 +91,9 @@ export async function uploadW9Action(
       signatureDate: new Date().toISOString().slice(0, 10),
     });
   } catch (err) {
+    await client.storage.from("documents").remove([uploaded.storagePath]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (client as any).from("documents").delete().eq("id", docRow.id);
     return {
       status: "error",
       message: err instanceof Error ? err.message : "Tax profile update failed.",

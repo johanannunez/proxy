@@ -1,4 +1,5 @@
 import "server-only";
+import { randomBytes } from "crypto";
 import { createServiceClient } from "@/lib/supabase/service";
 import { encrypt, decrypt } from "@/lib/tax/encryption";
 
@@ -155,7 +156,8 @@ export async function uploadW9Pdf(
   input: UploadW9PdfInput,
 ): Promise<UploadW9PdfResult> {
   const safeName = input.filename.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 60);
-  const path = `${input.ownerProfileId}/${W9_PATH_PREFIX}-${Date.now()}-${safeName || "w9"}.pdf`;
+  const entropy = randomBytes(4).toString("hex");
+  const path = `${input.ownerProfileId}/${W9_PATH_PREFIX}-${Date.now()}-${entropy}-${safeName || "w9"}.pdf`;
 
   const { error } = await client.storage.from(BUCKET).upload(path, input.file, {
     contentType: input.contentType,

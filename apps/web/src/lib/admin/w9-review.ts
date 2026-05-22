@@ -2,7 +2,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { generateW9SignedUrl, upsertTaxProfile } from "@/lib/tax/w9-storage";
+import { generateW9SignedUrl } from "@/lib/tax/w9-storage";
 
 export type AdminActorContext = {
   /** The authenticated admin or compliance profile id. */
@@ -96,18 +96,23 @@ export async function verifyW9(ownerId: string): Promise<VerifyW9Result> {
 
   const service = createServiceClient();
   try {
-    await upsertTaxProfile(service, ownerId, { status: "verified" });
+    // Single upsert — all tax_profile columns set atomically.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (service as any)
+    const { error: profileError } = await (service as any)
       .from("tax_profiles")
-      .update({
-        reviewed_by: actor.profileId,
-        reviewed_at: new Date().toISOString(),
-        rejection_reason: null,
-      })
-      .eq("owner_id", ownerId);
-    // Mark the corresponding documents row as verified too, so admin
-    // surfaces that read from `documents` show a consistent state.
+      .upsert(
+        {
+          owner_id: ownerId,
+          status: "verified",
+          reviewed_by: actor.profileId,
+          reviewed_at: new Date().toISOString(),
+          rejection_reason: null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "owner_id" },
+      );
+    if (profileError) throw new Error(profileError.message);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (service as any)
       .from("documents")
@@ -131,25 +136,33 @@ export async function rejectW9(
   ownerId: string,
   reason: string,
 ): Promise<VerifyW9Result> {
+  const actor = await requireReviewer();
+  if (!actor) return { ok: false, error: "Not authorized." };
+
   const trimmed = reason.trim();
   if (!trimmed) {
     return { ok: false, error: "Rejection reason is required so the owner knows what to fix." };
   }
-  const actor = await requireReviewer();
-  if (!actor) return { ok: false, error: "Not authorized." };
 
   const service = createServiceClient();
   try {
-    await upsertTaxProfile(service, ownerId, { status: "rejected" });
+    // Single upsert — all tax_profile columns set atomically.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (service as any)
+    const { error: profileError } = await (service as any)
       .from("tax_profiles")
-      .update({
-        reviewed_by: actor.profileId,
-        reviewed_at: new Date().toISOString(),
-        rejection_reason: trimmed,
-      })
-      .eq("owner_id", ownerId);
+      .upsert(
+        {
+          owner_id: ownerId,
+          status: "rejected",
+          reviewed_by: actor.profileId,
+          reviewed_at: new Date().toISOString(),
+          rejection_reason: trimmed,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "owner_id" },
+      );
+    if (profileError) throw new Error(profileError.message);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (service as any)
       .from("documents")
