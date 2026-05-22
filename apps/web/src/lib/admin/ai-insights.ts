@@ -1,4 +1,4 @@
-import "server-only";
+import 'server-only';
 import { createClient } from '@/lib/supabase/server';
 
 export type InsightSeverity = 'info' | 'recommendation' | 'warning' | 'success';
@@ -27,6 +27,7 @@ export async function fetchInsightsByParent(
     .eq('parent_type', parentType)
     .in('parent_id', parentIds)
     .is('dismissed_at', null)
+    .is('completed_at', null)
     .order('created_at', { ascending: false });
   if (error) {
     console.error('[ai-insights] fetch error:', error.code, error.message);
@@ -62,6 +63,7 @@ export async function fetchInsightsByParentWithPayload(
     .eq('parent_type', parentType)
     .in('parent_id', parentIds)
     .is('dismissed_at', null)
+    .is('completed_at', null)
     .order('created_at', { ascending: false });
   if (error) throw error;
   const map: Record<string, Array<Insight & { actionPayload: unknown }>> = {};

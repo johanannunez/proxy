@@ -103,6 +103,17 @@ function buildFeedbackText(
   return parts.length > 0 ? parts.join('\n\n') : 'No guest feedback available.';
 }
 
+function isValidInsight(i: unknown): boolean {
+  if (!i || typeof i !== 'object') return false;
+  const ins = i as Record<string, unknown>;
+  return (
+    typeof ins.title === 'string' &&
+    typeof ins.body === 'string' &&
+    Array.isArray(ins.suggestedFixes) &&
+    Array.isArray(ins.sourceExcerpts)
+  );
+}
+
 async function analyzeProperty(
   propertyId: string,
   propertyName: string,
@@ -148,7 +159,17 @@ async function analyzeProperty(
     const text = data.choices[0]?.message?.content ?? '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
-    return JSON.parse(jsonMatch[0]) as ClaudeResponse;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (
+      !Array.isArray(parsed?.ownerUpdates) ||
+      !Array.isArray(parsed?.houseActionItems) ||
+      parsed.ownerUpdates.some((i: unknown) => !isValidInsight(i)) ||
+      parsed.houseActionItems.some((i: unknown) => !isValidInsight(i))
+    ) {
+      console.error('[gi] unexpected LLM response shape:', JSON.stringify(parsed).slice(0, 200));
+      return null;
+    }
+    return parsed as ClaudeResponse;
   } catch (err) {
     console.error('[gi] openrouter error:', err);
     return null;
