@@ -80,7 +80,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage = pathname === "/" || pathname === "/login" || pathname === "/signup";
   if (isAuthPage && user) {
     const { data: authPageProfile } = await supabase
       .from("profiles")
