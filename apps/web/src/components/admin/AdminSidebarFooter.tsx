@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTransition, useState, useRef, useEffect } from "react";
-import { GearSix, UserSwitch, Power, Sun, Moon, Monitor, CaretRight, Check, Question } from "@phosphor-icons/react";
+import { useTransition, useState, useRef, useEffect, type CSSProperties } from "react";
+import {
+  GearSix, UserSwitch, Power, Sun, Moon, Monitor, Check, Question, CaretUp,
+} from "@phosphor-icons/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { signOut } from "@/app/(portal)/portal/actions";
 
@@ -25,122 +27,37 @@ function getPortalUrl(pathname: string): string {
 }
 
 const THEME_OPTIONS = [
-  { value: "light" as const, icon: <Sun size={14} weight="regular" />, label: "Light mode" },
-  { value: "dark" as const, icon: <Moon size={14} weight="regular" />, label: "Dark mode" },
-  { value: "system" as const, icon: <Monitor size={14} weight="regular" />, label: "Match system" },
+  { value: "light" as const, icon: <Sun size={14} weight="regular" />, label: "Light" },
+  { value: "dark" as const, icon: <Moon size={14} weight="regular" />, label: "Dark" },
+  { value: "system" as const, icon: <Monitor size={14} weight="regular" />, label: "System" },
 ] as const;
 
-function ThemeRow() {
+function ThemeSegmented() {
   const { theme, setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, [open]);
-
-  const current = THEME_OPTIONS.find((o) => o.value === theme) ?? THEME_OPTIONS[2];
-
   return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        onClick={() => setOpen(!open)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          width: "100%",
-          padding: "8px 14px",
-          background: "none",
-          border: "none",
-          color: "rgba(255,255,255,0.55)",
-          fontSize: "13px",
-          fontWeight: 500,
-          cursor: "pointer",
-          fontFamily: "inherit",
-          textAlign: "left",
-          transition: "background 120ms ease, color 120ms ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-          e.currentTarget.style.color = "rgba(255,255,255,0.8)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "none";
-          e.currentTarget.style.color = "rgba(255,255,255,0.55)";
-        }}
-      >
-        <span style={{ display: "inline-flex", alignItems: "center", color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>
-          {current.icon}
-        </span>
-        <span style={{ flex: 1 }}>{current.label}</span>
-        <CaretRight size={11} weight="bold" style={{ opacity: 0.25, flexShrink: 0 }} />
-      </button>
-
-      {open && (
-        <div
-          role="listbox"
-          aria-label="Theme"
+    <div style={{
+      display: "flex", gap: "2px", padding: "2px",
+      background: "rgba(255,255,255,0.06)", borderRadius: "8px",
+    }}>
+      {THEME_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => setTheme(opt.value)}
           style={{
-            position: "absolute",
-            bottom: "calc(100% + 4px)",
-            left: "12px",
-            right: "12px",
-            background: "var(--color-navy)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: "10px",
-            padding: "4px",
-            boxShadow: "0 -4px 24px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)",
-            zIndex: 50,
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "5px", padding: "5px 4px", borderRadius: "6px", border: "none",
+            background: theme === opt.value ? "rgba(255,255,255,0.12)" : "transparent",
+            color: theme === opt.value ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)",
+            fontSize: "11px", fontWeight: theme === opt.value ? 600 : 400,
+            cursor: "pointer", fontFamily: "inherit",
+            transition: "background 120ms ease, color 120ms ease",
           }}
         >
-          {THEME_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              role="option"
-              aria-selected={theme === opt.value}
-              type="button"
-              onClick={() => { setTheme(opt.value); setOpen(false); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                width: "100%",
-                padding: "7px 9px",
-                borderRadius: "6px",
-                background: theme === opt.value ? "rgba(255,255,255,0.08)" : "transparent",
-                border: "none",
-                color: theme === opt.value ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.55)",
-                fontSize: "12.5px",
-                fontWeight: theme === opt.value ? 600 : 400,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                textAlign: "left",
-                transition: "background 120ms ease, color 120ms ease",
-              }}
-              onMouseEnter={(e) => {
-                if (theme !== opt.value) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-              }}
-              onMouseLeave={(e) => {
-                if (theme !== opt.value) e.currentTarget.style.background = "transparent";
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center" }}>{opt.icon}</span>
-              <span style={{ flex: 1 }}>{opt.label}</span>
-              {theme === opt.value && (
-                <Check size={11} weight="bold" style={{ color: "var(--color-brand-light)" }} />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+          {opt.icon}
+          <span>{opt.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -158,125 +75,157 @@ export function AdminSidebarFooter({
 }) {
   const pathname = usePathname();
   const portalHref = getPortalUrl(pathname ?? "");
+  const [open, setOpen] = useState(false);
   const [signOutPending, startSignOut] = useTransition();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [open]);
+
+  const item: CSSProperties = {
+    display: "flex", alignItems: "center", gap: "10px",
+    width: "100%", padding: "8px 10px", borderRadius: "8px",
+    background: "none", border: "none",
+    color: "rgba(255,255,255,0.68)", fontSize: "13px", fontWeight: 500,
+    cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+    textDecoration: "none", transition: "background 120ms ease, color 120ms ease",
+  };
 
   return (
     <div
-      className="mx-3 mb-6 mt-auto border-t pt-2"
-      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+      ref={ref}
+      style={{
+        position: "relative",
+        margin: "0 12px 20px",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        paddingTop: "8px",
+      }}
     >
-      {/* Identity row — entire row links to account, gear icon as visual cue */}
-      <Link
-        href="/admin/account"
-        className="flex items-center gap-2.5 rounded-lg px-3 pb-1.5 pt-2.5 transition-colors hover:bg-[rgba(255,255,255,0.04)]"
+      {/* Flyout panel */}
+      {open && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: 0, right: 0,
+          background: "#0b1e30",
+          border: "1px solid rgba(255,255,255,0.11)",
+          borderRadius: "12px", padding: "5px",
+          boxShadow: "0 -12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.3)",
+          zIndex: 100,
+        }}>
+          <Link
+            href="/admin/account"
+            onClick={() => setOpen(false)}
+            style={item}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.9)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.68)"; }}
+          >
+            <GearSix size={15} weight="duotone" style={{ color: "rgba(255,255,255,0.38)", flexShrink: 0 }} />
+            Account settings
+          </Link>
+
+          <Link
+            href={portalHref}
+            onClick={() => setOpen(false)}
+            style={{ ...item, color: "rgba(96,185,235,0.85)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(96,185,235,0.07)"; e.currentTarget.style.color = "rgba(96,185,235,1)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(96,185,235,0.85)"; }}
+          >
+            <UserSwitch size={15} weight="duotone" style={{ color: "rgba(96,185,235,0.75)", flexShrink: 0 }} />
+            Switch to Portal
+          </Link>
+
+          <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "4px 6px" }} />
+
+          <button
+            type="button"
+            onClick={() => { window.dispatchEvent(new CustomEvent("admin:help-support")); setOpen(false); }}
+            style={item}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.9)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.68)"; }}
+          >
+            <Question size={15} weight="regular" style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }} />
+            Help & Support
+          </button>
+
+          <div style={{ padding: "5px 4px" }}>
+            <ThemeSegmented />
+          </div>
+
+          <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "4px 6px" }} />
+
+          <button
+            type="button"
+            disabled={signOutPending}
+            onClick={() => { setOpen(false); startSignOut(() => signOut()); }}
+            style={{ ...item, color: signOutPending ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.78)", cursor: signOutPending ? "wait" : "pointer" }}
+            onMouseEnter={(e) => { if (!signOutPending) { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.color = "rgba(239,68,68,1)"; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = signOutPending ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.78)"; }}
+          >
+            <Power size={15} weight="regular" style={{ flexShrink: 0 }} />
+            {signOutPending ? "Signing out…" : "Sign out"}
+          </button>
+        </div>
+      )}
+
+      {/* Identity trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        style={{
+          display: "flex", alignItems: "center", gap: "10px",
+          width: "100%", padding: "7px 9px", borderRadius: "10px",
+          background: open ? "rgba(255,255,255,0.06)" : "none",
+          border: `1px solid ${open ? "rgba(255,255,255,0.10)" : "transparent"}`,
+          cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+          transition: "background 120ms ease, border-color 120ms ease",
+        }}
+        onMouseEnter={(e) => { if (!open) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; } }}
+        onMouseLeave={(e) => { if (!open) { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = "transparent"; } }}
       >
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt={userName}
-            className="h-[34px] w-[34px] shrink-0 rounded-full object-cover"
-          />
+          <img src={avatarUrl} alt={userName} style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
         ) : (
-          <span
-            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-xs font-semibold tracking-wide"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.1)" }}
-          >
+          <span style={{
+            width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+            background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "11px", fontWeight: 600, color: "white", letterSpacing: "0.04em",
+          }}>
             {initials}
           </span>
         )}
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[13.5px] font-semibold leading-tight" style={{ color: "#E0EDF8" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#E0EDF8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.35 }}>
             {userName}
           </div>
-          <div className="mt-px truncate text-[11.5px] leading-tight" style={{ color: "rgba(255,255,255,0.40)" }}>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.35 }}>
             {userEmail}
           </div>
         </div>
-        <GearSix size={15} weight="regular" style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }} />
-      </Link>
-
-      {/* Flat action list */}
-      <div className="pb-1 pt-1">
-        {/* Section label */}
-        <div
+        <CaretUp
+          size={11}
+          weight="bold"
           style={{
-            fontSize: "9.5px",
-            fontWeight: 600,
-            letterSpacing: "0.07em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.22)",
-            padding: "4px 14px 6px",
+            color: "rgba(255,255,255,0.28)", flexShrink: 0,
+            transform: open ? "rotate(0deg)" : "rotate(180deg)",
+            transition: "transform 180ms ease",
           }}
-        >
-          WORKSPACE
-        </div>
-
-        {/* Portal */}
-        <Link
-          href={portalHref}
-          className="flex w-full items-center gap-2.5 px-[14px] py-2 text-[13px] font-medium transition-colors hover:bg-[rgba(255,255,255,0.04)]"
-          style={{ color: "rgba(96,185,235,0.9)", textDecoration: "none" }}
-        >
-          <UserSwitch size={15} weight="duotone" style={{ color: "rgba(96,185,235,0.9)", flexShrink: 0 }} />
-          Switch to Portal
-        </Link>
-
-        {/* Micro divider */}
-        <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "4px 12px" }} />
-
-        {/* Help & Support */}
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent("admin:help-support"))}
-          className="flex w-full items-center gap-2.5 px-[14px] py-2 text-[13px] font-medium"
-          style={{
-            background: "none",
-            border: "none",
-            color: "rgba(255,255,255,0.55)",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            textAlign: "left",
-            transition: "background 120ms ease, color 120ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-            e.currentTarget.style.color = "rgba(255,255,255,0.8)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "none";
-            e.currentTarget.style.color = "rgba(255,255,255,0.55)";
-          }}
-        >
-          <Question size={15} weight="regular" style={{ color: "rgba(255,255,255,0.35)", flexShrink: 0 }} />
-          Help & Support
-        </button>
-
-        {/* Theme row */}
-        <ThemeRow />
-
-        {/* Sign out */}
-        <button
-          type="button"
-          disabled={signOutPending}
-          onClick={() => startSignOut(() => signOut())}
-          className="flex w-full items-center gap-2.5 px-[14px] py-2 text-[13px] font-medium"
-          style={{
-            background: "none",
-            border: "none",
-            color: signOutPending ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.75)",
-            cursor: signOutPending ? "wait" : "pointer",
-            fontFamily: "inherit",
-            textAlign: "left",
-            transition: "background 120ms ease, color 150ms ease",
-          }}
-          onMouseEnter={(e) => { if (!signOutPending) { e.currentTarget.style.color = "rgba(239,68,68,1)"; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; } }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = signOutPending ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.75)"; e.currentTarget.style.background = "none"; }}
-        >
-          <Power size={15} weight="regular" style={{ flexShrink: 0 }} />
-          {signOutPending ? "Signing out…" : "Sign out"}
-        </button>
-      </div>
+        />
+      </button>
     </div>
   );
 }

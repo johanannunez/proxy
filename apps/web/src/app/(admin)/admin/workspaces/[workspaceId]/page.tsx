@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchWorkspaceContactDetail, fetchWorkspaceInfo, fetchWorkspaceMembers } from "@/lib/admin/workspace-contact-detail";
+import { fetchParcelTeamMembers, fetchWorkspaceContactDetail, fetchWorkspaceInfo, fetchWorkspaceMembers } from "@/lib/admin/workspace-contact-detail";
 import { fetchWorkspaceDetail } from "@/lib/admin/workspace-detail";
 import { createClient } from "@/lib/supabase/server";
 import { fetchInternalNote } from "@/lib/admin/owner-facts-actions";
@@ -13,38 +13,42 @@ import { SETTINGS_SECTIONS, type SettingsSection } from "@/app/(admin)/admin/wor
 import type { SessionRow } from "@/app/(admin)/admin/workspaces/[workspaceId]/settings/AccountSecuritySection";
 import type { ConnectionRow } from "@/app/(admin)/admin/workspaces/[workspaceId]/settings/DataPrivacySection";
 import { fetchWorkspaceMeetings, fetchNextMeeting } from "@/lib/admin/workspace-meetings";
-import { IntelligenceTab } from "./IntelligenceTab";
 import { fetchInsightsByParent } from "@/lib/admin/ai-insights";
 import { BillingTab } from "./BillingTab";
 import { fetchWorkspaceBilling } from "@/lib/admin/workspace-billing";
 import { DocumentsTab } from "./DocumentsTab";
 import { fetchWorkspaceDocuments } from "@/lib/admin/workspace-documents";
 import { MessagingTab } from "./MessagingTab";
-import { fetchWorkspacePersonMessages, fetchWorkspaceMessages } from "@/lib/admin/workspace-messages";
+import { fetchWorkspacePersonMessages, fetchWorkspaceMessages, fetchWorkspaceInboxConversations } from "@/lib/admin/workspace-messages";
 import { WorkspaceOverviewTab } from "./WorkspaceOverviewTab";
 import { fetchWorkspaceContactOpenTasks } from "@/lib/admin/workspace-overview";
 import { TasksTab } from "@/components/admin/tasks/TasksTab";
+import { WorkspaceProjectsTab } from "./WorkspaceProjectsTab";
+import { fetchWorkspaceProjects } from "@/lib/admin/workspace-projects";
+import { WorkspaceTeamTab } from "./WorkspaceTeamTab";
 
 export const dynamic = "force-dynamic";
 
 type TabKey =
   | "overview"
+  | "team"
+  | "messaging"
   | "properties"
+  | "projects"
   | "tasks"
   | "meetings"
-  | "intelligence"
-  | "messaging"
   | "documents"
   | "billing"
   | "settings";
 
 const KNOWN_TABS: readonly TabKey[] = [
   "overview",
+  "team",
+  "messaging",
   "properties",
+  "projects",
   "tasks",
   "meetings",
-  "intelligence",
-  "messaging",
   "documents",
   "billing",
   "settings",
@@ -55,12 +59,12 @@ type StoredContactMethod = "email" | "sms" | "phone" | "whatsapp" | null;
 
 type Props = {
   params: Promise<{ workspaceId: string }>;
-  searchParams: Promise<{ tab?: string; section?: string; person?: string }>;
+  searchParams: Promise<{ tab?: string; section?: string; person?: string; detail?: string }>;
 };
 
 export default async function WorkspaceDetailPage({ params, searchParams }: Props) {
   const { workspaceId } = await params;
-  const { tab: tabParam, section: sectionParam, person: personParam } = await searchParams;
+  const { tab: tabParam, section: sectionParam, person: personParam, detail: detailParam } = await searchParams;
 
   const workspaceInfo = await fetchWorkspaceInfo(workspaceId);
 
@@ -88,50 +92,43 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
     fetchWorkspaceContactDetail(activeContactId),
     fetchAdminProfiles(),
   ]);
+  void detailParam;
   if (!workspaceContact) notFound();
 
-  const nextMeeting = workspaceContact.profileId ? await fetchNextMeeting(workspaceContact.profileId) : null;
-  // Fetch full Workspace data once the active person is attached to a Workspace.
-  const workspaceData = workspaceContact.workspaceId
-    ? await fetchWorkspaceDetail(workspaceContact.workspaceId)
-    : null;
-
   const meetingProfileId = workspaceContact.profileId ?? activeContactId;
-  const workspaceMeetings =
-    tab === "meetings" && meetingProfileId
-      ? await fetchWorkspaceMeetings(meetingProfileId)
-      : [];
-
-  const isOverview = tab === "overview";
-  const isIntelligence = tab === "intelligence";
-
-  const contactInsights = isOverview || isIntelligence
-    ? await fetchInsightsByParent("contact", [activeContactId])
-    : {};
-  const insightList = contactInsights[activeContactId] ?? [];
-  const generatedAt = insightList[0]?.createdAt ?? null;
-
-  const billingData = tab === "billing"
-    ? await fetchWorkspaceBilling(workspaceId, workspaceContact.id, workspaceContact.properties.length)
-    : null;
-
-  const workspaceDocuments = (tab === "documents" || isOverview) && workspaceContact.profileId
-    ? await fetchWorkspaceDocuments(workspaceContact.profileId)
-    : [];
-
   const messagingContactIds = members.map((m) => m.id);
-  const allWorkspaceMessages = tab === "messaging"
-    ? await fetchWorkspaceMessages(messagingContactIds)
-    : [];
-  const overviewMessages = isOverview
-    ? await fetchWorkspacePersonMessages(activeContactId)
-    : [];
+  const propertyIds = workspaceContact.properties.map((property) => property.id);
+  const contactIds = members.map((member) => member.id);
+  const [
+    nextMeeting,
+    workspaceData,
+    workspaceMeetings,
+    contactInsights,
+    billingData,
+    workspaceDocuments,
+    allWorkspaceMessages,
+    workspaceInboxConversations,
+    overviewMessages,
+    openTasks,
+    workspaceProjects,
+    parcelTeam,
+  ] = await Promise.all([
+    workspaceContact.profileId ? fetchNextMeeting(workspaceContact.profileId) : Promise.resolve(null),
+    workspaceContact.workspaceId ? fetchWorkspaceDetail(workspaceContact.workspaceId) : Promise.resolve(null),
+    meetingProfileId ? fetchWorkspaceMeetings(meetingProfileId) : Promise.resolve([]),
+    fetchInsightsByParent("contact", [activeContactId]),
+    fetchWorkspaceBilling(workspaceId, workspaceContact.id, workspaceContact.properties.length, workspaceContact.profileId),
+    workspaceContact.profileId ? fetchWorkspaceDocuments(workspaceContact.profileId) : Promise.resolve([]),
+    fetchWorkspaceMessages(messagingContactIds),
+    fetchWorkspaceInboxConversations(workspaceContact.profileId),
+    fetchWorkspacePersonMessages(activeContactId),
+    fetchWorkspaceContactOpenTasks(activeContactId),
+    fetchWorkspaceProjects({ contactIds, propertyIds }),
+    fetchParcelTeamMembers(),
+  ]);
+  const insightList = contactInsights[activeContactId] ?? [];
 
-  const openTasks = isOverview
-    ? await fetchWorkspaceContactOpenTasks(activeContactId)
-    : [];
-
-  // Fetch settings data only when the settings tab is active and owner data exists.
+  // Preload settings data so switching to the tab does not block on a server navigation.
   let profileExtras: { preferredName: string | null; contactMethod: StoredContactMethod; timezone: string | null } =
     { preferredName: null, contactMethod: null, timezone: null };
   let internalNote: Awaited<ReturnType<typeof fetchInternalNote>> = null;
@@ -139,7 +136,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
   let connections: ConnectionRow[] = [];
   let workspaceDetail: { id: string; name: string; type: string | null; ein: string | null; notes: string | null } | null = null;
 
-  if (tab === "settings" && workspaceData) {
+  if (workspaceData) {
     const supabase = await createClient();
     const profileId = workspaceData.primaryMember.id;
 
@@ -195,117 +192,103 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
     }
   }
 
-  function renderTab(): React.ReactNode {
-    switch (tab) {
-      case "overview":
-        return (
-          <WorkspaceOverviewTab
-            workspaceContact={workspaceContact!}
-            documents={workspaceDocuments}
-            messages={overviewMessages}
-            insights={insightList}
-            openTasks={openTasks}
-            activityLog={workspaceData?.activity ?? []}
-          />
-        );
-
-      case "properties":
-        return <PropertiesTab properties={workspaceContact!.properties} />;
-
-      case "tasks":
-        return <TasksTab parentType="contact" parentId={activeContactId} />;
-
-      case "meetings":
-        return (
-          <MeetingsTab
-            ownerId={workspaceContact!.profileId ?? activeContactId}
-            ownerFirstName={workspaceContact!.fullName.split(" ")[0] ?? workspaceContact!.fullName}
-            ownerEmail={workspaceContact!.email ?? ""}
-            ownerPhone={workspaceContact!.phone ?? null}
-            meetings={workspaceMeetings}
-            properties={workspaceContact!.properties.map((p) => ({
-              id: p.id,
-              label: p.label,
-            }))}
-            contactId={activeContactId}
-            adminProfiles={adminProfiles}
-          />
-        );
-
-      case "billing":
-        if (!billingData) {
-          return (
-            <TabPlaceholder
-              title="Billing"
-              body="Billing is not available for this workspace yet."
-            />
-          );
-        }
-        return <BillingTab billing={billingData} />;
-
-      case "intelligence":
-        return (
-          <IntelligenceTab
-            contactId={activeContactId}
-            insights={insightList}
-            generatedAt={generatedAt}
-          />
-        );
-
-      case "messaging":
-        return (
-          <MessagingTab
-            contactId={activeContactId}
-            messages={allWorkspaceMessages}
-            members={members}
-            activeContactId={activeContactId}
-          />
-        );
-
-      case "documents":
-        if (!workspaceContact!.profileId) {
-          return (
-            <TabPlaceholder
-              title="Documents"
-              body="Documents are available once the workspace begins onboarding."
-            />
-          );
-        }
-        return <DocumentsTab documents={workspaceDocuments} />;
-
-      case "settings":
-        if (!workspaceData) {
-          return (
-            <TabPlaceholder
-              title="Settings"
-              body="Settings are available once the workspace completes onboarding."
-            />
-          );
-        }
-        return (
-          <SettingsTab
-            data={workspaceData}
-            activeSection={section}
-            profileExtras={profileExtras}
-            internalNote={internalNote}
-            sessions={sessions}
-            connections={connections}
-            workspaceDetail={workspaceDetail}
-            basePath={`/admin/workspaces/${workspaceId}`}
-            adminMembers={members}
-            adminWorkspaceId={workspaceInfo!.id}
-          />
-        );
-
-      default:
-        return (
-          <TabPlaceholder
-            title="Not found"
-            body="This tab does not exist."
-          />
-        );
-    }
-  }
+  const tabContents: Record<TabKey, React.ReactNode> = {
+    overview: (
+      <WorkspaceOverviewTab
+        workspaceContact={workspaceContact}
+        workspaceId={workspaceId}
+        projects={workspaceProjects}
+        documents={workspaceDocuments}
+        messages={overviewMessages}
+        insights={insightList}
+        openTasks={openTasks}
+        activityLog={workspaceData?.activity ?? []}
+      />
+    ),
+    properties: <PropertiesTab properties={workspaceContact.properties} />,
+    team: (
+      <WorkspaceTeamTab
+        workspaceId={workspaceId}
+        members={members}
+        activeContactId={activeContactId}
+        parcelTeam={parcelTeam}
+      />
+    ),
+    projects: (
+      <WorkspaceProjectsTab
+        projects={workspaceProjects}
+        activeContactId={activeContactId}
+        activeContactName={workspaceContact.fullName}
+        members={members}
+        properties={workspaceContact.properties}
+      />
+    ),
+    tasks: <TasksTab parentType="contact" parentId={activeContactId} />,
+    meetings: (
+      <MeetingsTab
+        ownerId={workspaceContact.profileId ?? activeContactId}
+        ownerFirstName={workspaceContact.fullName.split(" ")[0] ?? workspaceContact.fullName}
+        ownerEmail={workspaceContact.email ?? ""}
+        ownerPhone={workspaceContact.phone ?? null}
+        meetings={workspaceMeetings}
+        properties={workspaceContact.properties.map((p) => ({
+          id: p.id,
+          label: p.label,
+        }))}
+        contactId={activeContactId}
+        adminProfiles={adminProfiles}
+      />
+    ),
+    billing: billingData ? (
+      <BillingTab
+        workspaceId={workspaceId}
+        billing={billingData}
+        documents={workspaceDocuments}
+        ownerId={workspaceContact.profileId}
+        properties={workspaceContact.properties}
+      />
+    ) : (
+      <TabPlaceholder
+        title="Finances"
+        body="Finances are not available for this workspace yet."
+      />
+    ),
+    messaging: (
+      <MessagingTab
+        contactId={activeContactId}
+        messages={allWorkspaceMessages}
+        inboxConversations={workspaceInboxConversations}
+        members={members}
+        activeContactId={activeContactId}
+        ownerId={workspaceContact.profileId}
+      />
+    ),
+    documents: workspaceContact.profileId ? (
+      <DocumentsTab documents={workspaceDocuments} />
+    ) : (
+      <TabPlaceholder
+        title="Documents"
+        body="Documents are available once the workspace begins onboarding."
+      />
+    ),
+    settings: workspaceData ? (
+      <SettingsTab
+        data={workspaceData}
+        activeSection={section}
+        profileExtras={profileExtras}
+        internalNote={internalNote}
+        sessions={sessions}
+        connections={connections}
+        workspaceDetail={workspaceDetail}
+        basePath={`/admin/workspaces/${workspaceId}`}
+      />
+    ) : (
+      <TabPlaceholder
+        title="Settings"
+        body="Settings are available once the workspace completes onboarding."
+      />
+    ),
+  };
 
   return (
     <WorkspaceDetailShell
@@ -315,8 +298,8 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
       workspaceInfo={workspaceInfo}
       members={members}
       activeContactId={activeContactId as string}
-    >
-      {renderTab()}
-    </WorkspaceDetailShell>
+      initialTab={tab}
+      tabContents={tabContents}
+    />
   );
 }

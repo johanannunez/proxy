@@ -319,44 +319,83 @@
 .sDot.amber { background: #d97706; }
 .sDot.red { background: var(--color-error); }
 
-/* ── Intelligence card ───────────────────────────────────────────── */
+/* ── Projects card ───────────────────────────────────────────────── */
 
-.intelBody {
-  padding: 13px 14px;
+.projectBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
 }
 
-.intelSentiment {
-  font-size: 20px;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-
-.intelSentimentLabel {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-success);
-  margin-bottom: 4px;
-}
-
-.intelSentimentLabel.negative { color: var(--color-error); }
-.intelSentimentLabel.neutral { color: var(--color-text-secondary); }
-
-.intelNote {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-.intelRisk {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-warm-gray-100);
-  font-size: 11px;
-  font-weight: 600;
-  color: #d97706;
+.projectItem {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  border-radius: 7px;
+  color: inherit;
+  min-width: 0;
+  padding: 8px;
+  text-decoration: none;
+  transition: background-color 120ms ease;
+}
+
+.projectItem:hover {
+  background: var(--color-warm-gray-50);
+}
+
+.projectItem:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.projectItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgba(2, 170, 235, 0.08);
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.projectItemBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.projectItemName {
+  color: var(--color-navy);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectItemMeta {
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectProgress {
+  border-radius: 999px;
+  background: rgba(15, 59, 107, 0.06);
+  color: var(--color-navy);
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 7px;
 }
 
 /* ── Properties card ─────────────────────────────────────────────── */

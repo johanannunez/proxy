@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition } from "react";
+import { useState, useEffect, useCallback, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChatCircle,
@@ -15,11 +15,29 @@ import {
   DeviceMobile,
   Desktop,
   ArrowLeft,
+  Lightning,
+  PhoneSlash,
+  WarningCircle,
+  Buildings,
 } from "@phosphor-icons/react";
 import { RichTextEditor } from "@/components/messages/RichTextEditor";
 import { SafeHtml } from "@/components/messages/SafeHtml";
-import { sendMessage, sendBroadcast, getConversationMessages, getOwnerCount } from "./actions";
+import {
+  sendMessage,
+  sendBroadcast,
+  getConversationMessages,
+  getOwnerCount,
+  getOrCreateDirectConversation,
+} from "./actions";
 import { createClient } from "@/lib/supabase/client";
+import type { CommunicationsDashboardData } from "@/lib/admin/fetch-communications";
+import { scopeCommunicationsDashboard } from "./insight-scope";
+import { getConversationContextLabel, getConversationSearchText } from "./conversation-context";
+import { getMessageDisplayParticipant } from "./message-display";
+import { resolveEmailComposeSubject } from "./reply-subject";
+import { conversationNeedsReply, messageNeedsReply } from "./reply-state";
+import { conversationHasAttachments } from "./conversation-flags";
+import { resolveInboxWorkspaceHref } from "./workspace-link";
 
 type Conversation = {
   id: string;
@@ -29,11 +47,14 @@ type Conversation = {
   lastMessageAt: string;
   ownerName: string | null;
   ownerEmail: string | null;
+  ownerPhone: string | null;
   lastMessage: {
     body: string;
     senderId: string;
+    senderRole: string | null;
     createdAt: string;
     deliveryMethod: string;
+    metadata: Record<string, unknown>;
   } | null;
 };
 
@@ -41,6 +62,7 @@ type Owner = {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
 };
 
 type Message = {
@@ -69,13 +91,18 @@ type ConversationDetail = {
   owner_id: string | null;
   subject: string | null;
   type: string;
-  ownerProfile: { id: string; full_name: string | null; email: string } | null;
+  ownerProfile: { id: string; full_name: string | null; email: string; phone: string | null; workspaceId: string | null } | null;
 };
+
+type DeliveryMethod = "portal" | "email" | "sms";
 
 const FILTERS = [
   { key: "all", label: "All messages" },
   { key: "unread", label: "Unread" },
   { key: "sent", label: "Sent" },
+  { key: "sms", label: "SMS" },
+  { key: "email", label: "Email" },
+  { key: "attachments", label: "Files" },
   { key: "announcements", label: "Announcements" },
   { key: "email_logs", label: "Email logs" },
 ] as const;
@@ -86,12 +113,16 @@ export function AdminMessagesShell({
   conversations: initialConversations,
   allOwners,
   selectedOwnerId,
+  selectedConversationId,
   initialFilter,
+  communicationsDashboard,
 }: {
   conversations: Conversation[];
   allOwners: Owner[];
   selectedOwnerId: string | null;
+  selectedConversationId: string | null;
   initialFilter: string;
+  communicationsDashboard: CommunicationsDashboardData;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -105,8 +136,9 @@ export function AdminMessagesShell({
   const [conversationDetail, setConversationDetail] =
     useState<ConversationDetail | null>(null);
   const [composeBody, setComposeBody] = useState("");
-  const [deliveryMethod, setDeliveryMethod] = useState<"portal" | "email">("portal");
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("portal");
   const [emailSubject, setEmailSubject] = useState("");
+  const [sendError, setSendError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [showOwnerPicker, setShowOwnerPicker] = useState(false);
   const [ownerSearch, setOwnerSearch] = useState("");
@@ -117,19 +149,30 @@ export function AdminMessagesShell({
   const [broadcastDelivery, setBroadcastDelivery] = useState<"portal" | "portal_email">("portal");
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [ownerCount, setOwnerCount] = useState<number | null>(0);
+  const selectedOwner = selectedOwnerId
+    ? allOwners.find((owner) => owner.id === selectedOwnerId) ?? null
+    : null;
+  const scopedConversations = selectedOwnerId
+    ? initialConversations.filter((conversation) => conversation.ownerId === selectedOwnerId)
+    : initialConversations;
 
   // Filter conversations
-  const filtered = initialConversations.filter((c) => {
+  const filtered = scopedConversations.filter((c) => {
     if (filter === "announcements" && c.type !== "announcement") return false;
     if (filter === "email_logs" && c.type !== "email_log") return false;
-    if (filter === "sent" && c.type !== "direct") return false;
+    if (filter === "unread" && !conversationNeedsReply(c)) return false;
+    if (filter === "sent" && !conversationWasLastSentByAdmin(c)) return false;
+    if (filter === "sms" && !conversationIsSms(c)) return false;
+    if (filter === "email" && !conversationIsEmail(c)) return false;
+    if (filter === "attachments" && !conversationHasAttachments(c)) return false;
     if (search) {
       const q = search.toLowerCase();
       const matchesName = c.ownerName?.toLowerCase().includes(q);
       const matchesEmail = c.ownerEmail?.toLowerCase().includes(q);
       const matchesSubject = c.subject?.toLowerCase().includes(q);
       const matchesBody = c.lastMessage?.body?.toLowerCase().includes(q);
-      if (!matchesName && !matchesEmail && !matchesSubject && !matchesBody)
+      const matchesContext = getConversationSearchText(c).includes(q);
+      if (!matchesName && !matchesEmail && !matchesSubject && !matchesBody && !matchesContext)
         return false;
     }
     return true;
@@ -144,16 +187,24 @@ export function AdminMessagesShell({
     setConversationDetail(result.conversation as ConversationDetail);
   }, []);
 
-  // Auto-select conversation if owner filter is set
+  // Auto-select conversation from deep link or owner filter.
   useEffect(() => {
+    if (selectedConversationId) {
+      const conv = initialConversations.find((c) => c.id === selectedConversationId);
+      if (conv) loadConversation(conv.id);
+      return;
+    }
+
     if (selectedOwnerId) {
-      const conv = initialConversations.find(
-        (c) => c.ownerId === selectedOwnerId && c.type === "direct",
-      );
+      const ownerConversations = initialConversations.filter((c) => c.ownerId === selectedOwnerId);
+      const conv =
+        ownerConversations.find((c) => c.type === "direct") ??
+        ownerConversations.find((c) => c.type === "email_log") ??
+        ownerConversations[0];
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (conv) loadConversation(conv.id);
     }
-  }, [selectedOwnerId, initialConversations, loadConversation]);
+  }, [selectedConversationId, selectedOwnerId, initialConversations, loadConversation]);
 
   // Real-time subscription for new messages
   useEffect(() => {
@@ -179,19 +230,39 @@ export function AdminMessagesShell({
 
   const handleSend = async () => {
     if (!composeBody.trim() || !conversationDetail?.owner_id) return;
-    if (deliveryMethod === "email" && !emailSubject.trim()) return;
+    const effectiveDeliveryMethod = conversationDetail.type === "email_log" ? "email" : deliveryMethod;
+    const resolvedSubject = effectiveDeliveryMethod === "email"
+      ? resolveEmailComposeSubject({
+          conversationType: conversationDetail.type,
+          typedSubject: emailSubject,
+          messages: messages.map((message) => ({
+            deliveryMethod: message.delivery_method,
+            metadata: message.metadata,
+          })),
+        })
+      : null;
+    if (resolvedSubject && !resolvedSubject.ok) {
+      setSendError(resolvedSubject.error);
+      return;
+    }
+    if (effectiveDeliveryMethod === "sms" && !conversationDetail.ownerProfile?.phone) return;
     setSending(true);
+    setSendError(null);
     const result = await sendMessage({
       ownerId: conversationDetail.owner_id,
       body: composeBody,
-      deliveryMethod,
-      subject: deliveryMethod === "email" ? emailSubject : undefined,
+      deliveryMethod: effectiveDeliveryMethod,
+      subject: resolvedSubject?.ok ? resolvedSubject.subject : undefined,
+      conversationId: selectedConvId ?? undefined,
     });
     setSending(false);
-    if (result.error) return;
+    if (result.error) {
+      setSendError(result.error);
+      return;
+    }
     setComposeBody("");
     setEmailSubject("");
-    setDeliveryMethod("portal");
+    setDeliveryMethod(conversationDetail.type === "email_log" ? "email" : "portal");
     if (result.conversationId) loadConversation(result.conversationId);
   };
 
@@ -228,8 +299,7 @@ export function AdminMessagesShell({
       loadConversation(existing.id);
       return;
     }
-    // Send an initial empty-body message to create the conversation
-    const result = await sendMessage({ ownerId, body: "" });
+    const result = await getOrCreateDirectConversation(ownerId);
     if (result.conversationId) {
       startTransition(() => router.refresh());
       loadConversation(result.conversationId);
@@ -251,6 +321,34 @@ export function AdminMessagesShell({
     return o.name.toLowerCase().includes(q) || o.email.toLowerCase().includes(q);
   });
 
+  const scopedDashboard = scopeCommunicationsDashboard({
+    dashboard: communicationsDashboard,
+    selectedOwnerId,
+    selectedOwnerPhone: selectedOwner?.phone ?? null,
+  });
+  const insightStats = buildInsightStats(scopedConversations, scopedDashboard);
+  const composeDeliveryMethod = conversationDetail?.type === "email_log" ? "email" : deliveryMethod;
+  const emailSubjectResult = conversationDetail && composeDeliveryMethod === "email"
+    ? resolveEmailComposeSubject({
+        conversationType: conversationDetail.type,
+        typedSubject: emailSubject,
+        messages: messages.map((message) => ({
+          deliveryMethod: message.delivery_method,
+          metadata: message.metadata,
+        })),
+      })
+    : null;
+  const emailSubjectPlaceholder =
+    emailSubjectResult?.ok && emailSubjectResult.inherited
+      ? emailSubjectResult.subject
+      : "Email subject...";
+  const workspaceHref = conversationDetail
+    ? resolveInboxWorkspaceHref({
+        ownerWorkspaceId: conversationDetail.ownerProfile?.workspaceId,
+        messages: messages.map((message) => ({ metadata: message.metadata })),
+      })
+    : null;
+
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Left Panel: Filters (hidden on mobile) */}
@@ -263,6 +361,43 @@ export function AdminMessagesShell({
       >
         <div className="px-4 pb-3 pt-6">
           <h2 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>Messages</h2>
+          {selectedOwner ? (
+            <div className="mt-1 flex items-center gap-1.5 text-[10px]" style={{ color: "var(--color-text-tertiary)" }}>
+              <span className="truncate">Owner view: {selectedOwner.name}</span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="px-3 pb-3">
+          <div
+            className="rounded-lg border p-3"
+            style={{
+              borderColor: "var(--color-warm-gray-200)",
+              backgroundColor: "var(--color-white)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                <Lightning size={13} weight="fill" style={{ color: "var(--color-brand)" }} />
+                Command center
+              </span>
+              {insightStats.needsAttention > 0 ? (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
+                  {insightStats.needsAttention}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <InsightMetric label="Total" value={insightStats.total} />
+              <InsightMetric label="SMS" value={insightStats.sms} />
+              <InsightMetric label="Email" value={insightStats.email} />
+              <InsightMetric
+                label="Reply"
+                value={insightStats.needsReply}
+                tone={insightStats.needsReply > 0 ? "attention" : "neutral"}
+              />
+            </div>
+          </div>
         </div>
 
         <nav className="flex-1 px-2">
@@ -270,11 +405,21 @@ export function AdminMessagesShell({
             {FILTERS.map((f) => {
               const count =
                 f.key === "all"
-                  ? initialConversations.length
+                  ? scopedConversations.length
+                  : f.key === "unread"
+                    ? scopedConversations.filter(conversationNeedsReply).length
+                  : f.key === "sent"
+                    ? scopedConversations.filter(conversationWasLastSentByAdmin).length
+                  : f.key === "sms"
+                    ? scopedConversations.filter(conversationIsSms).length
+                  : f.key === "email"
+                    ? scopedConversations.filter(conversationIsEmail).length
+                  : f.key === "attachments"
+                    ? scopedConversations.filter(conversationHasAttachments).length
                   : f.key === "announcements"
-                    ? initialConversations.filter((c) => c.type === "announcement").length
+                    ? scopedConversations.filter((c) => c.type === "announcement").length
                     : f.key === "email_logs"
-                      ? initialConversations.filter((c) => c.type === "email_log").length
+                      ? scopedConversations.filter((c) => c.type === "email_log").length
                       : 0;
               return (
                 <li key={f.key}>
@@ -377,7 +522,9 @@ export function AdminMessagesShell({
             </div>
           ) : (
             <ul>
-              {filtered.map((c) => (
+              {filtered.map((c) => {
+                const contextLabel = getConversationContextLabel(c);
+                return (
                 <li key={c.id}>
                   <button
                     type="button"
@@ -432,16 +579,32 @@ export function AdminMessagesShell({
                       <div className="mt-0.5 truncate text-xs" style={{ color: "var(--color-text-secondary)" }}>
                         {c.lastMessage ? stripHtml(c.lastMessage.body).slice(0, 80) : "No messages yet"}
                       </div>
+                      {contextLabel ? (
+                        <div className="mt-1 truncate text-[10px]" style={{ color: "var(--color-text-tertiary)" }}>
+                          {contextLabel}
+                        </div>
+                      ) : null}
                       {c.lastMessage?.deliveryMethod === "email" ? (
                         <span className="mt-1 inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--color-text-tertiary)" }}>
                           <EnvelopeSimple size={10} />
                           Email
                         </span>
+                      ) : c.lastMessage?.deliveryMethod === "sms" ? (
+                        <span className="mt-1 inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--color-text-tertiary)" }}>
+                          <DeviceMobile size={10} />
+                          SMS
+                        </span>
+                      ) : null}
+                      {conversationNeedsReply(c) ? (
+                        <span className="ml-2 mt-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
+                          Needs reply
+                        </span>
                       ) : null}
                     </div>
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>
@@ -454,12 +617,58 @@ export function AdminMessagesShell({
         }`}
       >
         {!selectedConvId || !conversationDetail ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-center">
-              <ChatCircle size={48} weight="duotone" style={{ color: "var(--color-warm-gray-200)" }} className="mx-auto" />
-              <p className="mt-3 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
-                Select a conversation to view messages.
-              </p>
+          <div className="flex flex-1 items-center justify-center overflow-y-auto px-6 py-8">
+            <div className="w-full max-w-3xl">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                    {selectedOwner ? `${selectedOwner.name} communications` : "Communications command center"}
+                  </h2>
+                  <p className="mt-1 text-sm" style={{ color: "var(--color-text-tertiary)" }}>
+                    {selectedOwner
+                      ? "Review portal, SMS, and email history for this workspace owner."
+                      : "Select a conversation, or review what needs attention now."}
+                  </p>
+                </div>
+                <ChatCircle size={34} weight="duotone" style={{ color: "var(--color-brand)" }} />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <CommandMetric icon={<ChatCircle size={16} weight="duotone" />} label="Conversations" value={insightStats.total} />
+                <CommandMetric icon={<DeviceMobile size={16} weight="duotone" />} label="SMS threads" value={insightStats.sms} />
+                <CommandMetric icon={<EnvelopeSimple size={16} weight="duotone" />} label="Email logs" value={insightStats.email} />
+                <CommandMetric
+                  icon={<WarningCircle size={16} weight="duotone" />}
+                  label="Needs reply"
+                  value={insightStats.needsReply}
+                  tone={insightStats.needsReply > 0 ? "attention" : "neutral"}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <CommandList
+                  title="Unresolved callers"
+                  empty="No unresolved callers."
+                  items={scopedDashboard.unresolvedCallers.slice(0, 4).map((caller) => ({
+                    id: caller.phone,
+                    icon: <PhoneSlash size={14} weight="duotone" />,
+                    title: caller.phone,
+                    body: caller.claudeSummary ?? "Matched phone number needed.",
+                    date: caller.createdAt,
+                  }))}
+                />
+                <CommandList
+                  title="Action items"
+                  empty="No open communication actions."
+                  items={scopedDashboard.recentActionItems.slice(0, 4).map((item) => ({
+                    id: item.id,
+                    icon: <Lightning size={14} weight="duotone" />,
+                    title: item.title,
+                    body: item.body,
+                    date: item.createdAt,
+                  }))}
+                />
+              </div>
             </div>
           </div>
         ) : (
@@ -476,7 +685,7 @@ export function AdminMessagesShell({
               >
                 <ArrowLeft size={18} weight="bold" />
               </button>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
                   {conversationDetail.type === "announcement"
                     ? (conversationDetail.subject ?? "Announcement")
@@ -487,17 +696,36 @@ export function AdminMessagesShell({
                 {conversationDetail.ownerProfile?.email ? (
                   <div className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
                     {conversationDetail.ownerProfile.email}
+                    {conversationDetail.ownerProfile.phone ? ` · ${conversationDetail.ownerProfile.phone}` : ""}
                   </div>
                 ) : null}
               </div>
+              {workspaceHref ? (
+                <a
+                  href={workspaceHref}
+                  className="ml-auto hidden items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold md:flex"
+                  style={{ borderColor: "var(--color-warm-gray-200)", color: "var(--color-brand)" }}
+                >
+                  <Buildings size={13} weight="duotone" />
+                  Open workspace
+                </a>
+              ) : null}
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <div className="mx-auto flex max-w-3xl flex-col gap-4">
+                <ThreadInsightStrip messages={messages} conversation={conversationDetail} />
                 {messages.map((m) => {
                   const isAdmin = m.senderRole === "admin";
                   const isSystem = m.is_system;
+                  const communicationMeta = getCommunicationMeta(m);
+                  const participant = getMessageDisplayParticipant({
+                    senderName: m.senderName,
+                    senderRole: m.senderRole,
+                    deliveryMethod: m.delivery_method,
+                    metadata: m.metadata,
+                  });
                   return (
                     <div key={m.id}>
                       <div className={`flex items-end gap-2 ${isAdmin ? "flex-row-reverse" : "flex-row"}`}>
@@ -513,7 +741,7 @@ export function AdminMessagesShell({
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={m.senderAvatarUrl}
-                            alt={m.senderName}
+                            alt={participant.name}
                             className="h-7 w-7 shrink-0 rounded-full object-cover"
                           />
                         ) : (
@@ -524,7 +752,7 @@ export function AdminMessagesShell({
                               color: isAdmin ? "white" : "var(--color-text-primary)",
                             }}
                           >
-                            {buildInitials(m.senderName)}
+                            {buildInitials(participant.name)}
                           </span>
                         )}
 
@@ -544,6 +772,22 @@ export function AdminMessagesShell({
                               Announcement
                             </div>
                           ) : null}
+                          {!isSystem ? (
+                            <div
+                              className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold"
+                              style={{ color: isAdmin ? "rgba(255,255,255,0.82)" : "var(--color-text-secondary)" }}
+                            >
+                              <span>{participant.name}</span>
+                              {participant.detail ? (
+                                <span
+                                  className="truncate font-medium"
+                                  style={{ color: isAdmin ? "rgba(255,255,255,0.62)" : "var(--color-text-tertiary)" }}
+                                >
+                                  {participant.detail}
+                                </span>
+                              ) : null}
+                            </div>
+                          ) : null}
                           {m.delivery_method === "email" ? (
                             <div
                               className="mb-1 flex items-center gap-1 text-[10px]"
@@ -552,6 +796,17 @@ export function AdminMessagesShell({
                               <EnvelopeSimple size={10} />
                               Sent via email
                             </div>
+                          ) : m.delivery_method === "sms" ? (
+                            <div
+                              className="mb-1 flex items-center gap-1 text-[10px]"
+                              style={{ color: isAdmin ? "rgba(255,255,255,0.8)" : "var(--color-text-tertiary)" }}
+                            >
+                              <DeviceMobile size={10} />
+                              Sent via SMS
+                            </div>
+                          ) : null}
+                          {communicationMeta ? (
+                            <CommunicationMetaBlock meta={communicationMeta} isAdmin={isAdmin} />
                           ) : null}
                           <SafeHtml
                             html={m.body}
@@ -617,7 +872,7 @@ export function AdminMessagesShell({
             </div>
 
             {/* Compose */}
-            {conversationDetail.type === "direct" ? (
+            {conversationDetail.type === "direct" || conversationDetail.type === "email_log" ? (
               <div className="border-t p-4" style={{ borderColor: "var(--color-warm-gray-200)" }}>
                 <RichTextEditor dark={false} content="" onChange={setComposeBody} placeholder="Write a message..." />
                 <div className="mt-3 flex items-center justify-between">
@@ -630,10 +885,11 @@ export function AdminMessagesShell({
                       <button
                         type="button"
                         onClick={() => setDeliveryMethod("portal")}
+                        disabled={conversationDetail.type === "email_log"}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
                         style={{
-                          backgroundColor: deliveryMethod === "portal" ? "var(--color-warm-gray-100)" : "transparent",
-                          color: deliveryMethod === "portal" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+                          backgroundColor: composeDeliveryMethod === "portal" ? "var(--color-warm-gray-100)" : "transparent",
+                          color: composeDeliveryMethod === "portal" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
                         }}
                       >
                         <ChatCircle size={12} weight="bold" />
@@ -645,20 +901,34 @@ export function AdminMessagesShell({
                         className="flex items-center gap-1.5 border-l px-3 py-1.5 text-xs font-medium transition-colors"
                         style={{
                           borderColor: "var(--color-warm-gray-200)",
-                          backgroundColor: deliveryMethod === "email" ? "var(--color-warm-gray-100)" : "transparent",
-                          color: deliveryMethod === "email" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+                          backgroundColor: composeDeliveryMethod === "email" ? "var(--color-warm-gray-100)" : "transparent",
+                          color: composeDeliveryMethod === "email" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
                         }}
                       >
                         <EnvelopeSimple size={12} weight="bold" />
                         Email
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMethod("sms")}
+                        disabled={conversationDetail.type === "email_log" || !conversationDetail.ownerProfile?.phone}
+                        className="flex items-center gap-1.5 border-l px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40"
+                        style={{
+                          borderColor: "var(--color-warm-gray-200)",
+                          backgroundColor: composeDeliveryMethod === "sms" ? "var(--color-warm-gray-100)" : "transparent",
+                          color: composeDeliveryMethod === "sms" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+                        }}
+                      >
+                        <DeviceMobile size={12} weight="bold" />
+                        SMS
+                      </button>
                     </div>
 
                     {/* Subject field (email only) */}
-                    {deliveryMethod === "email" ? (
+                    {composeDeliveryMethod === "email" ? (
                       <input
                         type="text"
-                        placeholder="Email subject..."
+                        placeholder={emailSubjectPlaceholder}
                         value={emailSubject}
                         onChange={(e) => setEmailSubject(e.target.value)}
                         className="rounded-lg border bg-transparent px-3 py-1.5 text-xs focus:outline-none"
@@ -670,14 +940,28 @@ export function AdminMessagesShell({
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={sending || !composeBody.trim() || (deliveryMethod === "email" && !emailSubject.trim())}
+                    disabled={
+                      sending ||
+                      !composeBody.trim() ||
+                      (composeDeliveryMethod === "email" && !emailSubjectResult?.ok) ||
+                      (composeDeliveryMethod === "sms" && !conversationDetail.ownerProfile?.phone)
+                    }
                     className="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
                     style={{ backgroundColor: "var(--color-brand)" }}
                   >
                     <PaperPlaneTilt size={16} weight="bold" />
-                    {sending ? "Sending..." : deliveryMethod === "email" ? "Send email" : "Send"}
+                    {sending ? "Sending..." : composeDeliveryMethod === "email" ? "Send email" : composeDeliveryMethod === "sms" ? "Send SMS" : "Send"}
                   </button>
                 </div>
+                {sendError ? (
+                  <div className="mt-2 text-xs" style={{ color: "#dc2626" }}>
+                    {sendError}
+                  </div>
+                ) : composeDeliveryMethod === "sms" && !conversationDetail.ownerProfile?.phone ? (
+                  <div className="mt-2 text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+                    Add a phone number to this owner before sending SMS.
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </>
@@ -815,6 +1099,9 @@ export function AdminMessagesShell({
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>{o.name}</div>
                       <div className="truncate text-xs" style={{ color: "var(--color-text-tertiary)" }}>{o.email}</div>
+                      {o.phone ? (
+                        <div className="truncate text-xs" style={{ color: "var(--color-text-tertiary)" }}>{o.phone}</div>
+                      ) : null}
                     </div>
                   </button>
                 </li>
@@ -837,7 +1124,378 @@ export function AdminMessagesShell({
   );
 }
 
-/* ─── Helpers ─── */
+type InboxInsightStats = {
+  total: number;
+  sms: number;
+  email: number;
+  needsReply: number;
+  needsAttention: number;
+};
+
+type CommandListItem = {
+  id: string;
+  icon: ReactNode;
+  title: string;
+  body: string;
+  date: string;
+};
+
+type CommunicationMeta = {
+  channel: "email" | "sms";
+  title: string;
+  rows: Array<{ label: string; value: string }>;
+};
+
+function buildInsightStats(
+  conversations: Conversation[],
+  dashboard: CommunicationsDashboardData,
+): InboxInsightStats {
+  const sms = conversations.filter((c) => c.lastMessage?.deliveryMethod === "sms").length;
+  const email = conversations.filter(
+    (c) => c.type === "email_log" || c.lastMessage?.deliveryMethod === "email",
+  ).length;
+  const needsReply = conversations.filter(conversationNeedsReply).length;
+
+  return {
+    total: conversations.length,
+    sms,
+    email,
+    needsReply,
+    needsAttention: needsReply + dashboard.recentActionItems.length + dashboard.unresolvedCallers.length,
+  };
+}
+
+function conversationWasLastSentByAdmin(conversation: Conversation): boolean {
+  return conversation.lastMessage?.senderRole === "admin";
+}
+
+function conversationIsSms(conversation: Conversation): boolean {
+  return conversation.lastMessage?.deliveryMethod === "sms";
+}
+
+function conversationIsEmail(conversation: Conversation): boolean {
+  return conversation.type === "email_log" || conversation.lastMessage?.deliveryMethod === "email";
+}
+
+function InsightMetric({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: number;
+  tone?: "neutral" | "attention";
+}) {
+  return (
+    <div>
+      <div className="text-[10px] font-medium uppercase" style={{ color: "var(--color-text-tertiary)" }}>
+        {label}
+      </div>
+      <div
+        className="mt-0.5 text-sm font-semibold"
+        style={{ color: tone === "attention" ? "#92400e" : "var(--color-text-primary)" }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function CommandMetric({
+  icon,
+  label,
+  value,
+  tone = "neutral",
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+  tone?: "neutral" | "attention";
+}) {
+  return (
+    <div
+      className="rounded-lg border p-4"
+      style={{
+        borderColor: tone === "attention" ? "#fde68a" : "var(--color-warm-gray-200)",
+        backgroundColor: tone === "attention" ? "#fffbeb" : "var(--color-white)",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span style={{ color: tone === "attention" ? "#b45309" : "var(--color-brand)" }}>{icon}</span>
+        <span className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
+          {value}
+        </span>
+      </div>
+      <div className="mt-3 text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function CommandList({
+  title,
+  empty,
+  items,
+}: {
+  title: string;
+  empty: string;
+  items: CommandListItem[];
+}) {
+  return (
+    <div
+      className="rounded-lg border p-4"
+      style={{ borderColor: "var(--color-warm-gray-200)", backgroundColor: "var(--color-white)" }}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+          {title}
+        </h3>
+        <span className="text-xs" style={{ color: "var(--color-text-tertiary)" }}>
+          {items.length}
+        </span>
+      </div>
+      {items.length === 0 ? (
+        <div className="rounded-lg px-3 py-4 text-sm" style={{ backgroundColor: "var(--color-warm-gray-50)", color: "var(--color-text-tertiary)" }}>
+          {empty}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {items.map((item) => (
+            <div key={item.id} className="flex gap-3">
+              <span
+                className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                style={{ backgroundColor: "rgba(2, 170, 235, 0.12)", color: "var(--color-brand)" }}
+              >
+                {item.icon}
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                  {item.title}
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                  {item.body}
+                </p>
+                <div className="mt-1 text-[10px]" style={{ color: "var(--color-text-tertiary)" }}>
+                  {formatCommandDate(item.date)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThreadInsightStrip({
+  messages,
+  conversation,
+}: {
+  messages: Message[];
+  conversation: ConversationDetail;
+}) {
+  const smsCount = messages.filter((message) => message.delivery_method === "sms").length;
+  const emailCount = messages.filter((message) => message.delivery_method === "email").length;
+  const lastMessage = messages[messages.length - 1] ?? null;
+  const needsReply = lastMessage
+    ? messageNeedsReply({
+        ownerId: conversation.owner_id,
+        senderId: lastMessage.sender_id,
+        senderRole: lastMessage.senderRole,
+        deliveryMethod: lastMessage.delivery_method,
+        metadata: lastMessage.metadata,
+      })
+    : false;
+  const lastTouch = lastMessage ? formatRelative(lastMessage.created_at) : "No messages";
+  const contactMethods = [
+    conversation.ownerProfile?.email ? "Email" : null,
+    conversation.ownerProfile?.phone ? "SMS" : null,
+    conversation.type === "direct" ? "Portal" : null,
+  ].filter((method): method is string => Boolean(method));
+
+  return (
+    <div
+      className="grid gap-2 rounded-xl border p-2 sm:grid-cols-4"
+      style={{
+        borderColor: "var(--color-warm-gray-200)",
+        backgroundColor: "var(--color-warm-gray-50)",
+      }}
+    >
+      <ThreadInsightTile
+        icon={<ChatCircle size={13} weight="duotone" />}
+        label="Last touch"
+        value={lastTouch}
+      />
+      <ThreadInsightTile
+        icon={<EnvelopeSimple size={13} weight="duotone" />}
+        label="Email"
+        value={String(emailCount)}
+      />
+      <ThreadInsightTile
+        icon={<DeviceMobile size={13} weight="duotone" />}
+        label="SMS"
+        value={String(smsCount)}
+      />
+      <ThreadInsightTile
+        icon={<WarningCircle size={13} weight="duotone" />}
+        label="Reply"
+        value={needsReply ? "Needed" : "Clear"}
+        tone={needsReply ? "attention" : "neutral"}
+        detail={contactMethods.length > 0 ? contactMethods.join(", ") : "No channels"}
+      />
+    </div>
+  );
+}
+
+function ThreadInsightTile({
+  icon,
+  label,
+  value,
+  detail,
+  tone = "neutral",
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  detail?: string;
+  tone?: "neutral" | "attention";
+}) {
+  return (
+    <div
+      className="min-w-0 rounded-lg border px-3 py-2"
+      style={{
+        borderColor: tone === "attention" ? "#fde68a" : "var(--color-warm-gray-200)",
+        backgroundColor: tone === "attention" ? "#fffbeb" : "var(--color-white)",
+      }}
+    >
+      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase" style={{ color: "var(--color-text-tertiary)" }}>
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 truncate text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+        {value}
+      </div>
+      {detail ? (
+        <div className="mt-0.5 truncate text-[10px]" style={{ color: "var(--color-text-tertiary)" }}>
+          {detail}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatCommandDate(dateStr: string) {
+  return new Date(dateStr).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function getCommunicationMeta(message: Message): CommunicationMeta | null {
+  if (message.delivery_method === "email") {
+    const subject = metadataString(message.metadata, "subject");
+    const direction = metadataString(message.metadata, "direction");
+    const from = metadataString(message.metadata, "from");
+    const to = metadataStringArray(message.metadata, "to").join(", ");
+    const relatedContact = metadataString(message.metadata, "related_contact_name");
+    const attachmentNames = metadataAttachmentNames(message.metadata).join(", ");
+    const attachmentCount = metadataNumber(message.metadata, "attachment_count");
+    const rows = [
+      subject ? { label: "Subject", value: subject } : null,
+      direction ? { label: "Direction", value: titleCase(direction) } : null,
+      relatedContact ? { label: "Contact", value: relatedContact } : null,
+      from ? { label: "From", value: from } : null,
+      to ? { label: "To", value: to } : null,
+      attachmentNames
+        ? { label: "Files", value: attachmentNames }
+        : attachmentCount
+          ? { label: "Files", value: String(attachmentCount) }
+          : null,
+    ].filter((row): row is { label: string; value: string } => Boolean(row));
+
+    if (rows.length === 0) return null;
+    return { channel: "email", title: "Email details", rows };
+  }
+
+  if (message.delivery_method === "sms") {
+    const direction = metadataString(message.metadata, "direction");
+    const phoneFrom = metadataString(message.metadata, "phone_from");
+    const phoneTo = metadataString(message.metadata, "phone_to") ?? metadataString(message.metadata, "sms_to");
+    const rows = [
+      direction ? { label: "Direction", value: titleCase(direction) } : null,
+      phoneFrom ? { label: "From", value: phoneFrom } : null,
+      phoneTo ? { label: "To", value: phoneTo } : null,
+    ].filter((row): row is { label: string; value: string } => Boolean(row));
+
+    if (rows.length === 0) return null;
+    return { channel: "sms", title: "SMS details", rows };
+  }
+
+  return null;
+}
+
+function CommunicationMetaBlock({ meta, isAdmin }: { meta: CommunicationMeta; isAdmin: boolean }) {
+  const foreground = isAdmin ? "rgba(255,255,255,0.82)" : "var(--color-text-secondary)";
+  const muted = isAdmin ? "rgba(255,255,255,0.62)" : "var(--color-text-tertiary)";
+  const border = isAdmin ? "rgba(255,255,255,0.22)" : "var(--color-warm-gray-200)";
+  const background = isAdmin ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.64)";
+
+  return (
+    <div className="mb-2 rounded-lg border px-3 py-2" style={{ borderColor: border, backgroundColor: background }}>
+      <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase" style={{ color: muted }}>
+        {meta.channel === "email" ? <EnvelopeSimple size={10} /> : <DeviceMobile size={10} />}
+        {meta.title}
+      </div>
+      <div className="grid gap-1">
+        {meta.rows.map((row) => (
+          <div key={row.label} className="grid grid-cols-[64px_minmax(0,1fr)] gap-2 text-[10px]">
+            <span style={{ color: muted }}>{row.label}</span>
+            <span className="truncate" title={row.value} style={{ color: foreground }}>
+              {row.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function metadataString(metadata: Record<string, unknown>, key: string): string | null {
+  const value = metadata[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function metadataStringArray(metadata: Record<string, unknown>, key: string): string[] {
+  const value = metadata[key];
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  }
+  const single = metadataString(metadata, key);
+  return single ? [single] : [];
+}
+
+function metadataNumber(metadata: Record<string, unknown>, key: string): number | null {
+  const value = metadata[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function metadataAttachmentNames(metadata: Record<string, unknown>): string[] {
+  const value = metadata.attachments;
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const filename = (item as Record<string, unknown>).filename;
+    return typeof filename === "string" && filename.trim() ? [filename.trim()] : [];
+  });
+}
+
+function titleCase(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 function FilterIcon({ filterKey }: { filterKey: FilterKey }) {
   const size = 16;
@@ -846,6 +1504,9 @@ function FilterIcon({ filterKey }: { filterKey: FilterKey }) {
     case "all": return <ChatCircle size={size} weight={weight} />;
     case "unread": return <ChatCircle size={size} weight="fill" />;
     case "sent": return <PaperPlaneTilt size={size} weight={weight} />;
+    case "sms": return <DeviceMobile size={size} weight={weight} />;
+    case "email": return <EnvelopeSimple size={size} weight={weight} />;
+    case "attachments": return <EnvelopeSimple size={size} weight={weight} />;
     case "announcements": return <Megaphone size={size} weight={weight} />;
     case "email_logs": return <EnvelopeSimple size={size} weight={weight} />;
     default: return <FunnelSimple size={size} weight={weight} />;

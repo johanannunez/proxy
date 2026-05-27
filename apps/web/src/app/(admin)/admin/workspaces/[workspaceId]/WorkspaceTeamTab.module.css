@@ -1,0 +1,821 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summaryTile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 16px;
+  border: 1px solid var(--color-warm-gray-100);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 247, 244, 0.78)),
+    var(--color-white);
+  color: var(--color-brand);
+  box-shadow: 0 1px 2px rgba(11, 27, 43, 0.04);
+}
+
+.summaryTile span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.summaryTile strong {
+  color: var(--color-text-primary);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+
+.teamSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.sectionCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--color-warm-gray-100);
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.sectionLine {
+  height: 1px;
+  flex: 1;
+  background: var(--color-warm-gray-200);
+}
+
+.addButton,
+.saveButton,
+.cancelButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease, transform 120ms ease;
+}
+
+.addButton,
+.saveButton {
+  padding: 0 13px;
+  border: 1px solid var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-white);
+}
+
+.addButton:hover,
+.saveButton:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.cancelButton {
+  padding: 0 12px;
+  border: 1px solid var(--color-warm-gray-200);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+}
+
+.cancelButton:hover {
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-primary);
+}
+
+.addButton:focus-visible,
+.saveButton:focus-visible,
+.cancelButton:focus-visible,
+.removeButton:focus-visible,
+.cardMain:focus-visible,
+.parcelCard:focus-visible,
+.drawerClose:focus-visible,
+.drawerBackdrop:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.saveButton:disabled {
+  opacity: 0.58;
+  cursor: default;
+  transform: none;
+}
+
+.addPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, var(--color-warm-gray-200));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-brand) 4%, var(--color-white));
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.formField span {
+  color: var(--color-text-tertiary);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.textInput {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 7px;
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.textInput:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 14%, transparent);
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.errorText {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ownerGrid,
+.parcelGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.personCard {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--color-warm-gray-100);
+  border-radius: 8px;
+  background: var(--color-white);
+  box-shadow: 0 1px 2px rgba(11, 27, 43, 0.04);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.personCard:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 34%, var(--color-warm-gray-200));
+  box-shadow: 0 10px 24px -18px rgba(11, 27, 43, 0.35);
+  transform: translateY(-1px);
+}
+
+.personCardActive {
+  border-color: color-mix(in srgb, var(--color-brand) 42%, var(--color-warm-gray-200));
+  box-shadow: inset 3px 0 0 var(--color-brand), 0 1px 2px rgba(11, 27, 43, 0.04);
+}
+
+.cardMain,
+.parcelCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 136px;
+  padding: 18px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.parcelCardShell {
+  min-width: 0;
+  border: 1px solid var(--color-warm-gray-100);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-brand) 9%, transparent), transparent 42%),
+    var(--color-white);
+  box-shadow: 0 1px 2px rgba(11, 27, 43, 0.04);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.parcelCardShell:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 32%, var(--color-warm-gray-200));
+  box-shadow: 0 10px 24px -18px rgba(11, 27, 43, 0.35);
+  transform: translateY(-1px);
+}
+
+.parcelCard {
+  min-height: 132px;
+  padding-bottom: 16px;
+}
+
+.avatarImage,
+.avatarFallback,
+.avatarFallbackBrand {
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.avatarImage {
+  object-fit: cover;
+  box-shadow: 0 0 0 2px var(--color-white), 0 0 0 3px color-mix(in srgb, var(--color-brand) 22%, transparent);
+}
+
+.avatarFallback,
+.avatarFallbackBrand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.avatarFallback {
+  background: color-mix(in srgb, var(--color-brand) 10%, var(--color-white));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+.avatarFallbackBrand {
+  background: var(--color-brand-gradient);
+  color: var(--color-white);
+  box-shadow: 0 10px 22px -16px color-mix(in srgb, var(--color-brand) 70%, transparent);
+}
+
+.cardText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.cardTagRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cardTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardCompany {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewingBadge,
+.foundingBadge,
+.rolePill,
+.parcelRolePill,
+.portalBadgeActive,
+.portalBadgeMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.viewingBadge {
+  padding: 4px 7px;
+  background: color-mix(in srgb, var(--color-brand) 11%, var(--color-white));
+  color: var(--color-brand);
+}
+
+.foundingBadge {
+  padding: 4px 7px;
+  background: color-mix(in srgb, var(--color-star) 18%, var(--color-white));
+  color: #9a5b06;
+}
+
+.rolePill,
+.parcelRolePill {
+  padding: 5px 8px;
+  background: var(--color-warm-gray-100);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.parcelRolePill {
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--color-white));
+  color: var(--color-brand);
+}
+
+.cardLocationLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portalBadgeActive,
+.portalBadgeMuted {
+  padding: 5px 8px;
+}
+
+.portalBadgeActive {
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-white));
+  color: var(--color-success);
+}
+
+.portalBadgeMuted {
+  background: var(--color-warm-gray-100);
+  color: var(--color-text-tertiary);
+}
+
+.cardActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 18px 18px 96px;
+}
+
+.cardActionLink,
+.cardActionLinkMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 16%, var(--color-warm-gray-200));
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--color-white));
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.cardActionLinkMuted {
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+}
+
+.cardActionLink:hover,
+.cardActionLinkMuted:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-warm-gray-200));
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--color-white));
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.removeButton {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid color-mix(in srgb, #ef4444 18%, var(--color-warm-gray-200));
+  border-radius: 7px;
+  background: color-mix(in srgb, #ef4444 5%, var(--color-white));
+  color: #b91c1c;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.removeButton:hover {
+  background: color-mix(in srgb, #ef4444 10%, var(--color-white));
+  border-color: color-mix(in srgb, #ef4444 36%, var(--color-warm-gray-200));
+  transform: translateY(-1px);
+}
+
+.emptyParcelTeam {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 82px;
+  padding: 18px;
+  border: 1px dashed var(--color-warm-gray-200);
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.drawerLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 340;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawerBackdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(11, 27, 43, 0.32);
+  cursor: pointer;
+}
+
+.parcelDrawer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 100vw);
+  height: 100%;
+  background: var(--color-white);
+  border-left: 1px solid color-mix(in srgb, var(--color-brand) 20%, var(--color-warm-gray-200));
+  box-shadow: -20px 0 50px rgba(11, 27, 43, 0.16);
+  animation: drawerIn 180ms ease-out;
+}
+
+@keyframes drawerIn {
+  from { transform: translateX(18px); opacity: 0.84; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.drawerTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--color-warm-gray-100);
+  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-warm-gray-50) 100%);
+}
+
+.drawerKicker {
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.drawerClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 7px;
+  background: var(--color-white);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.drawerClose:hover {
+  background: var(--color-warm-gray-100);
+  border-color: var(--color-warm-gray-300, #d4d0c8);
+  color: var(--color-text-primary);
+}
+
+.parcelHero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 18%, var(--color-warm-gray-100));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-brand) 18%, transparent), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 7%, var(--color-white)), var(--color-white));
+}
+
+.parcelHeroText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.parcelHeroName {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-top: 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parcelHeroCompany {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parcelHeroRole {
+  align-self: flex-start;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 9%, var(--color-white));
+  color: var(--color-brand);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  padding: 5px 8px;
+}
+
+.parcelHeroLocation {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.drawerContent {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.drawerBio {
+  margin: 0;
+  padding: 18px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.6;
+}
+
+.drawerLinkGroup,
+.drawerDetailGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-warm-gray-100);
+}
+
+.drawerLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  border-radius: 7px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.drawerLink:hover {
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-primary);
+}
+
+.drawerLinkIcon,
+.drawerDetailIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.drawerDetailRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.drawerDetailText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.drawerDetailLabel {
+  color: var(--color-text-tertiary);
+  font-size: 10.5px;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.drawerDetailValue {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.detailTag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--color-warm-gray-100);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+@media (max-width: 1180px) {
+  .ownerGrid,
+  .parcelGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ownerGrid,
+  .parcelGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .root {
+    gap: 20px;
+  }
+
+  .sectionHeader {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .addButton {
+    width: 100%;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .saveButton,
+  .cancelButton {
+    width: 100%;
+  }
+
+  .cardMain,
+  .parcelCard {
+    min-height: 124px;
+    padding: 14px;
+  }
+
+  .cardActionRow {
+    padding: 0 14px 14px;
+  }
+
+  .removeButton {
+    top: 10px;
+    bottom: auto;
+  }
+}

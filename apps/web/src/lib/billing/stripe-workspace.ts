@@ -183,6 +183,45 @@ export async function createWorkspaceSetupIntent(params: {
   };
 }
 
+export async function createWorkspacePaymentSetupSession(params: {
+  workspaceId: string;
+  returnBaseUrl: string;
+  createdBy?: string | null;
+}): Promise<{ url: string; stripeCustomerId: string; billingProfileId: string }> {
+  const { billingProfileId, stripeCustomerId } = await ensureStripeCustomerForWorkspace(params);
+  const stripe = getStripe();
+  const returnBaseUrl = params.returnBaseUrl.replace(/\/$/, "");
+  const workspaceUrl = `${returnBaseUrl}/admin/workspaces/${params.workspaceId}?tab=billing`;
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "setup",
+    customer: stripeCustomerId,
+    payment_method_types: ["card", "us_bank_account"],
+    success_url: `${workspaceUrl}&payment_setup=success`,
+    cancel_url: `${workspaceUrl}&payment_setup=canceled`,
+    metadata: {
+      parcel_workspace_id: params.workspaceId,
+      parcel_billing_profile_id: billingProfileId,
+    },
+    setup_intent_data: {
+      metadata: {
+        parcel_workspace_id: params.workspaceId,
+        parcel_billing_profile_id: billingProfileId,
+      },
+    },
+  });
+
+  if (!session.url) {
+    throw new Error("Stripe did not return a payment setup URL");
+  }
+
+  return {
+    url: session.url,
+    stripeCustomerId,
+    billingProfileId,
+  };
+}
+
 export async function syncWorkspacePaymentMethodFromStripe(params: {
   paymentMethod: Stripe.PaymentMethod;
   workspaceId?: string | null;
@@ -198,9 +237,8 @@ export async function syncWorkspacePaymentMethodFromStripe(params: {
 
   const card = pm.card;
   const bank = pm.us_bank_account;
-
-  await db
-    .from("billing_payment_methods")
+  const { data: paymentMethodRow } = await db
+    .from<{ id: string }>("billing_payment_methods")
     .upsert(
       {
         billing_profile_id: billingProfileId,
@@ -214,10 +252,25 @@ export async function syncWorkspacePaymentMethodFromStripe(params: {
         exp_month: card?.exp_month ?? null,
         exp_year: card?.exp_year ?? null,
         status: "active",
+        is_default: true,
         metadata: jsonMetadata(pm.metadata),
       },
       { onConflict: "stripe_payment_method_id" },
-    );
+    )
+    .select("id")
+    .single();
+
+  if (paymentMethodRow?.id) {
+    await db
+      .from("billing_payment_methods")
+      .update({ is_default: false })
+      .eq("workspace_id", workspaceId)
+      .not("id", "eq", paymentMethodRow.id);
+    await db
+      .from("billing_profiles")
+      .update({ default_payment_method_id: paymentMethodRow.id })
+      .eq("id", billingProfileId);
+  }
 }
 
 export async function syncWorkspaceInvoiceFromStripe(inv: Stripe.Invoice): Promise<void> {

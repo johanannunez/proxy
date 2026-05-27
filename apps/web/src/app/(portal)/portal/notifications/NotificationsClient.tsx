@@ -15,18 +15,28 @@ import {
 } from "@phosphor-icons/react";
 import { markNotificationRead, markAllNotificationsRead, type NotificationItem } from "./actions";
 import { createClient } from "@/lib/supabase/client";
+import {
+  PORTAL_NOTIFICATION_PREFS_EVENT,
+  PORTAL_NOTIFICATION_PREFS_KEY,
+  isPortalNotificationEnabled,
+  readPortalNotificationPreferences,
+  type PortalNotificationPreferences,
+} from "@/lib/portal/notification-preferences";
 
 type Filter = "all" | "unread";
 
 export function NotificationsClient({
   initialItems,
+  initialPreferences,
   userId,
 }: {
   initialItems: NotificationItem[];
+  initialPreferences: PortalNotificationPreferences;
   userId: string;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<NotificationItem[]>(initialItems);
+  const [prefs, setPrefs] = useState<PortalNotificationPreferences>(initialPreferences);
   const [filter, setFilter] = useState<Filter>("all");
   const [, startTransition] = useTransition();
 
@@ -59,8 +69,29 @@ export function NotificationsClient({
     setItems(initialItems);
   }, [initialItems]);
 
-  const filtered = filter === "unread" ? items.filter((n) => !n.read) : items;
-  const unreadCount = items.filter((n) => !n.read).length;
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PORTAL_NOTIFICATION_PREFS_KEY, JSON.stringify(initialPreferences));
+      window.dispatchEvent(new Event(PORTAL_NOTIFICATION_PREFS_EVENT));
+    } catch {
+      // localStorage unavailable, keep server preferences in state
+    }
+    setPrefs(initialPreferences);
+  }, [initialPreferences]);
+
+  useEffect(() => {
+    const syncPrefs = () => setPrefs(readPortalNotificationPreferences());
+    window.addEventListener("storage", syncPrefs);
+    window.addEventListener(PORTAL_NOTIFICATION_PREFS_EVENT, syncPrefs);
+    return () => {
+      window.removeEventListener("storage", syncPrefs);
+      window.removeEventListener(PORTAL_NOTIFICATION_PREFS_EVENT, syncPrefs);
+    };
+  }, []);
+
+  const visibleItems = items.filter((n) => isPortalNotificationEnabled(n.type, prefs));
+  const filtered = filter === "unread" ? visibleItems.filter((n) => !n.read) : visibleItems;
+  const unreadCount = visibleItems.filter((n) => !n.read).length;
 
   const handleClick = async (n: NotificationItem) => {
     if (!n.read) {
@@ -113,7 +144,7 @@ export function NotificationsClient({
             boxShadow: filter === "all" ? "0 1px 2px rgba(0,0,0,0.04)" : "none",
           }}
         >
-          All ({items.length})
+          All ({visibleItems.length})
         </button>
         <button
           type="button"
@@ -209,6 +240,7 @@ function NotificationIcon({ type }: { type: string }) {
     block_approved: { icon: CheckCircle, bg: "rgba(22, 163, 74, 0.08)", color: "var(--color-success)" },
     block_denied: { icon: XCircle, bg: "rgba(220, 38, 38, 0.08)", color: "var(--color-error)" },
     payout_processed: { icon: CurrencyDollar, bg: "rgba(245, 158, 11, 0.08)", color: "#d97706" },
+    receipt_available: { icon: CurrencyDollar, bg: "rgba(245, 158, 11, 0.08)", color: "#d97706" },
     new_booking: { icon: CalendarCheck, bg: "rgba(2, 170, 235, 0.1)", color: "var(--color-brand)" },
     setup_reminder: { icon: ClipboardText, bg: "var(--color-warm-gray-100)", color: "var(--color-text-secondary)" },
   };

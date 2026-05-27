@@ -31,7 +31,7 @@ import {
   TextHThree,
   Minus,
 } from "@phosphor-icons/react";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 type Props = {
   content?: string;
@@ -51,8 +51,11 @@ const FONT_SIZES = ["12", "14", "16", "18", "20", "24", "28", "32"];
 
 export function RichTextEditor({ content = "", placeholder = "Write a message...", onChange, dark = false }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [showLinkInput, setShowLinkInput] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
@@ -80,11 +83,23 @@ export function RichTextEditor({ content = "", placeholder = "Write a message...
 
   const addLink = useCallback(() => {
     if (!editor) return;
-    const url = window.prompt("URL");
-    if (url) {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    if (editor.isActive("link")) {
+      editor.chain().focus().unsetLink().run();
+      setLinkUrl("");
+      setShowLinkInput(false);
+      return;
     }
+    setShowLinkInput(true);
   }, [editor]);
+
+  const applyLink = useCallback(() => {
+    if (!editor) return;
+    const url = linkUrl.trim();
+    if (!url) return;
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    setLinkUrl("");
+    setShowLinkInput(false);
+  }, [editor, linkUrl]);
 
   const addImage = useCallback(() => {
     fileInputRef.current?.click();
@@ -319,6 +334,38 @@ export function RichTextEditor({ content = "", placeholder = "Write a message...
           dark={dark}
           title="Insert link"
         />
+        {showLinkInput ? (
+          <div className="flex items-center gap-1">
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(event) => setLinkUrl(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  applyLink();
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setShowLinkInput(false);
+                  setLinkUrl("");
+                }
+              }}
+              placeholder="https://"
+              className="h-7 w-44 rounded border bg-transparent px-2 text-xs focus:outline-none"
+              style={{ borderColor: border, color: textColor }}
+            />
+            <button
+              type="button"
+              onClick={applyLink}
+              disabled={!linkUrl.trim()}
+              className="h-7 rounded px-2 text-xs font-medium disabled:opacity-40"
+              style={{ backgroundColor: toolbarBg, color: textColor }}
+            >
+              Apply
+            </button>
+          </div>
+        ) : null}
         <ToolbarBtn
           icon={<ImageSquare size={16} />}
           active={false}

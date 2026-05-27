@@ -1,10 +1,15 @@
 export type ProjectType =
+  | 'furnishing'
+  | 'renovation'
+  | 'onboarding'
+  | 'vendor_work'
+  | 'launch_prep'
+  | 'internal'
   | 'idea'
   | 'feature_build'
   | 'employee_onboarding'
   | 'cleaner_onboarding'
-  | 'vendor_onboarding'
-  | 'internal';
+  | 'vendor_onboarding';
 
 export type ProjectStatus =
   | 'not_started'
@@ -13,12 +18,15 @@ export type ProjectStatus =
   | 'done'
   | 'archived';
 
+export type ProjectVisibility = 'internal' | 'portal_visible';
+
 export type ProjectRow = {
   id: string;
   name: string;
   description: string | null;
   projectType: ProjectType;
   status: ProjectStatus;
+  visibility: ProjectVisibility;
   ownerUserId: string | null;
   ownerUserName: string | null;
   targetDate: string | null;
@@ -44,21 +52,31 @@ export type ProjectSavedView = {
 };
 
 export const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
+  furnishing: 'Furnishing',
+  renovation: 'Renovation',
+  onboarding: 'Onboarding',
+  vendor_work: 'Vendor Work',
+  launch_prep: 'Launch Prep',
+  internal: 'Internal',
   idea: 'Idea',
   feature_build: 'Feature build',
   employee_onboarding: 'Employee onboarding',
   cleaner_onboarding: 'Cleaner onboarding',
   vendor_onboarding: 'Vendor onboarding',
-  internal: 'Internal',
 };
 
 export const PROJECT_TYPE_EMOJI: Record<ProjectType, string> = {
+  furnishing: '🛋️',
+  renovation: '🏗️',
+  onboarding: '🚪',
+  vendor_work: '🤝',
+  launch_prep: '🚀',
+  internal: '📋',
   idea: '💡',
   feature_build: '🛠',
   employee_onboarding: '👋',
   cleaner_onboarding: '🧼',
   vendor_onboarding: '🤝',
-  internal: '📋',
 };
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
@@ -68,3 +86,17 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
   done: 'Done',
   archived: 'Archived',
 };
+
+export const PROJECT_VISIBILITY_LABEL: Record<ProjectVisibility, string> = {
+  internal: 'Internal',
+  portal_visible: 'Visible in portal',
+};
+
+export const CLIENT_PROJECT_TYPES: ProjectType[] = [
+  'furnishing',
+  'renovation',
+  'onboarding',
+  'vendor_work',
+  'launch_prep',
+  'internal',
+];

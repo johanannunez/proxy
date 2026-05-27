@@ -17,6 +17,14 @@ import {
   type NotificationItem,
 } from "@/app/(portal)/portal/notifications/actions";
 import { createClient } from "@/lib/supabase/client";
+import {
+  DEFAULT_PORTAL_NOTIFICATION_PREFS,
+  isPortalNotificationEnabled,
+  PORTAL_NOTIFICATION_PREFS_EVENT,
+  PORTAL_NOTIFICATION_PREFS_KEY,
+  readPortalNotificationPreferences,
+  type PortalNotificationPreferences,
+} from "@/lib/portal/notification-preferences";
 
 type NotificationsContextValue = {
   notifications: NotificationItem[];
@@ -42,13 +50,15 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(
  */
 export function NotificationsProvider({
   userId,
+  initialPreferences = DEFAULT_PORTAL_NOTIFICATION_PREFS,
   children,
 }: {
   userId: string;
+  initialPreferences?: PortalNotificationPreferences;
   children: ReactNode;
 }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [prefs, setPrefs] = useState<PortalNotificationPreferences>(initialPreferences);
   const [loading, setLoading] = useState(false);
   const loadInFlight = useRef(false);
 
@@ -59,11 +69,32 @@ export function NotificationsProvider({
     try {
       const result = await getNotifications(20);
       setNotifications(result.notifications);
-      setUnreadCount(result.unreadCount);
     } finally {
       setLoading(false);
       loadInFlight.current = false;
     }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        PORTAL_NOTIFICATION_PREFS_KEY,
+        JSON.stringify(initialPreferences),
+      );
+    } catch {
+      // localStorage unavailable, keep server preferences in state
+    }
+    setPrefs(initialPreferences);
+  }, [initialPreferences]);
+
+  useEffect(() => {
+    const syncPrefs = () => setPrefs(readPortalNotificationPreferences());
+    window.addEventListener("storage", syncPrefs);
+    window.addEventListener(PORTAL_NOTIFICATION_PREFS_EVENT, syncPrefs);
+    return () => {
+      window.removeEventListener("storage", syncPrefs);
+      window.removeEventListener(PORTAL_NOTIFICATION_PREFS_EVENT, syncPrefs);
+    };
   }, []);
 
   // Initial load
@@ -114,7 +145,6 @@ export function NotificationsProvider({
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
     },
     [],
   );
@@ -122,19 +152,27 @@ export function NotificationsProvider({
   const markAllRead = useCallback(async () => {
     await markAllNotificationsRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
   }, []);
+
+  const visibleNotifications = useMemo(
+    () => notifications.filter((n) => isPortalNotificationEnabled(n.type, prefs)),
+    [notifications, prefs],
+  );
+  const unreadCount = useMemo(
+    () => visibleNotifications.filter((n) => !n.read).length,
+    [visibleNotifications],
+  );
 
   const value = useMemo<NotificationsContextValue>(
     () => ({
-      notifications,
+      notifications: visibleNotifications,
       unreadCount,
       loading,
       refresh,
       markOneRead,
       markAllRead,
     }),
-    [notifications, unreadCount, loading, refresh, markOneRead, markAllRead],
+    [visibleNotifications, unreadCount, loading, refresh, markOneRead, markAllRead],
   );
 
   return (

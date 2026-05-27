@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, Suspense, useTransition, useRef, useEffect, useCallback } from "react";
+import { useState, Suspense, useTransition, useRef, useEffect, useCallback, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   CopySimple,
   CaretLeft,
   CaretRight,
+  IdentificationCard,
+  X as XIcon,
 } from "@phosphor-icons/react";
 import {
   startOfMonth,
@@ -34,24 +37,26 @@ const SHELL_LOADED_AT_MS = Date.now();
 
 type TabKey =
   | "overview"
+  | "team"
+  | "messaging"
   | "properties"
+  | "projects"
   | "tasks"
   | "meetings"
-  | "intelligence"
-  | "messaging"
   | "documents"
   | "billing"
   | "settings";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "overview",     label: "Overview"      },
+  { key: "team",         label: "Team"          },
+  { key: "messaging",    label: "Inbox"         },
   { key: "properties",   label: "Properties"    },
+  { key: "projects",     label: "Projects"      },
   { key: "tasks",        label: "Tasks"         },
   { key: "meetings",     label: "Meetings"      },
-  { key: "intelligence", label: "Insights"      },
-  { key: "messaging",    label: "Communication" },
   { key: "documents",    label: "Documents"     },
-  { key: "billing",      label: "Billing"       },
+  { key: "billing",      label: "Finances"      },
   { key: "settings",     label: "Settings"      },
 ];
 
@@ -78,7 +83,7 @@ function getInitials(name: string): string {
 }
 
 function relativeDays(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400_000);
   if (days < 1) return "today";
   if (days === 1) return "yesterday";
@@ -86,11 +91,11 @@ function relativeDays(iso: string | null): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-// "Mon, Apr 28" — for follow-up (date only, no time stored)
+// "Mon, Apr 28" for follow-up dates without a stored time.
 function formatShortDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "Not set";
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "Not set";
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
@@ -311,7 +316,7 @@ function DatePickerPopover({
   }, [anchorRef]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: globalThis.MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node) &&
           anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
         onClose();
@@ -461,6 +466,73 @@ function TabSkeleton({ tab }: { tab: TabKey }) {
         </div>
       );
 
+    case "team":
+      return (
+        <div className={styles.skContent}>
+          <div className={styles.skRow3}>
+            <SkCard>
+              <SkBone w="36%" h={9} />
+              <SkBone w="24%" h={24} />
+              <SkBone w="50%" h={9} />
+            </SkCard>
+            <SkCard>
+              <SkBone w="36%" h={9} />
+              <SkBone w="24%" h={24} />
+              <SkBone w="50%" h={9} />
+            </SkCard>
+            <SkCard>
+              <SkBone w="36%" h={9} />
+              <SkBone w="24%" h={24} />
+              <SkBone w="50%" h={9} />
+            </SkCard>
+          </div>
+          <div className={styles.skRow2}>
+            {[0, 1, 2, 3].map((i) => (
+              <SkCard key={i}>
+                <div className={styles.skListRow}>
+                  <SkBone style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0 }} />
+                  <div className={styles.skFlex1}>
+                    <SkBone w="56%" h={13} />
+                    <SkBone w="38%" h={9} />
+                  </div>
+                </div>
+                <SkBone w="70%" h={10} />
+              </SkCard>
+            ))}
+          </div>
+        </div>
+      );
+
+    case "projects":
+      return (
+        <div className={styles.skContent}>
+          <SkCard>
+            <SkBone w="28%" h={12} />
+            <SkBone w="82%" h={10} />
+            <div className={styles.skRow3}>
+              <SkBone h={36} style={{ borderRadius: 7 }} />
+              <SkBone h={36} style={{ borderRadius: 7 }} />
+              <SkBone h={36} style={{ borderRadius: 7 }} />
+            </div>
+          </SkCard>
+          <div className={styles.skRow2}>
+            {[0, 1].map((i) => (
+              <SkCard key={i}>
+                <div className={styles.skListRow}>
+                  <SkBone style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0 }} />
+                  <div className={styles.skFlex1}>
+                    <SkBone w="62%" h={13} />
+                    <SkBone w="38%" h={9} />
+                  </div>
+                </div>
+                <SkBone h={6} style={{ borderRadius: 999 }} />
+                <SkBone w="42%" h={10} />
+              </SkCard>
+            ))}
+          </div>
+        </div>
+      );
+
     case "tasks":
       return (
         <div className={styles.skContent}>
@@ -497,30 +569,6 @@ function TabSkeleton({ tab }: { tab: TabKey }) {
                   <SkBone w="32%" h={9} />
                 </div>
                 <SkBone style={{ width: 65, height: 22, borderRadius: 5 }} />
-              </div>
-            </SkCard>
-          ))}
-        </div>
-      );
-
-    case "intelligence":
-      return (
-        <div className={styles.skContent}>
-          <SkCard>
-            <SkBone w="28%" h={9} />
-            <SkBone h={10} />
-            <SkBone w="91%" h={10} />
-            <SkBone w="65%" h={10} />
-          </SkCard>
-          {[0, 1, 2].map((i) => (
-            <SkCard key={i}>
-              <div className={styles.skInsightRow}>
-                <SkBone style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 4, flexShrink: 0 }} />
-                <div className={styles.skFlex1}>
-                  <SkBone w="52%" h={12} />
-                  <SkBone h={9} />
-                  <SkBone w="78%" h={9} />
-                </div>
               </div>
             </SkCard>
           ))}
@@ -625,7 +673,8 @@ function WorkspaceContactDetailContent({
   workspaceInfo,
   members,
   activeContactId,
-  children,
+  initialTab,
+  tabContents,
 }: {
   workspaceContact: WorkspaceContactDetail;
   adminProfiles: AdminProfile[];
@@ -633,22 +682,18 @@ function WorkspaceContactDetailContent({
   workspaceInfo: WorkspaceInfo;
   members: WorkspaceMember[];
   activeContactId: string;
-  children: React.ReactNode;
+  initialTab: TabKey;
+  tabContents: Record<TabKey, React.ReactNode>;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawTab = searchParams.get("tab");
-  const activeTab: TabKey =
-    rawTab && TAB_KEYS.includes(rawTab) ? (rawTab as TabKey) : "overview";
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const rawSection = searchParams.get("section");
-  const rawPerson = searchParams.get("person");
+  const isContactDetailOpen = searchParams.get("detail") === "contact";
 
-  const [isTabPending, startTabTransition] = useTransition();
-  const [pendingTab, setPendingTab] = useState<TabKey | null>(null);
-
-  useEffect(() => {
-    if (!isTabPending) setPendingTab(null);
-  }, [isTabPending]);
+  const [isPersonPending, startPersonTransition] = useTransition();
+  const [pendingPersonId, setPendingPersonId] = useState<string | null>(null);
+  const visiblePendingPersonId = isPersonPending ? pendingPersonId : null;
 
   const tabLabel = TABS.find((t) => t.key === activeTab)?.label ?? activeTab;
   useSetTopBarSlots(
@@ -657,6 +702,86 @@ function WorkspaceContactDetailContent({
   );
 
   const shellRef = useRef<HTMLDivElement>(null);
+  const viewingMember =
+    members.find((member) => member.id === (visiblePendingPersonId ?? activeContactId)) ??
+    members.find((member) => member.id === activeContactId);
+
+  const replaceBrowserTab = useCallback((nextTab: TabKey, nextParams?: URLSearchParams) => {
+    const params = nextParams ?? new URLSearchParams(window.location.search);
+    params.set("tab", nextTab);
+    params.delete("detail");
+    if (nextTab !== "settings") params.delete("section");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, []);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const replaceQuery = useCallback((mutate: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(window.location.search);
+    mutate(params);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [router]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      setActiveTab(tab && TAB_KEYS.includes(tab) ? (tab as TabKey) : "overview");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const openContactDetails = useCallback(() => {
+    replaceQuery((params) => {
+      params.set("tab", activeTab);
+      params.set("person", visiblePendingPersonId ?? activeContactId);
+      params.set("detail", "contact");
+      if (activeTab !== "settings") params.delete("section");
+    });
+  }, [activeContactId, activeTab, replaceQuery, visiblePendingPersonId]);
+
+  const closeContactDetails = useCallback(() => {
+    replaceQuery((params) => {
+      params.delete("detail");
+    });
+  }, [replaceQuery]);
+
+  const handleWorkspaceTabLinkClick = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    if (!(event.target instanceof Element)) return;
+
+    const link = event.target.closest<HTMLAnchorElement>("a[href]");
+    if (!link || link.target || link.hasAttribute("download")) return;
+
+    const url = new URL(link.href, window.location.href);
+    if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
+
+    const nextTabParam = url.searchParams.get("tab");
+    if (!nextTabParam || !TAB_KEYS.includes(nextTabParam)) return;
+
+    event.preventDefault();
+    const nextTab = nextTabParam as TabKey;
+    const params = new URLSearchParams(window.location.search);
+    url.searchParams.forEach((value, key) => {
+      params.set(key, value);
+    });
+    setActiveTab(nextTab);
+    replaceBrowserTab(nextTab, params);
+  }, [replaceBrowserTab]);
 
   useEffect(() => {
     const main = shellRef.current?.closest("main");
@@ -671,6 +796,18 @@ function WorkspaceContactDetailContent({
     ro.observe(main);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!isContactDetailOpen) return;
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeContactDetails();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [closeContactDetails, isContactDetailOpen]);
 
   // Live name state for header sync with sidebar editing
   const [displayFirst, setDisplayFirst] = useState(workspaceContact.firstName ?? "");
@@ -706,7 +843,13 @@ function WorkspaceContactDetailContent({
 
             <div className={styles.contactBlock}>
               {displayAvatarUrl ? (
-                <img src={displayAvatarUrl} alt={workspaceContact.fullName} className={styles.avatar} />
+                <Image
+                  src={displayAvatarUrl}
+                  alt={workspaceContact.fullName}
+                  width={88}
+                  height={88}
+                  className={styles.avatar}
+                />
               ) : (
                 <div className={styles.avatarFallback}>
                   {getInitials((displayFirst || displayLast) ? `${displayFirst} ${displayLast}`.trim() : workspaceContact.fullName)}
@@ -723,26 +866,54 @@ function WorkspaceContactDetailContent({
                 </div>
                 {members.length > 1 && (
                   <div className={styles.personChipsRow}>
-                    {members.map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        className={`${styles.personChip} ${m.id === activeContactId ? styles.personChipActive : ''}`}
-                        onClick={() => {
-                          const sectionSuffix = rawSection ? `&section=${rawSection}` : "";
-                          router.replace(`?tab=${activeTab}&person=${m.id}${sectionSuffix}`, { scroll: false });
-                        }}
-                      >
-                        {m.avatarUrl ? (
-                          <img src={m.avatarUrl} alt={m.fullName} className={styles.personChipAvatar} />
-                        ) : (
-                          <span className={styles.personChipInitials}>
-                            {getInitials(m.fullName).slice(0, 1)}
-                          </span>
-                        )}
-                        <span>{m.firstName ?? m.fullName.split(' ')[0]}</span>
-                      </button>
-                    ))}
+                    {members.map((m) => {
+                      const chipActive = visiblePendingPersonId ? m.id === visiblePendingPersonId : m.id === activeContactId;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={`${styles.personChip} ${chipActive ? styles.personChipActive : ''}`}
+                          aria-pressed={chipActive}
+                          onClick={() => {
+                            if (m.id === activeContactId && !pendingPersonId) return;
+                            setPendingPersonId(m.id);
+                            startPersonTransition(() => {
+                              replaceQuery((params) => {
+                                params.set("tab", activeTab);
+                                params.set("person", m.id);
+                                params.delete("detail");
+                                if (rawSection) {
+                                  params.set("section", rawSection);
+                                } else {
+                                  params.delete("section");
+                                }
+                              });
+                            });
+                          }}
+                        >
+                          {m.avatarUrl ? (
+                            <Image
+                              src={m.avatarUrl}
+                              alt={m.fullName}
+                              width={16}
+                              height={16}
+                              className={styles.personChipAvatar}
+                            />
+                          ) : (
+                            <span className={styles.personChipInitials}>
+                              {getInitials(m.fullName).slice(0, 1)}
+                            </span>
+                          )}
+                          <span>{m.firstName ?? m.fullName.split(' ')[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {members.length > 1 && viewingMember && (
+                  <div className={styles.viewingContext}>
+                    Viewing {viewingMember.firstName ?? viewingMember.fullName.split(" ")[0]}
+                    {isPersonPending ? "..." : ""}
                   </div>
                 )}
                 <h1 className={styles.name}>
@@ -761,7 +932,7 @@ function WorkspaceContactDetailContent({
                       )}
                     </>
                   ) : (
-                    workspaceContact.fullName || "—"
+                    workspaceContact.fullName || "Not set"
                   )}
                 </h1>
                 <div className={styles.contactStack}>
@@ -793,6 +964,15 @@ function WorkspaceContactDetailContent({
               </div>
               <div className={styles.pillSep} />
               <StagePopover contactId={workspaceContact.id} stage={workspaceContact.lifecycleStage} />
+              <button
+                type="button"
+                className={styles.detailButton}
+                data-testid="workspace-view-details"
+                onClick={openContactDetails}
+              >
+                <IdentificationCard size={14} weight="bold" />
+                <span>View details</span>
+              </button>
             </div>
 
             <StatusLine
@@ -814,12 +994,11 @@ function WorkspaceContactDetailContent({
                 type="button"
                 className={styles.tab}
                 data-label={tab.label}
-                data-active={(pendingTab ? tab.key === pendingTab : activeTab === tab.key) ? "true" : "false"}
+                data-active={activeTab === tab.key ? "true" : "false"}
                 onClick={() => {
                   if (tab.key !== activeTab) {
-                    setPendingTab(tab.key);
-                    const personSuffix = rawPerson ? `&person=${rawPerson}` : "";
-                    startTabTransition(() => router.replace(`?tab=${tab.key}${personSuffix}`, { scroll: false }));
+                    setActiveTab(tab.key);
+                    replaceBrowserTab(tab.key);
                   }
                 }}
               >
@@ -827,25 +1006,61 @@ function WorkspaceContactDetailContent({
               </button>
             ))}
           </nav>
-          <div className={styles.contentWrapper}>
-            {isTabPending && pendingTab
-              ? <TabSkeleton tab={pendingTab} />
-              : <main className={styles.content}>{children}</main>
+          <div className={styles.contentWrapper} onClick={handleWorkspaceTabLinkClick}>
+            {visiblePendingPersonId
+              ? <TabSkeleton tab={activeTab} />
+              : <main className={styles.content}>{tabContents[activeTab]}</main>
             }
           </div>
         </div>
       </div>
 
-      <WorkspaceDetailSidebar
-        workspaceContact={workspaceContact}
-        adminProfiles={adminProfiles}
-        workspaceInfo={workspaceInfo}
-        members={members}
-        activeContactId={activeContactId}
-        onNameChange={handleNameChange}
-        onNameEditStart={handleNameEditStart}
-        onNameEditEnd={handleNameEditEnd}
-      />
+      {isContactDetailOpen && (
+        <div className={styles.drawerLayer} role="presentation">
+          <button
+            type="button"
+            className={styles.drawerBackdrop}
+            aria-label="Close contact details"
+            onClick={closeContactDetails}
+          />
+          <section
+            className={styles.detailDrawer}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Contact details"
+          >
+            <div className={styles.detailDrawerHeader}>
+              <div>
+                <span className={styles.detailDrawerTitle}>Contact details</span>
+                <span className={styles.detailDrawerSubtitle}>
+                  {viewingMember?.fullName ?? workspaceContact.fullName}
+                </span>
+              </div>
+              <button
+                type="button"
+                className={styles.detailDrawerClose}
+                aria-label="Close contact details"
+                onClick={closeContactDetails}
+              >
+                <XIcon size={18} weight="bold" />
+              </button>
+            </div>
+            <div className={styles.detailDrawerBody}>
+              <WorkspaceDetailSidebar
+                key={workspaceContact.id}
+                workspaceContact={workspaceContact}
+                adminProfiles={adminProfiles}
+                workspaceInfo={workspaceInfo}
+                members={members}
+                activeContactId={activeContactId}
+                onNameChange={handleNameChange}
+                onNameEditStart={handleNameEditStart}
+                onNameEditEnd={handleNameEditEnd}
+              />
+            </div>
+          </section>
+        </div>
+      )}
     </div>
     </WorkspaceNameContext.Provider>
   );
@@ -862,7 +1077,8 @@ export function WorkspaceDetailShell({
   workspaceInfo,
   members,
   activeContactId,
-  children,
+  initialTab,
+  tabContents,
 }: {
   workspaceContact: WorkspaceContactDetail;
   adminProfiles: AdminProfile[];
@@ -870,7 +1086,8 @@ export function WorkspaceDetailShell({
   workspaceInfo: WorkspaceInfo;
   members: WorkspaceMember[];
   activeContactId: string;
-  children: React.ReactNode;
+  initialTab: TabKey;
+  tabContents: Record<TabKey, React.ReactNode>;
 }) {
   return (
     <Suspense fallback={<div className={styles.shell} />}>
@@ -881,8 +1098,9 @@ export function WorkspaceDetailShell({
         workspaceInfo={workspaceInfo}
         members={members}
         activeContactId={activeContactId}
+        initialTab={initialTab}
+        tabContents={tabContents}
       >
-        {children}
       </WorkspaceContactDetailContent>
     </Suspense>
   );

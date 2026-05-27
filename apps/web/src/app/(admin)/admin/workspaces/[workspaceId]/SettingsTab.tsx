@@ -19,10 +19,8 @@ import {
   type ConnectionRow,
 } from "./settings/DataPrivacySection";
 import { DangerZoneSection } from "./settings/DangerZoneSection";
-import { PeopleSection } from "./settings/PeopleSection";
 import styles from "./SettingsTab.module.css";
 import { SETTINGS_SECTIONS, type SettingsSection } from "./settings-sections";
-import type { WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 
 export { SETTINGS_SECTIONS };
 export type { SettingsSection };
@@ -31,7 +29,6 @@ const SECTION_LABEL: Record<SettingsSection, string> = {
   personal: "Personal info",
   account: "Account & security",
   business: "Business entity",
-  people: "People",
   notifications: "Notifications",
   payments: "Payments & payout",
   property_defaults: "Property defaults",
@@ -88,8 +85,6 @@ export type SettingsTabProps = {
   } | null;
   /** Override the base path for section routing. Defaults to /admin/workspaces/:id. */
   basePath?: string;
-  adminMembers?: WorkspaceMember[];
-  adminWorkspaceId?: string;
 };
 
 export function SettingsTab({
@@ -101,8 +96,6 @@ export function SettingsTab({
   connections,
   workspaceDetail,
   basePath,
-  adminMembers,
-  adminWorkspaceId,
 }: SettingsTabProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,7 +125,6 @@ export function SettingsTab({
         {renderNavItem("personal", activeSection, switchSection)}
         {renderNavItem("account", activeSection, switchSection)}
         {renderNavItem("business", activeSection, switchSection)}
-        {renderNavItem("people", activeSection, switchSection)}
         {renderNavItem("notifications", activeSection, switchSection)}
         {renderNavItem(
           "payments",
@@ -193,13 +185,6 @@ export function SettingsTab({
               email: m.email,
               role: m.id === primaryMember.id ? "primary" : "member",
             }))}
-          />
-        )}
-
-        {activeSection === "people" && !!(adminWorkspaceId ?? data.workspace?.id) && (
-          <PeopleSection
-            workspaceId={adminWorkspaceId ?? data.workspace!.id}
-            members={adminMembers ?? []}
           />
         )}
 

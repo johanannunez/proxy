@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/supabase";
+import type {
+  WorkspacePersonRelationshipRole,
+  WorkspacePersonResponsibilityRole,
+} from "@/lib/admin/workspace-gallery";
 import type { AddressComponents, SocialLinks } from "@/lib/admin/workspace-contact-detail";
 
 type ContactUpdate = Database["public"]["Tables"]["contacts"]["Update"];
@@ -25,6 +29,75 @@ type UntypedDatabaseClient = {
 
 function untypedDatabase(client: unknown): UntypedDatabaseClient {
   return client as UntypedDatabaseClient;
+}
+
+type ContactMetadataRow = {
+  id: string;
+  profile_id: string | null;
+  metadata: unknown;
+};
+
+type WorkspaceRelationshipMetadata = "primary_owner" | "co_owner" | "spouse" | "accountant" | "manager" | "other";
+type WorkspaceResponsibilityMetadata = "day_to_day" | "finance" | "decision_maker" | "property_setup";
+
+type RelationshipUpdate = {
+  workspaceRole: WorkspaceRelationshipMetadata;
+};
+
+type ResponsibilityUpdate = {
+  responsibilities: WorkspaceResponsibilityMetadata[];
+  profileResponsibility: string;
+};
+
+type ContactOwnershipUpdate = number | null;
+
+const RELATIONSHIP_UPDATES: Record<WorkspacePersonRelationshipRole, RelationshipUpdate> = {
+  owner: { workspaceRole: "primary_owner" },
+  husband: { workspaceRole: "spouse" },
+  wife: { workspaceRole: "spouse" },
+  family: { workspaceRole: "other" },
+  partner: { workspaceRole: "co_owner" },
+  advisor: { workspaceRole: "other" },
+  collaborator: { workspaceRole: "co_owner" },
+};
+
+const RESPONSIBILITY_UPDATES: Record<WorkspacePersonResponsibilityRole, ResponsibilityUpdate> = {
+  primary: {
+    responsibilities: ["decision_maker"],
+    profileResponsibility: "primary",
+  },
+  day_to_day: {
+    responsibilities: ["day_to_day"],
+    profileResponsibility: "day_to_day",
+  },
+  finance: {
+    responsibilities: ["finance"],
+    profileResponsibility: "finance",
+  },
+  accounting: {
+    responsibilities: ["finance"],
+    profileResponsibility: "accounting",
+  },
+  operations: {
+    responsibilities: ["property_setup"],
+    profileResponsibility: "operations",
+  },
+  legal: {
+    responsibilities: [],
+    profileResponsibility: "legal",
+  },
+  notices: {
+    responsibilities: [],
+    profileResponsibility: "notices",
+  },
+  none: {
+    responsibilities: [],
+    profileResponsibility: "none",
+  },
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +221,123 @@ export async function updateWorkspaceContactFields(
 
   revalidatePath(`/admin/workspaces/${contactId}`);
   revalidatePath("/admin/workspaces");
+  return { ok: true, message: "Saved" };
+}
+
+export async function updateWorkspacePersonQuickLabels(args: {
+  workspaceId: string;
+  profileId?: string | null;
+  contactId?: string | null;
+  relationshipRole?: WorkspacePersonRelationshipRole;
+  responsibilityRole?: WorkspacePersonResponsibilityRole;
+  ownershipPercentage?: ContactOwnershipUpdate;
+}): Promise<{ ok: boolean; message: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, message: authError };
+
+  const relationshipUpdate = args.relationshipRole ? RELATIONSHIP_UPDATES[args.relationshipRole] : null;
+  const responsibilityUpdate = args.responsibilityRole ? RESPONSIBILITY_UPDATES[args.responsibilityRole] : null;
+  if (
+    args.ownershipPercentage === undefined &&
+    !relationshipUpdate &&
+    !responsibilityUpdate
+  ) {
+    return { ok: false, message: "Choose a valid people context." };
+  }
+
+  if (args.ownershipPercentage !== undefined) {
+    if (args.ownershipPercentage !== null && !Number.isFinite(args.ownershipPercentage)) {
+      return { ok: false, message: "Ownership share must be a number." };
+    }
+
+    if (args.ownershipPercentage !== null && (args.ownershipPercentage < 0 || args.ownershipPercentage > 100)) {
+      return { ok: false, message: "Ownership share must be between 0 and 100." };
+    }
+  }
+
+  const serviceClient = createServiceClient();
+  const db = untypedDatabase(serviceClient);
+  let contact: ContactMetadataRow | null = null;
+
+  if (args.contactId) {
+    const { data, error } = await db
+      .from<ContactMetadataRow>("contacts")
+      .select("id, profile_id, metadata")
+      .eq("id", args.contactId)
+      .eq("workspace_id", args.workspaceId)
+      .maybeSingle();
+
+    if (error) return { ok: false, message: error.message };
+    contact = data;
+  }
+
+  if (!contact && args.profileId) {
+    const { data, error } = await db
+      .from<ContactMetadataRow>("contacts")
+      .select("id, profile_id, metadata")
+      .eq("profile_id", args.profileId)
+      .eq("workspace_id", args.workspaceId)
+      .maybeSingle();
+
+    if (error) return { ok: false, message: error.message };
+    contact = data;
+  }
+
+  const profileId = args.profileId ?? contact?.profile_id ?? null;
+  if (!profileId && !contact) return { ok: false, message: "This person is not connected to the Workspace." };
+
+    if (contact) {
+    const currentMetadata = isRecord(contact.metadata) ? contact.metadata : {};
+    const nextMetadata = {
+      ...currentMetadata,
+      ...(args.relationshipRole && relationshipUpdate
+        ? {
+            workspace_relationship: args.relationshipRole,
+            workspace_relationship_source: "quick_settings",
+            workspace_role: relationshipUpdate.workspaceRole,
+          }
+          : {}),
+        ...(args.ownershipPercentage !== undefined
+          ? {
+              workspace_ownership_percentage: args.ownershipPercentage,
+              workspace_ownership_percentage_source: "quick_settings",
+            }
+          : {}),
+        ...(args.responsibilityRole && responsibilityUpdate
+        ? {
+            workspace_responsibility: args.responsibilityRole,
+            workspace_responsibility_source: "quick_settings",
+            responsibilities: responsibilityUpdate.responsibilities,
+          }
+        : {}),
+    };
+
+      const { error } = await db
+      .from("contacts")
+      .update({
+        metadata: nextMetadata,
+        ...(args.ownershipPercentage !== undefined
+          ? { ownership_percentage: args.ownershipPercentage }
+          : {}),
+      })
+      .eq("id", contact.id)
+      .eq("workspace_id", args.workspaceId);
+
+    if (error) return { ok: false, message: error.message };
+  }
+
+  if (profileId && responsibilityUpdate) {
+    const { error } = await db
+      .from("profiles")
+      .update({ responsibility: responsibilityUpdate.profileResponsibility })
+      .eq("id", profileId)
+      .eq("workspace_id", args.workspaceId);
+
+    if (error) return { ok: false, message: error.message };
+  }
+
+  revalidatePath("/admin/workspaces");
+  revalidatePath(`/admin/workspaces/${args.workspaceId}`);
   return { ok: true, message: "Saved" };
 }
 

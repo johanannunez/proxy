@@ -2,12 +2,13 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { LifecycleStage } from "@/lib/admin/contact-types";
+import type { Database } from "@/types/supabase";
 
 type QueryError = { message: string };
 type QueryResult<T> = { data: T | null; error: QueryError | null };
 type QueryBuilder<T> = PromiseLike<QueryResult<T>> & {
   select(columns?: string, options?: { count?: "exact"; head?: boolean }): QueryBuilder<T>;
-  eq(column: string, value: string): QueryBuilder<T>;
+  eq(column: string, value: string | number | boolean | null): QueryBuilder<T>;
   in(column: string, values: string[]): QueryBuilder<T>;
   order(column: string, options?: { ascending?: boolean }): QueryBuilder<T>;
   limit(count: number): QueryBuilder<T>;
@@ -114,6 +115,16 @@ type WorkspaceMemberContactRow = {
   phone: string | null;
   avatar_url: string | null;
   profile_id: string | null;
+  lifecycle_stage: LifecycleStage;
+  metadata: unknown;
+};
+
+type ParcelTeamMemberBase = Database["public"]["Tables"]["parcel_team"]["Row"];
+
+export type ParcelTeamMember = ParcelTeamMemberBase & {
+  company_name: string | null;
+  hours: string | null;
+  services: string[] | null;
 };
 
 export async function fetchWorkspaceContactDetail(contactId: string): Promise<WorkspaceContactDetail | null> {
@@ -184,7 +195,7 @@ export async function fetchWorkspaceContactDetail(contactId: string): Promise<Wo
       onboardingCompletedAt = profile.onboarding_completed_at ?? null;
 
       // Fetch both direct-owner properties and co-owned properties from the
-      // junction table, then deduplicate by ID — same pattern as workspace-detail.ts.
+      // junction table, then deduplicate by ID using the same pattern as workspace-detail.ts.
       const [{ data: primaryProps }, { data: coOwnedProps }] = await Promise.all([
         supabase
           .from("properties")
@@ -281,6 +292,7 @@ export async function fetchWorkspaceContactDetail(contactId: string): Promise<Wo
 
 export type WorkspaceMember = {
   id: string;
+  profileId: string | null;
   fullName: string;
   firstName: string | null;
   lastName: string | null;
@@ -288,6 +300,9 @@ export type WorkspaceMember = {
   phone: string | null;
   avatarUrl: string | null;
   portalAccess: boolean;
+  roleLabel: string;
+  relationshipLabel: string;
+  responsibilityLabel: string | null;
 };
 
 export type WorkspaceInfo = {
@@ -295,6 +310,94 @@ export type WorkspaceInfo = {
   name: string;
   type: string | null;
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function metadataString(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function metadataArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim().toLowerCase());
+}
+
+function titleizeRole(value: string): string {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+    .join(" ");
+}
+
+function relationshipLabelFromMetadata(
+  index: number,
+  lifecycleStage: LifecycleStage,
+  metadata: Record<string, unknown>,
+): string {
+  const relationship = metadataString(metadata.workspace_relationship);
+  const role = metadataString(metadata.workspace_role);
+  const normalized = (relationship || role).replace(/\s+/g, "_");
+
+  if (normalized === "owner" || normalized === "primary_owner" || normalized === "co_owner") return "Owner";
+  if (normalized === "husband") return "Husband";
+  if (normalized === "wife") return "Wife";
+  if (normalized === "spouse" || normalized === "family" || normalized === "husband_wife") return "Family";
+  if (normalized === "partner" || normalized === "business_partner") return "Partner";
+  if (normalized === "accountant" || normalized === "advisor") return "Advisor";
+  if (normalized === "cleaner" || normalized === "cleaning") return "Cleaner";
+  if (normalized === "manager") return "Manager";
+  if (normalized === "collaborator" || normalized === "other") return "Collaborator";
+  if (lifecycleStage === "active_owner") return "Owner";
+  return index === 0 ? "Owner" : "Collaborator";
+}
+
+function responsibilityLabelFromMetadata(
+  index: number,
+  relationshipLabel: string,
+  metadata: Record<string, unknown>,
+): string | null {
+  const explicit = metadataString(metadata.workspace_responsibility);
+  const relationship = metadataString(metadata.workspace_relationship);
+  const role = metadataString(metadata.workspace_role);
+  const responsibilities = metadataArray(metadata.responsibilities);
+  const normalized = (explicit || relationship || role).replace(/\s+/g, "_");
+
+  if (normalized === "primary" || normalized === "decision_maker") return "Lead contact";
+  if (normalized === "day_to_day") return "Day to day";
+  if (normalized === "finance") return "Finance";
+  if (normalized === "accounting" || normalized === "accountant") return "Accounting";
+  if (normalized === "operations" || normalized === "property_setup") return "Operations";
+  if (normalized === "legal") return "Legal";
+  if (normalized === "notices") return "Notices";
+  if (normalized === "cleaner" || normalized === "cleaning") return "Cleaning";
+  if (responsibilities.includes("decision_maker") && relationshipLabel === "Owner") return "Lead contact";
+  if (responsibilities.includes("day_to_day")) return "Day to day";
+  if (responsibilities.includes("finance")) return "Finance";
+  if (responsibilities.includes("accounting") || responsibilities.includes("accountant")) return "Accounting";
+  if (responsibilities.includes("property_setup")) return "Operations";
+  return relationshipLabel === "Owner" && index === 0 ? "Lead contact" : null;
+}
+
+function memberRoleLabels(
+  index: number,
+  lifecycleStage: LifecycleStage,
+  metadataValue: unknown,
+): Pick<WorkspaceMember, "roleLabel" | "relationshipLabel" | "responsibilityLabel"> {
+  const metadata = isRecord(metadataValue) ? metadataValue : {};
+  const relationshipLabel = relationshipLabelFromMetadata(index, lifecycleStage, metadata);
+  const responsibilityLabel = responsibilityLabelFromMetadata(index, relationshipLabel, metadata);
+  const roleLabel = responsibilityLabel
+    ? `${relationshipLabel}, ${responsibilityLabel}`
+    : titleizeRole(relationshipLabel);
+  return { roleLabel, relationshipLabel, responsibilityLabel };
+}
 
 // ---------------------------------------------------------------------------
 // Workspace helpers
@@ -306,21 +409,46 @@ export async function fetchWorkspaceMembers(workspaceId: string): Promise<Worksp
 
   const { data, error } = await db
     .from<WorkspaceMemberContactRow[]>("contacts")
-    .select("id, full_name, first_name, last_name, email, phone, avatar_url, profile_id")
+    .select("id, full_name, first_name, last_name, email, phone, avatar_url, profile_id, lifecycle_stage, metadata")
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: true });
 
   if (error || !data) return [];
 
-  return data.map((c) => ({
-    id: c.id,
-    fullName: c.full_name,
-    firstName: c.first_name,
-    lastName: c.last_name,
-    email: c.email,
-    phone: c.phone,
-    avatarUrl: c.avatar_url,
-    portalAccess: !!c.profile_id,
+  return data.map((c, index) => {
+    const labels = memberRoleLabels(index, c.lifecycle_stage, c.metadata);
+    return {
+      id: c.id,
+      profileId: c.profile_id,
+      fullName: c.full_name,
+      firstName: c.first_name,
+      lastName: c.last_name,
+      email: c.email,
+      phone: c.phone,
+      avatarUrl: c.avatar_url,
+      portalAccess: !!c.profile_id,
+      ...labels,
+    };
+  });
+}
+
+export async function fetchParcelTeamMembers(): Promise<ParcelTeamMember[]> {
+  const supabase = createServiceClient();
+
+  const db = untypedDatabase(supabase);
+
+  const { data, error } = await db
+    .from<ParcelTeamMember[]>("parcel_team")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
+  if (error || !data) return [];
+  return data.map((member) => ({
+    ...member,
+    company_name: member.company_name ?? null,
+    hours: member.hours ?? null,
+    services: member.services ?? null,
   }));
 }
 

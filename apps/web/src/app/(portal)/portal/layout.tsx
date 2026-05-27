@@ -15,6 +15,7 @@ import { NotificationsProvider } from "@/components/portal/NotificationsProvider
 import { ServiceWorkerRegistration } from "@/components/portal/ServiceWorkerRegistration";
 import { ImpersonationBanner } from "@/components/portal/ImpersonationBanner";
 import { PortalMain } from "@/components/portal/PortalMainContent";
+import { getPortalNotificationPreferences } from "@/lib/portal/notification-preferences-server";
 import { SignOutButton } from "./SignOutButton";
 
 /** Inline unread count query (cannot call "use server" actions from server components) */
@@ -161,6 +162,7 @@ export default async function PortalLayout({
 
   // Fetch unread message count for sidebar badge
   const unreadMessageCount = await getUnreadCount(supabase, activeUserId);
+  const notificationPreferences = await getPortalNotificationPreferences(user.id, supabase);
 
   // Fetch owners for the admin switcher dropdown (admin only, one query).
   let owners: OwnerOption[] = [];
@@ -180,7 +182,7 @@ export default async function PortalLayout({
   }
 
   return (
-    <NotificationsProvider userId={user.id}>
+    <NotificationsProvider userId={user.id} initialPreferences={notificationPreferences}>
       <PortalHeaderProvider>
         <div
           className="flex h-screen overflow-hidden"

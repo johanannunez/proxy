@@ -253,6 +253,11 @@ function NotificationIcon({ type }: { type: string }) {
       bg: "rgba(245, 158, 11, 0.08)",
       color: "#d97706",
     },
+    receipt_available: {
+      icon: CurrencyDollar,
+      bg: "rgba(245, 158, 11, 0.08)",
+      color: "#d97706",
+    },
     new_booking: {
       icon: CalendarCheck,
       bg: "rgba(2, 170, 235, 0.1)",

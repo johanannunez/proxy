@@ -1,20 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  PORTAL_NOTIFICATION_PREFS_EVENT,
+  PORTAL_NOTIFICATION_PREFS_KEY,
+  type PortalNotificationPreferences,
+} from "@/lib/portal/notification-preferences";
+import { updatePortalNotificationPreferences } from "../notification-preferences-actions";
 
-const STORAGE_KEY = "parcel-notification-prefs";
-
-type Preferences = {
-  portalMessages: boolean;
-  announcements: boolean;
-  accountAlerts: boolean;
-};
-
-const DEFAULT_PREFS: Preferences = {
-  portalMessages: true,
-  announcements: true,
-  accountAlerts: true,
-};
+type Preferences = PortalNotificationPreferences;
 
 const TOGGLE_ITEMS: {
   key: keyof Preferences;
@@ -38,6 +32,12 @@ const TOGGLE_ITEMS: {
     label: "Account alerts",
     description:
       "Security notifications like new sign-ins and password changes.",
+  },
+  {
+    key: "financialDocuments",
+    label: "Financial documents",
+    description:
+      "Get notified when a receipt or financial document is available.",
   },
 ];
 
@@ -79,36 +79,41 @@ function Toggle({
 
 export function NotificationsSection({
   contactMethod,
+  initialPreferences,
 }: {
   contactMethod: string;
+  initialPreferences: Preferences;
 }) {
-  const [prefs, setPrefs] = useState<Preferences>(DEFAULT_PREFS);
+  const [prefs, setPrefs] = useState<Preferences>(initialPreferences);
+  const [status, setStatus] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(stored) });
-      }
+      localStorage.setItem(PORTAL_NOTIFICATION_PREFS_KEY, JSON.stringify(initialPreferences));
+      window.dispatchEvent(new Event(PORTAL_NOTIFICATION_PREFS_EVENT));
     } catch {
-      // localStorage unavailable or corrupt, use defaults
+      // localStorage unavailable, server preferences still apply on load
     }
-  }, []);
+  }, [initialPreferences]);
 
   const updatePref = useCallback(
     (key: keyof Preferences, value: boolean) => {
-      setPrefs((prev) => {
-        const next = { ...prev, [key]: value };
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // localStorage full or unavailable
-        }
-        return next;
+      const next = { ...prefs, [key]: value };
+      setPrefs(next);
+      try {
+        localStorage.setItem(PORTAL_NOTIFICATION_PREFS_KEY, JSON.stringify(next));
+        window.dispatchEvent(new Event(PORTAL_NOTIFICATION_PREFS_EVENT));
+      } catch {
+        // localStorage full or unavailable
+      }
+      setStatus(null);
+      startTransition(async () => {
+        const result = await updatePortalNotificationPreferences(next);
+        setStatus(result.ok ? "Notification preferences saved." : result.message);
       });
     },
-    [],
+    [prefs],
   );
 
   return (
@@ -189,6 +194,23 @@ export function NotificationsSection({
             </div>
           ))}
         </div>
+        {status ? (
+          <p
+            className="mt-4 text-xs"
+            aria-live="polite"
+            style={{ color: status === "Notification preferences saved." ? "var(--color-success)" : "var(--color-error)" }}
+          >
+            {status}
+          </p>
+        ) : isPending ? (
+          <p
+            className="mt-4 text-xs"
+            aria-live="polite"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Saving notification preferences...
+          </p>
+        ) : null}
       </div>
     </section>
   );

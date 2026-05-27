@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getPortalNotificationPreferences } from "@/lib/portal/notification-preferences-server";
 import { NotificationsClient } from "./NotificationsClient";
 
 export const metadata: Metadata = {
@@ -32,6 +33,13 @@ export default async function NotificationsPage() {
     read: n.read,
     createdAt: n.created_at,
   }));
+  const notificationPreferences = await getPortalNotificationPreferences(user.id, supabase);
 
-  return <NotificationsClient initialItems={items} userId={user.id} />;
+  return (
+    <NotificationsClient
+      initialItems={items}
+      initialPreferences={notificationPreferences}
+      userId={user.id}
+    />
+  );
 }

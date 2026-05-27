@@ -6,7 +6,7 @@ import {
   Brain,
   ArrowsClockwise,
   Buildings,
-  Warning,
+  FolderOpen,
 } from "@phosphor-icons/react";
 import type { WorkspaceContactDetail } from "@/lib/admin/workspace-contact-detail";
 import type { WorkspaceDocument } from "@/lib/admin/workspace-documents";
@@ -14,11 +14,15 @@ import type { WorkspaceMessage } from "@/lib/admin/workspace-messages";
 import type { Insight } from "@/lib/admin/ai-insights";
 import type { OverviewTask } from "@/lib/admin/workspace-overview";
 import type { WorkspaceDetailActivityEntry } from "@/lib/admin/workspace-detail-types";
+import type { ProjectRow } from "@/lib/admin/project-types";
+import { PROJECT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/admin/project-types";
 import { regenerateWorkspaceIntelligence } from "./workspace-intelligence-actions";
 import styles from "./WorkspaceOverviewTab.module.css";
 
 type Props = {
   workspaceContact: WorkspaceContactDetail;
+  workspaceId: string;
+  projects: ProjectRow[];
   documents: WorkspaceDocument[];
   messages: WorkspaceMessage[];
   insights: Insight[];
@@ -61,6 +65,8 @@ function initials(name: string): string {
 
 export function WorkspaceOverviewTab({
   workspaceContact,
+  workspaceId,
+  projects,
   documents,
   messages,
   insights,
@@ -124,7 +130,7 @@ export function WorkspaceOverviewTab({
       level: "amber",
       title: `${unreadMessages.length} unread message${unreadMessages.length > 1 ? "s" : ""} from ${workspaceContact.fullName.split(" ")[0]}`,
       sub: "Needs a reply",
-      cta: "Communication →",
+      cta: "Inbox →",
       href: `?tab=messaging`,
     });
   }
@@ -132,13 +138,6 @@ export function WorkspaceOverviewTab({
   const sentimentPositive = sentimentInsight?.title?.toLowerCase().includes("positive");
   const sentimentNegative = sentimentInsight?.title?.toLowerCase().includes("negative");
   const sentimentEmoji = sentimentPositive ? "😊" : sentimentNegative ? "😟" : "😐";
-  const sentimentLabel = sentimentInsight?.title ?? "Sentiment unknown";
-  const sentimentClass = sentimentPositive
-    ? ""
-    : sentimentNegative
-      ? styles.negative
-      : styles.neutral;
-
   const briefChips: Array<{ label: string; color: "green" | "amber" | "blue" | "red" }> = [];
   if (sentimentInsight) {
     briefChips.push({
@@ -179,8 +178,10 @@ export function WorkspaceOverviewTab({
 
   const recentMessages = messages.slice(0, 3);
   const recentActivity = activityLog.slice(0, 5);
+  const activeProjects = projects.filter((project) => project.status !== "done");
+  const displayProjects = activeProjects.length > 0 ? activeProjects : projects;
 
-  const contactPath = `/admin/workspaces/${workspaceContact.id}`;
+  const contactPath = `/admin/workspaces/${workspaceId}`;
 
   return (
     <div className={styles.root}>
@@ -251,7 +252,7 @@ export function WorkspaceOverviewTab({
         </div>
       )}
 
-      {/* Bento Row 1: Open Tasks · Billing · Intelligence */}
+      {/* Bento Row 1: Open Tasks · Finances · Projects */}
       <div className={styles.bento}>
         {/* Open Tasks */}
         <div className={styles.card}>
@@ -279,10 +280,10 @@ export function WorkspaceOverviewTab({
           </div>
         </div>
 
-        {/* Billing */}
+        {/* Finances */}
         <div className={styles.card}>
           <div className={styles.cardHead}>
-            <span className={styles.cardHeadLabel}>Billing</span>
+            <span className={styles.cardHeadLabel}>Finances</span>
             <a href={`${contactPath}?tab=billing`} className={styles.cardHeadLink}>
               →
             </a>
@@ -311,33 +312,36 @@ export function WorkspaceOverviewTab({
           </div>
         </div>
 
-        {/* Intelligence */}
+        {/* Projects */}
         <div className={styles.card}>
           <div className={styles.cardHead}>
-            <span className={styles.cardHeadLabel}>Intelligence</span>
-            <a href={`${contactPath}?tab=intelligence`} className={styles.cardHeadLink}>
-              →
+            <span className={styles.cardHeadLabel}>Projects</span>
+            <a href={`${contactPath}?tab=projects`} className={styles.cardHeadLink}>
+              {projects.length} total →
             </a>
           </div>
-          <div className={styles.intelBody}>
-            {sentimentInsight ? (
-              <>
-                <div className={styles.intelSentiment}>{sentimentEmoji}</div>
-                <div className={`${styles.intelSentimentLabel} ${sentimentClass}`}>
-                  {sentimentLabel}
-                </div>
-                <div className={styles.intelNote}>
-                  {sentimentInsight.body.split(".")[0]}.
-                </div>
-              </>
+          <div className={styles.projectBody}>
+            {projects.length === 0 ? (
+              <div className={styles.emptyHint}>No projects yet</div>
             ) : (
-              <div className={styles.emptyHint}>No intelligence yet</div>
-            )}
-            {riskInsights.length > 0 && (
-              <div className={styles.intelRisk}>
-                <Warning size={11} weight="bold" />
-                {riskInsights.length} risk{riskInsights.length > 1 ? "s" : ""} flagged
-              </div>
+              displayProjects.slice(0, 3).map((project) => (
+                <a key={project.id} href={`/admin/projects/${project.id}`} className={styles.projectItem}>
+                  <span className={styles.projectItemIcon}>
+                    <FolderOpen size={13} weight="duotone" />
+                  </span>
+                  <span className={styles.projectItemBody}>
+                    <span className={styles.projectItemName}>{project.name}</span>
+                    <span className={styles.projectItemMeta}>
+                      {PROJECT_TYPE_LABEL[project.projectType]} · {PROJECT_STATUS_LABEL[project.status]}
+                    </span>
+                  </span>
+                  <span className={styles.projectProgress}>
+                    {project.taskCount === 0
+                      ? "0%"
+                      : `${Math.round((project.taskDoneCount / project.taskCount) * 100)}%`}
+                  </span>
+                </a>
+              ))
             )}
           </div>
         </div>
@@ -408,10 +412,10 @@ export function WorkspaceOverviewTab({
           </div>
         </div>
 
-        {/* Messages */}
+        {/* Inbox */}
         <div className={styles.card}>
           <div className={styles.cardHead}>
-            <span className={styles.cardHeadLabel}>Messages</span>
+            <span className={styles.cardHeadLabel}>Inbox</span>
             <a href={`${contactPath}?tab=messaging`} className={styles.cardHeadLink}>
               {messages.length} total →
             </a>

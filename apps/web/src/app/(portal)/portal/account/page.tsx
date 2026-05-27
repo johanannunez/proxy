@@ -10,6 +10,7 @@ import { RegionSection } from "./components/RegionSection";
 import { DataExportSection } from "./components/DataExportSection";
 import { DangerZoneSection } from "./components/DangerZoneSection";
 import { WorkspaceSection } from "./components/WorkspaceSection";
+import { getPortalNotificationPreferences } from "@/lib/portal/notification-preferences-server";
 
 export const metadata: Metadata = { title: "Account" };
 export const dynamic = "force-dynamic";
@@ -52,6 +53,7 @@ export default async function AccountPage() {
   const displayEmail = isImpersonating
     ? (ownerProfile?.email ?? "")
     : (profile?.email ?? "");
+  const notificationPreferences = await getPortalNotificationPreferences(userId, client);
 
   return (
     <div className="flex flex-col gap-8">
@@ -111,6 +113,7 @@ export default async function AccountPage() {
 
           <NotificationsSection
             contactMethod={profile?.contact_method ?? "email"}
+            initialPreferences={notificationPreferences}
           />
 
           {!isImpersonating ? <InstallAppSection /> : null}

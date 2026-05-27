@@ -16,7 +16,18 @@ export type WorkspaceDocument = {
 function deriveCategory(templateName: string): WorkspaceDocument["category"] {
   const lower = templateName.toLowerCase();
   if (lower.includes("agreement") || lower.includes("addendum") || lower.includes("contract")) return "legal";
-  if (lower.includes("w9") || lower.includes("w-9") || lower.includes("ach") || lower.includes("tax")) return "financial";
+  if (
+    lower.includes("w9")
+    || lower.includes("w-9")
+    || lower.includes("ach")
+    || lower.includes("tax")
+    || lower.includes("card authorization")
+    || lower.includes("credit card")
+    || lower.includes("payment")
+    || lower.includes("bank")
+  ) {
+    return "financial";
+  }
   return "property";
 }
 

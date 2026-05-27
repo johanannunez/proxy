@@ -9,7 +9,6 @@ import {
   DoorOpen,
   ChatsCircle,
   ListChecks,
-  BookOpenText,
   FolderOpen,
   Files,
   ShareNetwork,
@@ -23,6 +22,7 @@ import {
   CalendarDots,
   Receipt,
   Pulse,
+  Buildings,
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { AdminSidebarFooter } from "@/components/admin/AdminSidebarFooter";
@@ -65,27 +65,34 @@ type NavEntry = NavItem | NavGroup;
 
 const navEntries: NavEntry[] = [
   { kind: "item", href: "/admin", label: "Dashboard", icon: <Gauge size={18} weight="duotone" /> },
-  { kind: "item", href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={18} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
   { kind: "item", href: "/admin/inbox", label: "Inbox", icon: <ChatsCircle size={18} weight="duotone" />, matchPrefix: "/admin/inbox" },
   { kind: "item", href: "/admin/tasks", label: "Tasks", icon: <ListChecks size={18} weight="duotone" />, matchPrefix: "/admin/tasks" },
   { kind: "item", href: "/admin/meetings", label: "Meetings", icon: <CalendarDots size={18} weight="duotone" />, matchPrefix: "/admin/meetings" },
+  { kind: "item", href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={18} weight="duotone" />, matchPrefix: "/admin/workspaces" },
   {
     kind: "group",
     label: "Relationships",
     icon: <ShareNetwork size={18} weight="duotone" />,
     storageKey: "nav-people-expanded",
     items: [
-      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={16} weight="duotone" />, matchPrefix: "/admin/prospects" },
-      { href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={16} weight="duotone" />, matchPrefix: "/admin/workspaces" },
       { href: "/admin/people?mode=compact", label: "People", icon: <UserList size={16} weight="duotone" />, matchPrefix: "/admin/people" },
       { href: "/admin/vendors", label: "Vendors", icon: <Handshake size={16} weight="duotone" />, matchPrefix: "/admin/vendors" },
+      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={16} weight="duotone" />, matchPrefix: "/admin/prospects" },
     ],
   },
-  { kind: "item", href: "/admin/properties", label: "Properties", icon: <DoorOpen size={18} weight="duotone" />, matchPrefix: "/admin/properties" },
-  { kind: "item", href: "/admin/documents", label: "Documents", icon: <Files size={18} weight="duotone" />, matchPrefix: "/admin/documents" },
-  { kind: "item", href: "/admin/projects", label: "Projects", icon: <FolderOpen size={18} weight="duotone" />, matchPrefix: "/admin/projects" },
-  { kind: "item", href: "/admin/billing", label: "Billing", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/billing" },
-  { kind: "item", href: "/admin/help", label: "Help Center", icon: <BookOpenText size={18} weight="duotone" />, matchPrefix: "/admin/help" },
+  {
+    kind: "group",
+    label: "Operations",
+    icon: <Buildings size={18} weight="duotone" />,
+    storageKey: "nav-operations-expanded",
+    items: [
+      { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={16} weight="duotone" />, matchPrefix: "/admin/properties" },
+      { href: "/admin/documents", label: "Documents", icon: <Files size={16} weight="duotone" />, matchPrefix: "/admin/documents" },
+      { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={16} weight="duotone" />, matchPrefix: "/admin/projects" },
+      { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={16} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
+    ],
+  },
+  { kind: "item", href: "/admin/billing", label: "Finances", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/billing" },
 ];
 
 /* ─── Token constants ─── */
@@ -596,7 +603,7 @@ export function AdminTopBar({
     if (pathname.startsWith("/admin/treasury")) return "Treasury";
     if (pathname.startsWith("/admin/calendar")) return "Calendar";
     if (pathname.startsWith("/admin/meetings")) return "Meetings";
-    if (pathname.startsWith("/admin/billing")) return "Billing";
+    if (pathname.startsWith("/admin/billing")) return "Finances";
     if (pathname.startsWith("/admin/timeline")) return "Timeline";
     if (pathname.startsWith("/admin/guest-pulse")) return "Guest Pulse";
     return "";
@@ -693,21 +700,23 @@ const adminRailItems: Array<{
   matchPrefixes?: string[];
 }> = [
   { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Dashboard" },
-  { href: "/admin/guest-pulse", icon: <Pulse size={20} weight="duotone" />, label: "Pulse", matchPrefix: "/admin/guest-pulse" },
   { href: "/admin/inbox", icon: <ChatsCircle size={20} weight="duotone" />, label: "Inbox", matchPrefix: "/admin/inbox" },
   { href: "/admin/tasks", icon: <ListChecks size={20} weight="duotone" />, label: "Tasks", matchPrefix: "/admin/tasks" },
   { href: "/admin/meetings", icon: <CalendarDots size={20} weight="duotone" />, label: "Meetings", matchPrefix: "/admin/meetings" },
+  { href: "/admin/workspaces?view=active-owners", icon: <Stack size={20} weight="duotone" />, label: "Workspaces", matchPrefix: "/admin/workspaces" },
   {
-    href: "/admin/workspaces?view=active-owners",
+    href: "/admin/people?mode=compact",
     icon: <ShareNetwork size={20} weight="duotone" />,
     label: "Relationships",
-    matchPrefixes: ["/admin/workspaces", "/admin/prospects", "/admin/people", "/admin/vendors"],
+    matchPrefixes: ["/admin/prospects", "/admin/people", "/admin/vendors"],
   },
-  { href: "/admin/properties", icon: <DoorOpen size={20} weight="duotone" />, label: "Properties", matchPrefix: "/admin/properties" },
-  { href: "/admin/documents", icon: <Files size={20} weight="duotone" />, label: "Documents", matchPrefix: "/admin/documents" },
-  { href: "/admin/projects", icon: <FolderOpen size={20} weight="duotone" />, label: "Projects", matchPrefix: "/admin/projects" },
-  { href: "/admin/billing", icon: <Receipt size={20} weight="duotone" />, label: "Billing", matchPrefix: "/admin/billing" },
-  { href: "/admin/help", icon: <BookOpenText size={20} weight="duotone" />, label: "Help Center", matchPrefix: "/admin/help" },
+  {
+    href: "/admin/properties",
+    icon: <Buildings size={20} weight="duotone" />,
+    label: "Operations",
+    matchPrefixes: ["/admin/properties", "/admin/documents", "/admin/projects", "/admin/guest-pulse"],
+  },
+  { href: "/admin/billing", icon: <Receipt size={20} weight="duotone" />, label: "Finances", matchPrefix: "/admin/billing" },
 ];
 
 export function AdminIconRail() {

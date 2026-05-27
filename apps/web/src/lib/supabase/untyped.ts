@@ -14,6 +14,7 @@ export type QueryBuilder<T> = PromiseLike<QueryResult<T>> & {
   eq(column: string, value: string | number | boolean | null): QueryBuilder<T>;
   in(column: string, values: readonly string[]): QueryBuilder<T>;
   not(column: string, operator: string, value: string): QueryBuilder<T>;
+  neq(column: string, value: string | number | boolean | null): QueryBuilder<T>;
   order(column: string, options?: { ascending?: boolean }): QueryBuilder<T>;
   limit(count: number): QueryBuilder<T>;
   single(): Promise<QueryResult<T>>;

@@ -3,15 +3,17 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { PaperPlaneRight, PushPin, User, Buildings } from "@phosphor-icons/react";
 import { sendWorkspaceMessage, togglePinMessage } from "./messaging-actions";
-import type { WorkspaceMessage } from "@/lib/admin/workspace-messages";
+import type { WorkspaceInboxConversation, WorkspaceMessage } from "@/lib/admin/workspace-messages";
 import type { WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 import styles from "./MessagingTab.module.css";
 
 type Props = {
   contactId: string;
   messages: WorkspaceMessage[];
+  inboxConversations: WorkspaceInboxConversation[];
   members: WorkspaceMember[];
   activeContactId: string;
+  ownerId: string | null;
 };
 
 function formatTime(iso: string): string {
@@ -70,7 +72,13 @@ function MessageBubble({
   );
 }
 
-export function MessagingTab({ messages: initialMessages, members, activeContactId }: Props) {
+export function MessagingTab({
+  messages: initialMessages,
+  inboxConversations,
+  members,
+  activeContactId,
+  ownerId,
+}: Props) {
   const [localMessages, setLocalMessages] = useState<WorkspaceMessage[]>(initialMessages);
 
   useEffect(() => {
@@ -98,6 +106,7 @@ export function MessagingTab({ messages: initialMessages, members, activeContact
 
   const composeContactId = filterContactId === "all" ? activeContactId : filterContactId;
   const composeContact = members.find((m) => m.id === composeContactId);
+  const centralInboxHref = ownerId ? `/admin/inbox?owner=${encodeURIComponent(ownerId)}` : "/admin/inbox";
 
   function handlePin(messageId: string, messageContactId: string, currentlyPinned: boolean) {
     setLocalMessages((prev) =>
@@ -154,6 +163,49 @@ export function MessagingTab({ messages: initialMessages, members, activeContact
           ))}
         </div>
       )}
+
+      <section className={styles.globalInbox}>
+        <div className={styles.globalInboxHeader}>
+          <div>
+            <div className={styles.globalInboxEyebrow}>Global inbox</div>
+            <h3 className={styles.globalInboxTitle}>Portal, SMS, and email history</h3>
+          </div>
+          <a className={styles.globalInboxLink} href={centralInboxHref}>
+            Open inbox
+          </a>
+        </div>
+        {inboxConversations.length === 0 ? (
+          <p className={styles.globalInboxEmpty}>No central inbox conversations are linked to this workspace yet.</p>
+        ) : (
+          <div className={styles.globalInboxList}>
+            {inboxConversations.slice(0, 4).map((conversation) => (
+              <a
+                key={conversation.id}
+                className={styles.globalInboxRow}
+                href={`/admin/inbox?conversation=${encodeURIComponent(conversation.id)}`}
+              >
+                <span className={styles.globalInboxBadge}>
+                  {conversationLabel(conversation)}
+                </span>
+                <span className={styles.globalInboxContent}>
+                  <span className={styles.globalInboxSubject}>
+                    {conversation.subject ?? conversationLabel(conversation)}
+                  </span>
+                  {conversation.contextLabel ? (
+                    <span className={styles.globalInboxContext}>
+                      {conversation.contextLabel}
+                    </span>
+                  ) : null}
+                  <span className={styles.globalInboxPreview}>
+                    {conversation.lastMessageBody ? stripHtml(conversation.lastMessageBody).slice(0, 96) : "No messages yet"}
+                  </span>
+                </span>
+                <span className={styles.globalInboxTime}>{formatShortTime(conversation.lastMessageAt)}</span>
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
 
       {pinned.length > 0 && (
         <div className={styles.pinnedSection}>
@@ -234,4 +286,22 @@ export function MessagingTab({ messages: initialMessages, members, activeContact
       </div>
     </div>
   );
+}
+
+function conversationLabel(conversation: WorkspaceInboxConversation): string {
+  if (conversation.lastDeliveryMethod === "sms") return "SMS";
+  if (conversation.type === "email_log" || conversation.lastDeliveryMethod === "email") return "Email";
+  if (conversation.type === "announcement") return "Announcement";
+  return "Portal";
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
+function formatShortTime(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }

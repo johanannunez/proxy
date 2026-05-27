@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import {
   Files,
@@ -285,6 +285,24 @@ export function DocumentsHub({
     owner: DocHubOwner;
     docKey: DocKey;
   } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ownerParam = params.get("owner");
+    const docParam = params.get("doc");
+    if (!ownerParam || !docParam) return;
+    if (![...secureKeys, ...formKeys].includes(docParam as DocKey)) return;
+
+    const owner = owners.find((entry) =>
+      entry.profileId === ownerParam || entry.contactId === ownerParam
+    );
+    if (!owner) return;
+
+    const docKey = docParam as DocKey;
+    setSelectedDocKey(docKey);
+    setFilter(isSecureKey(docKey) ? "secure" : "forms");
+    setDrawerEntry({ owner, docKey });
+  }, [owners]);
 
   const visibleCards: DocKey[] = [
     ...(filter !== "forms" ? secureKeys : []),

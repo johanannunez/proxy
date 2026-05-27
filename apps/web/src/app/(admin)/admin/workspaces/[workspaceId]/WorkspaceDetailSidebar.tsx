@@ -8,13 +8,25 @@ import {
   useTransition,
   type KeyboardEvent,
   type ChangeEvent,
+  type ReactNode,
 } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import {
+  ArrowSquareOut,
+  Briefcase,
+  CalendarBlank,
+  ChatCircle,
   LinkedinLogo,
   InstagramLogo,
   FacebookLogo,
   XLogo,
+  EnvelopeSimple,
   Globe,
+  IdentificationCard,
+  PencilSimple,
+  Phone,
+  UserCircle,
   X as XIcon,
   CheckCircle,
   XCircle,
@@ -213,7 +225,7 @@ function EditableField({
                 onClick={() => { setEditing(true); onEditStart?.(); }}
                 type="button"
               >
-                {shown || placeholder || "—"}
+                {shown || placeholder || "Not set"}
               </button>
             </span>
             {copyValue && shown && <SidebarCopyBtn value={copyValue} onCopied={handleRowCopied} />}
@@ -593,7 +605,7 @@ function AddressField({
                       <span>{lines[0]}</span>
                       {lines[1] && <span>{lines[1]}</span>}
                     </>
-                  ) : "—"}
+                  ) : "Not set"}
                 </button>
               </span>
               {value && <SidebarCopyBtn value={value} onCopied={handleRowCopied} />}
@@ -844,6 +856,91 @@ const CONTACT_METHODS: { key: ContactMethod; label: string }[] = [
   { key: "whatsapp", label: "WhatsApp" },
 ];
 
+const CONTACT_METHOD_LABELS = new Map(CONTACT_METHODS.map((method) => [method.key, method.label]));
+
+type DrawerMode = "summary" | "edit";
+type SummaryCopyTarget = "email" | "phone";
+
+function displayValue(value: string | null | undefined, fallback = "Not set"): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : fallback;
+}
+
+function formatSummaryDate(iso: string | null): string {
+  if (!iso) return "Not set";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Not set";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function SummaryDetail({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className={styles.summaryDetail}>
+      <span className={styles.summaryDetailIcon}>{icon}</span>
+      <span className={styles.summaryDetailText}>
+        <span className={styles.summaryDetailLabel}>{label}</span>
+        <span className={value === "Not set" ? styles.summaryDetailMuted : styles.summaryDetailValue}>
+          {value}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function SummaryAction({
+  icon,
+  label,
+  disabled = false,
+  href,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  disabled?: boolean;
+  href?: string;
+  onClick?: () => void;
+}) {
+  if (href && !disabled) {
+    return (
+      <a className={styles.summaryAction} href={href}>
+        {icon}
+        <span>{label}</span>
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={styles.summaryAction}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Copy button (sidebar)
 // ---------------------------------------------------------------------------
@@ -1065,6 +1162,8 @@ export function WorkspaceDetailSidebar({
     workspaceContact.managementFeePercent !== null ? String(workspaceContact.managementFeePercent) : ""
   );
   const [socialModalOpen, setSocialModalOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<DrawerMode>("summary");
+  const [summaryCopied, setSummaryCopied] = useState<SummaryCopyTarget | null>(null);
 
   // Saved-field tracker
   const [savedFields, setSavedFields] = useState<Set<string>>(new Set());
@@ -1084,6 +1183,40 @@ export function WorkspaceDetailSidebar({
   const searchParams = useSearchParams();
   const rawTab = searchParams.get("tab") ?? "overview";
   const rawSection = searchParams.get("section");
+  const rawDetail = searchParams.get("detail");
+
+  const copySummaryValue = useCallback(async (target: SummaryCopyTarget, value: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setSummaryCopied(target);
+      setTimeout(() => setSummaryCopied(null), 1400);
+    } catch {
+      // clipboard API may fail silently
+    }
+  }, []);
+
+  const activeMember = members.find((member) => member.id === activeContactId);
+  const contactName = [firstName, lastName].filter(Boolean).join(" ").trim() || workspaceContact.fullName;
+  const contactInitials = getInitials(contactName);
+  const workspaceTypeLabel = workspaceInfo.type
+    ? BUSINESS_ENTITY_TYPE_LABELS[workspaceInfo.type] ?? workspaceInfo.type
+    : null;
+  const assignedProfile = adminProfiles.find((profile) => profile.id === assignedTo);
+  const assignedName = assignedProfile?.fullName || workspaceContact.assignedToName || "Unassigned";
+  const preferredMethodLabel = contactMethod ? CONTACT_METHOD_LABELS.get(contactMethod) ?? contactMethod : "Not set";
+  const roleLabel = activeMember?.roleLabel ?? "Owner";
+  const sourceLabel = displayValue(source);
+  const feeLabel = feePercent ? `${feePercent}%` : "Not set";
+
+  const openSchedule = () => {
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("tab", "meetings");
+    params.set("person", activeContactId);
+    params.delete("detail");
+    params.delete("section");
+    router.replace(`/admin/workspaces/${workspaceInfo.id}?${params.toString()}`, { scroll: false });
+  };
 
   async function save(fields: Parameters<typeof updateWorkspaceContactFields>[1]) {
     await updateWorkspaceContactFields(workspaceContact.id, fields);
@@ -1181,11 +1314,18 @@ export function WorkspaceDetailSidebar({
               className={`${styles.sidebarChip} ${m.id === activeContactId ? styles.sidebarChipActive : ''}`}
               onClick={() => {
                 const sectionSuffix = rawSection ? `&section=${rawSection}` : "";
-                router.replace(`?tab=${rawTab}&person=${m.id}${sectionSuffix}`, { scroll: false });
+                const detailSuffix = rawDetail ? `&detail=${rawDetail}` : "";
+                router.replace(`?tab=${rawTab}&person=${m.id}${detailSuffix}${sectionSuffix}`, { scroll: false });
               }}
             >
               {m.avatarUrl ? (
-                <img src={m.avatarUrl} alt={m.fullName} className={styles.sidebarChipAvatar} />
+                <Image
+                  src={m.avatarUrl}
+                  alt={m.fullName}
+                  width={16}
+                  height={16}
+                  className={styles.sidebarChipAvatar}
+                />
               ) : (
                 <span className={styles.sidebarChipInitials}>
                   {(m.firstName ? m.firstName[0] : m.fullName[0] ?? '?').toUpperCase()}
@@ -1196,6 +1336,141 @@ export function WorkspaceDetailSidebar({
           ))}
         </div>
       )}
+
+      <div className={styles.profileHeader}>
+        {workspaceContact.avatarUrl ? (
+          <Image
+            src={workspaceContact.avatarUrl}
+            alt={contactName}
+            width={56}
+            height={56}
+            className={styles.profileAvatarImage}
+          />
+        ) : (
+          <span className={styles.profileAvatar}>{contactInitials}</span>
+        )}
+        <div className={styles.profileIdentity}>
+          <span className={styles.profileName}>{contactName}</span>
+          <span className={styles.profileRole}>{roleLabel}</span>
+          <span className={styles.profileWorkspace}>
+            {workspaceInfo.name}
+            {workspaceTypeLabel ? <span>{workspaceTypeLabel}</span> : null}
+          </span>
+        </div>
+      </div>
+
+      <div className={styles.profileMetaGrid}>
+        <div className={styles.profileMetaItem}>
+          <span>Portal</span>
+          <strong className={hasPortal ? styles.profileMetaGood : styles.profileMetaMuted}>
+            {hasPortal ? "Has access" : "No access"}
+          </strong>
+        </div>
+        <div className={styles.profileMetaItem}>
+          <span>Assigned</span>
+          <strong>{assignedName}</strong>
+        </div>
+        <div className={styles.profileMetaItem}>
+          <span>Prefers</span>
+          <strong>{preferredMethodLabel}</strong>
+        </div>
+      </div>
+
+      <div className={styles.modeSwitch} role="tablist" aria-label="Contact drawer view">
+        <button
+          type="button"
+          role="tab"
+          className={`${styles.modeButton} ${drawerMode === "summary" ? styles.modeButtonActive : ""}`}
+          onClick={() => setDrawerMode("summary")}
+          aria-selected={drawerMode === "summary"}
+        >
+          Summary
+        </button>
+        <button
+          type="button"
+          role="tab"
+          className={`${styles.modeButton} ${drawerMode === "edit" ? styles.modeButtonActive : ""}`}
+          onClick={() => setDrawerMode("edit")}
+          aria-selected={drawerMode === "edit"}
+          data-testid="contact-drawer-edit"
+        >
+          Edit
+        </button>
+      </div>
+
+      {drawerMode === "summary" ? (
+        <div className={styles.summaryPanel}>
+          <div className={styles.summaryActionGrid} aria-label="Quick actions">
+            <SummaryAction
+              icon={<ChatCircle size={15} weight="bold" />}
+              label="Message"
+              href={email ? `mailto:${email}` : undefined}
+              disabled={!email}
+            />
+            <SummaryAction
+              icon={<CalendarBlank size={15} weight="bold" />}
+              label="Schedule"
+              onClick={openSchedule}
+            />
+            <SummaryAction
+              icon={summaryCopied === "email" ? <Check size={15} weight="bold" /> : <CopySimple size={15} weight="bold" />}
+              label={summaryCopied === "email" ? "Email copied" : "Copy email"}
+              disabled={!email}
+              onClick={() => copySummaryValue("email", email)}
+            />
+            <SummaryAction
+              icon={summaryCopied === "phone" ? <Check size={15} weight="bold" /> : <CopySimple size={15} weight="bold" />}
+              label={summaryCopied === "phone" ? "Phone copied" : "Copy phone"}
+              disabled={!phone}
+              onClick={() => copySummaryValue("phone", phone)}
+            />
+            <Link href={`/admin/people/${workspaceContact.id}`} className={styles.summaryAction}>
+              <ArrowSquareOut size={15} weight="bold" />
+              <span>Open full record</span>
+            </Link>
+          </div>
+
+          <section className={styles.summarySection}>
+            <div className={styles.summarySectionTitle}>Contact info</div>
+            <div className={styles.summaryDetailGrid}>
+              <SummaryDetail icon={<EnvelopeSimple size={15} weight="bold" />} label="Email" value={displayValue(email)} />
+              <SummaryDetail icon={<Phone size={15} weight="bold" />} label="Phone" value={displayValue(formatPhone(phone))} />
+              <SummaryDetail icon={<Globe size={15} weight="bold" />} label="Mailing" value={displayValue(addressFmt)} />
+              <SummaryDetail icon={<IdentificationCard size={15} weight="bold" />} label="Role" value={roleLabel} />
+            </div>
+          </section>
+
+          <section className={styles.summarySection}>
+            <div className={styles.summarySectionTitle}>Relationship</div>
+            <div className={styles.summaryDetailGrid}>
+              <SummaryDetail icon={<UserCircle size={15} weight="bold" />} label="Portal" value={hasPortal ? "Has access" : "No access"} />
+              <SummaryDetail icon={<Briefcase size={15} weight="bold" />} label="Assigned" value={assignedName} />
+              <SummaryDetail icon={<Globe size={15} weight="bold" />} label="Source" value={sourceLabel} />
+              <SummaryDetail icon={<ChatCircle size={15} weight="bold" />} label="Preferred" value={preferredMethodLabel} />
+            </div>
+          </section>
+
+          <section className={styles.summarySection}>
+            <div className={styles.summarySectionTitle}>Contract</div>
+            <div className={styles.summaryDetailGrid}>
+              <SummaryDetail icon={<CalendarBlank size={15} weight="bold" />} label="Start" value={formatSummaryDate(contractStart)} />
+              <SummaryDetail icon={<CalendarBlank size={15} weight="bold" />} label="End" value={formatSummaryDate(contractEnd)} />
+              <SummaryDetail icon={<Briefcase size={15} weight="bold" />} label="Mgmt fee" value={feeLabel} />
+            </div>
+          </section>
+
+          <section className={styles.summarySection}>
+            <div className={styles.summarySectionTitle}>Admin notes</div>
+            <p className={styles.summaryNote}>No private notes saved for this contact.</p>
+          </section>
+
+          <button type="button" className={styles.editDetailsButton} onClick={() => setDrawerMode("edit")}>
+            <PencilSimple size={15} weight="bold" />
+            Edit details
+          </button>
+        </div>
+      ) : (
+        <div className={styles.editPanel}>
 
       {/* ── Workspace section ────────────────────────────────────────────────── */}
       <div className={styles.workspaceSection}>
@@ -1277,7 +1552,7 @@ export function WorkspaceDetailSidebar({
         />
       )}
 
-      {/* Prefers + Portal/Newsletter — directly under contact, no "Owner" header */}
+      {/* Prefers + Portal/Newsletter directly under contact, no "Owner" header */}
       <div className={styles.fieldRow}>
         <span className={styles.fieldLabel}>Prefers</span>
         <div className={styles.contactMethodRow}>
@@ -1320,7 +1595,7 @@ export function WorkspaceDetailSidebar({
             <span className={styles.fieldLabel}>Source</span>
             <div className={styles.fieldValue}>
               <span className={`${styles.readonlyValue} ${!source ? styles.valueBtnEmpty : ""}`}>
-                {source || "—"}
+                {source || "Not set"}
               </span>
             </div>
           </div>
@@ -1362,6 +1637,9 @@ export function WorkspaceDetailSidebar({
         onSave={saveFeePercent}
         isSaved={savedFields.has("feePercent")}
       />
+
+        </div>
+      )}
 
     </aside>
   );

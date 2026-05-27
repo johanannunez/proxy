@@ -6,6 +6,129 @@
   overflow: hidden;
 }
 
+.globalInbox {
+  margin: 12px 20px 8px;
+  padding: 12px;
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 10px;
+  background: var(--color-white);
+  flex-shrink: 0;
+}
+
+.globalInboxHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.globalInboxEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.globalInboxTitle {
+  margin: 1px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.globalInboxLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.globalInboxEmpty {
+  margin: 10px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.globalInboxList {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.globalInboxRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.globalInboxRow:hover {
+  background: var(--color-warm-gray-50);
+}
+
+.globalInboxBadge {
+  min-width: 72px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  color: var(--color-brand);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.globalInboxContent {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.globalInboxSubject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.globalInboxPreview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.globalInboxContext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.globalInboxTime {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
 .pinnedSection {
   padding: 12px 24px;
   background: color-mix(in srgb, #b45309 8%, transparent);

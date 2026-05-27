@@ -124,7 +124,7 @@ function labelFromPathname(pathname: string): { label: string; icon: string } | 
     properties: { label: "Properties", icon: "Buildings" },
     projects:   { label: "Projects",   icon: "Kanban" },
     calendar:   { label: "Calendar",   icon: "CalendarBlank" },
-    billing:    { label: "Billing",    icon: "Wallet" },
+    billing:    { label: "Finances",   icon: "Wallet" },
     meetings:   { label: "Meetings",   icon: "CalendarBlank" },
     timeline:   { label: "Timeline",   icon: "ClockCounterClockwise" },
     payouts:    { label: "Payouts",    icon: "Wallet" },

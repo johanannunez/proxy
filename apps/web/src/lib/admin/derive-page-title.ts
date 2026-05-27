@@ -12,7 +12,7 @@ const STATIC_ROUTES: Array<{ prefix: string; title: string; subtitle?: string }>
   { prefix: "/admin/properties", title: "Properties", subtitle: "Every home under Parcel management." },
   { prefix: "/admin/inbox", title: "Inbox", subtitle: "All owner and guest conversations." },
   { prefix: "/admin/tasks", title: "Tasks", subtitle: "Your work across every person, property, and project." },
-  { prefix: "/admin/billing", title: "Billing", subtitle: "Invoices, recurring revenue, proposals, and catalog." },
+  { prefix: "/admin/billing", title: "Finances", subtitle: "Invoices, recurring revenue, proposals, and catalog." },
   { prefix: "/admin/help", title: "Help Center", subtitle: "Articles and onboarding content." },
   { prefix: "/admin/treasury", title: "Treasury", subtitle: "Cash, accounts, and financial health." },
   { prefix: "/admin/calendar", title: "Calendar", subtitle: "Bookings, owner reservations, vendor work, and Turno syncs." },

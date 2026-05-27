@@ -11,7 +11,6 @@ import {
   DoorOpen,
   UserSwitch,
   ListChecks,
-  BookOpenText,
   GearSix,
   X,
   Power,
@@ -26,6 +25,8 @@ import {
   UserList,
   CaretDown,
   Receipt,
+  Buildings,
+  Pulse,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "@/components/ThemeProvider";
@@ -94,23 +95,31 @@ const navItems: NavItem[] = [
 /* ── Sheet items (mirrors desktop sidebar) ── */
 
 const sheetItems: SheetEntry[] = [
+  { href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={19} weight="duotone" />, matchPrefix: "/admin/workspaces" },
   {
     kind: "group",
     label: "Relationships",
     icon: <ShareNetwork size={19} weight="duotone" />,
     storageKey: "mobile-nav-people-expanded",
     items: [
-      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={17} weight="duotone" />, matchPrefix: "/admin/prospects" },
-      { href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={17} weight="duotone" />, matchPrefix: "/admin/workspaces" },
       { href: "/admin/people?mode=compact", label: "People", icon: <UserList size={17} weight="duotone" />, matchPrefix: "/admin/people" },
       { href: "/admin/vendors", label: "Vendors", icon: <Handshake size={17} weight="duotone" />, matchPrefix: "/admin/vendors" },
+      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={17} weight="duotone" />, matchPrefix: "/admin/prospects" },
     ],
   },
-  { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={19} weight="duotone" />, matchPrefix: "/admin/properties" },
-  { href: "/admin/documents", label: "Documents", icon: <Files size={19} weight="duotone" />, matchPrefix: "/admin/documents" },
-  { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={19} weight="duotone" />, matchPrefix: "/admin/projects" },
-  { href: "/admin/billing", label: "Billing", icon: <Receipt size={19} weight="duotone" />, matchPrefix: "/admin/billing" },
-  { href: "/admin/help", label: "Help Center", icon: <BookOpenText size={19} weight="duotone" />, matchPrefix: "/admin/help" },
+  {
+    kind: "group",
+    label: "Operations",
+    icon: <Buildings size={19} weight="duotone" />,
+    storageKey: "mobile-nav-operations-expanded",
+    items: [
+      { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={17} weight="duotone" />, matchPrefix: "/admin/properties" },
+      { href: "/admin/documents", label: "Documents", icon: <Files size={17} weight="duotone" />, matchPrefix: "/admin/documents" },
+      { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={17} weight="duotone" />, matchPrefix: "/admin/projects" },
+      { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={17} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
+    ],
+  },
+  { href: "/admin/billing", label: "Finances", icon: <Receipt size={19} weight="duotone" />, matchPrefix: "/admin/billing" },
 ];
 
 /* ── Helpers ── */
