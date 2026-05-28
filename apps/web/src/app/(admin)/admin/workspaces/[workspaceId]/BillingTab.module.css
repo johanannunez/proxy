@@ -1,163 +1,618 @@
+/* ── Root ── */
 .root {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 1120px;
+  gap: 24px;
+  max-width: 960px;
 }
 
-.financeHero {
+/* ── Summary bar ── */
+.summaryBar {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
-  gap: 16px;
-  align-items: stretch;
-  border: 1px solid var(--color-border);
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
   border-radius: 12px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-brand) 12%, transparent), transparent 48%),
-    var(--color-surface);
-  padding: 20px;
+  overflow: hidden;
 }
 
-.financeHeroCopy {
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+.summaryDivider {
+  width: 1px;
+  height: 36px;
+  background: var(--color-warm-gray-200);
+}
+
+.summaryIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+.summaryValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.summaryLabel {
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+  margin-top: 1px;
+}
+
+/* ── Section eyebrow ── */
+.sectionEyebrow {
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+/* ── Payment methods ── */
+.paymentGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.paymentCard {
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border: 1px solid var(--color-warm-gray-200);
+}
+
+.paymentCardReady {
+  border-color: var(--color-warm-gray-200);
+}
+
+.paymentCardMissing {
+  border-color: color-mix(in srgb, var(--color-error) 20%, var(--color-warm-gray-200));
+}
+
+.paymentIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.paymentIconReady {
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 20%, transparent);
+  color: var(--color-success);
+}
+
+.paymentIconMissing {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 20%, transparent);
+  color: var(--color-error);
+}
+
+.paymentBody {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  gap: 3px;
 }
 
-.eyebrow {
+.paymentLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.paymentMain {
+  font-size: 13.5px;
+  font-weight: 660;
+  color: var(--color-text-primary);
+}
+
+.paymentSub {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.paymentSubWarning {
+  color: var(--color-error);
+}
+
+.paymentBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.paymentBadgeReady {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
+}
+
+.paymentBadgeMissing {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-error);
+  border: 1px solid color-mix(in srgb, var(--color-error) 20%, transparent);
+}
+
+.sendFormLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 660;
   color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+  border-radius: 7px;
+  padding: 5px 10px;
+  text-decoration: none;
+  transition: background 120ms ease;
+}
+
+.sendFormLink:hover {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+}
+
+/* ── Bills top bar ── */
+.billsTopBar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.billsTopBarLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.billsMeta {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.addReceiptButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 660;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.addReceiptButton:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-warm-gray-200));
+  background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+}
+
+/* ── Intake panel ── */
+.intakePanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.intakePanelError {
+  border-color: color-mix(in srgb, var(--color-error) 25%, var(--color-warm-gray-200));
+}
+
+.intakePanelSuccess {
+  border-color: color-mix(in srgb, var(--color-success) 25%, var(--color-warm-gray-200));
+}
+
+.intakeStatusMessage {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  margin-bottom: 14px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--color-warm-gray-50);
+}
+
+.intakeForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.intakeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.intakeNotesField {
+  max-width: 540px;
+}
+
+.intakeFileField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.intakeFileField > span {
+  color: var(--color-text-secondary);
   font-size: 0.6875rem;
-  font-weight: 820;
+  font-weight: 760;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.financeHero h2 {
-  margin: 0;
+.receiptFileInput {
+  font-size: 11px;
   color: var(--color-text-primary);
-  font-size: 1.55rem;
-  line-height: 1.1;
 }
 
-.financeHero p {
-  max-width: 620px;
+.intakeFileLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--color-brand);
+}
+
+.intakePropertyRow {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.intakePropertyRow > span {
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intakePropertyButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.propertyChip {
+  font-size: 11.5px;
+  font-weight: 560;
+  color: var(--color-text-secondary);
+  background: var(--color-warm-gray-50);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 7px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+
+.propertyChip:hover {
+  color: var(--color-text-primary);
+  border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-warm-gray-200));
+}
+
+.propertyChipActive {
+  color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+.intakeAnalysis {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 15%, transparent);
+  border-radius: 8px;
+  font-size: 11.5px;
+}
+
+.intakeAnalysis strong {
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 660;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.intakeAnalysis p {
+  color: var(--color-text-secondary);
+  line-height: 1.4;
   margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 
-.financeHeroActions {
-  display: grid;
+.intakeAnalysisIcon {
+  color: var(--color-brand);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.intakeVisibilityToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.intakeVisibilityToggle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.intakeActions {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.financeAction {
+/* ── Bills list ── */
+.billsList {
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.billsEmptyState {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+}
+
+.billsEmptyIcon {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.billsEmptyState strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 660;
+  color: var(--color-text-primary);
+  margin-bottom: 3px;
+}
+
+.billsEmptyState span {
+  font-size: 11.5px;
+}
+
+/* ── Property group ── */
+.propertyGroup {
+  border-bottom: 1px solid var(--color-warm-gray-200);
+}
+
+.propertyGroup:last-child {
+  border-bottom: none;
+}
+
+.propertyGroupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 13px 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms ease;
+  color: inherit;
+  font: inherit;
+}
+
+.propertyGroupHeader:hover {
+  background: var(--color-warm-gray-50);
+}
+
+.propertyGroupLeft {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 13%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 82%, var(--color-brand));
+}
+
+.propertyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.propertyDotUnassigned {
+  background: var(--color-text-secondary);
+}
+
+.propertyName {
+  font-size: 12.5px;
+  font-weight: 660;
   color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 760;
-  padding: 0 12px;
 }
 
-.financeAction svg {
-  color: var(--color-brand);
+.propertyNameUnassigned {
+  color: var(--color-text-secondary);
 }
 
-.operations {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.propertyCount {
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
 }
 
-.actionGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.actionPanel,
-.builderPanel,
-.reviewPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-}
-
-.actionHeader,
-.builderHeader,
-.lineEditorHeader,
-.reviewRow,
-.reviewActions {
+.propertyGroupRight {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
-.actionHeader,
-.builderHeader,
-.lineEditorHeader,
-.reviewRow {
-  justify-content: space-between;
-}
-
-.actionHeader svg,
-.builderHeader strong {
-  color: var(--color-brand);
-}
-
-.actionHeader h3,
-.builderHeader h3,
-.reviewPanel h3 {
-  margin: 0;
+.propertyTotal {
+  font-size: 12.5px;
+  font-weight: 660;
   color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: 760;
 }
 
-.actionHeader p,
-.builderHeader p,
-.inlineHint {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.45;
+.propertyChevron {
+  color: var(--color-text-secondary);
+  transition: transform 180ms ease;
 }
 
-.builderHeader strong {
-  font-size: 1.125rem;
+.propertyChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Receipt rows ── */
+.receiptList {
+  border-top: 1px solid var(--color-warm-gray-200);
+}
+
+.receiptRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 18px 9px 35px;
+  border-bottom: 1px solid var(--color-warm-gray-50);
+  font-size: 11.5px;
+  transition: background 80ms ease;
+}
+
+.receiptRow:last-child {
+  border-bottom: none;
+}
+
+.receiptRow:hover {
+  background: var(--color-warm-gray-50);
+}
+
+.receiptMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.receiptVendor {
+  font-weight: 560;
+  color: var(--color-text-primary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.receiptCategory {
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.receiptRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.receiptAmount {
+  font-weight: 660;
+  color: var(--color-text-primary);
+}
+
+.receiptDate {
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+}
+
+.receiptVisibility {
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.receiptFileLink {
+  font-size: 10px;
+  font-weight: 660;
+  color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+  border-radius: 5px;
+  padding: 2px 7px;
+  text-decoration: none;
+  transition: background 100ms ease;
+}
+
+.receiptFileLink:hover {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+}
+
+/* ── Shared form utilities (used by intake form) ── */
 .primaryButton,
-.secondaryButton,
-.iconButton {
+.secondaryButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
   border: 1px solid transparent;
   border-radius: 8px;
   font-size: 0.8125rem;
-  font-weight: 760;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+  font-weight: 660;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
 .primaryButton {
-  width: fit-content;
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 14px;
   color: var(--color-white);
   background: var(--color-brand);
@@ -168,14 +623,12 @@
 }
 
 .primaryButton:active,
-.secondaryButton:active,
-.iconButton:active {
+.secondaryButton:active {
   transform: translateY(1px);
 }
 
 .primaryButton:disabled,
-.secondaryButton:disabled,
-.iconButton:disabled {
+.secondaryButton:disabled {
   cursor: not-allowed;
   opacity: 0.48;
 }
@@ -184,50 +637,24 @@
   min-height: 36px;
   padding: 0 12px;
   color: var(--color-text-primary);
-  border-color: var(--color-border);
+  border-color: var(--color-warm-gray-200);
   background: var(--color-surface);
 }
 
 .secondaryButton:hover {
-  border-color: color-mix(in srgb, var(--color-brand) 34%, var(--color-border));
-  background: color-mix(in srgb, var(--color-brand) 7%, transparent);
-}
-
-.iconButton {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  color: var(--color-brand);
-  border-color: var(--color-border);
-  background: var(--color-surface);
-}
-
-.iconButton:hover {
-  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
-}
-
-.quickActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.builderGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-warm-gray-200));
+  background: color-mix(in srgb, var(--color-brand) 6%, transparent);
 }
 
 .field {
   display: flex;
-  min-width: 0;
   flex-direction: column;
   gap: 7px;
+  min-width: 0;
 }
 
-.field > span,
-.lineEditorHeader span {
-  color: var(--color-text-muted);
+.field > span {
+  color: var(--color-text-secondary);
   font-size: 0.6875rem;
   font-weight: 760;
   letter-spacing: 0.08em;
@@ -235,2046 +662,317 @@
 }
 
 .textInput,
-.textArea,
-.dateButton {
+.textArea {
   width: 100%;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-warm-gray-200);
   border-radius: 8px;
   color: var(--color-text-primary);
   background: var(--color-surface);
   font: inherit;
   font-size: 0.875rem;
   outline: none;
-  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  transition: border-color 130ms ease, box-shadow 130ms ease;
 }
 
-.textInput,
-.dateButton {
-  min-height: 40px;
-  padding: 0 12px;
+.textInput {
+  min-height: 38px;
+  padding: 0 11px;
 }
 
 .textArea {
-  min-height: 82px;
-  padding: 10px 12px;
+  min-height: 78px;
+  padding: 9px 11px;
   resize: vertical;
 }
 
 .textInput:focus,
-.textArea:focus,
-.dateButton:focus-visible {
+.textArea:focus {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 13%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 12%, transparent);
 }
 
-.lineEditor {
+/* ── Drop zone ── */
+.dropZone {
+  border: 2px dashed var(--color-warm-gray-200);
+  border-radius: 12px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.lineRow {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(170px, 1.2fr) 74px 96px 96px 34px;
-  gap: 8px;
   align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+  background: transparent;
+  text-align: center;
+  margin-bottom: 16px;
+  width: 100%;
 }
 
-.reviewRow {
-  padding: 14px 0;
-  border-top: 1px solid var(--color-border);
+.dropZone:hover,
+.dropZoneActive {
+  border-color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 4%, transparent);
 }
 
-.reviewRow strong,
-.reviewRow span {
+.dropZoneIcon {
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+}
+
+.dropZoneLabel {
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--color-text-primary);
+}
+
+.dropZoneHint {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+/* ── Batch grid ── */
+.batchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.batchCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.batchCardProcessing {
+  opacity: 0.72;
+}
+
+.batchCardThumb {
+  height: 116px;
+  background: var(--color-warm-gray-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.batchCardThumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
-.reviewRow strong {
-  color: var(--color-text-primary);
-  font-size: 0.9375rem;
-}
-
-.reviewRow span {
-  margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-  text-transform: capitalize;
-}
-
-.successBlock,
-.errorBlock {
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 0.875rem;
-  font-weight: 650;
-}
-
-.successBlock {
-  color: var(--color-success);
-  background: color-mix(in srgb, var(--color-success) 10%, transparent);
-}
-
-.errorBlock {
-  color: var(--color-error);
-  background: color-mix(in srgb, var(--color-error) 10%, transparent);
-}
-
-.summaryBar {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.summaryItem {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  padding: 18px 20px;
-}
-
-.summaryIcon { color: var(--color-brand); flex-shrink: 0; }
-
-.summaryValue {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.summaryLabel {
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-
-.summaryDivider {
-  width: 1px;
-  background: var(--color-border);
+.batchCardSpinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-warm-gray-200);
+  border-top-color: var(--color-brand);
+  border-radius: 50%;
+  animation: billsSpinFrame 0.75s linear infinite;
   flex-shrink: 0;
 }
 
-.attentionPanel {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.34fr) minmax(0, 1fr);
-  gap: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-brand) 7%, transparent), transparent 42%),
-    var(--color-surface);
-  padding: 16px;
+@keyframes billsSpinFrame {
+  to { transform: rotate(360deg); }
 }
 
-.attentionHeader {
+.batchCardPdfIcon {
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
+.batchCardThumbOverlay {
+  position: absolute;
+  inset: 0;
   display: flex;
-  min-width: 0;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
 }
 
-.attentionHeader h3 {
-  margin: 5px 0 0;
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: 820;
-}
-
-.attentionHeader strong {
-  display: grid;
-  place-items: center;
-  min-width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-  font-size: 0.82rem;
-  font-weight: 840;
-}
-
-.attentionList {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.attentionItem,
-.attentionClear {
-  min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-brand));
-  padding: 11px 12px;
-}
-
-.attentionItem {
+.batchCardBody {
+  padding: 13px 14px;
   display: flex;
-  gap: 10px;
-  color: inherit;
-  text-decoration: none;
+  flex-direction: column;
+  gap: 9px;
+  flex: 1;
 }
 
-.attentionItem > span {
-  flex: 0 0 auto;
-  width: fit-content;
-  height: fit-content;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text-muted) 11%, transparent);
-  color: var(--color-text-muted);
-  font-size: 0.66rem;
-  font-weight: 820;
-  line-height: 1;
-  padding: 5px 7px;
+.batchCardError {
+  font-size: 11px;
+  color: var(--color-error);
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 18%, transparent);
+  border-radius: 6px;
 }
 
-.attentionItem div {
-  min-width: 0;
+.batchCardActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 12px;
+  border-top: 1px solid var(--color-warm-gray-50);
 }
 
-.attentionItem strong,
-.attentionItem p {
-  display: block;
+.batchCardDiscard {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--color-warm-gray-200);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
 }
 
-.attentionItem strong {
-  color: var(--color-text-primary);
-  font-size: 0.82rem;
-  font-weight: 840;
-  line-height: 1.2;
-}
-
-.attentionItem p {
-  margin: 3px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.73rem;
-  line-height: 1.35;
-}
-
-.attentionItemUrgent {
-  border-color: color-mix(in srgb, var(--color-error) 22%, var(--color-border));
-  background: color-mix(in srgb, var(--color-error) 5%, var(--color-surface));
-}
-
-.attentionItemUrgent > span {
-  background: color-mix(in srgb, var(--color-error) 13%, transparent);
+.batchCardDiscard:hover {
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 28%, transparent);
   color: var(--color-error);
 }
 
-.attentionItemWatch {
-  border-color: color-mix(in srgb, var(--color-star) 24%, var(--color-border));
-  background: color-mix(in srgb, var(--color-star) 6%, var(--color-surface));
-}
-
-.attentionItemWatch > span {
-  background: color-mix(in srgb, var(--color-star) 16%, transparent);
-  color: color-mix(in srgb, var(--color-star) 82%, var(--color-text-primary));
-}
-
-.attentionClear {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--color-success);
-  font-size: 0.82rem;
-  font-weight: 760;
-}
-
-.vaultGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.vaultCard {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-  min-height: 132px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-  padding: 16px;
-}
-
-.vaultIcon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
-  color: var(--color-brand);
-}
-
-.vaultBody {
-  min-width: 0;
-}
-
-.vaultLabel {
-  display: block;
-  color: var(--color-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 820;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.vaultBody strong {
-  display: block;
-  margin-top: 5px;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-}
-
-.vaultBody p {
-  margin: 5px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.vaultStatus {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 4px 8px;
-}
-
-.vaultStatusReady {
-  background: color-mix(in srgb, var(--color-success) 13%, transparent);
-  color: var(--color-success);
-}
-
-.financialDocsPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-surface);
-  padding: 18px;
-}
-
-.financialDocsHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.financialDocsHeader h3 {
-  margin: 5px 0 0;
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: 820;
-}
-
-.financialDocsHeader p {
-  margin: 5px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.45;
-}
-
-.financialDocsActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.financialDocsMeter {
-  display: flex;
-  min-width: 76px;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.financialDocsMeter strong {
-  color: var(--color-text-primary);
-  font-size: 1rem;
-}
-
-.financialDocsMeter span {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.financialDocChecklist {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.financialDocActionGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.financialDocAction {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 16%, var(--color-border));
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--color-brand) 4%, var(--color-surface));
-  color: inherit;
-  padding: 9px 10px;
-  text-decoration: none;
-}
-
-.financialDocAction span,
-.financialDocAction strong {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.financialDocAction span {
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  font-weight: 760;
-}
-
-.financialDocAction strong {
-  flex: 0 0 auto;
-  color: var(--color-brand);
-  font-size: 0.74rem;
-  font-weight: 820;
-}
-
-.financialDocAction:hover {
-  border-color: color-mix(in srgb, var(--color-brand) 34%, var(--color-border));
-  background: color-mix(in srgb, var(--color-brand) 7%, var(--color-surface));
-}
-
-.financialDocCheck {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-brand));
-  padding: 11px 12px;
-}
-
-.financialDocCheck > span {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  font-weight: 840;
-}
-
-.financialDocCheck div {
-  min-width: 0;
-}
-
-.financialDocCheck strong,
-.financialDocCheck p {
-  display: block;
-}
-
-.financialDocCheck strong {
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 820;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.financialDocCheck p {
-  margin: 2px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.73rem;
-}
-
-.financialDocCheckReady {
-  border-color: color-mix(in srgb, var(--color-success) 22%, var(--color-border));
-  background: color-mix(in srgb, var(--color-success) 5%, var(--color-surface));
-}
-
-.financialDocCheckReady > span {
-  background: color-mix(in srgb, var(--color-success) 13%, transparent);
-  color: var(--color-success);
-}
-
-.financialDocCheckPending {
-  border-color: color-mix(in srgb, var(--color-star) 24%, var(--color-border));
-  background: color-mix(in srgb, var(--color-star) 5%, var(--color-surface));
-}
-
-.financialDocCheckPending > span {
-  background: color-mix(in srgb, var(--color-star) 16%, transparent);
-  color: color-mix(in srgb, var(--color-star) 84%, var(--color-text-primary));
-}
-
-.financialDocList {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.financialDocRow,
-.financialDocsEmpty {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-brand));
-  padding: 11px 12px;
-}
-
-.financialDocsEmpty {
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-  font-weight: 650;
-}
-
-.financialDocsEmpty svg {
-  color: var(--color-brand);
-  flex: 0 0 auto;
-}
-
-.financialDocIcon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
-  color: var(--color-brand);
-}
-
-.financialDocMain {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.financialDocMain strong,
-.financialDocMain span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.financialDocMain strong {
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 820;
-}
-
-.financialDocMain span {
-  margin-top: 2px;
-  color: var(--color-text-muted);
-  font-size: 0.73rem;
-}
-
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.cardTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.cardTitleIcon { color: var(--color-brand); }
-
-.noFee, .emptyText {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  margin: 0;
-}
-
-.receiptHeader {
+.batchSaveBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-}
-
-.receiptConsole {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+  padding: 11px 16px;
   background: var(--color-surface);
-  padding: 20px;
-}
-
-.receiptSubtitle {
-  margin: 6px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.45;
-}
-
-.receiptTotals {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.receiptTotals strong {
-  color: var(--color-text-primary);
-  font-size: 1rem;
-}
-
-.receiptTotals span {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.receiptExportPanel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 16%, var(--color-border));
+  border: 1px solid var(--color-warm-gray-200);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--color-brand) 4%, var(--color-surface));
-  padding: 12px 14px;
+  margin-bottom: 12px;
 }
 
-.receiptExportPanel span,
-.receiptExportPanel strong,
-.receiptExportPanel p {
-  display: block;
+.batchSaveCount {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
 }
 
-.receiptExportPanel span {
-  color: var(--color-brand);
-  font-size: 0.68rem;
-  font-weight: 820;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.receiptExportPanel strong {
-  margin-top: 5px;
-  color: var(--color-text-primary);
-  font-size: 0.88rem;
-  font-weight: 820;
-}
-
-.receiptExportPanel p {
-  margin: 3px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.76rem;
-  line-height: 1.4;
-}
-
-.receiptExportPanelError {
-  border-color: color-mix(in srgb, var(--color-error) 28%, var(--color-border));
-  background: color-mix(in srgb, var(--color-error) 5%, var(--color-surface));
-}
-
-.receiptExportPanelSuccess {
-  border-color: color-mix(in srgb, var(--color-success) 26%, var(--color-border));
-  background: color-mix(in srgb, var(--color-success) 5%, var(--color-surface));
-}
-
-.receiptExportActions {
+.batchSaveButtons {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
   gap: 8px;
 }
 
-.receiptYearPicker {
-  display: inline-flex;
-  gap: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 9px;
-  background: var(--color-surface);
-  padding: 4px;
-}
-
-.receiptYearPicker button {
-  min-height: 30px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.74rem;
-  font-weight: 780;
-  padding: 0 9px;
-}
-
-.receiptYearPicker .receiptYearPickerActive {
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-}
-
-.receiptIntakePanel {
+/* ── Batch flash banner ── */
+.batchFlash {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--color-surface));
-  padding: 14px;
-}
-
-.receiptIntakePanel strong,
-.receiptIntakePanel p {
-  display: block;
-}
-
-.receiptIntakePanel strong {
-  margin-top: 7px;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  font-weight: 820;
-}
-
-.receiptIntakePanel p {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.receiptIntakePanelError {
-  border-color: color-mix(in srgb, var(--color-error) 28%, var(--color-border));
-  background: color-mix(in srgb, var(--color-error) 5%, var(--color-surface));
-}
-
-.receiptIntakePanelSuccess {
-  border-color: color-mix(in srgb, var(--color-success) 28%, var(--color-border));
-  background: color-mix(in srgb, var(--color-success) 5%, var(--color-surface));
-}
-
-.receiptIntakeForm {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 96%, var(--color-brand));
-  padding: 14px;
-}
-
-.receiptNotesField {
-  grid-column: span 2;
-}
-
-.receiptUploadField {
-  grid-column: span 2;
-}
-
-.receiptIntakeProperty {
-  display: flex;
-  grid-column: span 4;
-  min-width: 0;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.receiptIntakeProperty > span {
-  color: var(--color-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 760;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.receiptIntakeProperty > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.receiptIntakeProperty button {
-  min-height: 32px;
-  max-width: 220px;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.74rem;
-  font-weight: 760;
-  padding: 0 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptIntakeProperty .receiptPropertyButtonActive {
-  border-color: color-mix(in srgb, var(--color-brand) 36%, var(--color-border));
-  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
-  color: var(--color-brand);
-}
-
-.receiptAnalysisPreview {
-  display: grid;
-  grid-column: span 4;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-brand) 6%, var(--color-surface));
-  padding: 12px;
-}
-
-.receiptAnalysisPreview div {
-  min-width: 0;
-}
-
-.receiptAnalysisPreview span,
-.receiptAnalysisPreview strong {
-  display: block;
-}
-
-.receiptAnalysisPreview span {
-  color: var(--color-text-muted);
-  font-size: 0.66rem;
-  font-weight: 780;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.receiptAnalysisPreview strong {
-  margin-top: 4px;
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 0.84rem;
-  font-weight: 820;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptAnalysisPreview p {
-  grid-column: span 4;
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.76rem;
-  line-height: 1.4;
-}
-
-.receiptFileInput {
-  width: 100%;
-  min-height: 40px;
-  border: 1px solid var(--color-border);
+  gap: 8px;
+  padding: 10px 14px;
   border-radius: 8px;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
-  font: inherit;
-  font-size: 0.8125rem;
-  padding: 8px 10px;
-}
-
-.receiptFileInput::file-selector-button {
-  min-height: 24px;
-  margin-right: 10px;
-  border: 0;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 780;
-  padding: 0 8px;
-}
-
-.receiptOwnerToggle {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: 8px;
-  align-self: end;
-  min-height: 40px;
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 760;
-}
-
-.receiptOwnerToggle input {
-  width: 16px;
-  height: 16px;
-  margin-top: 2px;
-  accent-color: var(--color-brand);
-}
-
-.receiptOwnerToggle span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  line-height: 1.15;
-}
-
-.receiptOwnerToggle small {
-  max-width: 210px;
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 24%, transparent);
+  color: var(--color-success);
+  font-size: 12px;
   font-weight: 560;
-  line-height: 1.25;
+  margin-bottom: 12px;
 }
 
-.receiptOwnerToggle[aria-disabled="true"] {
-  color: var(--color-text-muted);
-  opacity: 0.62;
-}
-
-.receiptIntakeActions {
+/* ── Payment field rows (ready + ghost/missing) ── */
+.paymentFields {
   display: flex;
-  align-items: end;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.receiptModeBar {
-  display: inline-flex;
-  width: fit-content;
-  max-width: 100%;
-  gap: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-brand));
-  padding: 4px;
-}
-
-.receiptModeButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 32px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: 0.78rem;
-  font-weight: 780;
-  padding: 0 10px;
-  white-space: nowrap;
-}
-
-.receiptModeButton svg {
-  color: currentColor;
-}
-
-.receiptModeButton span {
-  display: inline-grid;
-  place-items: center;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-  font-size: 0.68rem;
-  line-height: 1;
-}
-
-.receiptModeButtonActive {
-  background: var(--color-surface);
-  color: var(--color-brand);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text-primary) 10%, transparent);
-}
-
-.receiptSearch {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 42px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-brand));
-  color: var(--color-brand);
-  padding: 0 12px;
-}
-
-.receiptSearch input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-text-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  outline: none;
-}
-
-.receiptSearch input::placeholder {
-  color: var(--color-text-muted);
-}
-
-.receiptSearchSummary {
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
-  color: var(--color-brand);
-  font-size: 0.75rem;
-  font-weight: 780;
-  padding: 6px 8px 6px 10px;
-}
-
-.receiptSearchSummary button {
-  min-height: 22px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.7rem;
-  font-weight: 780;
-  padding: 0 8px;
-}
-
-.receiptEmptyState {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  border: 1px dashed color-mix(in srgb, var(--color-brand) 28%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-  color: var(--color-brand);
-  padding: 16px;
-}
-
-.receiptEmptyState strong,
-.receiptEmptyState span {
-  display: block;
-}
-
-.receiptEmptyState strong {
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.receiptEmptyState span {
-  margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-}
-
-.receiptYearList {
-  display: grid;
-  gap: 14px;
-}
-
-.receiptReviewList {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-}
-
-.receiptReviewCard {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  min-width: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-brand));
-  padding: 12px;
-}
-
-.receiptReviewCard strong,
-.receiptReviewCard p {
-  display: block;
-}
-
-.receiptReviewCard strong {
-  margin-top: 7px;
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-  font-weight: 820;
-}
-
-.receiptReviewCard p {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
-
-.receiptReviewBadge {
-  display: inline-flex;
-  width: fit-content;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-star) 14%, transparent);
-  color: var(--color-text-primary);
-  font-size: 0.6875rem;
-  font-weight: 820;
-  padding: 4px 8px;
-}
-
-.receiptReviewDate {
-  flex: 0 0 auto;
-  color: var(--color-text-muted);
-  font-size: 0.72rem;
-  font-weight: 720;
-  white-space: nowrap;
-}
-
-.receiptReviewStatus {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--color-surface));
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-  font-weight: 650;
-  padding: 10px 12px;
-}
-
-.receiptReviewStatus svg {
-  color: var(--color-brand);
-  flex: 0 0 auto;
-}
-
-.receiptReviewStatusError {
-  border-color: color-mix(in srgb, var(--color-error) 24%, var(--color-border));
-  background: color-mix(in srgb, var(--color-error) 5%, var(--color-surface));
-}
-
-.receiptReviewStatusSuccess {
-  border-color: color-mix(in srgb, var(--color-success) 24%, var(--color-border));
-  background: color-mix(in srgb, var(--color-success) 5%, var(--color-surface));
-}
-
-.receiptPaymentPanel {
-  display: grid;
-  gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--color-error) 24%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-error) 5%, var(--color-surface));
-  padding: 12px;
-}
-
-.receiptPaymentHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.receiptPaymentHeader strong,
-.receiptPaymentHeader p,
-.receiptPaymentHeader > span {
-  display: block;
-}
-
-.receiptPaymentHeader strong {
-  margin-top: 7px;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  font-weight: 820;
-}
-
-.receiptPaymentHeader p {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.76rem;
-  line-height: 1.4;
-}
-
-.receiptPaymentHeader > span {
-  color: var(--color-error);
-  font-size: 0.96rem;
-  font-weight: 860;
-  white-space: nowrap;
-}
-
-.receiptPaymentList {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.receiptPaymentCard {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--color-error) 14%, var(--color-border));
-  border-radius: 9px;
-  background: var(--color-surface);
-  padding: 10px;
-}
-
-.receiptPaymentCard div {
-  min-width: 0;
-}
-
-.receiptPaymentCard strong,
-.receiptPaymentCard span,
-.receiptPaymentCard p {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptPaymentCard strong {
-  color: var(--color-text-primary);
-  font-size: 0.8rem;
-  font-weight: 820;
-}
-
-.receiptPaymentCard span {
-  margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 0.72rem;
-}
-
-.receiptPaymentCard p {
-  margin: 5px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 0.74rem;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
-.receiptReviewRight {
-  display: flex;
-  flex: 0 0 auto;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.receiptReviewNotify {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-text-primary);
-  font-size: 0.74rem;
-  font-weight: 760;
-  white-space: nowrap;
-}
-
-.receiptReviewNotify input {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--color-brand);
-}
-
-.receiptReviewNotify[aria-disabled="true"] {
-  color: var(--color-text-muted);
-  opacity: 0.62;
-}
-
-.receiptAnalysisHint {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  width: fit-content;
-  margin-top: 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 9%, transparent);
-  color: var(--color-brand);
-  font-size: 0.72rem;
-  font-weight: 780;
-  padding: 5px 8px;
-}
-
-.receiptAnalysisHint span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptAnalysisReasons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-warm-gray-200);
 }
 
-.receiptAnalysisReasons span {
-  border: 1px solid color-mix(in srgb, var(--color-brand) 16%, var(--color-border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-  color: var(--color-text-muted);
-  font-size: 0.68rem;
-  font-weight: 740;
-  padding: 4px 7px;
-}
-
-.receiptReviewControls {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.2fr) auto;
-  gap: 10px;
-  align-items: end;
-  margin-top: 12px;
-}
-
-.receiptPropertyChooser {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.receiptPropertyChooser > span {
-  color: var(--color-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 760;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.receiptPropertyChooser > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.receiptPropertyChooser button {
-  min-height: 31px;
-  max-width: 180px;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 760;
-  padding: 0 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptPropertyChooser .receiptPropertyButtonActive {
-  border-color: color-mix(in srgb, var(--color-brand) 36%, var(--color-border));
-  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
-  color: var(--color-brand);
-}
-
-.receiptVisibilityButtons {
-  display: inline-flex;
-  gap: 4px;
-  align-self: end;
-  border: 1px solid var(--color-border);
-  border-radius: 9px;
-  background: var(--color-surface);
-  padding: 4px;
-}
-
-.receiptVisibilityButtons button {
-  min-height: 31px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.74rem;
-  font-weight: 780;
-  padding: 0 9px;
-  white-space: nowrap;
-}
-
-.receiptVisibilityButtons .receiptVisibilityButtonActive {
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-}
-
-.receiptYear {
-  display: grid;
-  gap: 10px;
-}
-
-.receiptYearHeader {
+.paymentFieldRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.paymentFieldLabel {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.paymentFieldValue {
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--color-text-primary);
-  font-size: 0.95rem;
-  font-weight: 820;
+  font-family: ui-monospace, "SF Mono", monospace;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  padding: 2px 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 100ms ease;
+  text-align: left;
 }
 
-.receiptYearHeader strong {
-  color: var(--color-brand);
-  font-size: 0.875rem;
+.paymentFieldValue:hover {
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
 }
 
-.receiptMonthList {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+.paymentFieldValueMissing {
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--color-text-secondary) 42%, transparent);
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-style: italic;
+  padding: 2px 5px;
+  letter-spacing: 0.02em;
 }
 
-.receiptMonthCard {
-  border: 1px solid var(--color-border);
+.paymentFieldCopied {
+  font-size: 9.5px;
+  color: var(--color-success);
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 660;
+}
+
+/* ── Receipt hover preview (position: fixed at section root) ── */
+.receiptPreviewPopover {
+  position: fixed;
+  z-index: 200;
+  background: var(--color-surface);
+  border: 1px solid var(--color-warm-gray-200);
   border-radius: 10px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-brand));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.20), 0 2px 6px rgba(0, 0, 0, 0.10);
+  pointer-events: none;
 }
 
-.receiptMonth {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border-bottom: 1px solid var(--color-border);
-  padding: 10px 12px;
-}
-
-.receiptMonth span {
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 800;
-}
-
-.receiptMonth strong {
-  display: inline-flex;
-  min-width: 24px;
-  justify-content: center;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-  font-size: 0.75rem;
-  padding: 3px 8px;
-}
-
-.receiptRows {
-  display: flex;
-  flex-direction: column;
-}
-
-.receiptRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.receiptRow:last-child {
-  border-bottom: 0;
-}
-
-.receiptName,
-.receiptMeta,
-.receiptAnalysisSummary {
+.receiptPreviewImage {
+  width: 200px;
+  height: 260px;
+  object-fit: cover;
   display: block;
 }
 
-.receiptName {
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 780;
-}
-
-.receiptMeta {
-  margin-top: 2px;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.receiptAnalysisSummary {
-  max-width: 430px;
-  margin-top: 5px;
-  overflow: hidden;
-  color: var(--color-text-secondary);
-  font-size: 0.72rem;
-  font-weight: 650;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptMeta span::before {
-  content: ".";
-  display: inline-block;
-  margin: 0 6px;
-  color: color-mix(in srgb, var(--color-text-muted) 70%, transparent);
-}
-
-.receiptRight {
+.receiptPreviewPdfLabel {
+  width: 200px;
+  height: 260px;
   display: flex;
-  align-items: flex-end;
   flex-direction: column;
-  gap: 5px;
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.receiptSignal {
-  display: inline-flex;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 9%, transparent);
-  color: var(--color-brand);
-  font-size: 0.68rem;
-  font-weight: 820;
-  line-height: 1;
-  padding: 4px 7px;
-}
-
-.receiptSource {
-  display: inline-flex;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent);
-  color: var(--color-text-muted);
-  font-size: 0.66rem;
-  font-weight: 820;
-  line-height: 1;
-  padding: 4px 7px;
-}
-
-.receiptVisibility {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-text-muted);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.receiptFileLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-brand);
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.receiptFileLink:hover {
-  text-decoration: underline;
-}
-
-.receiptDeleteButton {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 25px;
-  border: 1px solid color-mix(in srgb, var(--color-error) 18%, var(--color-border));
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-error);
-  font: inherit;
-  font-size: 0.68rem;
-  font-weight: 820;
-  line-height: 1;
-  padding: 0 8px;
-}
-
-.receiptDeleteButton:hover {
-  background: color-mix(in srgb, var(--color-error) 7%, transparent);
-}
-
-.receiptDeleteButtonConfirm {
-  background: color-mix(in srgb, var(--color-error) 10%, transparent);
-}
-
-.receiptInsightGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.receiptInsightCard {
-  display: flex;
-  min-width: 0;
-  min-height: 170px;
-  flex-direction: column;
-  gap: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface) 95%, var(--color-brand));
-  padding: 14px;
-}
-
-.receiptInsightHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.receiptInsightHeader span {
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 820;
-}
-
-.receiptInsightHeader strong {
-  display: inline-flex;
-  min-width: 24px;
-  justify-content: center;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
-  color: var(--color-brand);
-  font-size: 0.75rem;
-  padding: 3px 8px;
-}
-
-.receiptInsightRows {
-  display: flex;
-  flex-direction: column;
   gap: 8px;
-}
-
-.receiptInsightRow {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.receiptInsightRow:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-
-.receiptInsightRow span {
-  overflow: hidden;
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  font-weight: 760;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.receiptInsightRow strong,
-.receiptInsightEmpty {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 650;
-  line-height: 1.4;
-}
-
-.receiptInsightEmpty {
-  margin: 0;
-}
-
-.aiPanel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: center;
-  border: 1px dashed color-mix(in srgb, var(--color-brand) 34%, var(--color-border));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--color-surface));
-  padding: 18px 20px;
-}
-
-.aiPanel h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-  font-weight: 800;
-}
-
-.aiPanel h3 svg {
-  color: var(--color-brand);
-}
-
-.aiPanel p {
-  margin: 6px 0 0;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.45;
-}
-
-.aiChips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
-  grid-column: 1 / -1;
-}
-
-.aiChips span {
-  border: 1px solid color-mix(in srgb, var(--color-brand) 18%, var(--color-border));
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-brand);
-  font-size: 0.75rem;
-  font-weight: 760;
-  padding: 6px 9px;
-}
-
-.securityNote {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--color-success) 18%, var(--color-border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-success) 6%, var(--color-surface));
+  font-size: 11px;
   color: var(--color-text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 650;
-  line-height: 1.45;
-  padding: 12px 14px;
-}
-
-.securityNote svg {
-  flex: 0 0 auto;
-  color: var(--color-success);
-}
-
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.feeRows { display: flex; flex-direction: column; gap: 8px; }
-
-.feeRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary);
-  padding: 6px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-.feeRow:last-child { border-bottom: none; }
-
-.feeLabel { color: var(--color-text-secondary); }
-.feeValue { font-weight: 600; color: var(--color-text-primary); }
-.feeDiscount { font-weight: 600; color: var(--color-success); }
-.feeTotal .feeLabel { font-weight: 700; color: var(--color-text-primary); }
-.feeTotal .feeValue { font-size: 1.0625rem; }
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-.table th {
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0 8px 10px;
-  border-bottom: 1px solid var(--color-border);
-}
-.table td {
-  padding: 12px 8px;
-  color: var(--color-text-secondary);
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
-}
-.table tr:last-child td { border-bottom: none; }
-
-.pill {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.pillDraft { background: color-mix(in srgb, var(--color-text-muted) 12%, transparent); color: var(--color-text-muted); }
-.pillOpen { background: color-mix(in srgb, var(--color-brand) 15%, transparent); color: var(--color-brand); }
-.pillPaid { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); }
-.pillFailed { background: color-mix(in srgb, var(--color-error) 14%, transparent); color: var(--color-error); }
-.pillUncollectible { background: color-mix(in srgb, var(--color-text-muted) 12%, transparent); color: var(--color-text-muted); }
-.pillVoid { background: color-mix(in srgb, var(--color-text-muted) 12%, transparent); color: var(--color-text-muted); }
-
-.invoiceLink {
-  display: inline-flex;
-  align-items: center;
-  color: var(--color-brand);
-  padding: 4px;
-  border-radius: 4px;
-  transition: background 120ms ease;
-}
-.invoiceLink:hover { background: color-mix(in srgb, var(--color-brand) 12%, transparent); }
-
-.paymentRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.paymentIcon { color: var(--color-brand); flex-shrink: 0; }
-.paymentMain { font-size: 0.9375rem; font-weight: 600; color: var(--color-text-primary); }
-.paymentSub {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-.paymentExpiring { color: var(--color-star); }
-
-.scheduleList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.scheduleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.scheduleRow:last-child {
-  border-bottom: none;
-}
-
-.scheduleName {
-  color: var(--color-text-primary);
-  font-size: 0.9375rem;
-  font-weight: 700;
-}
-
-.scheduleMeta {
-  margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-}
-
-.scheduleRight {
-  display: flex;
-  min-width: 190px;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.scheduleDate {
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
-}
-
-.creditNote {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  padding: 7px 10px;
-  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
-  border-radius: 8px;
-  color: var(--color-success);
-  background: color-mix(in srgb, var(--color-success) 9%, transparent);
-  font-size: 0.8125rem;
-  font-weight: 700;
-}
-
-@media (max-width: 760px) {
-  .root {
-    padding: 16px;
-  }
-
-  .financeHero,
-  .attentionPanel,
-  .vaultGrid,
-  .financialDocList,
-  .actionGrid,
-  .builderGrid,
-  .lineRow,
-  .receiptMonthList,
-  .receiptIntakeForm,
-  .receiptReviewList,
-  .receiptInsightGrid,
-  .aiPanel {
-    grid-template-columns: 1fr;
-  }
-
-  .summaryBar,
-  .actionHeader,
-  .builderHeader,
-  .reviewRow,
-  .receiptHeader,
-  .receiptExportPanel,
-  .receiptIntakePanel,
-  .financialDocsHeader,
-  .scheduleRow {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .summaryDivider {
-    width: 100%;
-    height: 1px;
-  }
-
-  .summaryItem,
-  .financialDocsMeter,
-  .scheduleRight {
-    width: 100%;
-  }
-
-  .financialDocsMeter {
-    align-items: flex-start;
-  }
-
-  .aiChips {
-    justify-content: flex-start;
-  }
-
-  .attentionList {
-    grid-template-columns: 1fr;
-  }
-
-  .financialDocsActions {
-    justify-content: flex-start;
-  }
-
-  .financialDocChecklist {
-    grid-template-columns: 1fr;
-  }
-
-  .financialDocActionGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .scheduleRight {
-    align-items: flex-start;
-  }
-
-  .reviewActions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .receiptModeBar {
-    width: 100%;
-  }
-
-  .receiptModeButton {
-    flex: 1 1 0;
-  }
-
-  .receiptExportActions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .receiptYearPicker {
-    width: 100%;
-  }
-
-  .receiptYearPicker button {
-    flex: 1 1 0;
-  }
-
-  .receiptReviewCard {
-    flex-direction: column;
-  }
-
-  .receiptReviewRight {
-    align-items: flex-start;
-  }
-
-  .receiptReviewControls {
-    grid-template-columns: 1fr;
-  }
-
-  .receiptPaymentHeader,
-  .receiptPaymentCard {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .receiptPaymentList {
-    grid-template-columns: 1fr;
-  }
-
-  .receiptVisibilityButtons {
-    width: 100%;
-  }
-
-  .receiptVisibilityButtons button {
-    flex: 1 1 0;
-  }
-
-  .receiptNotesField {
-    grid-column: auto;
-  }
-
-  .receiptUploadField {
-    grid-column: auto;
-  }
-
-  .receiptIntakeProperty {
-    grid-column: auto;
-  }
-
-  .receiptAnalysisPreview {
-    grid-column: auto;
-    grid-template-columns: 1fr;
-  }
-
-  .receiptAnalysisPreview p {
-    grid-column: auto;
-  }
-
-  .receiptIntakeActions {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
+  background: var(--color-warm-gray-50);
 }
