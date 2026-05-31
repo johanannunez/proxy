@@ -1,6 +1,7 @@
 // apps/web/src/app/(admin)/admin/documents/templates/template-actions.ts
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
 import { createTemplate, cloneTemplate } from "@/lib/signing/docuseal";
 import {
   createDocumentTemplateRecord,
@@ -13,6 +14,19 @@ export type TemplateActionResult =
   | { ok: true; template: DocumentTemplate }
   | { ok: false; error: string };
 
+async function requireAdmin(): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if ((profile as { role: string } | null)?.role !== "admin") return { error: "Admin access required." };
+  return { error: null };
+}
+
 /**
  * Phase 1: upload PDF + metadata -> create DocuSeal template (auto-detects fields)
  * -> persist DB record with is_active=false. Phase 2 activates it after builder save.
@@ -20,6 +34,9 @@ export type TemplateActionResult =
 export async function uploadAndCreateTemplate(
   formData: FormData,
 ): Promise<TemplateActionResult> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   const displayName = (formData.get("display_name") as string | null)?.trim() ?? "";
   const documentKey = (formData.get("document_key") as string | null)?.trim() ?? "";
   const description = (formData.get("description") as string | null)?.trim() || undefined;
@@ -79,6 +96,9 @@ export async function uploadAndCreateTemplate(
 export async function activateTemplate(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   const ok = await updateDocumentTemplateRecord(id, { is_active: true });
   return ok ? { ok: true } : { ok: false, error: "Could not activate the template." };
 }
@@ -91,6 +111,9 @@ export async function forkSystemTemplate(
   sourceId: string,
   orgId: string,
 ): Promise<TemplateActionResult> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   if (!orgId) {
     return { ok: false, error: "Organization context required to customize a template." };
   }
@@ -133,6 +156,9 @@ export async function forkSystemTemplate(
 export async function deactivateTemplate(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   const template = await getDocumentTemplate(id);
   if (!template) return { ok: false, error: "Template not found." };
   if (template.is_system) return { ok: false, error: "System templates cannot be deleted." };
