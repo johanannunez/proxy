@@ -11,6 +11,7 @@ import {
   ListChecks,
   FolderOpen,
   Files,
+  FileDashed,
   ShareNetwork,
   Funnel,
   UserList,
@@ -88,11 +89,12 @@ const navEntries: NavEntry[] = [
     items: [
       { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={16} weight="duotone" />, matchPrefix: "/admin/properties" },
       { href: "/admin/documents", label: "Documents", icon: <Files size={16} weight="duotone" />, matchPrefix: "/admin/documents" },
+      { href: "/admin/documents/templates", label: "Templates", icon: <FileDashed size={16} weight="duotone" />, matchPrefix: "/admin/documents/templates" },
       { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={16} weight="duotone" />, matchPrefix: "/admin/projects" },
       { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={16} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
     ],
   },
-  { kind: "item", href: "/admin/billing", label: "Finances", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/billing" },
+  { kind: "item", href: "/admin/finances", label: "Finances", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/finances" },
 ];
 
 /* ─── Token constants ─── */
@@ -482,8 +484,8 @@ export function AdminSidebar({
           }}
         >
           <Image
-            src="/brand/logo-mark-white.png"
-            alt="Parcel"
+            src="/brand/logo-mark-white-v2.png"
+            alt="Proxy"
             width={48}
             height={48}
             style={{ width: "48px", height: "auto", flexShrink: 0 }}
@@ -603,7 +605,7 @@ export function AdminTopBar({
     if (pathname.startsWith("/admin/treasury")) return "Treasury";
     if (pathname.startsWith("/admin/calendar")) return "Calendar";
     if (pathname.startsWith("/admin/meetings")) return "Meetings";
-    if (pathname.startsWith("/admin/billing")) return "Finances";
+    if (pathname.startsWith("/admin/finances")) return "Finances";
     if (pathname.startsWith("/admin/timeline")) return "Timeline";
     if (pathname.startsWith("/admin/guest-pulse")) return "Guest Pulse";
     return "";
@@ -631,8 +633,8 @@ export function AdminTopBar({
         }}
       >
         <Image
-          src="/brand/logo-mark-white.png"
-          alt="Parcel"
+          src="/brand/logo-mark-white-v2.png"
+          alt="Proxy"
           width={26}
           height={26}
           style={{ width: "26px", height: "auto", flexShrink: 0 }}
@@ -716,7 +718,7 @@ const adminRailItems: Array<{
     label: "Operations",
     matchPrefixes: ["/admin/properties", "/admin/documents", "/admin/projects", "/admin/guest-pulse"],
   },
-  { href: "/admin/billing", icon: <Receipt size={20} weight="duotone" />, label: "Finances", matchPrefix: "/admin/billing" },
+  { href: "/admin/finances", icon: <Receipt size={20} weight="duotone" />, label: "Finances", matchPrefix: "/admin/finances" },
 ];
 
 export function AdminIconRail() {
@@ -740,7 +742,7 @@ export function AdminIconRail() {
       {/* Logo */}
       <Link
         href="/admin"
-        aria-label="Parcel Admin Home"
+        aria-label="Proxy Admin Home"
         className={css.railLink}
         style={{
           display: "flex",
@@ -753,8 +755,8 @@ export function AdminIconRail() {
         }}
       >
         <Image
-          src="/brand/logo-mark-white.png"
-          alt="Parcel"
+          src="/brand/logo-mark-white-v2.png"
+          alt="Proxy"
           width={24}
           height={24}
           style={{ width: "24px", height: "auto" }}
