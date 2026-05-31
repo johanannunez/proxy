@@ -1,0 +1,221 @@
+import "server-only";
+/**
+ * DocuSeal API adapter. Self-hostable, open-source e-signature engine — the same
+ * one Hubflo uses. Kept behind this thin adapter so the engine stays swappable
+ * (we previously had a BoldSign adapter; the signing orchestration in
+ * `@/lib/documents/signing` depends only on these functions, not on DocuSeal).
+ *
+ * Config (env):
+ *   DOCUSEAL_API_TOKEN  — required; from DocuSeal → Settings → API. Absent => null.
+ *   DOCUSEAL_BASE_URL   — API base, defaults to cloud https://api.docuseal.com.
+ *                         Self-host: https://sign.myproxyhost.com/api
+ *   DOCUSEAL_APP_URL    — app base for constructing signer URLs, defaults to
+ *                         https://docuseal.com. Self-host: https://sign.myproxyhost.com
+ */
+
+const DEFAULT_BASE_URL = "https://api.docuseal.com";
+const DEFAULT_APP_URL = "https://docuseal.com";
+
+function token(): string | null {
+  return process.env.DOCUSEAL_API_TOKEN ?? null;
+}
+function baseUrl(): string {
+  return (process.env.DOCUSEAL_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+}
+function appUrl(): string {
+  return (process.env.DOCUSEAL_APP_URL ?? DEFAULT_APP_URL).replace(/\/$/, "");
+}
+
+/** True when DocuSeal is configured enough to create real submissions. */
+export function isDocuSealConfigured(): boolean {
+  return Boolean(token());
+}
+
+function headers(): HeadersInit {
+  return { "X-Auth-Token": token() as string, "Content-Type": "application/json" };
+}
+
+export type SubmissionSubmitterInput = {
+  role: string;
+  email: string;
+  name?: string;
+  externalId?: string;
+};
+
+export type SubmissionSubmitter = {
+  submitterId: number;
+  email: string;
+  role: string;
+  slug: string;
+  status: string;
+  embedUrl: string;
+  completedAt: string | null;
+};
+
+export type CreateSubmissionResult = {
+  submissionId: number;
+  submitters: SubmissionSubmitter[];
+} | null;
+
+type RawSubmitter = {
+  id: number;
+  submission_id: number;
+  email: string;
+  role: string;
+  slug: string;
+  status?: string;
+  completed_at?: string | null;
+  embed_src?: string | null;
+};
+
+function toSubmitter(raw: RawSubmitter): SubmissionSubmitter {
+  return {
+    submitterId: raw.id,
+    email: raw.email,
+    role: raw.role,
+    slug: raw.slug,
+    status: raw.status ?? "pending",
+    embedUrl: raw.embed_src || `${appUrl()}/s/${raw.slug}`,
+    completedAt: raw.completed_at ?? null,
+  };
+}
+
+/**
+ * Create a submission from a template with ordered submitters (owner signer(s)
+ * first, Proxy countersigner last). `sendEmail: false` keeps signing on-platform
+ * via the embedded form. Returns null when DocuSeal isn't configured.
+ */
+export async function createSubmission(opts: {
+  templateId: number;
+  submitters: SubmissionSubmitterInput[];
+  sendEmail?: boolean;
+  orderPreserved?: boolean;
+}): Promise<CreateSubmissionResult> {
+  if (!isDocuSealConfigured()) return null;
+
+  const res = await fetch(`${baseUrl()}/submissions`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({
+      template_id: opts.templateId,
+      send_email: opts.sendEmail ?? false,
+      order: opts.orderPreserved === false ? "random" : "preserved",
+      submitters: opts.submitters.map((s) => ({
+        role: s.role,
+        email: s.email,
+        name: s.name,
+        external_id: s.externalId,
+      })),
+    }),
+  });
+
+  if (!res.ok) {
+    console.error("[docuseal] createSubmission failed:", res.status, await res.text());
+    return null;
+  }
+
+  // DocuSeal returns an array of submitters for the created submission.
+  const data = (await res.json()) as RawSubmitter[];
+  if (!Array.isArray(data) || data.length === 0) return null;
+  return {
+    submissionId: data[0].submission_id,
+    submitters: data.map(toSubmitter),
+  };
+}
+
+export type SubmissionStatus = {
+  submissionId: number;
+  status: string;
+  completedAt: string | null;
+  submitters: SubmissionSubmitter[];
+} | null;
+
+/** Read a submission's current status + per-submitter completion. */
+export async function getSubmission(submissionId: number): Promise<SubmissionStatus> {
+  if (!isDocuSealConfigured()) return null;
+  const res = await fetch(`${baseUrl()}/submissions/${submissionId}`, { headers: headers() });
+  if (!res.ok) {
+    console.error("[docuseal] getSubmission failed:", res.status, await res.text());
+    return null;
+  }
+  const data = (await res.json()) as {
+    id: number;
+    status?: string;
+    completed_at?: string | null;
+    submitters: RawSubmitter[];
+  };
+  return {
+    submissionId: data.id,
+    status: data.status ?? "pending",
+    completedAt: data.completed_at ?? null,
+    submitters: (data.submitters ?? []).map(toSubmitter),
+  };
+}
+
+/** Fetch a fresh embedded signing URL for one submitter (e.g. resend/reopen). */
+export async function getSubmitterEmbedUrl(submitterSlug: string): Promise<string> {
+  return `${appUrl()}/s/${submitterSlug}`;
+}
+
+export type CreateTemplateResult = {
+  templateId: number;
+  name: string;
+} | null;
+
+/**
+ * Upload a PDF to DocuSeal and create a new template from it.
+ * DocuSeal runs field auto-detection on the uploaded PDF.
+ */
+export async function createTemplate(
+  name: string,
+  pdfBuffer: Buffer,
+  fileName: string,
+): Promise<CreateTemplateResult> {
+  if (!isDocuSealConfigured()) return null;
+
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append(
+    "documents",
+    new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }),
+    fileName,
+  );
+
+  const res = await fetch(`${baseUrl()}/templates`, {
+    method: "POST",
+    headers: { "X-Auth-Token": token() as string },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    console.error("[docuseal] createTemplate failed:", res.status, await res.text());
+    return null;
+  }
+
+  const data = (await res.json()) as { id: number; name: string };
+  return { templateId: data.id, name: data.name };
+}
+
+/**
+ * Clone an existing DocuSeal template (used for the system-template fork flow).
+ */
+export async function cloneTemplate(
+  sourceTemplateId: number,
+  newName: string,
+): Promise<CreateTemplateResult> {
+  if (!isDocuSealConfigured()) return null;
+
+  const res = await fetch(`${baseUrl()}/templates/${sourceTemplateId}/clone`, {
+    method: "POST",
+    headers: { ...headers(), "Content-Type": "application/json" },
+    body: JSON.stringify({ name: newName }),
+  });
+
+  if (!res.ok) {
+    console.error("[docuseal] cloneTemplate failed:", res.status, await res.text());
+    return null;
+  }
+
+  const data = (await res.json()) as { id: number; name: string };
+  return { templateId: data.id, name: data.name };
+}

@@ -1,0 +1,141 @@
+// apps/web/src/app/(admin)/admin/documents/templates/template-actions.ts
+"use server";
+
+import { createTemplate, cloneTemplate } from "@/lib/signing/docuseal";
+import {
+  createDocumentTemplateRecord,
+  updateDocumentTemplateRecord,
+  getDocumentTemplate,
+} from "@/lib/admin/document-templates";
+import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
+
+export type TemplateActionResult =
+  | { ok: true; template: DocumentTemplate }
+  | { ok: false; error: string };
+
+/**
+ * Phase 1: upload PDF + metadata -> create DocuSeal template (auto-detects fields)
+ * -> persist DB record with is_active=false. Phase 2 activates it after builder save.
+ */
+export async function uploadAndCreateTemplate(
+  formData: FormData,
+): Promise<TemplateActionResult> {
+  const displayName = (formData.get("display_name") as string | null)?.trim() ?? "";
+  const documentKey = (formData.get("document_key") as string | null)?.trim() ?? "";
+  const description = (formData.get("description") as string | null)?.trim() || undefined;
+  const signerRolesRaw = formData.get("signer_roles") as string | null;
+  const requiresCounter = formData.get("requires_countersignature") === "true";
+  const gateStepRaw = formData.get("gate_step") as string | null;
+  const pdfFile = formData.get("pdf") as File | null;
+
+  if (!displayName || !documentKey) {
+    return { ok: false, error: "Display name and document key are required." };
+  }
+  if (!pdfFile || pdfFile.size === 0) {
+    return { ok: false, error: "A PDF file is required." };
+  }
+  if (!pdfFile.name.toLowerCase().endsWith(".pdf")) {
+    return { ok: false, error: "Only PDF files are supported." };
+  }
+  if (!/^[a-z0-9_]+$/.test(documentKey)) {
+    return { ok: false, error: "Document key must be lowercase letters, numbers, and underscores only." };
+  }
+
+  const signerRoles: string[] = signerRolesRaw
+    ? (JSON.parse(signerRolesRaw) as string[])
+    : ["Owner"];
+  if (signerRoles.length === 0) {
+    return { ok: false, error: "At least one signer role is required." };
+  }
+  const gateStep = gateStepRaw && gateStepRaw !== "" ? parseInt(gateStepRaw, 10) : undefined;
+
+  const buffer = Buffer.from(await pdfFile.arrayBuffer());
+  const docuSealResult = await createTemplate(displayName, buffer, pdfFile.name);
+  if (!docuSealResult) {
+    return { ok: false, error: "Could not create the DocuSeal template. Verify DOCUSEAL_API_TOKEN is set in Doppler." };
+  }
+
+  const record = await createDocumentTemplateRecord({
+    document_key: documentKey,
+    display_name: displayName,
+    description,
+    signer_roles: signerRoles,
+    requires_countersignature: requiresCounter,
+    gate_step: gateStep,
+    docuseal_template_id: docuSealResult.templateId,
+  });
+
+  if (!record) {
+    return { ok: false, error: "Could not save the template record. The document key may already exist." };
+  }
+
+  return { ok: true, template: record };
+}
+
+/**
+ * Phase 2: called after admin saves the builder layout.
+ * Marks the template active so the signing flow can resolve it.
+ */
+export async function activateTemplate(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const ok = await updateDocumentTemplateRecord(id, { is_active: true });
+  return ok ? { ok: true } : { ok: false, error: "Could not activate the template." };
+}
+
+/**
+ * Fork a system template for a specific org (future multi-tenant use).
+ * Clones the DocuSeal template and creates a new org-scoped DB record.
+ */
+export async function forkSystemTemplate(
+  sourceId: string,
+  orgId: string,
+): Promise<TemplateActionResult> {
+  if (!orgId) {
+    return { ok: false, error: "Organization context required to customize a template." };
+  }
+
+  const source = await getDocumentTemplate(sourceId);
+  if (!source || !source.is_system) {
+    return { ok: false, error: "Source template not found or is not a system template." };
+  }
+  if (!source.docuseal_template_id) {
+    return { ok: false, error: "System template has no DocuSeal template built yet. Build it first." };
+  }
+
+  const cloned = await cloneTemplate(
+    source.docuseal_template_id,
+    `${source.display_name} (Custom)`,
+  );
+  if (!cloned) {
+    return { ok: false, error: "Could not clone the DocuSeal template." };
+  }
+
+  const record = await createDocumentTemplateRecord({
+    org_id: orgId,
+    document_key: source.document_key,
+    display_name: source.display_name,
+    description: source.description ?? undefined,
+    signer_roles: source.signer_roles,
+    requires_countersignature: source.requires_countersignature,
+    gate_step: source.gate_step ?? undefined,
+    docuseal_template_id: cloned.templateId,
+  });
+
+  if (!record) {
+    return { ok: false, error: "Could not save the forked template record." };
+  }
+
+  return { ok: true, template: record };
+}
+
+/** Soft-delete a tenant template. System templates cannot be deleted. */
+export async function deactivateTemplate(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const template = await getDocumentTemplate(id);
+  if (!template) return { ok: false, error: "Template not found." };
+  if (template.is_system) return { ok: false, error: "System templates cannot be deleted." };
+  const ok = await updateDocumentTemplateRecord(id, { is_active: false });
+  return ok ? { ok: true } : { ok: false, error: "Could not deactivate the template." };
+}
