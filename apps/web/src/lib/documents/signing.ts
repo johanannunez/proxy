@@ -1,0 +1,308 @@
+import "server-only";
+/**
+ * Signature orchestration on top of the DocuSeal adapter. Owns:
+ *   - starting a signature (create submission, persist document_signers, set spine 'sent')
+ *   - resolving a signer's embedded signing URL
+ *   - applying DocuSeal webhook events through the status machine:
+ *       sent → (owner signs) → awaiting_countersignature → (Proxy signs) → on_file
+ *
+ * Engine-agnostic above the adapter: only `@/lib/signing/docuseal` knows DocuSeal.
+ */
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  createSubmission,
+  isDocuSealConfigured,
+  type SubmissionSubmitter,
+} from "@/lib/signing/docuseal";
+import {
+  SIGNER_ROLE,
+  COUNTERSIGNER_ROLE,
+} from "@/lib/signing/signature-config";
+import { WORKSPACE_DOCUMENT_DEFINITIONS, type WorkspaceDocumentKey } from "@/lib/admin/documents-hub-shared";
+import { resolveTemplateId, isSignatureDocumentKey } from "@/lib/admin/document-templates";
+import { GATE_STEP, DOCUMENT_LIFECYCLE } from "./lifecycle";
+import { isComplete, normalizeStatus, type DocumentStatus } from "./status";
+import { syncSpineForOwner } from "./spine";
+
+type SpineDocRow = {
+  id: string;
+  owner_id: string;
+  workspace_id: string | null;
+  document_key: string | null;
+  status: string;
+  source_ref: string | null;
+};
+
+function countersigner(): { email: string; name: string } | null {
+  const email = process.env.DOCUSEAL_COUNTERSIGNER_EMAIL;
+  const name = process.env.DOCUSEAL_COUNTERSIGNER_NAME ?? "Proxy";
+  return email ? { email, name } : null;
+}
+
+export type StartSignatureResult =
+  | { ok: true; embedUrl: string | null; status: "ready" | "preparing" }
+  | { ok: false; error: string };
+
+/**
+ * Ensure a signature submission exists for a spine document and return the
+ * embedded signing URL for the given signer profile. Idempotent: reuses an
+ * existing submission. Enforces the gate (prerequisites must be On file).
+ */
+export async function ensureSignatureSubmission(input: {
+  documentId: string;
+  signerProfileId: string;
+}): Promise<StartSignatureResult> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = createServiceClient() as any;
+
+  const { data: doc } = await db
+    .from("documents")
+    .select("id, owner_id, workspace_id, document_key, status, source_ref")
+    .eq("id", input.documentId)
+    .maybeSingle();
+  const spine = doc as SpineDocRow | null;
+  if (!spine) return { ok: false, error: "Document not found." };
+  if (input.signerProfileId !== spine.owner_id) {
+    return { ok: false, error: "Not authorized to sign this document." };
+  }
+
+  const key = spine.document_key;
+  if (!key || !(await isSignatureDocumentKey(key))) {
+    return { ok: false, error: "This document is not signed electronically." };
+  }
+
+  // Gate: a signature can only start once earlier gate steps are On file.
+  const unlocked = await isDocumentUnlocked(db, spine);
+  if (!unlocked) return { ok: false, error: "Complete the earlier required steps first." };
+
+  // Already has signers? Return the requesting signer's embed URL.
+  const existing = await getSignerRow(db, spine.id, input.signerProfileId);
+  if (existing?.embedded_link) {
+    return { ok: true, embedUrl: existing.status === "pending" ? existing.embedded_link : null, status: "ready" };
+  }
+
+  if (!isDocuSealConfigured()) {
+    return { ok: true, embedUrl: null, status: "preparing" };
+  }
+
+  const templateId = await resolveTemplateId(key);
+  if (!templateId) return { ok: true, embedUrl: null, status: "preparing" };
+
+  // Resolve the owner signer + Proxy countersigner.
+  const { data: owner } = await db.from("profiles").select("id, full_name, email").eq("id", spine.owner_id).maybeSingle();
+  if (!owner?.email) return { ok: false, error: "Owner email is missing." };
+  const cs = countersigner();
+
+  const submitters = [
+    { role: SIGNER_ROLE, email: owner.email as string, name: (owner.full_name as string) ?? undefined, externalId: spine.owner_id },
+    ...(cs ? [{ role: COUNTERSIGNER_ROLE, email: cs.email, name: cs.name }] : []),
+  ];
+
+  const submission = await createSubmission({ templateId, submitters, sendEmail: false, orderPreserved: true });
+  if (!submission) return { ok: false, error: "Could not start the signing session. Try again shortly." };
+
+  await persistSubmission(db, spine, submission.submissionId, submission.submitters, owner.id, cs?.email ?? null);
+
+  const mine = submission.submitters.find((s) => s.email === owner.email);
+  return { ok: true, embedUrl: mine?.embedUrl ?? null, status: "ready" };
+}
+
+/** Get the embedded signing URL for a signer if they still need to sign. */
+export async function getSignerEmbedUrl(documentId: string, signerProfileId: string): Promise<string | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = createServiceClient() as any;
+  const row = await getSignerRow(db, documentId, signerProfileId);
+  return row && row.status === "pending" ? row.embedded_link : null;
+}
+
+/* ─── Webhook application ─── */
+
+export type DocuSealEvent = {
+  eventType: string;
+  submissionId: number | null;
+  email: string | null;
+  completedAt: string | null;
+  signedPdfUrl: string | null;
+};
+
+/**
+ * Apply a DocuSeal webhook event: mark the matching signer signed, then move the
+ * spine document through the status machine and reconcile requests.
+ */
+export async function applyDocuSealEvent(event: DocuSealEvent): Promise<void> {
+  if (!event.submissionId) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = createServiceClient() as any;
+
+  const { data: signerRows } = await db
+    .from("document_signers")
+    .select("id, document_id, role, status, signer_email")
+    .eq("boldsign_document_id", String(event.submissionId));
+  const signers = (signerRows ?? []) as Array<{ id: string; document_id: string; role: string; status: string; signer_email: string | null }>;
+  if (signers.length === 0) return;
+
+  const documentId = signers[0].document_id;
+
+  // Visibility events: log to document_events and return — no status change.
+  if (event.eventType === "form.viewed" || event.eventType === "form.started") {
+    await db.from("document_events").insert({
+      document_id: documentId,
+      signer_email: event.email,
+      event_type: event.eventType,
+      occurred_at: event.completedAt ?? new Date().toISOString(),
+    });
+    return;
+  }
+
+  // Expiry: move status and exit.
+  if (event.eventType === "submission.expired") {
+    await db.from("documents").update({ status: "expired" }).eq("id", documentId);
+    return;
+  }
+
+  // Declined: move to action_required.
+  if (event.eventType === "form.declined") {
+    await db.from("documents").update({ status: "action_required" }).eq("id", documentId);
+    return;
+  }
+
+  const isCompletion = event.eventType === "form.completed" || event.eventType === "submission.completed";
+
+  if (isCompletion && event.email) {
+    const match = signers.find((s) => s.signer_email?.toLowerCase() === event.email?.toLowerCase());
+    if (match && match.status !== "signed") {
+      await db.from("document_signers").update({ status: "signed", signed_at: event.completedAt ?? new Date().toISOString() }).eq("id", match.id);
+      match.status = "signed";
+    }
+  }
+
+  const allSigners = signers.filter((s) => s.role === "signer");
+  const counter = signers.filter((s) => s.role === "countersigner");
+  const allOwnerSigned = allSigners.length > 0 && allSigners.every((s) => s.status === "signed");
+  const counterSigned = counter.length === 0 || counter.every((s) => s.status === "signed");
+  const fullyExecuted = allOwnerSigned && counterSigned;
+
+  const nextStatus: DocumentStatus = fullyExecuted
+    ? "on_file"
+    : allOwnerSigned
+      ? "awaiting_countersignature"
+      : "signed";
+
+  const now = new Date().toISOString();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const docUpdate: Record<string, any> = { status: nextStatus };
+  if (fullyExecuted) docUpdate.completed_at = now;
+  if (event.signedPdfUrl) docUpdate.file_url = event.signedPdfUrl;
+  await db.from("documents").update(docUpdate).eq("id", documentId);
+
+  // Update the signed_documents record (provider submission id lives there).
+  const { data: docRow } = await db.from("documents").select("owner_id, source_ref").eq("id", documentId).maybeSingle();
+  if (docRow?.source_ref) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sd: Record<string, any> = { status: fullyExecuted ? "completed" : "pending", updated_at: now };
+    if (fullyExecuted) { sd.fully_executed_at = now; sd.signed_at = now; }
+    if (event.signedPdfUrl) sd.signed_pdf_url = event.signedPdfUrl;
+    await db.from("signed_documents").update(sd).eq("id", docRow.source_ref);
+  }
+
+  if (fullyExecuted && docRow?.owner_id) {
+    await syncSpineForOwner(docRow.owner_id as string);
+  }
+}
+
+/* ─── internals ─── */
+
+async function getSignerRow(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  documentId: string,
+  signerProfileId: string,
+): Promise<{ embedded_link: string | null; status: string } | null> {
+  const { data } = await db
+    .from("document_signers")
+    .select("embedded_link, status")
+    .eq("document_id", documentId)
+    .eq("signer_profile_id", signerProfileId)
+    .maybeSingle();
+  return (data as { embedded_link: string | null; status: string } | null) ?? null;
+}
+
+async function persistSubmission(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  spine: SpineDocRow,
+  submissionId: number,
+  submitters: SubmissionSubmitter[],
+  ownerProfileId: string,
+  countersignerEmail: string | null,
+): Promise<void> {
+  const def = spine.document_key ? WORKSPACE_DOCUMENT_DEFINITIONS[spine.document_key as WorkspaceDocumentKey] : null;
+  const now = new Date().toISOString();
+
+  // signed_documents record holds the provider submission id.
+  const { data: sd } = await db
+    .from("signed_documents")
+    .insert({
+      user_id: ownerProfileId,
+      property_id: null,
+      boldsign_document_id: String(submissionId),
+      template_name: def?.label ?? spine.document_key ?? "Document",
+      status: "pending",
+      sent_at: now,
+      created_at: now,
+      updated_at: now,
+    })
+    .select("id")
+    .single();
+
+  // Link spine row → submission, mark sent.
+  await db.from("documents").update({ status: "sent", source: "signed_document", source_ref: sd?.id ?? null }).eq("id", spine.id);
+
+  // One document_signers row per submitter.
+  const rows = submitters.map((s, index) => ({
+    document_id: spine.id,
+    signer_profile_id: s.email && countersignerEmail && s.email.toLowerCase() === countersignerEmail.toLowerCase() ? null : ownerProfileId,
+    signer_email: s.email,
+    signer_name: null,
+    role: countersignerEmail && s.email.toLowerCase() === countersignerEmail.toLowerCase() ? "countersigner" : "signer",
+    role_index: index + 1,
+    order_index: index,
+    required: true,
+    status: "pending",
+    boldsign_document_id: String(submissionId),
+    embedded_link: s.embedUrl,
+    created_at: now,
+    updated_at: now,
+  }));
+  await db.from("document_signers").insert(rows);
+}
+
+/** Gate check: every gate step below this document's step must be On file. */
+async function isDocumentUnlocked(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  spine: SpineDocRow,
+): Promise<boolean> {
+  const key = spine.document_key as WorkspaceDocumentKey | null;
+  if (!key) return true;
+  const gateStep = DOCUMENT_LIFECYCLE[key].gateStep;
+  if (gateStep === GATE_STEP.agreement) return true;
+
+  const { data: docs } = await db
+    .from("documents")
+    .select("document_key, status")
+    .eq("workspace_id", spine.workspace_id);
+  const rows = (docs ?? []) as Array<{ document_key: string | null; status: string }>;
+  const onFile = (k: WorkspaceDocumentKey) => {
+    const matching = rows.filter((r) => r.document_key === k);
+    return matching.length > 0 && matching.every((r) => isComplete(normalizeStatus(r.status)));
+  };
+
+  if (gateStep > GATE_STEP.agreement) {
+    const agreements = rows.filter((r) => r.document_key === "host_rental_agreement");
+    if (agreements.length > 0 && !agreements.every((r) => isComplete(normalizeStatus(r.status)))) return false;
+  }
+  if (gateStep > GATE_STEP.payment && !onFile("paid_onboarding_fee")) return false;
+  if (gateStep > GATE_STEP.banking && !(onFile("ach_authorization") && onFile("card_authorization"))) return false;
+  return true;
+}
