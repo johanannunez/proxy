@@ -1,0 +1,141 @@
+// apps/web/src/lib/admin/document-templates.ts
+import "server-only";
+import { createServiceClient } from "@/lib/supabase/service";
+import type {
+  DocumentTemplate,
+  CreateDocumentTemplateInput,
+  UpdateDocumentTemplateInput,
+} from "./document-templates-types";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DB = any;
+function db(): DB {
+  return createServiceClient() as DB;
+}
+
+/**
+ * List all active templates visible to an org: system templates + org-specific ones.
+ * For v1 (no orgs table), orgId is unused — all templates are system-level.
+ */
+export async function listDocumentTemplates(orgId?: string): Promise<DocumentTemplate[]> {
+  let query = db()
+    .from("document_templates")
+    .select("*")
+    .eq("is_active", true)
+    .order("is_system", { ascending: false })
+    .order("gate_step", { ascending: true, nullsFirst: false })
+    .order("display_name");
+
+  if (orgId) {
+    query = query.or(`org_id.is.null,org_id.eq.${orgId}`);
+  } else {
+    query = query.is("org_id", null);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("[document-templates] list:", error.message);
+    return [];
+  }
+  return (data ?? []) as DocumentTemplate[];
+}
+
+/**
+ * Resolve the DocuSeal template ID for a document key.
+ * Tenant-specific template wins over system template.
+ */
+export async function resolveTemplateId(
+  documentKey: string,
+  orgId?: string,
+): Promise<number | null> {
+  let query = db()
+    .from("document_templates")
+    .select("docuseal_template_id, org_id")
+    .eq("document_key", documentKey)
+    .eq("is_active", true);
+
+  if (orgId) {
+    query = query.or(`org_id.is.null,org_id.eq.${orgId}`);
+  } else {
+    query = query.is("org_id", null);
+  }
+
+  // Prefer tenant row (org_id not null) over system row.
+  query = query.order("org_id", { ascending: false, nullsFirst: false }).limit(1);
+
+  const { data } = await query.maybeSingle();
+  const row = data as { docuseal_template_id: number | null } | null;
+  return row?.docuseal_template_id ?? null;
+}
+
+/**
+ * Returns true if any active template exists for this document key.
+ * Used to decide whether a document is an e-signature document.
+ */
+export async function isSignatureDocumentKey(
+  documentKey: string,
+  orgId?: string,
+): Promise<boolean> {
+  let query = db()
+    .from("document_templates")
+    .select("id")
+    .eq("document_key", documentKey)
+    .eq("is_active", true)
+    .limit(1);
+
+  if (orgId) {
+    query = query.or(`org_id.is.null,org_id.eq.${orgId}`);
+  } else {
+    query = query.is("org_id", null);
+  }
+
+  const { data } = await query.maybeSingle();
+  return data !== null;
+}
+
+export async function getDocumentTemplate(id: string): Promise<DocumentTemplate | null> {
+  const { data } = await db()
+    .from("document_templates")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as DocumentTemplate | null) ?? null;
+}
+
+export async function createDocumentTemplateRecord(
+  input: CreateDocumentTemplateInput,
+): Promise<DocumentTemplate | null> {
+  const { data, error } = await db()
+    .from("document_templates")
+    .insert({
+      org_id: input.org_id ?? null,
+      document_key: input.document_key,
+      display_name: input.display_name,
+      description: input.description ?? null,
+      docuseal_template_id: input.docuseal_template_id ?? null,
+      signer_roles: input.signer_roles,
+      requires_countersignature: input.requires_countersignature,
+      gate_step: input.gate_step ?? null,
+      is_system: false,
+      is_active: false,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    console.error("[document-templates] create:", error.message);
+    return null;
+  }
+  return data as DocumentTemplate;
+}
+
+export async function updateDocumentTemplateRecord(
+  id: string,
+  input: UpdateDocumentTemplateInput,
+): Promise<boolean> {
+  const { error } = await db().from("document_templates").update(input).eq("id", id);
+  if (error) {
+    console.error("[document-templates] update:", error.message);
+    return false;
+  }
+  return true;
+}
