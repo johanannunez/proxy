@@ -36,19 +36,13 @@ create policy "Authenticated users can read document templates"
 
 create policy "Service role can mutate document templates"
   on public.document_templates for all
-  using (auth.role() = 'service_role');
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
 
-create or replace function public.set_document_templates_updated_at()
-returns trigger language plpgsql as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
+drop trigger if exists document_templates_updated_at on public.document_templates;
 create trigger document_templates_updated_at
   before update on public.document_templates
-  for each row execute function public.set_document_templates_updated_at();
+  for each row execute function public.set_updated_at();
 
 -- gate_step values match GATE_STEP in lifecycle.ts: 1=agreement, 2=payment, 3=banking, 4=rest.
 insert into public.document_templates
