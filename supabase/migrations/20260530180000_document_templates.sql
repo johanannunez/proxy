@@ -1,5 +1,5 @@
 -- Document template catalog. Replaces DOCUSEAL_TEMPLATE_IDS in signature-config.ts.
--- org_id nullable: NULL = system template (Parcel-provided, all tenants).
+-- org_id nullable: NULL = system template (Proxy-provided, all tenants).
 --                  set  = tenant-owned (future; no orgs table yet, FK added later).
 
 create table if not exists public.document_templates (
@@ -50,14 +50,14 @@ insert into public.document_templates
 values
   ('host_rental_agreement',
    'Host Rental Agreement',
-   'Property management agreement between the owner and Parcel.',
-   '{"Owner","Parcel"}', true, 1, true, true),
+   'Property management agreement between the owner and Proxy.',
+   '{"Owner","Proxy"}', true, 1, true, true),
   ('ach_authorization',
    'ACH Authorization',
    'Bank account direct debit authorization for disbursements.',
-   '{"Owner","Parcel"}', true, 3, true, true),
+   '{"Owner","Proxy"}', true, 3, true, true),
   ('card_authorization',
    'Card Authorization',
    'Credit card on file authorization for maintenance and incidentals.',
-   '{"Owner","Parcel"}', true, 3, true, true)
+   '{"Owner","Proxy"}', true, 3, true, true)
 on conflict do nothing;
