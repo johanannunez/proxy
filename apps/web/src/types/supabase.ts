@@ -1614,7 +1614,7 @@ export type Database = {
           },
         ]
       }
-      parcel_team: {
+      proxy_team: {
         Row: {
           active: boolean
           avatar_url: string | null

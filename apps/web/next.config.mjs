@@ -33,6 +33,19 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/workspace/dashboard", destination: "/workspace/home", permanent: true },
+      { source: "/workspace/messages", destination: "/workspace/inbox", permanent: true },
+      { source: "/workspace/messages/:path*", destination: "/workspace/inbox/:path*", permanent: true },
+      { source: "/workspace/financials", destination: "/workspace/finances", permanent: true },
+      { source: "/workspace/financials/:path*", destination: "/workspace/finances/:path*", permanent: true },
+      { source: "/workspace/members", destination: "/workspace/team", permanent: true },
+      { source: "/workspace/members/:path*", destination: "/workspace/team/:path*", permanent: true },
+      { source: "/workspace/reserve", destination: "/workspace/home", permanent: false },
+      { source: "/workspace/reserve/:path*", destination: "/workspace/home", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {
