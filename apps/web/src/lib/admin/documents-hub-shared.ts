@@ -101,6 +101,13 @@ export const FORM_TYPES = {
     color: "#ec4899",
     description: "11-section property data — access, tech, rules, utilities, and more",
   },
+  paid_onboarding_fee: {
+    label: "Paid Initial Onboarding Fee",
+    shortLabel: "Fee",
+    rowLabel: "Fee",
+    color: "#14b8a6",
+    description: "Initial onboarding payment confirmation",
+  },
   wifi_info: {
     label: "Wi-Fi Information",
     shortLabel: "Wi-Fi",
@@ -150,6 +157,13 @@ export const FORM_TYPES = {
     color: "#64748b",
     description: "Room-by-room condition report and appliance inventory at onboarding",
   },
+  block_dates_calendar: {
+    label: "Block Dates on the Calendar",
+    shortLabel: "Block Dates",
+    rowLabel: "Blocks",
+    color: "#9333ea",
+    description: "Owner stays, unavailable dates, and launch calendar blocks",
+  },
   property_offboarding: {
     label: "Offboarding",
     shortLabel: "Offboarding",
@@ -161,6 +175,313 @@ export const FORM_TYPES = {
 
 export type SecureDocKey = keyof typeof SECURE_DOC_TYPES;
 export type FormKey = keyof typeof FORM_TYPES;
+
+export type DocumentLifecycleKind = "secure_doc" | "form" | "upload" | "lifecycle";
+export type DocumentVisibility = "always" | "offboarding_started";
+
+export type DocumentExpirationRule = {
+  expires: boolean;
+  renewalLeadDays: number | null;
+  dateField: string | null;
+};
+
+export type DocumentPreviewKind =
+  | "agreement"
+  | "bank"
+  | "card"
+  | "tax"
+  | "id"
+  | "setup"
+  | "wifi"
+  | "guidebook"
+  | "permit"
+  | "hoa"
+  | "insurance"
+  | "platforms"
+  | "inspection"
+  | "calendar"
+  | "offboarding";
+
+export type WorkspaceDocumentKey =
+  | SecureDocKey
+  | "paid_onboarding_fee"
+  | "property_setup"
+  | "wifi_info"
+  | "guidebook"
+  | "str_permit"
+  | "hoa_info"
+  | "insurance_certificate"
+  | "platform_authorization"
+  | "onboarding_inspection"
+  | "block_dates_calendar"
+  | "property_offboarding";
+
+export type DocumentLifecycleDefinition = {
+  key: WorkspaceDocumentKey;
+  label: string;
+  shortLabel: string;
+  group: "Owner package" | "Payment setup" | "Property setup" | "Offboarding";
+  kind: DocumentLifecycleKind;
+  color: string;
+  visibility: DocumentVisibility;
+  sendable: boolean;
+  requestable: boolean;
+  expiration: DocumentExpirationRule;
+  description: string;
+  preview: DocumentPreviewKind;
+};
+
+const NO_EXPIRATION: DocumentExpirationRule = {
+  expires: false,
+  renewalLeadDays: null,
+  dateField: null,
+};
+
+export const WORKSPACE_DOCUMENT_DEFINITIONS: Record<WorkspaceDocumentKey, DocumentLifecycleDefinition> = {
+  host_rental_agreement: {
+    key: "host_rental_agreement",
+    label: SECURE_DOC_TYPES.host_rental_agreement.label,
+    shortLabel: SECURE_DOC_TYPES.host_rental_agreement.shortLabel,
+    group: "Owner package",
+    kind: "secure_doc",
+    color: "#ef4444",
+    visibility: "always",
+    sendable: true,
+    requestable: false,
+    expiration: NO_EXPIRATION,
+    description: "Management agreement and fee structure for the owner relationship.",
+    preview: "agreement",
+  },
+  card_authorization: {
+    key: "card_authorization",
+    label: SECURE_DOC_TYPES.card_authorization.label,
+    shortLabel: SECURE_DOC_TYPES.card_authorization.shortLabel,
+    group: "Payment setup",
+    kind: "secure_doc",
+    color: SECURE_DOC_TYPES.card_authorization.color,
+    visibility: "always",
+    sendable: true,
+    requestable: false,
+    expiration: { expires: true, renewalLeadDays: 60, dateField: "card_expiration_date" },
+    description: "Authorization to keep an owner debit or credit card available for approved property expenses.",
+    preview: "card",
+  },
+  ach_authorization: {
+    key: "ach_authorization",
+    label: SECURE_DOC_TYPES.ach_authorization.label,
+    shortLabel: SECURE_DOC_TYPES.ach_authorization.shortLabel,
+    group: "Payment setup",
+    kind: "secure_doc",
+    color: SECURE_DOC_TYPES.ach_authorization.color,
+    visibility: "always",
+    sendable: true,
+    requestable: false,
+    expiration: NO_EXPIRATION,
+    description: "Bank authorization for ACH transfers and payouts.",
+    preview: "bank",
+  },
+  w9: {
+    key: "w9",
+    label: SECURE_DOC_TYPES.w9.label,
+    shortLabel: SECURE_DOC_TYPES.w9.shortLabel,
+    group: "Owner package",
+    kind: "upload",
+    color: SECURE_DOC_TYPES.w9.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Taxpayer identification for 1099 reporting.",
+    preview: "tax",
+  },
+  identity: {
+    key: "identity",
+    label: SECURE_DOC_TYPES.identity.label,
+    shortLabel: SECURE_DOC_TYPES.identity.shortLabel,
+    group: "Owner package",
+    kind: "upload",
+    color: SECURE_DOC_TYPES.identity.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: { expires: true, renewalLeadDays: 60, dateField: "expiration_date" },
+    description: "Owner identity verification for account and compliance review.",
+    preview: "id",
+  },
+  paid_onboarding_fee: {
+    key: "paid_onboarding_fee",
+    label: FORM_TYPES.paid_onboarding_fee.label,
+    shortLabel: FORM_TYPES.paid_onboarding_fee.shortLabel,
+    group: "Payment setup",
+    kind: "form",
+    color: FORM_TYPES.paid_onboarding_fee.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Confirmation that the initial onboarding payment has been collected or waived.",
+    preview: "bank",
+  },
+  property_setup: {
+    key: "property_setup",
+    label: FORM_TYPES.property_setup.label,
+    shortLabel: FORM_TYPES.property_setup.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.property_setup.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Core property details for access, rooms, utilities, rules, and operations.",
+    preview: "setup",
+  },
+  wifi_info: {
+    key: "wifi_info",
+    label: FORM_TYPES.wifi_info.label,
+    shortLabel: FORM_TYPES.wifi_info.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.wifi_info.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Network name, password, router location, and connection details.",
+    preview: "wifi",
+  },
+  guidebook: {
+    key: "guidebook",
+    label: FORM_TYPES.guidebook.label,
+    shortLabel: FORM_TYPES.guidebook.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.guidebook.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Local recommendations and useful guest-facing information.",
+    preview: "guidebook",
+  },
+  str_permit: {
+    key: "str_permit",
+    label: FORM_TYPES.str_permit.label,
+    shortLabel: FORM_TYPES.str_permit.shortLabel,
+    group: "Property setup",
+    kind: "upload",
+    color: FORM_TYPES.str_permit.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: { expires: true, renewalLeadDays: 60, dateField: "expiration_date" },
+    description: "Short-term rental permit or license required for the property.",
+    preview: "permit",
+  },
+  hoa_info: {
+    key: "hoa_info",
+    label: FORM_TYPES.hoa_info.label,
+    shortLabel: FORM_TYPES.hoa_info.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.hoa_info.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "HOA rules, restrictions, management contact, and property-specific requirements.",
+    preview: "hoa",
+  },
+  insurance_certificate: {
+    key: "insurance_certificate",
+    label: FORM_TYPES.insurance_certificate.label,
+    shortLabel: FORM_TYPES.insurance_certificate.shortLabel,
+    group: "Property setup",
+    kind: "upload",
+    color: FORM_TYPES.insurance_certificate.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: { expires: true, renewalLeadDays: 60, dateField: "expiration_date" },
+    description: "Insurance certificate or policy information for the property.",
+    preview: "insurance",
+  },
+  platform_authorization: {
+    key: "platform_authorization",
+    label: FORM_TYPES.platform_authorization.label,
+    shortLabel: FORM_TYPES.platform_authorization.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.platform_authorization.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Authorization and access status for Airbnb, Vrbo, Hospitable, and related platforms.",
+    preview: "platforms",
+  },
+  onboarding_inspection: {
+    key: "onboarding_inspection",
+    label: FORM_TYPES.onboarding_inspection.label,
+    shortLabel: FORM_TYPES.onboarding_inspection.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.onboarding_inspection.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Condition, inventory, and readiness notes captured during onboarding.",
+    preview: "inspection",
+  },
+  block_dates_calendar: {
+    key: "block_dates_calendar",
+    label: FORM_TYPES.block_dates_calendar.label,
+    shortLabel: FORM_TYPES.block_dates_calendar.shortLabel,
+    group: "Property setup",
+    kind: "form",
+    color: FORM_TYPES.block_dates_calendar.color,
+    visibility: "always",
+    sendable: false,
+    requestable: true,
+    expiration: NO_EXPIRATION,
+    description: "Owner stays, unavailable dates, and launch calendar blocks.",
+    preview: "calendar",
+  },
+  property_offboarding: {
+    key: "property_offboarding",
+    label: FORM_TYPES.property_offboarding.label,
+    shortLabel: FORM_TYPES.property_offboarding.shortLabel,
+    group: "Offboarding",
+    kind: "lifecycle",
+    color: FORM_TYPES.property_offboarding.color,
+    visibility: "offboarding_started",
+    sendable: false,
+    requestable: false,
+    expiration: NO_EXPIRATION,
+    description: "Final transition work for payout, access, platforms, guest communication, and owner handoff.",
+    preview: "offboarding",
+  },
+};
+
+export const WORKSPACE_DOCUMENT_ORDER: WorkspaceDocumentKey[] = [
+  "host_rental_agreement",
+  "w9",
+  "identity",
+  "paid_onboarding_fee",
+  "ach_authorization",
+  "card_authorization",
+  "property_setup",
+  "wifi_info",
+  "guidebook",
+  "block_dates_calendar",
+  "str_permit",
+  "hoa_info",
+  "insurance_certificate",
+  "platform_authorization",
+  "onboarding_inspection",
+  "property_offboarding",
+];
 
 export type SignedDocRow = {
   id: string;

@@ -149,7 +149,7 @@ export async function saveHospitableConnection(
   }).then(() => {}, () => {});
 
   revalidatePath("/admin/properties");
-  revalidatePath("/portal/reserve");
+  revalidatePath("/workspace/reserve");
   return { ok: true };
 }
 

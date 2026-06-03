@@ -967,7 +967,7 @@ function getFormFields(itemKey: string): FormField[] {
         { label: "Agreement Version", value: "v2026-01" },
         { label: "Effective Date", value: "Mar 18, 2026" },
         { label: "Term Length", value: "Month-to-month", hint: "Months or 'month-to-month'" },
-        { label: "Revenue Split", value: "80% owner / 20% Parcel" },
+        { label: "Revenue Split", value: "80% owner / 20% Proxy" },
       ];
     case "property_setup_form":
       return [
@@ -985,7 +985,7 @@ function getFormFields(itemKey: string): FormField[] {
       ];
     case "wifi_info":
       return [
-        { label: "Network Name (SSID)", value: "ParcelHouse-524", copyable: true },
+        { label: "Network Name (SSID)", value: "ProxyHouse-524", copyable: true },
         { label: "Password", value: "SycamoreSun2026!", hint: "Shared with guests via guidebook", copyable: true },
         { label: "Router Location", value: "Utility closet, top shelf" },
       ];

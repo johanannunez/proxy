@@ -8,10 +8,22 @@ import type { SecureDocKey } from "@/lib/admin/documents-hub";
 
 export type ActionResult = { ok: boolean; error?: string };
 
-async function getAdminUserId(): Promise<string | null> {
+/**
+ * These are "use server" actions imported by client components, so they are
+ * callable by any authenticated user. Gate them to admins — without this an
+ * owner could send BoldSign documents or delete signed_documents rows.
+ */
+async function requireAdmin(): Promise<{ userId: string | null; error: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  if (!user) return { userId: null, error: "You must be signed in." };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profile?.role !== "admin") return { userId: null, error: "Admin access required." };
+  return { userId: user.id, error: null };
 }
 
 export async function sendDocumentToOwner(
@@ -20,6 +32,9 @@ export async function sendDocumentToOwner(
   ownerName: string,
   docKey: SecureDocKey,
 ): Promise<ActionResult> {
+  const { userId: adminId, error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   const def = SECURE_DOC_TYPES[docKey];
 
   if (!def.templateId) {
@@ -38,7 +53,7 @@ export async function sendDocumentToOwner(
       return { ok: false, error: "BoldSign document creation failed. Check BOLDSIGN_API_KEY." };
     }
 
-    const sentBy = await getAdminUserId();
+    const sentBy = adminId;
     const supabase = await createClient();
     const now = new Date().toISOString();
 
@@ -73,6 +88,9 @@ export async function sendDocumentReminder(
   boldsignDocumentId: string,
   ownerEmail: string,
 ): Promise<ActionResult> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   try {
     const signLink = await resendDocumentLink(boldsignDocumentId, ownerEmail);
 
@@ -97,6 +115,9 @@ export async function sendDocumentReminder(
 }
 
 export async function deleteDocument(documentId: string): Promise<ActionResult> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
   try {
     const supabase = await createClient();
     const { error } = await (supabase as any)
