@@ -8,7 +8,7 @@ import {
   Buildings,
   FolderOpen,
 } from "@phosphor-icons/react";
-import type { WorkspaceContactDetail } from "@/lib/admin/workspace-contact-detail";
+import type { WorkspaceContactDetail, WorkspaceMember, ProxyTeamMember } from "@/lib/admin/workspace-contact-detail";
 import type { WorkspaceDocument } from "@/lib/admin/workspace-documents";
 import type { WorkspaceMessage } from "@/lib/admin/workspace-messages";
 import type { Insight } from "@/lib/admin/ai-insights";
@@ -17,6 +17,7 @@ import type { WorkspaceDetailActivityEntry } from "@/lib/admin/workspace-detail-
 import type { ProjectRow } from "@/lib/admin/project-types";
 import { PROJECT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/admin/project-types";
 import { regenerateWorkspaceIntelligence } from "./workspace-intelligence-actions";
+import { WorkspaceTeamTab } from "./WorkspaceTeamTab";
 import styles from "./WorkspaceOverviewTab.module.css";
 
 type Props = {
@@ -28,6 +29,8 @@ type Props = {
   insights: Insight[];
   openTasks: OverviewTask[];
   activityLog: WorkspaceDetailActivityEntry[];
+  members?: WorkspaceMember[];
+  proxyTeam?: ProxyTeamMember[];
 };
 
 function relativeTime(iso: string): string {
@@ -72,6 +75,8 @@ export function WorkspaceOverviewTab({
   insights,
   openTasks,
   activityLog,
+  members = [],
+  proxyTeam = [],
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -284,7 +289,7 @@ export function WorkspaceOverviewTab({
         <div className={styles.card}>
           <div className={styles.cardHead}>
             <span className={styles.cardHeadLabel}>Finances</span>
-            <a href={`${contactPath}?tab=billing`} className={styles.cardHeadLink}>
+            <a href={`${contactPath}?tab=finance`} className={styles.cardHeadLink}>
               →
             </a>
           </div>
@@ -462,6 +467,15 @@ export function WorkspaceOverviewTab({
           ))
         )}
       </div>
+
+      {members.length > 0 && (
+        <WorkspaceTeamTab
+          workspaceId={workspaceId}
+          members={members}
+          activeContactId={workspaceContact.id}
+          proxyTeam={proxyTeam}
+        />
+      )}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export function PaymentsPayoutSection({
       <header className={s.sectionHeader}>
         <h2 className={s.sectionTitle}>Payments &amp; payout</h2>
         <p className={s.sectionSubtitle}>
-          Where and when money moves between Parcel and the owner.
+          Where and when money moves between Proxy and the owner.
         </p>
       </header>
 
@@ -123,7 +123,7 @@ export function PaymentsPayoutSection({
           <div className={s.row}>
             <div className={s.labelCell}>
               <label className={s.label}>Payout cadence</label>
-              <span className={s.labelHint}>When Parcel sweeps funds to bank.</span>
+              <span className={s.labelHint}>When Proxy sweeps funds to bank.</span>
             </div>
             <div className={s.fieldCell}>
               <div className={s.segmented}>

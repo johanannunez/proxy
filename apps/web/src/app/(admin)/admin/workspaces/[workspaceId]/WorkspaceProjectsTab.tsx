@@ -26,7 +26,7 @@ const PROJECT_TYPE_OPTIONS = CLIENT_PROJECT_TYPES.map((type) => ({
 
 const VISIBILITY_OPTIONS: Array<{ value: ProjectVisibility; label: string }> = [
   { value: "internal", label: PROJECT_VISIBILITY_LABEL.internal },
-  { value: "portal_visible", label: PROJECT_VISIBILITY_LABEL.portal_visible },
+  { value: "workspace_visible", label: PROJECT_VISIBILITY_LABEL.workspace_visible },
 ];
 
 function formatTargetDate(value: string | null): string {
@@ -209,8 +209,8 @@ export function WorkspaceProjectsTab({
                       {project.linkedPropertyName ? ` · ${project.linkedPropertyName}` : ""}
                     </p>
                   </div>
-                  <span className={`${styles.visibilityPill} ${project.visibility === "portal_visible" ? styles.visible : ""}`}>
-                    {project.visibility === "portal_visible" ? (
+                  <span className={`${styles.visibilityPill} ${project.visibility === "workspace_visible" ? styles.visible : ""}`}>
+                    {project.visibility === "workspace_visible" ? (
                       <GlobeHemisphereWest size={11} weight="bold" />
                     ) : (
                       <LockKey size={11} weight="bold" />

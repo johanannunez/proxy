@@ -855,6 +855,15 @@
   animation: contentIn 180ms ease;
 }
 
+.contentFullBleed {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: contentIn 180ms ease;
+}
+
 /* ── Contact detail drawer ─────────────────────────────────────────────── */
 
 .drawerLayer {

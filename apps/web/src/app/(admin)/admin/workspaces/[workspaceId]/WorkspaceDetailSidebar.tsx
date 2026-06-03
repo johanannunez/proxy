@@ -37,7 +37,7 @@ import { parsePhoneNumber } from "libphonenumber-js";
 import type { WorkspaceContactDetail, AddressComponents, WorkspaceInfo, WorkspaceMember, SocialLinks } from "@/lib/admin/workspace-contact-detail";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { AdminProfile } from "./workspace-person-actions";
-import { updateWorkspaceContactFields, updateEmailWithPortalSync } from "./workspace-person-actions";
+import { updateWorkspaceContactFields, updateEmailWithWorkspaceSync } from "./workspace-person-actions";
 import { DatePickerInput } from "@/components/admin/DatePickerInput";
 import styles from "./WorkspaceDetailSidebar.module.css";
 
@@ -981,14 +981,14 @@ function EmailField({
   emailVerified,
   profileId,
   onSaveDirect,
-  onSaveWithPortal,
+  onSaveWithWorkspace,
   isSaved,
 }: {
   email: string;
   emailVerified: boolean;
   profileId: string | null;
   onSaveDirect: (val: string) => Promise<void>;
-  onSaveWithPortal: (val: string) => Promise<{ ok: boolean; message: string }>;
+  onSaveWithWorkspace: (val: string) => Promise<{ ok: boolean; message: string }>;
   isSaved?: boolean;
 }) {
   const [fieldState, setFieldState] = useState<EmailFieldState>("display");
@@ -1024,7 +1024,7 @@ function EmailField({
       setFieldState("display");
       return;
     }
-    // Portal account: need the confirm step before changing login credential
+    // Workspace account: need the confirm step before changing login credential
     if (profileId) {
       setFieldState("confirming");
       return;
@@ -1040,9 +1040,9 @@ function EmailField({
 
   const handleSend = useCallback(async () => {
     setFieldState("sending");
-    await onSaveWithPortal(draft.trim());
+    await onSaveWithWorkspace(draft.trim());
     setFieldState("display");
-  }, [draft, onSaveWithPortal]);
+  }, [draft, onSaveWithWorkspace]);
 
   const shown = email || "";
 
@@ -1242,8 +1242,8 @@ export function WorkspaceDetailSidebar({
     await save({ email: val });
     markSaved("email");
   };
-  const saveEmailWithPortal = async (val: string): Promise<{ ok: boolean; message: string }> => {
-    const result = await updateEmailWithPortalSync(workspaceContact.id, val);
+  const saveEmailWithWorkspace = async (val: string): Promise<{ ok: boolean; message: string }> => {
+    const result = await updateEmailWithWorkspaceSync(workspaceContact.id, val);
     if (result.ok) {
       setEmail(val);
       setEmailVerified(false);
@@ -1299,7 +1299,7 @@ export function WorkspaceDetailSidebar({
     await save({ preferredContactMethod: next });
   };
 
-  const hasPortal = workspaceContact.profileId !== null;
+  const hasWorkspaceAccess = workspaceContact.profileId !== null;
 
   return (
     <aside className={styles.sidebar}>
@@ -1361,9 +1361,9 @@ export function WorkspaceDetailSidebar({
 
       <div className={styles.profileMetaGrid}>
         <div className={styles.profileMetaItem}>
-          <span>Portal</span>
-          <strong className={hasPortal ? styles.profileMetaGood : styles.profileMetaMuted}>
-            {hasPortal ? "Has access" : "No access"}
+          <span>Workspace</span>
+          <strong className={hasWorkspaceAccess ? styles.profileMetaGood : styles.profileMetaMuted}>
+            {hasWorkspaceAccess ? "Has access" : "No access"}
           </strong>
         </div>
         <div className={styles.profileMetaItem}>
@@ -1443,7 +1443,7 @@ export function WorkspaceDetailSidebar({
           <section className={styles.summarySection}>
             <div className={styles.summarySectionTitle}>Relationship</div>
             <div className={styles.summaryDetailGrid}>
-              <SummaryDetail icon={<UserCircle size={15} weight="bold" />} label="Portal" value={hasPortal ? "Has access" : "No access"} />
+              <SummaryDetail icon={<UserCircle size={15} weight="bold" />} label="Workspace" value={hasWorkspaceAccess ? "Has access" : "No access"} />
               <SummaryDetail icon={<Briefcase size={15} weight="bold" />} label="Assigned" value={assignedName} />
               <SummaryDetail icon={<Globe size={15} weight="bold" />} label="Source" value={sourceLabel} />
               <SummaryDetail icon={<ChatCircle size={15} weight="bold" />} label="Preferred" value={preferredMethodLabel} />
@@ -1513,7 +1513,7 @@ export function WorkspaceDetailSidebar({
         emailVerified={emailVerified}
         profileId={workspaceContact.profileId}
         onSaveDirect={saveEmailDirect}
-        onSaveWithPortal={saveEmailWithPortal}
+        onSaveWithWorkspace={saveEmailWithWorkspace}
         isSaved={savedFields.has("email")}
       />
 
@@ -1552,7 +1552,7 @@ export function WorkspaceDetailSidebar({
         />
       )}
 
-      {/* Prefers + Portal/Newsletter directly under contact, no "Owner" header */}
+      {/* Prefers + Workspace/Newsletter directly under contact, no "Owner" header */}
       <div className={styles.fieldRow}>
         <span className={styles.fieldLabel}>Prefers</span>
         <div className={styles.contactMethodRow}>
@@ -1572,10 +1572,10 @@ export function WorkspaceDetailSidebar({
       </div>
 
       <div className={styles.fieldRow}>
-        <span className={styles.fieldLabel}>Portal</span>
+        <span className={styles.fieldLabel}>Workspace</span>
         <div className={styles.fieldValue}>
-          <span className={`${styles.portalStatus} ${hasPortal ? styles.portalStatusActive : styles.portalStatusNone}`}>
-            {hasPortal ? (
+          <span className={`${styles.workspaceStatus} ${hasWorkspaceAccess ? styles.workspaceStatusActive : styles.workspaceStatusNone}`}>
+            {hasWorkspaceAccess ? (
               <><CheckCircle size={13} weight="fill" /> Has access</>
             ) : (
               <><XCircle size={13} weight="regular" /> No access</>

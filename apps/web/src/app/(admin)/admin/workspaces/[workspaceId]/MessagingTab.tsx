@@ -168,7 +168,7 @@ export function MessagingTab({
         <div className={styles.globalInboxHeader}>
           <div>
             <div className={styles.globalInboxEyebrow}>Global inbox</div>
-            <h3 className={styles.globalInboxTitle}>Portal, SMS, and email history</h3>
+            <h3 className={styles.globalInboxTitle}>Workspace, SMS, and email history</h3>
           </div>
           <a className={styles.globalInboxLink} href={centralInboxHref}>
             Open inbox
@@ -292,7 +292,7 @@ function conversationLabel(conversation: WorkspaceInboxConversation): string {
   if (conversation.lastDeliveryMethod === "sms") return "SMS";
   if (conversation.type === "email_log" || conversation.lastDeliveryMethod === "email") return "Email";
   if (conversation.type === "announcement") return "Announcement";
-  return "Portal";
+  return "Workspace";
 }
 
 function stripHtml(html: string): string {

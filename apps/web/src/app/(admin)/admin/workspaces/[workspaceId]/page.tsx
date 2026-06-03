@@ -1,7 +1,11 @@
-import { notFound } from "next/navigation";
-import { fetchParcelTeamMembers, fetchWorkspaceContactDetail, fetchWorkspaceInfo, fetchWorkspaceMembers } from "@/lib/admin/workspace-contact-detail";
+import { notFound, redirect } from "next/navigation";
+import { fetchProxyTeamMembers, fetchWorkspaceContactDetail, fetchWorkspaceInfo, fetchWorkspaceMembers } from "@/lib/admin/workspace-contact-detail";
+import type { AddressComponents } from "@/lib/admin/workspace-contact-detail";
 import { fetchWorkspaceDetail } from "@/lib/admin/workspace-detail";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
+import type { OwnerReceiptRow } from "@/app/(workspace)/workspace/finances/receipts-types";
 import { fetchInternalNote } from "@/lib/admin/owner-facts-actions";
 import { WorkspaceDetailShell } from "./WorkspaceDetailShell";
 import { fetchAdminProfiles } from "./workspace-person-actions";
@@ -14,48 +18,77 @@ import type { SessionRow } from "@/app/(admin)/admin/workspaces/[workspaceId]/se
 import type { ConnectionRow } from "@/app/(admin)/admin/workspaces/[workspaceId]/settings/DataPrivacySection";
 import { fetchWorkspaceMeetings, fetchNextMeeting } from "@/lib/admin/workspace-meetings";
 import { fetchInsightsByParent } from "@/lib/admin/ai-insights";
-import { BillingTab } from "./BillingTab";
-import { fetchWorkspaceBilling } from "@/lib/admin/workspace-billing";
+import { FinanceTab } from "./FinanceTab";
+import { fetchWorkspaceFinance } from "@/lib/admin/workspace-finance";
 import { DocumentsTab } from "./DocumentsTab";
 import { fetchWorkspaceDocuments } from "@/lib/admin/workspace-documents";
+import { fetchOwnerSpine } from "@/lib/documents/spine";
+import { fetchDocumentGroupSettings } from "@/lib/admin/document-group-settings";
 import { MessagingTab } from "./MessagingTab";
 import { fetchWorkspacePersonMessages, fetchWorkspaceMessages, fetchWorkspaceInboxConversations } from "@/lib/admin/workspace-messages";
 import { WorkspaceOverviewTab } from "./WorkspaceOverviewTab";
 import { fetchWorkspaceContactOpenTasks } from "@/lib/admin/workspace-overview";
 import { TasksTab } from "@/components/admin/tasks/TasksTab";
-import { WorkspaceProjectsTab } from "./WorkspaceProjectsTab";
 import { fetchWorkspaceProjects } from "@/lib/admin/workspace-projects";
-import { WorkspaceTeamTab } from "./WorkspaceTeamTab";
 
 export const dynamic = "force-dynamic";
 
 type TabKey =
-  | "overview"
-  | "team"
-  | "messaging"
-  | "properties"
-  | "projects"
+  | "home"
+  | "inbox"
   | "tasks"
   | "meetings"
   | "documents"
-  | "billing"
+  | "finances"
+  | "properties"
+  | "timeline"
   | "settings";
 
 const KNOWN_TABS: readonly TabKey[] = [
-  "overview",
-  "team",
-  "messaging",
-  "properties",
-  "projects",
+  "home",
+  "inbox",
   "tasks",
   "meetings",
   "documents",
-  "billing",
+  "finances",
+  "properties",
+  "timeline",
   "settings",
 ];
 
+const LEGACY_TAB_MAP: Record<string, TabKey> = {
+  overview: "home",
+  team: "home",
+  messaging: "inbox",
+  finance: "finances",
+  billing: "finances",
+  projects: "home",
+};
+
 const CONTACT_METHODS = ["email", "sms", "phone", "whatsapp"] as const;
 type StoredContactMethod = "email" | "sms" | "phone" | "whatsapp" | null;
+
+function buildAddressLines(
+  components: AddressComponents | null,
+  formatted: string | null,
+): { line1: string; line2: string } | null {
+  if (components?.route) {
+    const line1 = [components.street_number, components.route].filter(Boolean).join(" ");
+    const city = components.locality ?? "";
+    const state = components.administrative_area_level_1 ?? "";
+    const zip = components.postal_code ?? "";
+    const stateParts = [state, zip].filter(Boolean).join(" ");
+    const line2 = [city, stateParts].filter(Boolean).join(", ");
+    return line1 ? { line1, line2: line2 || "" } : null;
+  }
+  if (formatted) {
+    const commaIdx = formatted.lastIndexOf(",", formatted.lastIndexOf(",") - 1);
+    if (commaIdx > 0) {
+      return { line1: formatted.slice(0, commaIdx).trim(), line2: formatted.slice(commaIdx + 1).trim() };
+    }
+  }
+  return null;
+}
 
 type Props = {
   params: Promise<{ workspaceId: string }>;
@@ -65,6 +98,14 @@ type Props = {
 export default async function WorkspaceDetailPage({ params, searchParams }: Props) {
   const { workspaceId } = await params;
   const { tab: tabParam, section: sectionParam, person: personParam, detail: detailParam } = await searchParams;
+
+  if (tabParam && LEGACY_TAB_MAP[tabParam]) {
+    const nextSearchParams = new URLSearchParams({ tab: LEGACY_TAB_MAP[tabParam] });
+    if (sectionParam) nextSearchParams.set("section", sectionParam);
+    if (personParam) nextSearchParams.set("person", personParam);
+    if (detailParam) nextSearchParams.set("detail", detailParam);
+    redirect(`/admin/workspaces/${workspaceId}?${nextSearchParams.toString()}`);
+  }
 
   const workspaceInfo = await fetchWorkspaceInfo(workspaceId);
 
@@ -82,7 +123,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
 
   const tab: TabKey = (KNOWN_TABS as readonly string[]).includes(tabParam ?? "")
     ? (tabParam as TabKey)
-    : "overview";
+    : "home";
 
   const section: SettingsSection = (SETTINGS_SECTIONS as readonly string[]).includes(sectionParam ?? "")
     ? (sectionParam as SettingsSection)
@@ -104,27 +145,47 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
     workspaceData,
     workspaceMeetings,
     contactInsights,
-    billingData,
+    financeData,
     workspaceDocuments,
+    ownerSpineDocuments,
+    documentGroupSettings,
     allWorkspaceMessages,
     workspaceInboxConversations,
     overviewMessages,
     openTasks,
     workspaceProjects,
-    parcelTeam,
+    proxyTeam,
+    receiptsForExplorer,
   ] = await Promise.all([
     workspaceContact.profileId ? fetchNextMeeting(workspaceContact.profileId) : Promise.resolve(null),
     workspaceContact.workspaceId ? fetchWorkspaceDetail(workspaceContact.workspaceId) : Promise.resolve(null),
     meetingProfileId ? fetchWorkspaceMeetings(meetingProfileId) : Promise.resolve([]),
     fetchInsightsByParent("contact", [activeContactId]),
-    fetchWorkspaceBilling(workspaceId, workspaceContact.id, workspaceContact.properties.length, workspaceContact.profileId),
-    workspaceContact.profileId ? fetchWorkspaceDocuments(workspaceContact.profileId) : Promise.resolve([]),
+    fetchWorkspaceFinance(workspaceId, workspaceContact.id, workspaceContact.properties.length, workspaceContact.profileId),
+    workspaceContact.profileId ? fetchWorkspaceDocuments(workspaceContact.profileId, propertyIds) : Promise.resolve([]),
+    workspaceContact.profileId ? fetchOwnerSpine(workspaceContact.profileId) : Promise.resolve([]),
+    workspaceContact.profileId ? fetchDocumentGroupSettings(workspaceContact.profileId) : Promise.resolve([]),
     fetchWorkspaceMessages(messagingContactIds),
     fetchWorkspaceInboxConversations(workspaceContact.profileId),
     fetchWorkspacePersonMessages(activeContactId),
     fetchWorkspaceContactOpenTasks(activeContactId),
     fetchWorkspaceProjects({ contactIds, propertyIds }),
-    fetchParcelTeamMembers(),
+    fetchProxyTeamMembers(),
+    workspaceContact.profileId
+      ? (async () => {
+          const svc = createServiceClient();
+          const db = untypedDatabase(svc);
+          const { data } = await db
+            .from<OwnerReceiptRow[]>("owner_receipts")
+            .select(
+              "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, property:properties(name, address_line1, city, state)",
+            )
+            .eq("owner_id", workspaceContact.profileId!)
+            .order("purchase_date", { ascending: false })
+            .limit(500);
+          return (data as unknown as OwnerReceiptRow[]) ?? [];
+        })()
+      : Promise.resolve([] as OwnerReceiptRow[]),
   ]);
   const insightList = contactInsights[activeContactId] ?? [];
 
@@ -193,7 +254,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
   }
 
   const tabContents: Record<TabKey, React.ReactNode> = {
-    overview: (
+    home: (
       <WorkspaceOverviewTab
         workspaceContact={workspaceContact}
         workspaceId={workspaceId}
@@ -203,24 +264,18 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
         insights={insightList}
         openTasks={openTasks}
         activityLog={workspaceData?.activity ?? []}
+        members={members}
+        proxyTeam={proxyTeam}
       />
     ),
-    properties: <PropertiesTab properties={workspaceContact.properties} />,
-    team: (
-      <WorkspaceTeamTab
-        workspaceId={workspaceId}
+    inbox: (
+      <MessagingTab
+        contactId={activeContactId}
+        messages={allWorkspaceMessages}
+        inboxConversations={workspaceInboxConversations}
         members={members}
         activeContactId={activeContactId}
-        parcelTeam={parcelTeam}
-      />
-    ),
-    projects: (
-      <WorkspaceProjectsTab
-        projects={workspaceProjects}
-        activeContactId={activeContactId}
-        activeContactName={workspaceContact.fullName}
-        members={members}
-        properties={workspaceContact.properties}
+        ownerId={workspaceContact.profileId}
       />
     ),
     tasks: <TasksTab parentType="contact" parentId={activeContactId} />,
@@ -239,13 +294,39 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
         adminProfiles={adminProfiles}
       />
     ),
-    billing: billingData ? (
-      <BillingTab
-        workspaceId={workspaceId}
-        billing={billingData}
+    documents: workspaceContact.profileId ? (
+      <DocumentsTab
         documents={workspaceDocuments}
+        spineDocuments={ownerSpineDocuments}
+        groupSettings={documentGroupSettings}
+        workspaceId={workspaceId}
+        members={members}
+        owner={{
+          profileId: workspaceContact.profileId,
+          fullName: workspaceContact.fullName,
+          email: workspaceContact.email ?? "",
+          phone: workspaceContact.phone ?? null,
+        }}
+        properties={workspaceContact.properties.map((p) => ({ id: p.id, label: p.label }))}
+      />
+    ) : (
+      <TabPlaceholder
+        title="Documents"
+        body="Documents are available once the workspace begins onboarding."
+      />
+    ),
+    finances: financeData ? (
+      <FinanceTab
+        workspaceId={workspaceId}
+        finance={financeData}
+        contactId={workspaceContact.id}
+        ownerEmail={workspaceContact.email}
         ownerId={workspaceContact.profileId}
+        ownerName={workspaceContact.fullName}
+        ownerPhone={workspaceContact.phone}
+        ownerAddress={buildAddressLines(workspaceContact.addressComponents, workspaceContact.addressFormatted)}
         properties={workspaceContact.properties}
+        receiptsForExplorer={receiptsForExplorer}
       />
     ) : (
       <TabPlaceholder
@@ -253,22 +334,11 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
         body="Finances are not available for this workspace yet."
       />
     ),
-    messaging: (
-      <MessagingTab
-        contactId={activeContactId}
-        messages={allWorkspaceMessages}
-        inboxConversations={workspaceInboxConversations}
-        members={members}
-        activeContactId={activeContactId}
-        ownerId={workspaceContact.profileId}
-      />
-    ),
-    documents: workspaceContact.profileId ? (
-      <DocumentsTab documents={workspaceDocuments} />
-    ) : (
+    properties: <PropertiesTab properties={workspaceContact.properties} />,
+    timeline: (
       <TabPlaceholder
-        title="Documents"
-        body="Documents are available once the workspace begins onboarding."
+        title="Timeline"
+        body="Activity timeline for this workspace."
       />
     ),
     settings: workspaceData ? (

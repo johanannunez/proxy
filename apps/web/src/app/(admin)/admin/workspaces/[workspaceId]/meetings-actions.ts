@@ -205,7 +205,7 @@ export async function updateOwnerMeeting(
   }
 
   revalidatePath(`/admin/workspaces/${ownerId}`);
-  revalidatePath("/portal/meetings");
+  revalidatePath("/workspace/meetings");
 
   if (user && current) {
     const title = (data.title ?? current.title) as string;
@@ -380,7 +380,7 @@ export async function shareRecap(
   if (error) return { ok: false, message: error.message };
 
   revalidatePath(`/admin/workspaces/${ownerId}`);
-  revalidatePath("/portal/meetings");
+  revalidatePath("/workspace/meetings");
 
   notifyMeetingRecapShared(ownerId, user.id, {
     title: meeting.title as string,
@@ -449,7 +449,7 @@ export async function generateMeetingSummary(
   }
 
   const systemPrompt =
-    "You are an expert meeting summarizer for a property management company called Parcel. " +
+    "You are an expert meeting summarizer for a property management company called Proxy. " +
     "Given a meeting transcript, produce: " +
     "1) A concise 2-3 sentence summary, " +
     "2) A bullet list of key decisions or updates, " +
@@ -520,7 +520,7 @@ export async function generateMeetingSummary(
   }
 
   revalidatePath(`/admin/workspaces/${ownerId}`);
-  revalidatePath("/portal/meetings");
+  revalidatePath("/workspace/meetings");
   return {
     ok: true,
     message: "AI summary generated.",

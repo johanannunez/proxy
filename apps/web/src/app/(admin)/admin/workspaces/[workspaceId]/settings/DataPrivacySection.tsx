@@ -50,7 +50,7 @@ export function DataPrivacySection({ connections }: Props) {
           <span className={s.cardHeaderTitle}>Connected services</span>
         </div>
         <p className={s.cardHeaderSub}>
-          Third-party integrations the owner has linked to Parcel.
+          Third-party integrations the owner has linked to Proxy.
         </p>
         <ul className={x.list}>
           {connections.length === 0 ? (
@@ -113,7 +113,7 @@ export function DataPrivacySection({ connections }: Props) {
         </ul>
         <div className={s.cardFooter}>
           <p className={s.cardFooterHint}>
-            Disconnecting a service stops data sync. Historical records stay in Parcel.
+            Disconnecting a service stops data sync. Historical records stay in Proxy.
           </p>
           <button type="button" className={s.btnSecondary}>
             Browse integrations
@@ -131,7 +131,7 @@ export function DataPrivacySection({ connections }: Props) {
             <div className={s.labelCell}>
               <label className={s.label}>Google Calendar</label>
               <span className={s.labelHint}>
-                Meetings you create in Parcel will sync to your Google Calendar and include a Meet link for video calls.
+                Meetings you create in Proxy will sync to your Google Calendar and include a Meet link for video calls.
               </span>
             </div>
             <div className={s.fieldCell}>
@@ -157,12 +157,12 @@ export function DataPrivacySection({ connections }: Props) {
             <div className={s.labelCell}>
               <label className={s.label}>Owner-facing timeline</label>
               <span className={s.labelHint}>
-                Parcel team can hide sensitive events from the owner&rsquo;s view.
+                Proxy team can hide sensitive events from the owner&rsquo;s view.
               </span>
             </div>
             <div className={s.fieldCell}>
               <p className={s.fieldHint}>
-                Admin-only events are tagged &ldquo;admin only&rdquo; and never appear in the owner portal.
+                Admin-only events are tagged &ldquo;admin only&rdquo; and never appear in the owner workspace.
               </p>
               <button type="button" className={s.btnGhost}>
                 <Eye size={14} weight="duotone" /> Review hidden events
@@ -178,7 +178,7 @@ export function DataPrivacySection({ connections }: Props) {
           />
           <ToggleRow
             label="Product analytics"
-            hint="Anonymous usage to help Parcel improve."
+            hint="Anonymous usage to help Proxy improve."
             checked={analyticsOptIn}
             onChange={() => setAnalyticsOptIn((v) => !v)}
           />
@@ -195,7 +195,7 @@ export function DataPrivacySection({ connections }: Props) {
             <div className={s.labelCell}>
               <label className={s.label}>Full export</label>
               <span className={s.labelHint}>
-                Everything Parcel has on this owner.
+                Everything Proxy has on this owner.
               </span>
             </div>
             <div className={s.fieldCell}>

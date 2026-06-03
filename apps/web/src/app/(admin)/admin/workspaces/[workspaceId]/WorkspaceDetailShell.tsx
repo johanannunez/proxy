@@ -36,29 +36,36 @@ const SHELL_LOADED_AT_MS = Date.now();
 // ---------------------------------------------------------------------------
 
 type TabKey =
-  | "overview"
-  | "team"
-  | "messaging"
-  | "properties"
-  | "projects"
+  | "home"
+  | "inbox"
   | "tasks"
   | "meetings"
   | "documents"
-  | "billing"
+  | "finances"
+  | "properties"
+  | "timeline"
   | "settings";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "overview",     label: "Overview"      },
-  { key: "team",         label: "Team"          },
-  { key: "messaging",    label: "Inbox"         },
-  { key: "properties",   label: "Properties"    },
-  { key: "projects",     label: "Projects"      },
-  { key: "tasks",        label: "Tasks"         },
-  { key: "meetings",     label: "Meetings"      },
-  { key: "documents",    label: "Documents"     },
-  { key: "billing",      label: "Finances"      },
-  { key: "settings",     label: "Settings"      },
+  { key: "home",       label: "Home"       },
+  { key: "inbox",      label: "Inbox"      },
+  { key: "tasks",      label: "Tasks"      },
+  { key: "meetings",   label: "Meetings"   },
+  { key: "documents",  label: "Documents"  },
+  { key: "finances",   label: "Finances"   },
+  { key: "properties", label: "Properties" },
+  { key: "timeline",   label: "Timeline"   },
+  { key: "settings",   label: "Settings"   },
 ];
+
+const LEGACY_TAB_MAP: Record<string, TabKey> = {
+  overview: "home",
+  team: "home",
+  messaging: "inbox",
+  finance: "finances",
+  billing: "finances",
+  projects: "home",
+};
 
 const TAB_KEYS = TABS.map((t) => t.key) as readonly string[];
 
@@ -413,7 +420,7 @@ function SkCard({ children }: { children: React.ReactNode }) {
 
 function TabSkeleton({ tab }: { tab: TabKey }) {
   switch (tab) {
-    case "overview":
+    case "home":
       return (
         <div className={styles.skContent}>
           <div className={styles.skRow2}>
@@ -466,72 +473,6 @@ function TabSkeleton({ tab }: { tab: TabKey }) {
         </div>
       );
 
-    case "team":
-      return (
-        <div className={styles.skContent}>
-          <div className={styles.skRow3}>
-            <SkCard>
-              <SkBone w="36%" h={9} />
-              <SkBone w="24%" h={24} />
-              <SkBone w="50%" h={9} />
-            </SkCard>
-            <SkCard>
-              <SkBone w="36%" h={9} />
-              <SkBone w="24%" h={24} />
-              <SkBone w="50%" h={9} />
-            </SkCard>
-            <SkCard>
-              <SkBone w="36%" h={9} />
-              <SkBone w="24%" h={24} />
-              <SkBone w="50%" h={9} />
-            </SkCard>
-          </div>
-          <div className={styles.skRow2}>
-            {[0, 1, 2, 3].map((i) => (
-              <SkCard key={i}>
-                <div className={styles.skListRow}>
-                  <SkBone style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0 }} />
-                  <div className={styles.skFlex1}>
-                    <SkBone w="56%" h={13} />
-                    <SkBone w="38%" h={9} />
-                  </div>
-                </div>
-                <SkBone w="70%" h={10} />
-              </SkCard>
-            ))}
-          </div>
-        </div>
-      );
-
-    case "projects":
-      return (
-        <div className={styles.skContent}>
-          <SkCard>
-            <SkBone w="28%" h={12} />
-            <SkBone w="82%" h={10} />
-            <div className={styles.skRow3}>
-              <SkBone h={36} style={{ borderRadius: 7 }} />
-              <SkBone h={36} style={{ borderRadius: 7 }} />
-              <SkBone h={36} style={{ borderRadius: 7 }} />
-            </div>
-          </SkCard>
-          <div className={styles.skRow2}>
-            {[0, 1].map((i) => (
-              <SkCard key={i}>
-                <div className={styles.skListRow}>
-                  <SkBone style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0 }} />
-                  <div className={styles.skFlex1}>
-                    <SkBone w="62%" h={13} />
-                    <SkBone w="38%" h={9} />
-                  </div>
-                </div>
-                <SkBone h={6} style={{ borderRadius: 999 }} />
-                <SkBone w="42%" h={10} />
-              </SkCard>
-            ))}
-          </div>
-        </div>
-      );
 
     case "tasks":
       return (
@@ -575,7 +516,7 @@ function TabSkeleton({ tab }: { tab: TabKey }) {
         </div>
       );
 
-    case "messaging":
+    case "inbox":
       return (
         <div className={styles.skContent} style={{ gap: 10 }}>
           {[44, 62, 38, 55, 48].map((pct, i) => (
@@ -604,7 +545,7 @@ function TabSkeleton({ tab }: { tab: TabKey }) {
         </div>
       );
 
-    case "billing":
+    case "finances":
       return (
         <div className={styles.skContent}>
           <div className={styles.skRow3}>
@@ -729,7 +670,8 @@ function WorkspaceContactDetailContent({
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      setActiveTab(tab && TAB_KEYS.includes(tab) ? (tab as TabKey) : "overview");
+      const normalizedTab = tab ? (LEGACY_TAB_MAP[tab] ?? tab) : null;
+      setActiveTab(normalizedTab && TAB_KEYS.includes(normalizedTab) ? (normalizedTab as TabKey) : "home");
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -771,10 +713,11 @@ function WorkspaceContactDetailContent({
     if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
 
     const nextTabParam = url.searchParams.get("tab");
-    if (!nextTabParam || !TAB_KEYS.includes(nextTabParam)) return;
+    const normalizedTabParam = nextTabParam ? (LEGACY_TAB_MAP[nextTabParam] ?? nextTabParam) : null;
+    if (!normalizedTabParam || !TAB_KEYS.includes(normalizedTabParam)) return;
 
     event.preventDefault();
-    const nextTab = nextTabParam as TabKey;
+    const nextTab = normalizedTabParam as TabKey;
     const params = new URLSearchParams(window.location.search);
     url.searchParams.forEach((value, key) => {
       params.set(key, value);
@@ -1009,7 +952,7 @@ function WorkspaceContactDetailContent({
           <div className={styles.contentWrapper} onClick={handleWorkspaceTabLinkClick}>
             {visiblePendingPersonId
               ? <TabSkeleton tab={activeTab} />
-              : <main className={styles.content}>{tabContents[activeTab]}</main>
+              : <main className={(activeTab === "documents" || activeTab === "finances") ? styles.contentFullBleed : styles.content}>{tabContents[activeTab]}</main>
             }
           </div>
         </div>

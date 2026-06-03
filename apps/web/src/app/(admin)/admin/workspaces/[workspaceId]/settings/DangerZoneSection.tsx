@@ -57,7 +57,7 @@ export function DangerZoneSection({ ownerName }: Props) {
           </button>
         </div>
         <div className={x.dangerBody}>
-          Hides the owner portal, pauses payouts, and suspends billing. Data is preserved and can be reactivated later.
+          Hides the owner workspace, pauses payouts, and suspends finance activity. Data is preserved and can be reactivated later.
         </div>
       </section>
 
@@ -169,7 +169,7 @@ function ConfirmModal({
           <p style={{ margin: 0 }}>
             {isDelete
               ? "This removes the owner profile, workspace, properties, and all records. This cannot be undone."
-              : "This hides the owner portal, pauses payouts, and suspends billing. You can reactivate later."}
+              : "This hides the owner workspace, pauses payouts, and suspends finance activity. You can reactivate later."}
           </p>
           <p style={{ margin: "10px 0 8px", fontSize: 12.5, color: "#647689" }}>
             Type <strong>{ownerName}</strong> to confirm.

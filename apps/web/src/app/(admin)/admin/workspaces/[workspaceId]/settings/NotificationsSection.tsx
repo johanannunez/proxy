@@ -9,7 +9,7 @@ type Channel = "bookings" | "payouts" | "messages" | "tasks" | "invoices" | "sys
 const CHANNELS: Array<{ key: Channel; label: string; sub: string }> = [
   { key: "bookings", label: "Bookings", sub: "New reservation, change, cancellation." },
   { key: "payouts",  label: "Payouts",  sub: "Payout sent, failed, or adjusted." },
-  { key: "messages", label: "Messages", sub: "New message in Parcel inbox." },
+  { key: "messages", label: "Messages", sub: "New message in Proxy inbox." },
   { key: "tasks",    label: "Tasks",    sub: "Task assigned, due soon, overdue." },
   { key: "invoices", label: "Invoices", sub: "Invoice issued, paid, failed." },
   { key: "system",   label: "System",   sub: "Weekly digest, platform updates, security." },
@@ -43,7 +43,7 @@ export function NotificationsSection() {
       <header className={s.sectionHeader}>
         <h2 className={s.sectionTitle}>Notifications</h2>
         <p className={s.sectionSubtitle}>
-          When and how the owner hears from Parcel.
+          When and how the owner hears from Proxy.
         </p>
       </header>
 

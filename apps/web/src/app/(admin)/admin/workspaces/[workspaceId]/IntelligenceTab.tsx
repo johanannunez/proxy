@@ -116,7 +116,7 @@ export function IntelligenceTab({ contactId, insights, generatedAt }: Props) {
           <p className={styles.emptyTitle}>No intelligence yet</p>
           <p className={styles.emptyBody}>
             Click Refresh to generate AI insights for this relationship.
-            Parcel analyzes communication events, meetings, and contact history.
+            Proxy analyzes communication events, meetings, and contact history.
           </p>
         </div>
       ) : (

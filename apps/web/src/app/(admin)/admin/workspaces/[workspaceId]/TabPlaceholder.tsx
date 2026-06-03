@@ -4,7 +4,7 @@ import styles from "./TabPlaceholder.module.css";
 
 /**
  * Dignified "rebuilding" card shown on tabs that haven't been rebuilt yet
- * (Properties, Billing, Activity, Files, Settings). Deliberately quiet
+ * (Properties, Finances, Activity, Files, Settings). Deliberately quiet
  * so the admin sees it once, knows why it's empty, and moves on.
  */
 export function TabPlaceholder({

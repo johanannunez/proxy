@@ -24,7 +24,7 @@ import {
   XCircle,
 } from "@phosphor-icons/react";
 import ConfirmModal from "@/components/admin/ConfirmModal";
-import type { ParcelTeamMember, WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
+import type { ProxyTeamMember, WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 import {
   addPersonToWorkspace,
   removePersonFromWorkspace,
@@ -35,7 +35,7 @@ type Props = {
   workspaceId: string;
   members: WorkspaceMember[];
   activeContactId: string;
-  parcelTeam: ParcelTeamMember[];
+  proxyTeam: ProxyTeamMember[];
 };
 
 type FormState = {
@@ -76,7 +76,7 @@ function formatMemberSince(value: string): string {
   });
 }
 
-function isJohananParcelLead(member: ParcelTeamMember): boolean {
+function isJohananProxyLead(member: ProxyTeamMember): boolean {
   const normalizedName = member.name.trim().toLowerCase();
   return normalizedName === "johanan nunez";
 }
@@ -152,7 +152,7 @@ function OwnerCard({
               {member.portalAccess ? (
                 <>
                   <CheckCircle size={13} weight="fill" />
-                  Portal access
+                  Workspace access
                 </>
               ) : (
                 <>
@@ -186,31 +186,31 @@ function OwnerCard({
   );
 }
 
-function ParcelCard({
+function ProxyCard({
   member,
   onOpen,
 }: {
-  member: ParcelTeamMember;
+  member: ProxyTeamMember;
   onOpen: () => void;
 }) {
   const companyName = member.company_name?.trim();
-  const showJohananActions = isJohananParcelLead(member);
+  const showJohananActions = isJohananProxyLead(member);
   const topTag = member.founding_member ? (
     <span className={styles.foundingBadge}>
       <Sparkle size={11} weight="fill" />
       Founding team
     </span>
   ) : (
-    <span className={styles.parcelRolePill}>{member.role}</span>
+    <span className={styles.proxyRolePill}>{member.role}</span>
   );
   const secondaryLine = companyName || (member.founding_member ? member.role : null);
 
   return (
-    <article className={styles.parcelCardShell}>
+    <article className={styles.proxyCardShell}>
       <button
         type="button"
-        className={styles.parcelCard}
-        data-testid="parcel-team-card"
+        className={styles.proxyCard}
+        data-testid="proxy-team-card"
         data-member-name={member.name}
         onClick={onOpen}
       >
@@ -235,7 +235,7 @@ function ParcelCard({
       </button>
       {showJohananActions ? (
         <div className={styles.cardActionRow}>
-          <a className={styles.cardActionLink} href="/portal/messages">
+          <a className={styles.cardActionLink} href="/workspace/inbox">
             <ChatCircleDots size={14} weight="bold" />
             Message in portal
           </a>
@@ -292,11 +292,11 @@ function DrawerTagRow({
   );
 }
 
-function ParcelTeamDrawer({
+function ProxyTeamDrawer({
   member,
   onClose,
 }: {
-  member: ParcelTeamMember;
+  member: ProxyTeamMember;
   onClose: () => void;
 }) {
   const companyName = member.company_name?.trim();
@@ -321,11 +321,11 @@ function ParcelTeamDrawer({
         aria-label="Close team member"
       />
       <section
-        className={styles.parcelDrawer}
+        className={styles.proxyDrawer}
         role="dialog"
         aria-modal="true"
         aria-label="Team member"
-        data-testid="parcel-team-drawer"
+        data-testid="proxy-team-drawer"
       >
         <div className={styles.drawerTopBar}>
           <span className={styles.drawerKicker}>Team member</span>
@@ -333,14 +333,14 @@ function ParcelTeamDrawer({
             <XIcon size={18} weight="bold" />
           </button>
         </div>
-        <div className={styles.parcelHero}>
+        <div className={styles.proxyHero}>
           <Avatar src={member.avatar_url} name={member.name} size={60} tone="brand" />
-          <span className={styles.parcelHeroText}>
-            <span className={styles.parcelHeroRole}>{member.role}</span>
-            <span className={styles.parcelHeroName}>{member.name}</span>
-            {companyName ? <span className={styles.parcelHeroCompany}>{companyName}</span> : null}
+          <span className={styles.proxyHeroText}>
+            <span className={styles.proxyHeroRole}>{member.role}</span>
+            <span className={styles.proxyHeroName}>{member.name}</span>
+            {companyName ? <span className={styles.proxyHeroCompany}>{companyName}</span> : null}
             {member.location ? (
-              <span className={styles.parcelHeroLocation}>
+              <span className={styles.proxyHeroLocation}>
                 <MapPin size={12} weight="bold" />
                 {member.location}
               </span>
@@ -414,7 +414,7 @@ export function WorkspaceTeamTab({
   workspaceId,
   members,
   activeContactId,
-  parcelTeam,
+  proxyTeam,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -425,11 +425,11 @@ export function WorkspaceTeamTab({
   const [removePending, startRemoveTransition] = useTransition();
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-  const selectedParcelId = searchParams?.get("teamMember") ?? null;
+  const selectedProxyId = searchParams?.get("teamMember") ?? null;
 
-  const selectedParcel = useMemo(
-    () => parcelTeam.find((member) => member.id === selectedParcelId) ?? null,
-    [parcelTeam, selectedParcelId],
+  const selectedProxy = useMemo(
+    () => proxyTeam.find((member) => member.id === selectedProxyId) ?? null,
+    [proxyTeam, selectedProxyId],
   );
 
   const portalAccessCount = members.filter((member) => member.portalAccess).length;
@@ -446,7 +446,7 @@ export function WorkspaceTeamTab({
     });
   }
 
-  function updateParcelDetail(memberId: string | null) {
+  function updateProxyDetail(memberId: string | null) {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
     params.set("tab", "team");
     if (memberId) {
@@ -517,15 +517,15 @@ export function WorkspaceTeamTab({
         <div className={styles.summaryTile}>
           <User size={18} weight="bold" />
           <span>
-            <strong>{parcelTeam.length}</strong>
-            Parcel team
+            <strong>{proxyTeam.length}</strong>
+            Proxy team
           </span>
         </div>
         <div className={styles.summaryTile}>
           <CheckCircle size={18} weight="bold" />
           <span>
             <strong>{portalAccessCount}</strong>
-            Portal access
+            Workspace access
           </span>
         </div>
       </section>
@@ -626,21 +626,21 @@ export function WorkspaceTeamTab({
       </section>
 
       <section className={styles.teamSection}>
-        <SectionTitle title="Parcel Team" count={parcelTeam.length} />
-        {parcelTeam.length > 0 ? (
-          <div className={styles.parcelGrid}>
-            {parcelTeam.map((member) => (
-              <ParcelCard
+        <SectionTitle title="Proxy Team" count={proxyTeam.length} />
+        {proxyTeam.length > 0 ? (
+          <div className={styles.proxyGrid}>
+            {proxyTeam.map((member) => (
+              <ProxyCard
                 key={member.id}
                 member={member}
-                onOpen={() => updateParcelDetail(member.id)}
+                onOpen={() => updateProxyDetail(member.id)}
               />
             ))}
           </div>
         ) : (
-          <div className={styles.emptyParcelTeam}>
+          <div className={styles.emptyProxyTeam}>
             <UsersThree size={20} weight="bold" />
-            <span>Parcel team members will appear here.</span>
+            <span>Proxy team members will appear here.</span>
           </div>
         )}
       </section>
@@ -655,8 +655,8 @@ export function WorkspaceTeamTab({
         onCancel={() => setConfirmRemoveId(null)}
       />
 
-      {selectedParcel ? (
-        <ParcelTeamDrawer member={selectedParcel} onClose={() => updateParcelDetail(null)} />
+      {selectedProxy ? (
+        <ProxyTeamDrawer member={selectedProxy} onClose={() => updateProxyDetail(null)} />
       ) : null}
     </div>
   );

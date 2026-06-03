@@ -14,7 +14,7 @@ import {
   removeAdminAvatar,
   getAdminOriginalAvatar,
 } from "@/lib/admin/admin-avatar-actions";
-import { AvatarCropModal } from "@/components/portal/AvatarCropModal";
+import { AvatarCropModal } from "@/components/workspace/AvatarCropModal";
 import styles from "./PersonalInfoSection.module.css";
 
 type ContactMethod = "email" | "sms" | "either";
@@ -321,7 +321,7 @@ export function PersonalInfoSection({
             <div className={styles.labelCell}>
               <span className={styles.label}>Profile photo</span>
               <span className={styles.labelHint}>
-                Shown to the team and on the owner portal.
+                Shown to the team and on the owner workspace.
               </span>
             </div>
             <div className={styles.fieldCell}>

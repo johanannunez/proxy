@@ -146,7 +146,7 @@
 .cancelButton:focus-visible,
 .removeButton:focus-visible,
 .cardMain:focus-visible,
-.parcelCard:focus-visible,
+.proxyCard:focus-visible,
 .drawerClose:focus-visible,
 .drawerBackdrop:focus-visible {
   outline: 2px solid var(--color-brand);
@@ -227,7 +227,7 @@
 }
 
 .ownerGrid,
-.parcelGrid {
+.proxyGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
@@ -255,7 +255,7 @@
 }
 
 .cardMain,
-.parcelCard {
+.proxyCard {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -271,7 +271,7 @@
   text-align: left;
 }
 
-.parcelCardShell {
+.proxyCardShell {
   min-width: 0;
   border: 1px solid var(--color-warm-gray-100);
   border-radius: 8px;
@@ -282,13 +282,13 @@
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
-.parcelCardShell:hover {
+.proxyCardShell:hover {
   border-color: color-mix(in srgb, var(--color-brand) 32%, var(--color-warm-gray-200));
   box-shadow: 0 10px 24px -18px rgba(11, 27, 43, 0.35);
   transform: translateY(-1px);
 }
 
-.parcelCard {
+.proxyCard {
   min-height: 132px;
   padding-bottom: 16px;
 }
@@ -372,7 +372,7 @@
 .viewingBadge,
 .foundingBadge,
 .rolePill,
-.parcelRolePill,
+.proxyRolePill,
 .portalBadgeActive,
 .portalBadgeMuted {
   display: inline-flex;
@@ -399,7 +399,7 @@
 }
 
 .rolePill,
-.parcelRolePill {
+.proxyRolePill {
   padding: 5px 8px;
   background: var(--color-warm-gray-100);
   color: var(--color-text-secondary);
@@ -407,7 +407,7 @@
   text-overflow: ellipsis;
 }
 
-.parcelRolePill {
+.proxyRolePill {
   background: color-mix(in srgb, var(--color-brand) 8%, var(--color-white));
   color: var(--color-brand);
 }
@@ -503,7 +503,7 @@
   transform: translateY(-1px);
 }
 
-.emptyParcelTeam {
+.emptyProxyTeam {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -533,7 +533,7 @@
   cursor: pointer;
 }
 
-.parcelDrawer {
+.proxyDrawer {
   position: relative;
   z-index: 1;
   display: flex;
@@ -588,7 +588,7 @@
   color: var(--color-text-primary);
 }
 
-.parcelHero {
+.proxyHero {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -599,14 +599,14 @@
     linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 7%, var(--color-white)), var(--color-white));
 }
 
-.parcelHeroText {
+.proxyHeroText {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
 
-.parcelHeroName {
+.proxyHeroName {
   overflow: hidden;
   color: var(--color-text-primary);
   font-size: 16px;
@@ -618,7 +618,7 @@
   white-space: nowrap;
 }
 
-.parcelHeroCompany {
+.proxyHeroCompany {
   overflow: hidden;
   color: var(--color-text-secondary);
   font-size: 12.5px;
@@ -628,7 +628,7 @@
   white-space: nowrap;
 }
 
-.parcelHeroRole {
+.proxyHeroRole {
   align-self: flex-start;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-brand) 9%, var(--color-white));
@@ -639,7 +639,7 @@
   padding: 5px 8px;
 }
 
-.parcelHeroLocation {
+.proxyHeroLocation {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -755,7 +755,7 @@
 
 @media (max-width: 1180px) {
   .ownerGrid,
-  .parcelGrid {
+  .proxyGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -770,7 +770,7 @@
   }
 
   .ownerGrid,
-  .parcelGrid {
+  .proxyGrid {
     grid-template-columns: 1fr;
   }
 }
@@ -805,7 +805,7 @@
   }
 
   .cardMain,
-  .parcelCard {
+  .proxyCard {
     min-height: 124px;
     padding: 14px;
   }
