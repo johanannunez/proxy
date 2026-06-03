@@ -2,6 +2,7 @@
 
 import { createHash } from "crypto";
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 import type { OwnerReceiptRow } from "@/app/(workspace)/workspace/finances/receipts-types";
@@ -12,6 +13,27 @@ const ALLOWED_MIME = new Set([
   "image/heic", "image/heif", "image/bmp", "image/tiff",
   "application/pdf",
 ]);
+
+const EDITABLE_FIELDS = new Set([
+  "vendor", "amount", "currency", "category", "purchase_date", "notes",
+  "visibility", "reimbursement_status", "payment_source",
+  "claim_provider", "claim_reference", "reimbursed_at",
+]);
+
+async function requireAdmin(): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if ((profile as { role: string } | null)?.role !== "admin") {
+    return { error: "Admin access required." };
+  }
+  return { error: null };
+}
 
 const AI_SYSTEM_PROMPT = `You analyze receipts and financial documents for a short-term rental property management company.
 
@@ -125,6 +147,9 @@ export async function uploadReceiptForOwner(
   | { duplicate: true; existingReceipt: OwnerReceiptRow; signedUrl: string | null }
   | { error: string }
 > {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { error: authError };
+
   const file = formData.get("file");
   if (!(file instanceof File)) return { error: "No file provided" };
   if (file.size > MAX_SIZE_BYTES) return { error: "File too large (max 50 MB)" };
@@ -201,6 +226,11 @@ export async function uploadReceiptForOwner(
 }
 
 export async function updateReceiptFieldAdmin(id: string, field: string, value: unknown, workspaceId: string): Promise<void> {
+  const { error: authError } = await requireAdmin();
+  if (authError) throw new Error(authError);
+
+  if (!EDITABLE_FIELDS.has(field)) throw new Error(`Field '${field}' is not editable.`);
+
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
   await db.from("owner_receipts").update({ [field]: value } as unknown).eq("id", id);
@@ -208,6 +238,9 @@ export async function updateReceiptFieldAdmin(id: string, field: string, value: 
 }
 
 export async function markReceiptReviewedAdmin(id: string, workspaceId: string): Promise<void> {
+  const { error: authError } = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
   await db.from("owner_receipts").update({ reviewed_at: new Date().toISOString() } as unknown).eq("id", id);
@@ -215,6 +248,9 @@ export async function markReceiptReviewedAdmin(id: string, workspaceId: string):
 }
 
 export async function deleteReceiptAdmin(id: string, storagePath: string | null, workspaceId: string): Promise<void> {
+  const { error: authError } = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   const svc = createServiceClient();
   if (storagePath) {
     await svc.storage.from("receipts").remove([storagePath]);
@@ -225,12 +261,27 @@ export async function deleteReceiptAdmin(id: string, storagePath: string | null,
 }
 
 export async function getReceiptSignedUrlAdmin(storagePath: string): Promise<string | null> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return null;
+
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+  // Verify the path belongs to an actual receipt row before issuing a URL.
+  const { data: receipt } = await db
+    .from("owner_receipts")
+    .select("id")
+    .eq("storage_path", storagePath)
+    .maybeSingle();
+  if (!receipt) return null;
+
   const { data } = await svc.storage.from("receipts").createSignedUrl(storagePath, 3600);
   return data?.signedUrl ?? null;
 }
 
 export async function toggleReceiptVisibility(id: string, visible: boolean, workspaceId: string): Promise<void> {
+  const { error: authError } = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
   await db.from("owner_receipts").update({ visibility: visible ? "visible" : "hidden" } as unknown).eq("id", id);

@@ -8,6 +8,7 @@ import {
   publishForm,
   deleteForm,
   createFormResponse,
+  getForm,
 } from "@/lib/admin/forms";
 import type { FormSchema } from "@/lib/admin/forms-types";
 
@@ -121,7 +122,13 @@ export async function submitFormResponseAction(
   data: Record<string, unknown>,
   propertyId?: string,
 ): Promise<FormActionResult> {
-  const { userId } = await requireAuth();
+  const { userId, error: authError } = await requireAuth();
+  if (authError || !userId) return { ok: false, error: authError ?? "You must be signed in." };
+
+  const form = await getForm(formId);
+  if (!form || !form.is_active || !form.is_public) {
+    return { ok: false, error: "Form is not accepting responses." };
+  }
 
   const result = await createFormResponse({
     form_id: formId,
