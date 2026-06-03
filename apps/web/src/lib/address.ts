@@ -1,5 +1,5 @@
 /**
- * Shared address formatting utilities for the Parcel portal and admin.
+ * Shared address formatting utilities for the Proxy portal and admin.
  *
  * The DB stores address_line1 (street) and address_line2 (unit/apt — optional).
  * These helpers normalize and assemble them into consistent display strings

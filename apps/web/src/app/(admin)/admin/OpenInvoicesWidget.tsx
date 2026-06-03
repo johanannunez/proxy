@@ -56,8 +56,8 @@ export function OpenInvoicesWidget({ data }: { data: OpenInvoicesData }) {
     <WidgetShell
       label="Invoices"
       count={data.total > 0 ? data.total : undefined}
-      href="/admin/billing"
-      hrefLabel="View billing"
+      href="/admin/finances"
+      hrefLabel="View finances"
     >
       {!isEmpty && (
         <div className={styles.totalOwed}>

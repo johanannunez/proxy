@@ -17,7 +17,7 @@ import {
 // Config
 // ---------------------------------------------------------------------------
 
-const BRAND_FROM = '"The Parcel Company" <hello@theparcelco.com>';
+const BRAND_FROM = '"Proxy" <hello@myproxyhost.com>';
 
 // ---------------------------------------------------------------------------
 // Owner contact lookup
@@ -91,9 +91,9 @@ function normalizePhone(raw: string): string | null {
   return null;
 }
 
-// Trim to 155 chars to leave room for " - Parcel" suffix without exceeding segment
+// Trim to 155 chars to leave room for " - Proxy" suffix without exceeding segment
 function smsText(body: string): string {
-  const suffix = " - Parcel";
+  const suffix = " - Proxy";
   const max = 155 - suffix.length;
   const trimmed = body.length > max ? body.slice(0, max - 1) + "…" : body;
   return trimmed + suffix;

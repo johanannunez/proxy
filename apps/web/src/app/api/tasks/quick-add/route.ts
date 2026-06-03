@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const caldavUid = `task-${crypto.randomUUID()}@parcelco.com`;
+  const caldavUid = `task-${crypto.randomUUID()}@myproxyhost.com`;
 
   const { data, error } = await (supabase as any)
     .from('tasks')
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.theparcelco.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.myproxyhost.com';
   return NextResponse.json({
     id: data.id,
     title: data.title,

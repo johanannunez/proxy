@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { Power } from "@phosphor-icons/react";
-import { signOut } from "@/app/(portal)/portal/actions";
+import { signOut } from "@/app/(workspace)/workspace/actions";
 
 export function AdminSignOutButton() {
   const [pending, startTransition] = useTransition();

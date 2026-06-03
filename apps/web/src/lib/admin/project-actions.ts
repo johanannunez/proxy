@@ -50,7 +50,7 @@ export async function createProject(input: CreateProjectInput): Promise<{ id: st
   if (!data) throw new Error('Project was not created.');
   revalidatePath('/admin/projects');
   revalidatePath('/admin/workspaces');
-  revalidatePath('/portal/projects');
+  revalidatePath('/workspace/projects');
   return { id: data.id as string };
 }
 
@@ -81,7 +81,7 @@ export async function updateProject(
   revalidatePath('/admin/projects');
   revalidatePath(`/admin/projects/${id}`);
   revalidatePath('/admin/workspaces');
-  revalidatePath('/portal/projects');
+  revalidatePath('/workspace/projects');
 }
 
 export async function archiveProject(id: string): Promise<void> {

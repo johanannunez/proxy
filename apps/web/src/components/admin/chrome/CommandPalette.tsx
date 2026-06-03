@@ -77,7 +77,7 @@ const GROUP_ORDER: Array<keyof PaletteSearchResponse> = [
 
 /* ───── Recent tracking (localStorage) ───── */
 
-const RECENT_KEY = "parcel.admin.recent";
+const RECENT_KEY = "proxy.admin.recent";
 const RECENT_LIMIT = 8;
 
 type RecentEntry = { href: string; label: string; icon: string; at: number };
@@ -124,7 +124,7 @@ function labelFromPathname(pathname: string): { label: string; icon: string } | 
     properties: { label: "Properties", icon: "Buildings" },
     projects:   { label: "Projects",   icon: "Kanban" },
     calendar:   { label: "Calendar",   icon: "CalendarBlank" },
-    billing:    { label: "Finances",   icon: "Wallet" },
+    finances:   { label: "Finances",   icon: "Wallet" },
     meetings:   { label: "Meetings",   icon: "CalendarBlank" },
     timeline:   { label: "Timeline",   icon: "ClockCounterClockwise" },
     payouts:    { label: "Payouts",    icon: "Wallet" },

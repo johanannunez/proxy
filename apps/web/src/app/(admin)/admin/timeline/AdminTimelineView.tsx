@@ -83,7 +83,7 @@ const FORM_CATEGORY_OPTIONS = CATEGORIES.filter((category) => category.value !==
 const FORM_VISIBILITY_OPTIONS = VISIBILITY_FILTERS.filter((filter) => filter.value !== "all");
 
 const TEMPLATES = [
-  { label: "Welcome", eventType: "welcome", category: "account", title: "Welcome to Parcel", isPinned: true, visibility: "owner" },
+  { label: "Welcome", eventType: "welcome", category: "account", title: "Welcome to Proxy", isPinned: true, visibility: "owner" },
   { label: "Onboarding Complete", eventType: "onboarding_complete", category: "account", title: "Onboarding complete", isPinned: true, visibility: "owner" },
   { label: "First Booking", eventType: "booking_created", category: "calendar", title: "First booking received", isPinned: true, visibility: "owner" },
   { label: "First Payout", eventType: "payout_issued", category: "financial", title: "First payout sent", isPinned: true, visibility: "owner" },
@@ -214,7 +214,7 @@ function exportTimelineCsv(
   const link = document.createElement("a");
   const today = new Date().toISOString().split("T")[0];
   link.href = url;
-  link.download = `parcel-timeline-export-${today}.csv`;
+  link.download = `proxy-timeline-export-${today}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }

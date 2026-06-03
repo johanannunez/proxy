@@ -1,7 +1,7 @@
 /**
- * Branded Parcel email template.
+ * Branded Proxy email template.
  * Wraps rich HTML content from the Tiptap editor in a clean,
- * email-client-safe template matching the Parcel brand.
+ * email-client-safe template matching the Proxy brand.
  */
 
 const BRAND_BLUE = "#02AAEB";
@@ -9,7 +9,7 @@ const BRAND_DARK = "#1B77BE";
 const TEXT_PRIMARY = "#1a1a1a";
 const TEXT_SECONDARY = "#6b7280";
 const BG_LIGHT = "#fafafa";
-const PORTAL_URL = "https://www.theparcelco.com";
+const PORTAL_URL = "https://www.myproxyhost.com";
 
 export function buildMessageEmail(args: {
   subject: string;
@@ -18,8 +18,8 @@ export function buildMessageEmail(args: {
   ownerName?: string;
 }) {
   const portalLink = args.conversationId
-    ? `${PORTAL_URL}/portal/messages`
-    : `${PORTAL_URL}/portal/messages`;
+    ? `${PORTAL_URL}/workspace/inbox`
+    : `${PORTAL_URL}/workspace/inbox`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -59,7 +59,7 @@ export function buildMessageEmail(args: {
       <!-- Header -->
       <div class="header">
         <a href="${PORTAL_URL}" class="logo" style="color: ${TEXT_PRIMARY}; text-decoration: none;">
-          Parcel<span class="logo-badge" style="color: ${BRAND_BLUE}; margin-left: 8px;">Owner Portal</span>
+          Proxy<span class="logo-badge" style="color: ${BRAND_BLUE}; margin-left: 8px;">Owner Workspace</span>
         </a>
       </div>
 
@@ -74,14 +74,14 @@ export function buildMessageEmail(args: {
       <!-- CTA -->
       <div class="cta-wrap">
         <a href="${portalLink}" class="cta-btn" style="color: #ffffff; background-color: ${BRAND_BLUE}; text-decoration: none;">
-          View in your Parcel portal
+          View in your Proxy portal
         </a>
       </div>
 
       <!-- Footer -->
       <div class="footer">
-        <p>This message was sent from your <a href="${PORTAL_URL}">Parcel Owner Portal</a>.</p>
-        <p>The Parcel Company &middot; Rentals Made Easy</p>
+        <p>This message was sent from your <a href="${PORTAL_URL}">Proxy Workspace</a>.</p>
+        <p>Proxy &middot; Rentals Made Easy</p>
       </div>
     </div>
   </div>
@@ -100,7 +100,84 @@ export function buildBroadcastEmail(args: {
   });
 }
 
-const ADMIN_URL = "https://www.theparcelco.com/admin";
+export function buildWorkspaceRequestEmail(args: {
+  subject: string;
+  body: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  trustNote: string;
+  requestedItems: string[];
+}) {
+  const itemRows = args.requestedItems
+    .map((item) => `
+      <tr>
+        <td style="padding: 10px 12px; border-top: 1px solid #eef2f7;">
+          <span style="display: inline-block; width: 7px; height: 7px; border-radius: 999px; background: ${BRAND_BLUE}; margin-right: 9px; vertical-align: middle;"></span>
+          <span style="font-size: 14px; color: ${TEXT_PRIMARY}; font-weight: 600;">${escapeHtml(item)}</span>
+        </td>
+      </tr>`)
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(args.subject)}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${BG_LIGHT}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="padding: 24px 12px; background-color: ${BG_LIGHT};">
+    <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #edf0f3; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);">
+      <div style="padding: 30px 36px 22px; border-bottom: 1px solid #eef2f7;">
+        <a href="${PORTAL_URL}" style="font-size: 21px; font-weight: 800; color: ${TEXT_PRIMARY}; text-decoration: none; letter-spacing: -0.4px;">
+          Proxy<span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: ${BRAND_BLUE}; margin-left: 9px;">Owner Request</span>
+        </a>
+      </div>
+
+      <div style="padding: 30px 36px 8px;">
+        <div style="font-size: 15px; line-height: 1.7; color: ${TEXT_PRIMARY};">
+          ${args.body}
+        </div>
+      </div>
+
+      ${args.requestedItems.length > 0 ? `
+      <div style="padding: 12px 36px 0;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #eef2f7; border-radius: 12px; overflow: hidden; background: #fbfdff;">
+          <thead>
+            <tr>
+              <th style="padding: 11px 12px; text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: ${TEXT_SECONDARY}; background: #f8fafc;">Requested items</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows}
+          </tbody>
+        </table>
+      </div>` : ""}
+
+      <div style="padding: 26px 36px 12px; text-align: center;">
+        <a href="${escapeHtml(args.ctaUrl)}" style="display: inline-block; padding: 13px 24px; border-radius: 10px; background: ${BRAND_BLUE}; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800;">
+          ${escapeHtml(args.ctaLabel)}
+        </a>
+      </div>
+
+      <div style="padding: 8px 36px 28px;">
+        <div style="border: 1px solid #e5edf5; border-radius: 12px; background: #f8fbfd; padding: 14px 16px;">
+          <p style="margin: 0 0 5px; font-size: 12px; font-weight: 800; color: ${TEXT_PRIMARY};">Secure Proxy portal</p>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${TEXT_SECONDARY};">${escapeHtml(args.trustNote)}</p>
+        </div>
+      </div>
+
+      <div style="padding: 22px 36px; border-top: 1px solid #eef2f7; text-align: center; background: #fbfbfc;">
+        <p style="font-size: 12px; color: ${TEXT_SECONDARY}; margin: 0 0 5px; line-height: 1.5;">Sent by Proxy.</p>
+        <p style="font-size: 12px; color: ${TEXT_SECONDARY}; margin: 0; line-height: 1.5;">If something looks off, reply to this email and we will help.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+const ADMIN_URL = "https://www.myproxyhost.com/admin";
 
 export function buildFollowUpDigestEmail(args: {
   contacts: Array<{
@@ -157,7 +234,7 @@ export function buildFollowUpDigestEmail(args: {
 
       <div style="padding: 28px 40px 20px; border-bottom: 1px solid #f0eeec;">
         <a href="${ADMIN_URL}" style="font-size: 20px; font-weight: 700; color: ${TEXT_PRIMARY}; text-decoration: none; letter-spacing: -0.3px;">
-          Parcel<span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: ${BRAND_BLUE}; margin-left: 8px;">Admin</span>
+          Proxy<span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: ${BRAND_BLUE}; margin-left: 8px;">Admin</span>
         </a>
       </div>
 
@@ -187,7 +264,7 @@ export function buildFollowUpDigestEmail(args: {
       </div>
 
       <div style="padding: 20px 40px; border-top: 1px solid #f0eeec; text-align: center;">
-        <p style="font-size: 12px; color: ${TEXT_SECONDARY}; margin: 0;">Daily follow-up digest from <a href="${ADMIN_URL}" style="color: ${BRAND_DARK}; text-decoration: none;">Parcel</a>.</p>
+        <p style="font-size: 12px; color: ${TEXT_SECONDARY}; margin: 0;">Daily follow-up digest from <a href="${ADMIN_URL}" style="color: ${BRAND_DARK}; text-decoration: none;">Proxy</a>.</p>
       </div>
 
     </div>

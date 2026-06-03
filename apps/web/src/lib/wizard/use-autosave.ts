@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef } from "react";
  * Hook for localStorage auto-save on setup step forms.
  *
  * Saves form data to localStorage debounced at 500ms on every field change.
- * Key format: 'parcel:setup:v1:{stepKey}:{propertyId}'
+ * Key format: 'proxy:setup:v1:{stepKey}:{propertyId}'
  *
  * Usage:
  *   const { save, load, clear } = useAutoSave("wifi", propertyId);
@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef } from "react";
  *   // On successful server save: clear();
  */
 export function useAutoSave(stepKey: string, propertyId?: string) {
-  const key = `parcel:setup:v1:${stepKey}:${propertyId ?? "owner"}`;
+  const key = `proxy:setup:v1:${stepKey}:${propertyId ?? "owner"}`;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = useCallback(

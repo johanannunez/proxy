@@ -21,7 +21,7 @@ export async function sendPushToOwner(args: {
   }
 
   webpush.setVapidDetails(
-    "mailto:hello@theparcelco.com",
+    "mailto:hello@myproxyhost.com",
     publicKey,
     privateKey,
   );
@@ -37,8 +37,8 @@ export async function sendPushToOwner(args: {
   const payload = JSON.stringify({
     title: args.title,
     body: args.body.replace(/<[^>]*>/g, "").slice(0, 100),
-    data: { url: args.url ?? "/portal/messages" },
-    tag: args.tag ?? "parcel-message",
+    data: { url: args.url ?? "/workspace/inbox" },
+    tag: args.tag ?? "proxy-message",
   });
 
   const results = await Promise.allSettled(
@@ -90,7 +90,7 @@ export async function sendPushToAllOwners(args: {
         title: args.title,
         body: args.body,
         url: args.url,
-        tag: "parcel-announcement",
+        tag: "proxy-announcement",
       }),
     ),
   );

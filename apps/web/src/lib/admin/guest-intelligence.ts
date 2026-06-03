@@ -126,8 +126,8 @@ async function analyzeProperty(
   const feedbackText = buildFeedbackText(reviews, conversations);
   if (feedbackText === 'No guest feedback available.') return null;
 
-  const apiKey = process.env.OPENROUTER_API_PARCEL;
-  if (!apiKey) throw new Error('OPENROUTER_API_PARCEL is not set');
+  const apiKey = process.env.OPENROUTER_API_PROXY;
+  if (!apiKey) throw new Error('OPENROUTER_API_PROXY is not set');
 
   try {
     const controller = new AbortController();

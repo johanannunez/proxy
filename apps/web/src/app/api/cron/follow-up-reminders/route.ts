@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       Authorization: `Bearer ${resendKey}`,
     },
     body: JSON.stringify({
-      from: "Parcel <hello@theparcelco.com>",
+      from: "Proxy <hello@myproxyhost.com>",
       to: DIGEST_TO,
       subject,
       html,

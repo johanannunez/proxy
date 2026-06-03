@@ -173,7 +173,7 @@ function verifyResendWebhook(request: Request, payload: string): { ok: true } | 
   }
 
   const providedSecret =
-    request.headers.get("x-parcel-webhook-secret") ??
+    request.headers.get("x-proxy-webhook-secret") ??
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
   return providedSecret && providedSecret === fallbackSecret

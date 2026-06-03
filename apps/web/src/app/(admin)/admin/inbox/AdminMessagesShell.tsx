@@ -94,7 +94,7 @@ type ConversationDetail = {
   ownerProfile: { id: string; full_name: string | null; email: string; phone: string | null; workspaceId: string | null } | null;
 };
 
-type DeliveryMethod = "portal" | "email" | "sms";
+type DeliveryMethod = "workspace" | "email" | "sms";
 
 const FILTERS = [
   { key: "all", label: "All messages" },
@@ -136,7 +136,7 @@ export function AdminMessagesShell({
   const [conversationDetail, setConversationDetail] =
     useState<ConversationDetail | null>(null);
   const [composeBody, setComposeBody] = useState("");
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("portal");
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("workspace");
   const [emailSubject, setEmailSubject] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -146,7 +146,7 @@ export function AdminMessagesShell({
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [broadcastSubject, setBroadcastSubject] = useState("");
   const [broadcastBody, setBroadcastBody] = useState("");
-  const [broadcastDelivery, setBroadcastDelivery] = useState<"portal" | "portal_email">("portal");
+  const [broadcastDelivery, setBroadcastDelivery] = useState<"workspace" | "workspace_email">("workspace");
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [ownerCount, setOwnerCount] = useState<number | null>(0);
   const selectedOwner = selectedOwnerId
@@ -262,7 +262,7 @@ export function AdminMessagesShell({
     }
     setComposeBody("");
     setEmailSubject("");
-    setDeliveryMethod(conversationDetail.type === "email_log" ? "email" : "portal");
+    setDeliveryMethod(conversationDetail.type === "email_log" ? "email" : "workspace");
     if (result.conversationId) loadConversation(result.conversationId);
   };
 
@@ -278,7 +278,7 @@ export function AdminMessagesShell({
     if (result.error) return;
     setBroadcastSubject("");
     setBroadcastBody("");
-    setBroadcastDelivery("portal");
+    setBroadcastDelivery("workspace");
     setShowBroadcast(false);
     startTransition(() => router.refresh());
   };
@@ -884,16 +884,16 @@ export function AdminMessagesShell({
                     >
                       <button
                         type="button"
-                        onClick={() => setDeliveryMethod("portal")}
+                        onClick={() => setDeliveryMethod("workspace")}
                         disabled={conversationDetail.type === "email_log"}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
                         style={{
-                          backgroundColor: composeDeliveryMethod === "portal" ? "var(--color-warm-gray-100)" : "transparent",
-                          color: composeDeliveryMethod === "portal" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+                          backgroundColor: composeDeliveryMethod === "workspace" ? "var(--color-warm-gray-100)" : "transparent",
+                          color: composeDeliveryMethod === "workspace" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
                         }}
                       >
                         <ChatCircle size={12} weight="bold" />
-                        Portal
+                        Workspace
                       </button>
                       <button
                         type="button"
@@ -998,26 +998,26 @@ export function AdminMessagesShell({
               <div className="flex overflow-hidden rounded-lg border" style={{ borderColor: "var(--color-warm-gray-200)" }}>
                 <button
                   type="button"
-                  onClick={() => setBroadcastDelivery("portal")}
+                  onClick={() => setBroadcastDelivery("workspace")}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: broadcastDelivery === "portal" ? "var(--color-warm-gray-100)" : "transparent",
-                    color: broadcastDelivery === "portal" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+                    backgroundColor: broadcastDelivery === "workspace" ? "var(--color-warm-gray-100)" : "transparent",
+                    color: broadcastDelivery === "workspace" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
                   }}
                 >
-                  Portal only
+                  Workspace only
                 </button>
                 <button
                   type="button"
-                  onClick={() => setBroadcastDelivery("portal_email")}
+                  onClick={() => setBroadcastDelivery("workspace_email")}
                   className="flex items-center gap-1.5 border-l px-3 py-1.5 text-xs font-medium transition-colors"
                   style={{
                     borderColor: "var(--color-warm-gray-200)",
-                    backgroundColor: broadcastDelivery === "portal_email" ? "var(--color-warm-gray-100)" : "transparent",
-                    color: broadcastDelivery === "portal_email" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+                    backgroundColor: broadcastDelivery === "workspace_email" ? "var(--color-warm-gray-100)" : "transparent",
+                    color: broadcastDelivery === "workspace_email" ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
                   }}
                 >
-                  Portal + Email
+                  Workspace + Email
                 </button>
               </div>
             </div>
@@ -1030,7 +1030,7 @@ export function AdminMessagesShell({
               {ownerCount === null
                 ? "Could not load owner count."
                 : <>This will be sent to <strong style={{ color: "var(--color-text-primary)" }}>{ownerCount}</strong> owner{ownerCount !== 1 ? "s" : ""}
-              {broadcastDelivery === "portal_email" ? " (portal + email)" : " (portal only)"}.</>
+              {broadcastDelivery === "workspace_email" ? " (portal + email)" : " (portal only)"}.</>
               }
             </div>
 
@@ -1311,7 +1311,7 @@ function ThreadInsightStrip({
   const contactMethods = [
     conversation.ownerProfile?.email ? "Email" : null,
     conversation.ownerProfile?.phone ? "SMS" : null,
-    conversation.type === "direct" ? "Portal" : null,
+    conversation.type === "direct" ? "Workspace" : null,
   ].filter((method): method is string => Boolean(method));
 
   return (

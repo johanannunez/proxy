@@ -39,7 +39,7 @@ Industry data shows average US vacation rental occupancy hovering around 56% nat
 
 ## Dynamic pricing is table stakes
 
-Static nightly rates leave money on the table during peak periods and sit empty during slow ones. Modern revenue management tools adjust pricing based on demand, local events, competitor rates, and booking windows. Professional management companies like The Parcel Company integrate dynamic pricing as a baseline service, not a premium add-on.
+Static nightly rates leave money on the table during peak periods and sit empty during slow ones. Modern revenue management tools adjust pricing based on demand, local events, competitor rates, and booking windows. Professional management companies like Proxy integrate dynamic pricing as a baseline service, not a premium add-on.
 
 ## Guest expectations have risen
 
@@ -51,7 +51,7 @@ Many owners lack the time or proximity to manage their property effectively. The
 
 ---
 
-At The Parcel Company, we partner with owners who want their property to perform at its best without the daily grind of self-management. If you are evaluating your options, [learn about our co-hosting services](/properties).`,
+At Proxy, we partner with owners who want their property to perform at its best without the daily grind of self-management. If you are evaluating your options, [learn about our co-hosting services](/properties).`,
   },
   {
     slug: "corporate-housing-furnished-stay-guide",
@@ -93,7 +93,7 @@ Things break. Schedules change. You need a property manager who responds in hour
 
 ---
 
-At The Parcel Company, every property on our platform is vetted against these criteria and more. We believe corporate housing should feel like home — because it is, even if only for a month.`,
+At Proxy, every property on our platform is vetted against these criteria and more. We believe corporate housing should feel like home — because it is, even if only for a month.`,
   },
   {
     slug: "best-mountain-getaways-families-spring",
@@ -165,7 +165,7 @@ A small Bluetooth speaker and a playlist you love can transform any space. Light
 
 ---
 
-The best vacation rentals anticipate these needs. At The Parcel Company, our properties come stocked with quality basics so you can focus on enjoying the trip, not setting it up.`,
+The best vacation rentals anticipate these needs. At Proxy, our properties come stocked with quality basics so you can focus on enjoying the trip, not setting it up.`,
   },
   {
     slug: "how-to-maximize-rental-income-vacation-property",
@@ -211,7 +211,7 @@ If you are spending more than five hours per week managing a single property, th
 
 ---
 
-The Parcel Company helps owners extract the full potential from their properties. [See how our management approach works](/about).`,
+Proxy helps owners extract the full potential from their properties. [See how our management approach works](/about).`,
   },
   {
     slug: "best-us-cities-short-term-rentals-2026",
@@ -253,7 +253,7 @@ An underrated beach market with lower property costs than Florida's Gulf Coast. 
 
 ---
 
-Market selection is the first step. Professional management in your chosen market is the second. [Explore how The Parcel Company operates across key US markets](/about).`,
+Market selection is the first step. Professional management in your chosen market is the second. [Explore how Proxy operates across key US markets](/about).`,
   },
   {
     slug: "pet-friendly-vacation-rentals-guide",
@@ -295,7 +295,7 @@ Before you arrive, locate the closest 24-hour veterinary clinic and save the add
 
 ---
 
-At The Parcel Company, our pet-friendly properties are genuinely equipped for four-legged guests — not just technically tolerant. [Browse our pet-friendly listings](/properties?amenity=pet-friendly).`,
+At Proxy, our pet-friendly properties are genuinely equipped for four-legged guests — not just technically tolerant. [Browse our pet-friendly listings](/properties?amenity=pet-friendly).`,
   },
   {
     slug: "remote-work-vacation-rental-workcation",
@@ -337,7 +337,7 @@ Block your calendar for afternoon activities before the trip. Without a plan, wo
 
 ---
 
-The Parcel Company curates properties with remote workers in mind — verified Wi-Fi speeds, real workspaces, and locations that reward you when you close the laptop. [Find your next workcation](/properties).`,
+Proxy curates properties with remote workers in mind — verified Wi-Fi speeds, real workspaces, and locations that reward you when you close the laptop. [Find your next workcation](/properties).`,
   },
   {
     slug: "property-management-mistakes-new-hosts",
@@ -387,7 +387,7 @@ Guests should not need to message you to figure out how the thermostat works or 
 
 ---
 
-The Parcel Company helps new and experienced owners avoid these pitfalls with full-service management. [Learn about our owner partnership model](/about).`,
+Proxy helps new and experienced owners avoid these pitfalls with full-service management. [Learn about our owner partnership model](/about).`,
   },
   {
     slug: "sustainable-travel-eco-friendly-vacation-rentals",
@@ -429,7 +429,7 @@ The best sustainable rentals provide refillable soap dispensers instead of singl
 
 ---
 
-At The Parcel Company, we are building sustainability into our property standards — from energy-efficient upgrades to waste-reduction programs. [Explore our properties](/properties) and travel with impact in mind.`,
+At Proxy, we are building sustainability into our property standards — from energy-efficient upgrades to waste-reduction programs. [Explore our properties](/properties) and travel with impact in mind.`,
   },
 ];
 

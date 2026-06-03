@@ -24,7 +24,7 @@ export async function reverseGeocode(
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
       {
-        headers: { "User-Agent": "ParcelPortal/1.0" },
+        headers: { "User-Agent": "ProxyWorkspace/1.0" },
       },
     );
     if (!res.ok) return null;
@@ -55,7 +55,7 @@ export async function forwardGeocode(
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
       {
-        headers: { "User-Agent": "ParcelPortal/1.0" },
+        headers: { "User-Agent": "ProxyWorkspace/1.0" },
       },
     );
     if (!res.ok) return null;

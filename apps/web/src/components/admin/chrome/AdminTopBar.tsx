@@ -73,7 +73,7 @@ const SECTION_LABELS: Record<string, string> = {
   workspaces: "Workspaces",
   vendors: "Vendors",
   properties: "Properties",
-  billing: "Finances",
+  finances: "Finances",
   help: "Help Center",
   treasury: "Treasury",
   timeline: "Timeline",

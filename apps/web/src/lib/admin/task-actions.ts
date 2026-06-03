@@ -29,7 +29,7 @@ export type CreateTaskInput = {
 export async function createTask(input: CreateTaskInput): Promise<{ id: string }> {
   const { supabase, user } = await requireAdminUser();
 
-  const caldav_uid = `task-${crypto.randomUUID()}@parcelco.com`;
+  const caldav_uid = `task-${crypto.randomUUID()}@myproxyhost.com`;
 
   // Compute next_spawn_at when creating a recurring task
   let next_spawn_at: string | null = null;
@@ -150,7 +150,7 @@ export async function completeTask(id: string): Promise<void> {
         recurrence_rule: task.recurrence_rule,
         pre_notify_hours: task.pre_notify_hours,
         priority: (task as any).priority ?? 4,
-        caldav_uid: `task-${crypto.randomUUID()}@parcelco.com`,
+        caldav_uid: `task-${crypto.randomUUID()}@myproxyhost.com`,
         spawned_from_task_id: task.id,
         due_at: nextDue,
         next_spawn_at: afterNext,

@@ -47,12 +47,12 @@ export const homeTypeOptions: Array<{ value: string; label: string }> =
 
 /**
  * Maps Hospitable's `property_type` enum (which mirrors Airbnb's taxonomy)
- * onto Parcel's `home_type` enum. Used by the reconciliation layer to
- * detect when a Parcel row and a Hospitable listing describe the same
+ * onto Proxy's `home_type` enum. Used by the reconciliation layer to
+ * detect when a Proxy row and a Hospitable listing describe the same
  * building with different labels.
  *
  * Hospitable / Airbnb do NOT have concepts for duplex, multi-family, or
- * ADU, so those Parcel types have no inbound match. In the reconciler a
+ * ADU, so those Proxy types have no inbound match. In the reconciler a
  * missing mapping is treated as "semantically different taxonomies" and
  * surfaced as a warning rather than a hard mismatch.
  */

@@ -15,7 +15,7 @@ async function sendViaResend(args: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Parcel Platform <hello@theparcelco.com>",
+      from: "Proxy Platform <hello@myproxyhost.com>",
       to: "jo@johanannunez.com",
       subject: args.subject,
       html: args.html,

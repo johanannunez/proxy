@@ -49,7 +49,7 @@ export async function logEmailToOwner(args: {
     subject: args.subject,
     bodyHtml: args.bodyHtml,
     direction: "outbound",
-    from: "hello@theparcelco.com",
+    from: "hello@myproxyhost.com",
     to: [],
     resendId: args.resendId,
     source: "app",

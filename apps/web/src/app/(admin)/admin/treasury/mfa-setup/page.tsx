@@ -26,7 +26,7 @@ export default async function MfaSetupPage() {
     .single();
 
   if (profile?.role !== "admin") {
-    redirect("/portal/dashboard");
+    redirect("/workspace/home");
   }
 
   // If user already has TOTP enrolled, skip setup

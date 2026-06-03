@@ -18,7 +18,7 @@ export type ProjectStatus =
   | 'done'
   | 'archived';
 
-export type ProjectVisibility = 'internal' | 'portal_visible';
+export type ProjectVisibility = 'internal' | 'workspace_visible';
 
 export type ProjectRow = {
   id: string;
@@ -89,7 +89,7 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
 
 export const PROJECT_VISIBILITY_LABEL: Record<ProjectVisibility, string> = {
   internal: 'Internal',
-  portal_visible: 'Visible in portal',
+  workspace_visible: 'Visible in portal',
 };
 
 export const CLIENT_PROJECT_TYPES: ProjectType[] = [

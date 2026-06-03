@@ -12,7 +12,7 @@ import {
 import {
   decideBlockRequest,
   reopenBlockRequest,
-} from "@/app/(portal)/portal/reserve/actions";
+} from "@/app/(workspace)/workspace/reserve/actions";
 import { labelForBlockStatus } from "@/lib/labels";
 
 type Row = {

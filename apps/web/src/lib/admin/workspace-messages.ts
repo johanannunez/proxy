@@ -152,9 +152,9 @@ function getWorkspaceInboxContextLabel(
     if (contactName) return `Contact: ${contactName}`;
 
     const from = metadataString(metadata, "from");
-    if (from && !from.toLowerCase().endsWith("@theparcelco.com")) return `From: ${from}`;
+    if (from && !from.toLowerCase().endsWith("@myproxyhost.com")) return `From: ${from}`;
 
-    const to = metadataStringArray(metadata, "to").find((email) => !email.toLowerCase().endsWith("@theparcelco.com"));
+    const to = metadataStringArray(metadata, "to").find((email) => !email.toLowerCase().endsWith("@myproxyhost.com"));
     if (to) return `To: ${to}`;
   }
 

@@ -1,4 +1,4 @@
-export type InboxDeliveryMethod = "portal" | "email" | "sms";
+export type InboxDeliveryMethod = "workspace" | "email" | "sms";
 
 export type InboxConversationForSend = {
   id: string;
@@ -45,10 +45,10 @@ export type OwnerNotificationDecisionArgs = {
   recipients: string[];
 };
 
-const PARCEL_EMAILS = new Set([
-  "hello@theparcelco.com",
-  "support@theparcelco.com",
-  "team@theparcelco.com",
+const PROXY_EMAILS = new Set([
+  "hello@myproxyhost.com",
+  "support@myproxyhost.com",
+  "team@myproxyhost.com",
 ]);
 
 export function resolveSendMessageConversationTarget(args: {
@@ -151,7 +151,7 @@ function findLatestInboundExternalSender(messages: EmailReplyMessage[]): string 
     if (metadata.direction !== "inbound") continue;
 
     const from = normalizeEmail(metadata.from);
-    if (from && !PARCEL_EMAILS.has(from)) return from;
+    if (from && !PROXY_EMAILS.has(from)) return from;
   }
 
   return null;

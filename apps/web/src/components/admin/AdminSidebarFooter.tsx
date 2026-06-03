@@ -7,23 +7,23 @@ import {
   GearSix, UserSwitch, Power, Sun, Moon, Monitor, Check, Question, CaretUp,
 } from "@phosphor-icons/react";
 import { useTheme } from "@/components/ThemeProvider";
-import { signOut } from "@/app/(portal)/portal/actions";
+import { signOut } from "@/app/(workspace)/workspace/actions";
 
-function getPortalUrl(pathname: string): string {
+function getWorkspaceUrl(pathname: string): string {
   const map: Array<[string, string]> = [
-    ["/admin/properties", "/portal/properties"],
-    ["/admin/calendar", "/portal/calendar"],
-    ["/admin/meetings", "/portal/meetings"],
-    ["/admin/inbox", "/portal/messages"],
-    ["/admin/tasks", "/portal/tasks"],
-    ["/admin/timeline", "/portal/timeline"],
-    ["/admin/account", "/portal/account"],
-    ["/admin/help", "/portal/help"],
+    ["/admin/properties", "/workspace/properties"],
+    ["/admin/calendar", "/workspace/calendar"],
+    ["/admin/meetings", "/workspace/meetings"],
+    ["/admin/inbox", "/workspace/inbox"],
+    ["/admin/tasks", "/workspace/tasks"],
+    ["/admin/timeline", "/workspace/timeline"],
+    ["/admin/account", "/workspace/account"],
+    ["/admin/help", "/workspace/help"],
   ];
   for (const [prefix, dest] of map) {
     if (pathname.startsWith(prefix)) return dest;
   }
-  return "/portal/dashboard";
+  return "/workspace/home";
 }
 
 const THEME_OPTIONS = [
@@ -74,7 +74,7 @@ export function AdminSidebarFooter({
   avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
-  const portalHref = getPortalUrl(pathname ?? "");
+  const workspaceHref = getWorkspaceUrl(pathname ?? "");
   const [open, setOpen] = useState(false);
   const [signOutPending, startSignOut] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
@@ -136,14 +136,14 @@ export function AdminSidebarFooter({
           </Link>
 
           <Link
-            href={portalHref}
+            href={workspaceHref}
             onClick={() => setOpen(false)}
             style={{ ...item, color: "rgba(96,185,235,0.85)" }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(96,185,235,0.07)"; e.currentTarget.style.color = "rgba(96,185,235,1)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(96,185,235,0.85)"; }}
           >
             <UserSwitch size={15} weight="duotone" style={{ color: "rgba(96,185,235,0.75)", flexShrink: 0 }} />
-            Switch to Portal
+            Switch to Workspace
           </Link>
 
           <div style={{ height: "1px", background: "rgba(255,255,255,0.07)", margin: "4px 6px" }} />

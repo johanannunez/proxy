@@ -124,7 +124,7 @@ export async function verifyW9(ownerId: string): Promise<VerifyW9Result> {
   }
 
   revalidatePath("/admin/documents");
-  revalidatePath("/portal/setup/w9");
+  revalidatePath("/workspace/setup/w9");
   return { ok: true };
 }
 
@@ -174,6 +174,6 @@ export async function rejectW9(
   }
 
   revalidatePath("/admin/documents");
-  revalidatePath("/portal/setup/w9");
+  revalidatePath("/workspace/setup/w9");
   return { ok: true };
 }

@@ -119,9 +119,9 @@ type WorkspaceMemberContactRow = {
   metadata: unknown;
 };
 
-type ParcelTeamMemberBase = Database["public"]["Tables"]["parcel_team"]["Row"];
+type ProxyTeamMemberBase = Database["public"]["Tables"]["proxy_team"]["Row"];
 
-export type ParcelTeamMember = ParcelTeamMemberBase & {
+export type ProxyTeamMember = ProxyTeamMemberBase & {
   company_name: string | null;
   hours: string | null;
   services: string[] | null;
@@ -432,13 +432,13 @@ export async function fetchWorkspaceMembers(workspaceId: string): Promise<Worksp
   });
 }
 
-export async function fetchParcelTeamMembers(): Promise<ParcelTeamMember[]> {
+export async function fetchProxyTeamMembers(): Promise<ProxyTeamMember[]> {
   const supabase = createServiceClient();
 
   const db = untypedDatabase(supabase);
 
   const { data, error } = await db
-    .from<ParcelTeamMember[]>("parcel_team")
+    .from<ProxyTeamMember[]>("proxy_team")
     .select("*")
     .eq("active", true)
     .order("sort_order", { ascending: true });

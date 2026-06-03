@@ -12,7 +12,7 @@ function plainTextFromHtml(html: string): string {
 }
 
 export function smsTextFromHtml(html: string): string {
-  const suffix = " - Parcel";
+  const suffix = " - Proxy";
   const maxLength = 155 - suffix.length;
   const text = plainTextFromHtml(html).replace(/\s+/g, " ").trim();
   const trimmed = text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;

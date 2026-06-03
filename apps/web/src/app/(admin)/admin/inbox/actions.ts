@@ -23,6 +23,7 @@ import {
 
 async function sendViaResend(args: {
   to: string[];
+  cc?: string[];
   subject: string;
   html: string;
 }): Promise<{ ok: boolean; resendId?: string; error?: string }> {
@@ -40,8 +41,9 @@ async function sendViaResend(args: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Parcel <hello@theparcelco.com>",
+        from: "Proxy <hello@myproxyhost.com>",
         to: args.to,
+        cc: args.cc && args.cc.length > 0 ? args.cc : undefined,
         subject: args.subject,
         html: args.html,
       }),
@@ -85,9 +87,13 @@ async function fetchEmailReplyMessages(conversationId: string): Promise<EmailRep
 export async function sendMessage(args: {
   ownerId: string;
   body: string;
-  deliveryMethod?: "portal" | "email" | "sms";
+  deliveryMethod?: "workspace" | "email" | "sms";
   subject?: string;
   conversationId?: string;
+  emailHtml?: string;
+  emailTo?: string[];
+  emailCc?: string[];
+  smsBody?: string;
 }) {
   const supabase = await createClient();
   const {
@@ -96,7 +102,7 @@ export async function sendMessage(args: {
   if (!user) return { error: "Not authenticated" };
 
   const svc = createServiceClient();
-  const deliveryMethod = args.deliveryMethod ?? "portal";
+  const deliveryMethod = args.deliveryMethod ?? "workspace";
 
   let selectedConversation: InboxConversationForSend | null = null;
   if (args.conversationId) {
@@ -180,10 +186,10 @@ export async function sendMessage(args: {
     });
 
     if (!recipients.ok) return { error: recipients.error };
-    emailRecipients = recipients.to;
+    emailRecipients = args.emailTo && args.emailTo.length > 0 ? args.emailTo : recipients.to;
 
-    const subject = args.subject || "New message from The Parcel Company";
-    const html = buildMessageEmail({
+    const subject = args.subject || "New message from Proxy";
+    const html = args.emailHtml ?? buildMessageEmail({
       subject,
       body: args.body,
       conversationId,
@@ -192,6 +198,7 @@ export async function sendMessage(args: {
 
     const result = await sendViaResend({
       to: emailRecipients,
+      cc: args.emailCc,
       subject,
       html,
     });
@@ -215,7 +222,7 @@ export async function sendMessage(args: {
 
     const smsResult = await sendOpenPhoneSms({
       to: ownerProfile.phone,
-      bodyHtml: args.body,
+      bodyHtml: args.smsBody ?? args.body,
     });
 
     if (!smsResult.ok) {
@@ -231,8 +238,9 @@ export async function sendMessage(args: {
   if (args.subject) metadata.subject = args.subject;
   if (deliveryMethod === "email") {
     metadata.direction = "outbound";
-    metadata.from = "hello@theparcelco.com";
+    metadata.from = "hello@myproxyhost.com";
     metadata.to = emailRecipients;
+    if (args.emailCc && args.emailCc.length > 0) metadata.cc = args.emailCc;
     metadata.source = "admin_inbox";
     if (emailReplyContext.relatedContactId) metadata.related_contact_id = emailReplyContext.relatedContactId;
     if (emailReplyContext.relatedContactName) metadata.related_contact_name = emailReplyContext.relatedContactName;
@@ -291,9 +299,9 @@ export async function sendMessage(args: {
     createNotification({
       ownerId: args.ownerId,
       type: "message_received",
-      title: "New message from The Parcel Company",
+      title: "New message from Proxy",
       body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
-      link: "/portal/messages",
+      link: "/workspace/inbox",
     }).catch(() => {});
   }
 
@@ -301,9 +309,9 @@ export async function sendMessage(args: {
   if (shouldNotifyOwner) {
     sendPushToOwner({
       ownerId: args.ownerId,
-      title: "The Parcel Company",
+      title: "Proxy",
       body: args.body,
-      url: "/portal/messages",
+      url: "/workspace/inbox",
     }).catch(() => {});
   }
 
@@ -330,7 +338,7 @@ export async function sendMessage(args: {
       ownerId: args.ownerId,
       eventType: "message_received",
       category: "communication",
-      title: "New message from Parcel",
+      title: "New message from Proxy",
       body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
       visibility: "admin_only",
     });
@@ -347,7 +355,7 @@ export async function sendMessage(args: {
 export async function sendBroadcast(args: {
   subject: string;
   body: string;
-  deliveryMethod: "portal" | "portal_email";
+  deliveryMethod: "workspace" | "workspace_email";
 }) {
   const supabase = await createClient();
   const {
@@ -378,7 +386,7 @@ export async function sendBroadcast(args: {
       sender_id: user.id,
       body: args.body,
       is_system: true,
-      delivery_method: args.deliveryMethod === "portal_email" ? "email" : "portal",
+      delivery_method: args.deliveryMethod === "workspace_email" ? "email" : "workspace",
       metadata: { subject: args.subject } as unknown as import("@/types/supabase").Json,
     })
     .select("id")
@@ -387,7 +395,7 @@ export async function sendBroadcast(args: {
   if (msgErr || !msg) return { error: msgErr?.message ?? "Failed to send announcement" };
 
   // If email delivery, send to all owners
-  if (args.deliveryMethod === "portal_email") {
+  if (args.deliveryMethod === "workspace_email") {
     const { data: owners, error: ownersErr } = await svc
       .from("profiles")
       .select("email, full_name")
@@ -419,14 +427,14 @@ export async function sendBroadcast(args: {
     type: "announcement",
     title: args.subject,
     body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
-    link: "/portal/messages",
+    link: "/workspace/inbox",
   }).catch(() => {});
 
   // Push notification to all owners (fire-and-forget)
   sendPushToAllOwners({
-    title: "Parcel Announcement",
+    title: "Proxy Announcement",
     body: args.body,
-    url: "/portal/messages",
+    url: "/workspace/inbox",
   }).catch(() => {});
 
   // Log activity (fire-and-forget)

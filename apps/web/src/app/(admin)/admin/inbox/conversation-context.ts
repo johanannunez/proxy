@@ -8,10 +8,10 @@ export type ConversationContextInput = {
   } | null;
 };
 
-const PARCEL_EMAILS = new Set([
-  "hello@theparcelco.com",
-  "support@theparcelco.com",
-  "team@theparcelco.com",
+const PROXY_EMAILS = new Set([
+  "hello@myproxyhost.com",
+  "support@myproxyhost.com",
+  "team@myproxyhost.com",
 ]);
 
 export function getConversationContextLabel(conversation: ConversationContextInput): string | null {
@@ -29,7 +29,7 @@ export function getConversationContextLabel(conversation: ConversationContextInp
 
     const externalTo = metadataStringArray(message.metadata, "to")
       .map(normalizeEmail)
-      .find((email): email is string => Boolean(email && !PARCEL_EMAILS.has(email)));
+      .find((email): email is string => Boolean(email && !PROXY_EMAILS.has(email)));
     if (externalTo && externalTo !== normalizeEmail(conversation.ownerEmail)) {
       return `To: ${externalTo}`;
     }
@@ -65,7 +65,7 @@ export function getConversationSearchText(conversation: ConversationContextInput
 
 function externalEmail(value: string | null): string | null {
   const email = normalizeEmail(value);
-  if (!email || PARCEL_EMAILS.has(email)) return null;
+  if (!email || PROXY_EMAILS.has(email)) return null;
   return email;
 }
 

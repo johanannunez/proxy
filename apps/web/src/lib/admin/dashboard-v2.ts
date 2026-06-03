@@ -64,7 +64,7 @@ export async function fetchCommandStripData(): Promise<CommandStripData> {
     supabase
       .from('profiles')
       .select('id')
-      .like('email', '%@pending.theparcelco.com'),
+      .like('email', '%@pending.myproxyhost.com'),
   ]);
 
   const pipelineValue = (pipelineContacts ?? []).reduce(
@@ -220,7 +220,7 @@ export async function fetchOwnerActivity(): Promise<OwnerActivityData> {
     supabase
       .from('profiles')
       .select('workspace_id')
-      .like('email', '%@pending.theparcelco.com'),
+      .like('email', '%@pending.myproxyhost.com'),
     supabase
       .from('properties')
       .select('contact_id')

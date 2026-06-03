@@ -23,7 +23,7 @@ assert.deepEqual(emailLogTarget, {
 });
 
 const blockedPortalOnEmailLog = resolveSendMessageConversationTarget({
-  deliveryMethod: "portal",
+  deliveryMethod: "workspace",
   selectedConversation: {
     id: "email-log-1",
     ownerId: "owner-1",
@@ -54,7 +54,7 @@ assert.deepEqual(directTarget, {
 });
 
 const createDirectTarget = resolveSendMessageConversationTarget({
-  deliveryMethod: "portal",
+  deliveryMethod: "workspace",
   selectedConversation: null,
   existingDirectConversationId: null,
 });

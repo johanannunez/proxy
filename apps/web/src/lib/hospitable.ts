@@ -93,7 +93,7 @@ export interface HospitableProperty {
    * Hospitable's building-type taxonomy: "house", "apartment",
    * "condominium", "townhouse", "cabin", "loft", etc. Mirrors Airbnb.
    * Used by `lib/hospitable-reconcile.ts` to detect drift between the
-   * Parcel-owned `home_type` enum and the OTA listing.
+   * Proxy-owned `home_type` enum and the OTA listing.
    */
   property_type?: string;
   /** "Entire Home", "Private Room", "Shared Room", "Hotel Room". */

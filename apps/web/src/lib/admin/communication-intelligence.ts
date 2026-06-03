@@ -179,8 +179,8 @@ export async function runCommunicationIntelligenceSync(): Promise<{
   errors: number;
 }> {
   const supabase = createServiceClient();
-  const apiKey = process.env.OPENROUTER_API_PARCEL;
-  if (!apiKey) throw new Error('OPENROUTER_API_PARCEL is not set');
+  const apiKey = process.env.OPENROUTER_API_PROXY;
+  if (!apiKey) throw new Error('OPENROUTER_API_PROXY is not set');
 
   const now = new Date().toISOString();
   const { data: events, error } = await table<EventRow>(supabase, 'communication_events')

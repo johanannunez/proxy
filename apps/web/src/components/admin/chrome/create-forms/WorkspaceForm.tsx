@@ -202,7 +202,7 @@ export function WorkspaceForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className={styles.note}>
-        Portal access stays off until you invite this person.
+        Workspace access stays off until you invite this person.
       </div>
 
       {error ? <div className={styles.error}>{error}</div> : null}

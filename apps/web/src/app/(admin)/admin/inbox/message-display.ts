@@ -10,10 +10,10 @@ export type MessageDisplayParticipant = {
   detail: string | null;
 };
 
-const PARCEL_EMAILS = new Set([
-  "hello@theparcelco.com",
-  "support@theparcelco.com",
-  "team@theparcelco.com",
+const PROXY_EMAILS = new Set([
+  "hello@myproxyhost.com",
+  "support@myproxyhost.com",
+  "team@myproxyhost.com",
 ]);
 
 export function getMessageDisplayParticipant(message: MessageDisplayInput): MessageDisplayParticipant {
@@ -30,7 +30,7 @@ export function getMessageDisplayParticipant(message: MessageDisplayInput): Mess
         };
       }
 
-      if (from && !PARCEL_EMAILS.has(from)) {
+      if (from && !PROXY_EMAILS.has(from)) {
         return {
           name: from,
           detail: "Email contact",
@@ -40,7 +40,7 @@ export function getMessageDisplayParticipant(message: MessageDisplayInput): Mess
 
     const outboundRecipient = metadataStringArray(message.metadata, "to")
       .map(normalizeEmail)
-      .find((email): email is string => Boolean(email && !PARCEL_EMAILS.has(email)));
+      .find((email): email is string => Boolean(email && !PROXY_EMAILS.has(email)));
     return {
       name: message.senderName,
       detail: outboundRecipient ?? null,

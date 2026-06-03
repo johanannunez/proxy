@@ -38,7 +38,7 @@ export { formatMonthYear } from "@/lib/admin/workspace-detail-types";
  *       profile and published properties.
  *
  *   Status pill:
- *     - `not_invited`  all members have `@pending.theparcelco.com` emails
+ *     - `not_invited`  all members have `@pending.myproxyhost.com` emails
  *     - `active`       every member has `onboarding_completed_at` stamped
  *     - `setting_up`   at least one property but onboarding not stamped
  *     - `invited`      fallback (real email, no properties)
@@ -279,7 +279,7 @@ export async function fetchWorkspaceDetail(workspaceId: string): Promise<Workspa
     ]);
 
   const isPending = (email: string | null) =>
-    !email || email.endsWith("@pending.theparcelco.com");
+    !email || email.endsWith("@pending.myproxyhost.com");
 
   const membersByWorkspace = new Map<string, Array<{ id: string; email: string | null; onboardedAt: string | null }>>();
   const profileOnboardedById = new Map(

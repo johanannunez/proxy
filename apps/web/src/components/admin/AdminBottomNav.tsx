@@ -119,7 +119,7 @@ const sheetItems: SheetEntry[] = [
       { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={17} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
     ],
   },
-  { href: "/admin/billing", label: "Finances", icon: <Receipt size={19} weight="duotone" />, matchPrefix: "/admin/billing" },
+  { href: "/admin/finances", label: "Finances", icon: <Receipt size={19} weight="duotone" />, matchPrefix: "/admin/finances" },
 ];
 
 /* ── Helpers ── */
@@ -264,21 +264,21 @@ export function AdminBottomNav({
   const { resolvedTheme, toggleTheme } = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const portalHref = (() => {
+  const workspaceHref = (() => {
     const map: Array<[string, string]> = [
-      ["/admin/properties", "/portal/properties"],
-      ["/admin/calendar", "/portal/calendar"],
-      ["/admin/meetings", "/portal/meetings"],
-      ["/admin/inbox", "/portal/messages"],
-      ["/admin/tasks", "/portal/tasks"],
-      ["/admin/timeline", "/portal/timeline"],
-      ["/admin/account", "/portal/account"],
-      ["/admin/help", "/portal/help"],
+      ["/admin/properties", "/workspace/properties"],
+      ["/admin/calendar", "/workspace/calendar"],
+      ["/admin/meetings", "/workspace/meetings"],
+      ["/admin/inbox", "/workspace/inbox"],
+      ["/admin/tasks", "/workspace/tasks"],
+      ["/admin/timeline", "/workspace/timeline"],
+      ["/admin/account", "/workspace/account"],
+      ["/admin/help", "/workspace/help"],
     ];
     for (const [prefix, dest] of map) {
       if (pathname?.startsWith(prefix)) return dest;
     }
-    return "/portal/dashboard";
+    return "/workspace/home";
   })();
 
   const isActive = useCallback(
@@ -524,9 +524,9 @@ export function AdminBottomNav({
 
               {/* Footer actions */}
               <div className="px-4 pb-2">
-                {/* Portal link */}
+                {/* Workspace link */}
                 <Link
-                  href={portalHref}
+                  href={workspaceHref}
                   onClick={closeMore}
                   className="mb-2 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold"
                   style={{
@@ -543,7 +543,7 @@ export function AdminBottomNav({
                     className="shrink-0"
                     style={{ color: "#fff" }}
                   />
-                  Portal
+                  Workspace
                 </Link>
 
                 {/* Dark/light mode toggle */}

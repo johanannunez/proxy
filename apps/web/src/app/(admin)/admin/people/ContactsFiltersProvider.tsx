@@ -61,7 +61,7 @@ export function ContactsFiltersProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('parcel_contacts_hidden_views');
+      const stored = localStorage.getItem('proxy_contacts_hidden_views');
       if (stored) {
         const parsed = JSON.parse(stored) as string[];
         if (Array.isArray(parsed)) {
@@ -130,7 +130,7 @@ export function ContactsFiltersProvider({ children }: { children: ReactNode }) {
   const setHiddenViews = useCallback((next: string[]) => {
     setState((prev) => ({ ...prev, hiddenViews: next }));
     try {
-      localStorage.setItem('parcel_contacts_hidden_views', JSON.stringify(next));
+      localStorage.setItem('proxy_contacts_hidden_views', JSON.stringify(next));
     } catch {
       // ignore
     }

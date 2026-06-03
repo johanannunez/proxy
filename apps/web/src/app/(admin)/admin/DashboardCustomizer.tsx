@@ -32,7 +32,7 @@ const WIDGET_LABELS: Record<WidgetKey, { label: string; group: string }> = {
   guestIntelligence:    { label: 'Guest Intelligence',     group: 'Intelligence' },
 };
 
-const STORAGE_KEY = 'parcel:dashboard:widgets';
+const STORAGE_KEY = 'proxy:dashboard:widgets';
 const ALL_KEYS = Object.keys(WIDGET_LABELS) as WidgetKey[];
 
 function loadPrefs(): Record<WidgetKey, boolean> {

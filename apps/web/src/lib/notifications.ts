@@ -1,10 +1,10 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 import {
-  isPortalNotificationEnabled,
+  isWorkspaceNotificationEnabled,
   preferencesFromRow,
   type OwnerNotificationPreferenceRow,
-} from "@/lib/portal/notification-preferences";
+} from "@/lib/workspace/notification-preferences";
 
 async function ownerAllowsNotification(ownerId: string, type: NotificationType): Promise<boolean> {
   const svc = createServiceClient();
@@ -15,7 +15,7 @@ async function ownerAllowsNotification(ownerId: string, type: NotificationType):
     .eq("owner_id", ownerId)
     .maybeSingle();
 
-  return isPortalNotificationEnabled(type, preferencesFromRow(data));
+  return isWorkspaceNotificationEnabled(type, preferencesFromRow(data));
 }
 
 /**
