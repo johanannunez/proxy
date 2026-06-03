@@ -10,7 +10,7 @@ import { PullToRefresh } from "@/components/workspace/PullToRefresh";
  * Normal pages get the standard centered, padded layout with pull-to-refresh.
  */
 
-const FULL_BLEED_ROUTES = ["/workspace/inbox", "/workspace/documents"];
+const FULL_BLEED_ROUTES = ["/workspace/inbox", "/workspace/documents", "/workspace/finances"];
 
 export function WorkspaceMain({ children }: { children: ReactNode }) {
   const pathname = usePathname();

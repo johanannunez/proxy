@@ -25,7 +25,7 @@ export default async function FinancialsPage() {
   const { data, error } = await db
     .from<OwnerReceiptRow[]>("owner_receipts")
     .select(
-      "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, property:properties(name, address_line1, city, state)",
+      "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, file_hash, property:properties(name, address_line1, city, state)",
     )
     .eq("owner_id", userId)
     .eq("visibility", "visible")
@@ -38,138 +38,142 @@ export default async function FinancialsPage() {
   const needsPayment = receipts.filter((r) => r.analysis_kind === "to_pay");
 
   return (
-    <div className="flex flex-col gap-5">
-      <section
-        className="rounded-2xl border p-5"
-        style={{
-          backgroundColor: "var(--color-white)",
-          borderColor: "var(--color-warm-gray-200)",
-        }}
-      >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-              style={{
-                backgroundColor: "rgba(2, 170, 235, 0.10)",
-                color: "var(--color-brand)",
-              }}
-            >
-              <Receipt size={18} weight="duotone" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                Receipts
-              </h2>
-              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                Financial documents and receipts shared by Proxy.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="rounded-xl px-4 py-2 text-center" style={{ backgroundColor: "var(--color-warm-gray-50)" }}>
-              <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                {receipts.length}
-              </div>
-              <div className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
-                Receipts
-              </div>
-            </div>
-            <div className="rounded-xl px-4 py-2 text-center" style={{ backgroundColor: "var(--color-warm-gray-50)" }}>
-              <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                {formatCurrency(total)}
-              </div>
-              <div className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
-                Shared
-              </div>
-            </div>
-            <div className="rounded-xl px-4 py-2 text-center" style={{ backgroundColor: "var(--color-warm-gray-50)" }}>
-              <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                {analyzedCount}
-              </div>
-              <div className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
-                Analyzed
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {needsPayment.length > 0 && (
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex flex-col gap-5 px-4 pb-5 pt-6 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10">
         <section
-          className="rounded-2xl border p-4"
+          className="rounded-2xl border p-5"
           style={{
-            backgroundColor: "rgba(245, 158, 11, 0.08)",
-            borderColor: "rgba(245, 158, 11, 0.22)",
+            backgroundColor: "var(--color-white)",
+            borderColor: "var(--color-warm-gray-200)",
           }}
         >
-          <div className="flex items-start gap-3">
-            <CurrencyDollar size={18} weight="duotone" color="#b45309" />
-            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                {needsPayment.length} item{needsPayment.length === 1 ? "" : "s"}
-              </span>{" "}
-              marked for payment review by Proxy.
-            </p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: "rgba(2, 170, 235, 0.10)",
+                  color: "var(--color-brand)",
+                }}
+              >
+                <Receipt size={18} weight="duotone" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  Finances
+                </h2>
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                  Receipts, invoices, and financial documents shared by Proxy.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="rounded-xl px-4 py-2 text-center" style={{ backgroundColor: "var(--color-warm-gray-50)" }}>
+                <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {receipts.length}
+                </div>
+                <div className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
+                  Documents
+                </div>
+              </div>
+              <div className="rounded-xl px-4 py-2 text-center" style={{ backgroundColor: "var(--color-warm-gray-50)" }}>
+                <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {formatCurrency(total)}
+                </div>
+                <div className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
+                  Shared
+                </div>
+              </div>
+              <div className="rounded-xl px-4 py-2 text-center" style={{ backgroundColor: "var(--color-warm-gray-50)" }}>
+                <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {analyzedCount}
+                </div>
+                <div className="text-[11px] font-medium" style={{ color: "var(--color-text-tertiary)" }}>
+                  Analyzed
+                </div>
+              </div>
+            </div>
           </div>
         </section>
-      )}
+
+        {needsPayment.length > 0 && (
+          <section
+            className="rounded-2xl border p-4"
+            style={{
+              backgroundColor: "rgba(245, 158, 11, 0.08)",
+              borderColor: "rgba(245, 158, 11, 0.22)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <CurrencyDollar size={18} weight="duotone" color="#b45309" />
+              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                <span className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {needsPayment.length} item{needsPayment.length === 1 ? "" : "s"}
+                </span>{" "}
+                marked for payment review by Proxy.
+              </p>
+            </div>
+          </section>
+        )}
+      </div>
 
       <ReceiptsExplorer initialReceipts={receipts} />
 
-      <section
-        className="rounded-2xl border p-6"
-        style={{
-          backgroundColor: "var(--color-white)",
-          borderColor: "var(--color-warm-gray-200)",
-        }}
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-            style={{ backgroundColor: "rgba(22, 163, 74, 0.10)", color: "#15803d" }}
-          >
-            <ChartLineUp size={18} weight="duotone" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>
-              Booking Revenue
-            </h2>
-            <p className="mt-1 text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Track your booking performance, occupancy, and revenue directly in Hospitable, where all booking data lives.
-            </p>
-            <a
-              href="https://app.hospitable.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold hover:opacity-80"
-              style={{
-                backgroundColor: "rgba(22, 163, 74, 0.10)",
-                color: "#15803d",
-                border: "1px solid rgba(22, 163, 74, 0.20)",
-              }}
+      <div className="flex flex-col gap-5 px-4 pb-20 pt-5 sm:px-6 lg:px-10 md:pb-6">
+        <section
+          className="rounded-2xl border p-6"
+          style={{
+            backgroundColor: "var(--color-white)",
+            borderColor: "var(--color-warm-gray-200)",
+          }}
+        >
+          <div className="flex items-start gap-4">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: "rgba(22, 163, 74, 0.10)", color: "#15803d" }}
             >
-              View in Hospitable <ArrowSquareOut size={14} weight="bold" />
-            </a>
+              <ChartLineUp size={18} weight="duotone" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                Booking Revenue
+              </h2>
+              <p className="mt-1 text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                Track your booking performance, occupancy, and revenue directly in Hospitable, where all booking data lives.
+              </p>
+              <a
+                href="https://app.hospitable.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold hover:opacity-80"
+                style={{
+                  backgroundColor: "rgba(22, 163, 74, 0.10)",
+                  color: "#15803d",
+                  border: "1px solid rgba(22, 163, 74, 0.20)",
+                }}
+              >
+                View in Hospitable <ArrowSquareOut size={14} weight="bold" />
+              </a>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section
-        className="rounded-2xl border p-5"
-        style={{
-          backgroundColor: "rgba(2, 170, 235, 0.06)",
-          borderColor: "rgba(2, 170, 235, 0.16)",
-        }}
-      >
-        <div className="flex items-start gap-3">
-          <Sparkle size={18} weight="duotone" color="var(--color-brand)" />
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Receipt notifications follow your account notification preferences. You can turn financial document notifications on or off from Account settings.
-          </p>
-        </div>
-      </section>
+        <section
+          className="rounded-2xl border p-5"
+          style={{
+            backgroundColor: "rgba(2, 170, 235, 0.06)",
+            borderColor: "rgba(2, 170, 235, 0.16)",
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <Sparkle size={18} weight="duotone" color="var(--color-brand)" />
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Receipt notifications follow your account notification preferences. You can turn financial document notifications on or off from Account settings.
+            </p>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

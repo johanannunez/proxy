@@ -178,7 +178,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
           const { data } = await db
             .from<OwnerReceiptRow[]>("owner_receipts")
             .select(
-              "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, property:properties(name, address_line1, city, state)",
+              "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, file_hash, property:properties(name, address_line1, city, state)",
             )
             .eq("owner_id", workspaceContact.profileId!)
             .order("purchase_date", { ascending: false })
