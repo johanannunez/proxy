@@ -1,5 +1,6 @@
 "use server";
 
+import "server-only";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -29,13 +30,12 @@ async function requireAdmin(): Promise<{ userId: string | null; error: string | 
   return { userId: user.id, error: null };
 }
 
-async function requireAuth(): Promise<{ userId: string | null; error: string | null }> {
+async function getOptionalUserId(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { userId: null, error: "You must be signed in." };
-  return { userId: user.id, error: null };
+  return user?.id ?? null;
 }
 
 export type FormActionResult<T = void> =
@@ -117,18 +117,44 @@ export async function deleteFormAction(id: string): Promise<FormActionResult> {
   return { ok: true, data: undefined };
 }
 
+export async function toggleFormPublicAction(
+  id: string,
+  isPublic: boolean,
+): Promise<void> {
+  const { error } = await requireAdmin();
+  if (error) return;
+  await updateForm(id, { is_public: isPublic });
+  revalidatePath(`/admin/documents/forms`);
+}
+
+export async function updateFormSlugAction(
+  id: string,
+  slug: string,
+): Promise<{ error?: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { error: authError };
+  const trimmed = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  if (!trimmed) return { error: "Slug cannot be empty" };
+  try {
+    await updateForm(id, { slug: trimmed });
+    revalidatePath(`/admin/documents/forms`);
+    return {};
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Slug already in use";
+    return { error: msg };
+  }
+}
+
 export async function submitFormResponseAction(
   formId: string,
   data: Record<string, unknown>,
   propertyId?: string,
 ): Promise<FormActionResult> {
-  const { userId, error: authError } = await requireAuth();
-  if (authError || !userId) return { ok: false, error: authError ?? "You must be signed in." };
-
   const form = await getForm(formId);
   if (!form || !form.is_active || !form.is_public) {
     return { ok: false, error: "Form is not accepting responses." };
   }
+  const userId = await getOptionalUserId();
 
   const result = await createFormResponse({
     form_id: formId,
