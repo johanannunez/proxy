@@ -1,0 +1,72 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fieldWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.submitRow {
+  padding-top: 0.5rem;
+}
+
+.submitBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  letter-spacing: -0.01em;
+}
+.submitBtn:hover:not(:disabled) { opacity: 0.9; }
+.submitBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.successCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.successCheck {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  color: var(--color-success);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.successMsg {
+  font-size: 1.0625rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 360px;
+}
+
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
