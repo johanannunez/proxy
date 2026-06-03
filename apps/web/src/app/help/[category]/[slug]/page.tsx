@@ -34,7 +34,7 @@ export async function generateMetadata({
     title: article.title,
     description: article.summary,
     alternates: {
-      canonical: `https://theparcelco.com/help/${catSlug}/${slug}`,
+      canonical: `https://www.myproxyhost.com/help/${catSlug}/${slug}`,
     },
     openGraph: {
       title: article.title,
@@ -208,7 +208,7 @@ export default async function ArticlePage({
           <HelpfulWidget articleId={article.id} />
         </div>
 
-        {/* ── Portal link ── */}
+        {/* ── Workspace link ── */}
         {article.related_portal_path && (
           <div
             className="mt-6 rounded-xl border px-5 py-4 text-center"

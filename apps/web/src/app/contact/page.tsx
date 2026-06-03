@@ -3,8 +3,8 @@ import StaticPage from "@/components/StaticPage";
 export const metadata = {
   title: "Contact Us",
   description:
-    "Get in touch with The Parcel Company. Questions about bookings, properties, or listing your home? Email us at hello@theparcelco.com.",
-  alternates: { canonical: "https://theparcelco.com/contact" },
+    "Get in touch with Proxy. Questions about bookings, properties, or listing your home? Email us at hello@myproxyhost.com.",
+  alternates: { canonical: "https://www.myproxyhost.com/contact" },
 };
 
 export default function ContactPage() {
@@ -17,10 +17,10 @@ export default function ContactPage() {
       <p>
         <strong>Email:</strong>{" "}
         <a
-          href="mailto:hello@theparcelco.com"
+          href="mailto:hello@myproxyhost.com"
           className="text-brand hover:underline"
         >
-          hello@theparcelco.com
+          hello@myproxyhost.com
         </a>
       </p>
       <p>

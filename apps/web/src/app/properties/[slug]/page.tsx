@@ -25,10 +25,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const city = property?.address?.city ?? "Tri-Cities";
 
   return {
-    title: `Parcel Co. | ${name}`,
+    title: `Proxy | ${name}`,
     description: `Book ${name} directly in ${city}, WA. No platform fees, best rates guaranteed.`,
     openGraph: {
-      title: `Parcel Co. | ${name}`,
+      title: `Proxy | ${name}`,
       description: `Premium vacation rental in ${city}, WA. Book direct.`,
       type: "website",
     },

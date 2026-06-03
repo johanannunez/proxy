@@ -2,8 +2,8 @@ import StaticPage from "@/components/StaticPage";
 
 export const metadata = {
   title: "Terms of Service",
-  description: "Terms of service for using The Parcel Company platform for vacation rental and corporate housing bookings.",
-  alternates: { canonical: "https://theparcelco.com/terms" },
+  description: "Terms of service for using Proxy platform for vacation rental and corporate housing bookings.",
+  alternates: { canonical: "https://www.myproxyhost.com/terms" },
 };
 
 export default function TermsPage() {
@@ -13,14 +13,14 @@ export default function TermsPage() {
         <em>Last updated: April 2026</em>
       </p>
       <p>
-        By using The Parcel Company website and services, you agree to these
+        By using Proxy website and services, you agree to these
         terms. Please read them carefully.
       </p>
       <h2 className="mt-6 text-xl font-bold text-text-primary">
         Use of Service
       </h2>
       <p>
-        The Parcel Company provides a platform connecting guests with property
+        Proxy provides a platform connecting guests with property
         owners. We are not a party to rental agreements between guests and
         property owners.
       </p>
@@ -38,10 +38,10 @@ export default function TermsPage() {
       <p>
         Questions about these terms? Email{" "}
         <a
-          href="mailto:hello@theparcelco.com"
+          href="mailto:hello@myproxyhost.com"
           className="text-brand hover:underline"
         >
-          hello@theparcelco.com
+          hello@myproxyhost.com
         </a>
         .
       </p>

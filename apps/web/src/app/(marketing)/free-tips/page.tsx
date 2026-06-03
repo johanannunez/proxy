@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     description:
       "One short email every week with proven tactics that quietly make rental owners more money.",
     type: "website",
-    url: "https://theparcelco.com/free-tips",
+    url: "https://www.myproxyhost.com/free-tips",
   },
   twitter: {
     card: "summary_large_image",

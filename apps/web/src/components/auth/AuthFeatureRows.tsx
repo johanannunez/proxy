@@ -1,7 +1,7 @@
 const features = [
   {
     title: "Everything About Your Property",
-    desc: "See the setup details, records, documents, and updates Parcel has on file.",
+    desc: "See the setup details, records, documents, and updates Proxy has on file.",
     icon: (
       <>
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />

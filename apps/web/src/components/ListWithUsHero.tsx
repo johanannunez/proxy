@@ -34,7 +34,7 @@ export default function ListWithUsHero() {
             your property
           </h1>
           <p className="mt-4 max-w-lg text-lg leading-relaxed text-white/80 md:text-xl">
-            Partner with The Parcel Company for professional co-hosting,
+            Partner with Proxy for professional co-hosting,
             premium guests, and hands-off vacation rental management.
           </p>
           <a

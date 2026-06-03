@@ -28,7 +28,7 @@ export async function signup(
 
   const supabase = await createClient();
   const headerList = await headers();
-  const origin = headerList.get("origin") ?? "https://www.theparcelco.com";
+  const origin = headerList.get("origin") ?? "https://www.myproxyhost.com";
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -53,7 +53,7 @@ export async function signup(
       ownerId: data.user.id,
       eventType: "welcome",
       category: "account",
-      title: "Welcome to Parcel",
+      title: "Welcome to Proxy",
       body: "Your owner account has been created. Welcome aboard.",
       isPinned: true,
     });
@@ -64,5 +64,5 @@ export async function signup(
     };
   }
 
-  redirect("/portal/dashboard");
+  redirect("/workspace/home");
 }

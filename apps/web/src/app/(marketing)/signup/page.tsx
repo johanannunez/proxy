@@ -14,7 +14,7 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   title: "Create an account",
-  description: "Create a Parcel owner account to manage your properties.",
+  description: "Create a Proxy owner account to manage your properties.",
 };
 
 export default function SignupPage() {
@@ -29,8 +29,8 @@ export default function SignupPage() {
           {/* Branding — mobile only */}
           <div className="auth-mobile-branding">
             <Image
-              src="/brand/logo-mark.png"
-              alt="The Parcel Co."
+              src="/brand/logo-mark-v2.png"
+              alt="The Proxy"
               width={72}
               height={72}
               style={{

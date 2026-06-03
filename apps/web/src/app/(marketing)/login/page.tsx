@@ -14,7 +14,7 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   title: "Log in",
-  description: "Log in to your Parcel owner portal.",
+  description: "Log in to your Proxy owner workspace.",
 };
 
 type SearchParams = Promise<{ redirect?: string }>;
@@ -37,8 +37,8 @@ export default async function LoginPage({
           {/* Branding — mobile only, hidden on desktop where the left panel shows it */}
           <div className="auth-mobile-branding">
             <Image
-              src="/brand/logo-mark.png"
-              alt="The Parcel Co."
+              src="/brand/logo-mark-v2.png"
+              alt="The Proxy"
               width={72}
               height={72}
               style={{
@@ -75,7 +75,7 @@ export default async function LoginPage({
             Login to your workspace.
           </p>
 
-          <LoginForm redirectTo={redirect ?? "/portal/dashboard"} />
+          <LoginForm redirectTo={redirect ?? "/workspace/home"} />
 
           <hr
             style={{
@@ -92,7 +92,7 @@ export default async function LoginPage({
               color: "#6b7280",
             }}
           >
-            New to Parcel?{" "}
+            New to Proxy?{" "}
             <Link
               href="/signup"
               style={{

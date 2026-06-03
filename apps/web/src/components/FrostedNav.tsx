@@ -48,8 +48,8 @@ export default function FrostedNav({ transparent = true }: FrostedNavProps) {
           {/* Logo */}
           <Link href="/" className="relative z-10 flex items-center gap-2">
             <Image
-              src={!isDark && resolvedTheme === "light" ? "/brand/logo-mark.png" : "/brand/logo-mark-white.png"}
-              alt="The Parcel Company"
+              src={!isDark && resolvedTheme === "light" ? "/brand/logo-mark-v2.png" : "/brand/logo-mark-white-v2.png"}
+              alt="Proxy"
               width={48}
               height={48}
               className="h-9 w-auto transition-opacity duration-300"

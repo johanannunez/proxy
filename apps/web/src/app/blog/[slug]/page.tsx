@@ -23,7 +23,7 @@ export async function generateMetadata({
     description: post.excerpt,
     keywords: post.keywords,
     openGraph: {
-      title: `Parcel Co. | ${post.title}`,
+      title: `Proxy | ${post.title}`,
       description: post.excerpt,
       type: "article",
       publishedTime: new Date(post.date).toISOString(),
@@ -37,7 +37,7 @@ export async function generateMetadata({
       images: [post.image],
     },
     alternates: {
-      canonical: `https://theparcelco.com/blog/${slug}`,
+      canonical: `https://www.myproxyhost.com/blog/${slug}`,
     },
   };
 }
@@ -61,21 +61,21 @@ export default async function BlogPostPage({
     dateModified: new Date(post.date).toISOString(),
     author: {
       "@type": "Organization",
-      name: "The Parcel Company",
-      url: "https://theparcelco.com",
+      name: "Proxy",
+      url: "https://www.myproxyhost.com",
     },
     publisher: {
       "@type": "Organization",
-      name: "The Parcel Company",
-      url: "https://theparcelco.com",
+      name: "Proxy",
+      url: "https://www.myproxyhost.com",
       logo: {
         "@type": "ImageObject",
-        url: "https://theparcelco.com/brand/logo-mark.png",
+        url: "https://www.myproxyhost.com/brand/logo-mark-v2.png",
       },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://theparcelco.com/blog/${slug}`,
+      "@id": `https://www.myproxyhost.com/blog/${slug}`,
     },
     keywords: post.keywords.join(", "),
     articleSection: post.category,
@@ -89,19 +89,19 @@ export default async function BlogPostPage({
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://theparcelco.com",
+        item: "https://www.myproxyhost.com",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Journal",
-        item: "https://theparcelco.com/blog",
+        item: "https://www.myproxyhost.com/blog",
       },
       {
         "@type": "ListItem",
         position: 3,
         name: post.title,
-        item: `https://theparcelco.com/blog/${slug}`,
+        item: `https://www.myproxyhost.com/blog/${slug}`,
       },
     ],
   };

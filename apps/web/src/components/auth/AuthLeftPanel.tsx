@@ -26,8 +26,8 @@ export function AuthLeftPanel() {
           }}
         >
           <Image
-            src="/brand/logo-mark.png"
-            alt="The Parcel Co."
+            src="/brand/logo-mark-v2.png"
+            alt="The Proxy"
             width={34}
             height={34}
             style={{
@@ -45,7 +45,7 @@ export function AuthLeftPanel() {
               letterSpacing: "-0.01em",
             }}
           >
-            The Parcel Co.
+            The Proxy
           </span>
         </a>
 
@@ -60,7 +60,7 @@ export function AuthLeftPanel() {
             marginBottom: "10px",
           }}
         >
-          Meet Parcel.
+          Meet Proxy.
         </h1>
 
         <p

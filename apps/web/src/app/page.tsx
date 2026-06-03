@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { Hero195 } from "@/components/ui/hero-195";
 
 export default function RootPage() {
-  redirect("/login");
+  return <Hero195 />;
 }

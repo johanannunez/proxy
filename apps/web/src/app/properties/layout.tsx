@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   description:
     "Browse verified vacation rentals and furnished corporate residences across the US. Filter by type, location, and amenities. Flexible cancellation included.",
   openGraph: {
-    title: "Parcel Co. | Vacation Rentals & Corporate Housing",
+    title: "Proxy | Vacation Rentals & Corporate Housing",
     description:
       "Browse verified vacation rentals and furnished corporate residences across the US.",
   },
   alternates: {
-    canonical: "https://theparcelco.com/properties",
+    canonical: "https://www.myproxyhost.com/properties",
   },
 };
 

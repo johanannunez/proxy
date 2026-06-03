@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 const REVIEWS = [
   {
     quote:
-      "Parcel is the first tool that actually feels like it was built for landlords, not accountants. I open it every morning before anything else and I already know where everything stands.",
+      "Proxy is the first tool that actually feels like it was built for landlords, not accountants. I open it every morning before anything else and I already know where everything stands.",
     name: "Maria T.",
     meta: "Kennewick, WA · 4 properties",
   },
   {
     quote:
-      "I used to dread Mondays. Now I open Parcel first thing and everything is right there. It completely changed how I think about owning and managing properties.",
+      "I used to dread Mondays. Now I open Proxy first thing and everything is right there. It completely changed how I think about owning and managing properties.",
     name: "Derek W.",
     meta: "Spokane, WA · 6 units · Owner since 2023",
   },
@@ -23,7 +23,7 @@ const REVIEWS = [
   },
   {
     quote:
-      "Switching to Parcel was the best decision I made for my rental business. I spend half the time I used to on admin work and actually enjoy managing my units now.",
+      "Switching to Proxy was the best decision I made for my rental business. I spend half the time I used to on admin work and actually enjoy managing my units now.",
     name: "James R.",
     meta: "Portland, OR · 8 units",
   },

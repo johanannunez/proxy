@@ -27,13 +27,13 @@ export async function generateMetadata({
     title: cat.name,
     description:
       cat.description ??
-      `Browse help articles about ${cat.name} at The Parcel Company.`,
-    alternates: { canonical: `https://theparcelco.com/help/${slug}` },
+      `Browse help articles about ${cat.name} at Proxy.`,
+    alternates: { canonical: `https://www.myproxyhost.com/help/${slug}` },
     openGraph: {
-      title: `Parcel Co. | ${cat.name} | Help Center`,
+      title: `Proxy | ${cat.name} | Help Center`,
       description:
         cat.description ??
-        `Browse help articles about ${cat.name} at The Parcel Company.`,
+        `Browse help articles about ${cat.name} at Proxy.`,
     },
   };
 }

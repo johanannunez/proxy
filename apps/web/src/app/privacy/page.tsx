@@ -2,8 +2,8 @@ import StaticPage from "@/components/StaticPage";
 
 export const metadata = {
   title: "Privacy Policy",
-  description: "How The Parcel Company collects, uses, and protects your personal information when you use our platform.",
-  alternates: { canonical: "https://theparcelco.com/privacy" },
+  description: "How Proxy collects, uses, and protects your personal information when you use our platform.",
+  alternates: { canonical: "https://www.myproxyhost.com/privacy" },
 };
 
 export default function PrivacyPage() {
@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <em>Last updated: April 2026</em>
       </p>
       <p>
-        The Parcel Company respects your privacy. This policy explains what
+        Proxy respects your privacy. This policy explains what
         information we collect, how we use it, and your rights regarding your
         data.
       </p>
@@ -38,10 +38,10 @@ export default function PrivacyPage() {
       <p>
         Privacy questions? Email{" "}
         <a
-          href="mailto:hello@theparcelco.com"
+          href="mailto:hello@myproxyhost.com"
           className="text-brand hover:underline"
         >
-          hello@theparcelco.com
+          hello@myproxyhost.com
         </a>
         .
       </p>
