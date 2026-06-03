@@ -25,7 +25,7 @@ export function getStripe(): Stripe {
 }
 
 /**
- * Ensures a Stripe Customer exists for the given Parcel profile.
+ * Ensures a Stripe Customer exists for the given Proxy profile.
  * Creates one if missing, otherwise returns the existing stripe_customer_id.
  */
 export async function ensureStripeCustomer(profileId: string): Promise<string> {
@@ -52,7 +52,7 @@ export async function ensureStripeCustomer(profileId: string): Promise<string> {
   const customer = await stripe.customers.create({
     email: profile.email ?? undefined,
     name: profile.full_name ?? undefined,
-    metadata: { parcel_profile_id: profileId },
+    metadata: { proxy_profile_id: profileId },
   });
 
   const { error: insertError } = await supabase.from("stripe_customers").insert({
@@ -98,9 +98,9 @@ export async function createOneTimeInvoice(params: {
     days_until_due: params.dueInDays ?? 14,
     description: params.description,
     metadata: {
-      parcel_owner_id: params.ownerId,
-      parcel_property_id: params.propertyId ?? "",
-      parcel_kind: params.kind ?? "adhoc",
+      proxy_owner_id: params.ownerId,
+      proxy_property_id: params.propertyId ?? "",
+      proxy_kind: params.kind ?? "adhoc",
     },
   });
 
@@ -222,15 +222,15 @@ export async function syncSubscriptionFromStripe(sub: Stripe.Subscription) {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const supabase = (await createClient()) as any;
 
-  const ownerId = sub.metadata?.parcel_owner_id;
-  if (!ownerId) return; // subscription not originated by Parcel
+  const ownerId = sub.metadata?.proxy_owner_id;
+  if (!ownerId) return; // subscription not originated by Proxy
 
   const price = sub.items.data[0]?.price;
   const periodEnd = readSubscriptionPeriodEnd(sub);
 
   const update = {
     owner_id: ownerId,
-    property_id: sub.metadata?.parcel_property_id || null,
+    property_id: sub.metadata?.proxy_property_id || null,
     stripe_subscription_id: sub.id,
     stripe_price_id: price?.id ?? null,
     price_cents: price?.unit_amount ?? 0,

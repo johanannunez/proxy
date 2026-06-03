@@ -16,7 +16,7 @@ import {
 import { useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { WorkspaceFinancialReceipt } from "@/lib/admin/workspace-billing";
+import type { WorkspaceFinancialReceipt } from "@/lib/admin/workspace-finance";
 import {
   analyzeReceiptDraft,
   createReceipt,
@@ -25,7 +25,7 @@ import {
   updateReceipt,
 } from "./financials-actions";
 import type { ReceiptAnalysisSource, ReceiptDraftAnalysis } from "./financials-actions";
-import styles from "./BillingTab.module.css";
+import styles from "./FinanceTab.module.css";
 
 type ReceiptView = "review" | "library" | "insights";
 
@@ -979,7 +979,7 @@ export function FinanceReceiptDashboard({
             />
             <span>
               Visible to owner
-              <small>Shows in the owner portal financials view.</small>
+              <small>Shows in the owner workspace financials view.</small>
             </span>
           </label>
           <label className={styles.receiptOwnerToggle} aria-disabled={!intakeFields.ownerVisible}>

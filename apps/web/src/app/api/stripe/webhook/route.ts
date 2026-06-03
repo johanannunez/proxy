@@ -64,12 +64,12 @@ export async function POST(req: Request) {
           typeof intent.payment_method === "string"
             ? intent.payment_method
             : intent.payment_method?.id;
-        if (paymentMethodId && intent.metadata?.parcel_workspace_id) {
+        if (paymentMethodId && intent.metadata?.proxy_workspace_id) {
           const paymentMethod =
             await getStripe().paymentMethods.retrieve(paymentMethodId);
           await syncWorkspacePaymentMethodFromStripe({
             paymentMethod,
-            workspaceId: intent.metadata.parcel_workspace_id,
+            workspaceId: intent.metadata.proxy_workspace_id,
           });
         }
         break;

@@ -10,6 +10,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 import { logTimelineEvent } from "@/lib/timeline";
 import { createNotification } from "@/lib/notifications";
+import { sendMessage } from "@/app/(admin)/admin/inbox/actions";
 
 const RECEIPT_BUCKET = "property-documents";
 const RECEIPT_ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -17,6 +18,27 @@ const RECEIPT_MAX_SIZE = 10 * 1024 * 1024;
 const FINANCE_ANALYSIS_MODEL = "anthropic/claude-haiku-4-5";
 
 export type ReceiptDraftAnalysisKind = "receipt" | "invoice" | "recurring" | "to_pay";
+export type ReceiptPaymentSource =
+  | "owner_card"
+  | "company_card"
+  | "owner_paid"
+  | "vendor_invoice"
+  | "airbnb_claim"
+  | "insurance_claim"
+  | "other";
+export type ReceiptReimbursementStatus =
+  | "none"
+  | "reimbursement_needed"
+  | "claim_needed"
+  | "claim_submitted"
+  | "reimbursed"
+  | "denied_writeoff";
+export type ReceiptClaimProvider = "airbnb" | "insurance" | "other";
+
+export type ReceiptDraftLineItem = {
+  label: string;
+  amount?: string;
+};
 
 export type ReceiptDraftAnalysis = {
   category: string;
@@ -24,9 +46,15 @@ export type ReceiptDraftAnalysis = {
   confidence: "high" | "medium" | "low";
   summary: string;
   reasons: string[];
+  lineItems?: ReceiptDraftLineItem[];
   vendor?: string;
   amount?: string;
   purchaseDate?: string;
+  paymentSource?: ReceiptPaymentSource;
+  reimbursementStatus?: ReceiptReimbursementStatus;
+  claimProvider?: ReceiptClaimProvider | null;
+  claimReference?: string;
+  reimbursedAt?: string;
 };
 
 export type ReceiptDraftAnalysisInput = {
@@ -40,10 +68,32 @@ export type ReceiptDraftAnalysisInput = {
 };
 
 export type ReceiptAnalysisSource = "document" | "ai" | "rules" | "manual";
+export type FinanceRequestType =
+  | "ach_authorization"
+  | "card_authorization"
+  | "receipt_upload"
+  | "reimbursement_details"
+  | "claim_evidence";
+export type FinanceRequestStatus = "draft" | "sent" | "viewed" | "completed" | "cancelled";
+export type FinanceRequestDeliveryMethod = "email" | "sms";
 
-// ---------------------------------------------------------------------------
+const FINANCE_REQUEST_TYPES: FinanceRequestType[] = [
+  "ach_authorization",
+  "card_authorization",
+  "receipt_upload",
+  "reimbursement_details",
+  "claim_evidence",
+];
+
+const FINANCE_REQUEST_STATUSES: FinanceRequestStatus[] = [
+  "draft",
+  "sent",
+  "viewed",
+  "completed",
+  "cancelled",
+];
+
 // Helpers
-// ---------------------------------------------------------------------------
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -114,6 +164,32 @@ function escapeCsvField(value: string | number | null | undefined): string {
   return str;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function messageToHtml(value: string): string {
+  return escapeHtml(value)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `<p>${line}</p>`)
+    .join("");
+}
+
+function isFinanceRequestType(value: string): value is FinanceRequestType {
+  return FINANCE_REQUEST_TYPES.includes(value as FinanceRequestType);
+}
+
+function isFinanceRequestStatus(value: string): value is FinanceRequestStatus {
+  return FINANCE_REQUEST_STATUSES.includes(value as FinanceRequestStatus);
+}
+
 function safeStorageName(filename: string): string {
   const withoutExtension = filename.replace(/\.[^.]+$/, "");
   return withoutExtension.replace(/[^a-zA-Z0-9-_]/g, "-").slice(0, 60) || "receipt";
@@ -136,6 +212,9 @@ function isReceiptDraftAnalysis(value: unknown): value is ReceiptDraftAnalysis {
   const candidate = value as Record<string, unknown>;
   const kind = candidate.kind;
   const confidence = candidate.confidence;
+  const paymentSource = candidate.paymentSource;
+  const reimbursementStatus = candidate.reimbursementStatus;
+  const claimProvider = candidate.claimProvider;
   return (
     typeof candidate.category === "string"
     && (kind === "receipt" || kind === "invoice" || kind === "recurring" || kind === "to_pay")
@@ -143,6 +222,44 @@ function isReceiptDraftAnalysis(value: unknown): value is ReceiptDraftAnalysis {
     && typeof candidate.summary === "string"
     && Array.isArray(candidate.reasons)
     && candidate.reasons.every((reason) => typeof reason === "string")
+    && (
+      candidate.lineItems === undefined
+      || (
+        Array.isArray(candidate.lineItems)
+        && candidate.lineItems.every((item) => {
+          if (!item || typeof item !== "object") return false;
+          const lineItem = item as Record<string, unknown>;
+          return typeof lineItem.label === "string"
+            && (lineItem.amount === undefined || typeof lineItem.amount === "string");
+        })
+      )
+    )
+    && (
+      paymentSource === undefined
+      || paymentSource === "owner_card"
+      || paymentSource === "company_card"
+      || paymentSource === "owner_paid"
+      || paymentSource === "vendor_invoice"
+      || paymentSource === "airbnb_claim"
+      || paymentSource === "insurance_claim"
+      || paymentSource === "other"
+    )
+    && (
+      reimbursementStatus === undefined
+      || reimbursementStatus === "none"
+      || reimbursementStatus === "reimbursement_needed"
+      || reimbursementStatus === "claim_needed"
+      || reimbursementStatus === "claim_submitted"
+      || reimbursementStatus === "reimbursed"
+      || reimbursementStatus === "denied_writeoff"
+    )
+    && (
+      claimProvider === undefined
+      || claimProvider === null
+      || claimProvider === "airbnb"
+      || claimProvider === "insurance"
+      || claimProvider === "other"
+    )
   );
 }
 
@@ -162,6 +279,9 @@ function analyzeReceiptDraftLocally(input: ReceiptDraftAnalysisInput): ReceiptDr
   let category = input.category.trim();
   let kind: ReceiptDraftAnalysisKind = "receipt";
   let confidence: ReceiptDraftAnalysis["confidence"] = "low";
+  let paymentSource: ReceiptPaymentSource = "owner_card";
+  let reimbursementStatus: ReceiptReimbursementStatus = "none";
+  let claimProvider: ReceiptClaimProvider | null = null;
 
   if (/(invoice|statement|bill|net\s?\d+|amount due|due on|balance due|payment due)/.test(text)) {
     kind = "invoice";
@@ -179,6 +299,45 @@ function analyzeReceiptDraftLocally(input: ReceiptDraftAnalysisInput): ReceiptDr
     kind = "to_pay";
     reasons.push("payment due wording");
     confidence = "high";
+  }
+
+  if (/(company card|parcel card|business card|company paid|parcel paid|reimburse parcel)/.test(text)) {
+    paymentSource = "company_card";
+    reimbursementStatus = "reimbursement_needed";
+    reasons.push("company card reimbursement signal");
+    confidence = "high";
+  } else if (/(owner paid|paid directly|owner reimbursement|reimburse owner|owner invoice)/.test(text)) {
+    paymentSource = "owner_paid";
+    reimbursementStatus = "reimbursement_needed";
+    reasons.push("owner reimbursement signal");
+    confidence = "high";
+  }
+
+  if (/(airbnb|resolution center|claim|damage reimbursement|host guarantee)/.test(text)) {
+    paymentSource = paymentSource === "owner_card" ? "airbnb_claim" : paymentSource;
+    reimbursementStatus = /(submitted|filed|opened claim|claim number)/.test(text)
+      ? "claim_submitted"
+      : "claim_needed";
+    claimProvider = "airbnb";
+    reasons.push("Airbnb claim signal");
+    confidence = "high";
+  } else if (/(insurance claim|adjuster|deductible|policy claim)/.test(text)) {
+    paymentSource = paymentSource === "owner_card" ? "insurance_claim" : paymentSource;
+    reimbursementStatus = /(submitted|filed|claim number)/.test(text)
+      ? "claim_submitted"
+      : "claim_needed";
+    claimProvider = "insurance";
+    reasons.push("insurance claim signal");
+    confidence = "high";
+  } else if (
+    /(vendor invoice|service invoice|cleaning invoice|carpet cleaning invoice|contractor invoice)/.test(text)
+    && reimbursementStatus === "none"
+  ) {
+    paymentSource = "vendor_invoice";
+    reimbursementStatus = "claim_needed";
+    claimProvider = "airbnb";
+    reasons.push("service invoice may need claim review");
+    confidence = confidence === "low" ? "medium" : confidence;
   }
 
   const categorySignals: Array<{ category: string; pattern: RegExp; reason: string }> = [
@@ -211,6 +370,10 @@ function analyzeReceiptDraftLocally(input: ReceiptDraftAnalysisInput): ReceiptDr
       ? "Review the uploaded document and confirm what this expense was for."
       : `Likely ${category.toLowerCase()} ${kind.replace("_", " ")} based on the available receipt context.`,
     reasons,
+    lineItems: input.amount ? [{ label: category, amount: input.amount }] : undefined,
+    paymentSource,
+    reimbursementStatus,
+    claimProvider,
   };
 }
 
@@ -218,9 +381,14 @@ function buildFinanceAnalysisPrompt(input: ReceiptDraftAnalysisInput): string {
   return [
     "Classify this financial upload for a short term rental property management workspace.",
     "Return only JSON matching this schema:",
-    '{"category":"string","kind":"receipt|invoice|recurring|to_pay","confidence":"high|medium|low","summary":"one plain sentence explaining what this was for","reasons":["short reason"],"vendor":"optional","amount":"optional","purchaseDate":"optional ISO date if clear"}',
+    '{"category":"string","kind":"receipt|invoice|recurring|to_pay","confidence":"high|medium|low","summary":"one plain sentence explaining what this was for","reasons":["short reason"],"lineItems":[{"label":"item or fee","amount":"optional"}],"vendor":"optional","amount":"optional","purchaseDate":"optional ISO date if clear","paymentSource":"owner_card|company_card|owner_paid|vendor_invoice|airbnb_claim|insurance_claim|other","reimbursementStatus":"none|reimbursement_needed|claim_needed|claim_submitted|reimbursed|denied_writeoff","claimProvider":"airbnb|insurance|other|null","claimReference":"optional","reimbursedAt":"optional ISO date"}',
     "Use kind to_pay when the document likely still needs payment.",
     "Use kind recurring when the document appears to repeat monthly, annually, or by subscription.",
+    "Default to paymentSource owner_card and reimbursementStatus none unless the document clearly says otherwise.",
+    "Use company_card with reimbursement_needed when Proxy or a company card paid and money should move back.",
+    "Use owner_paid with reimbursement_needed when the owner paid directly and needs to be reimbursed.",
+    "Use vendor_invoice with claim_needed when a service invoice likely needs Airbnb or insurance claim processing.",
+    "Use airbnb_claim or insurance_claim with claim_needed or claim_submitted when claim language is present.",
     "Use category names like Repairs, Cleaning, Utilities, Supplies, Insurance, Taxes, Software, Professional services, Mortgage, Owner expense.",
     `Vendor: ${input.vendor || "unknown"}`,
     `Current category: ${input.category || "unknown"}`,
@@ -236,9 +404,14 @@ function buildFinanceDocumentPrompt(input: ReceiptDraftAnalysisInput): string {
     "Analyze this uploaded finance document for a short term rental property management workspace.",
     "Extract what the document was for, whether it is already paid or needs payment, and whether it looks recurring.",
     "Return only JSON matching this schema:",
-    '{"category":"string","kind":"receipt|invoice|recurring|to_pay","confidence":"high|medium|low","summary":"one plain sentence explaining what this was for","reasons":["short reason"],"vendor":"optional","amount":"optional","purchaseDate":"optional ISO date if clear"}',
+    '{"category":"string","kind":"receipt|invoice|recurring|to_pay","confidence":"high|medium|low","summary":"one plain sentence explaining what this was for","reasons":["short reason"],"lineItems":[{"label":"item or fee","amount":"optional"}],"vendor":"optional","amount":"optional","purchaseDate":"optional ISO date if clear","paymentSource":"owner_card|company_card|owner_paid|vendor_invoice|airbnb_claim|insurance_claim|other","reimbursementStatus":"none|reimbursement_needed|claim_needed|claim_submitted|reimbursed|denied_writeoff","claimProvider":"airbnb|insurance|other|null","claimReference":"optional","reimbursedAt":"optional ISO date"}',
     "Use kind to_pay when the document likely still needs payment.",
     "Use kind recurring when the document appears to repeat monthly, annually, or by subscription.",
+    "Default to paymentSource owner_card and reimbursementStatus none unless the document clearly says otherwise.",
+    "Use company_card with reimbursement_needed when Proxy or a company card paid and money should move back.",
+    "Use owner_paid with reimbursement_needed when the owner paid directly and needs to be reimbursed.",
+    "Use vendor_invoice with claim_needed when a service invoice likely needs Airbnb or insurance claim processing.",
+    "Use airbnb_claim or insurance_claim with claim_needed or claim_submitted when claim language is present.",
     "Prefer category names like Repairs, Cleaning, Utilities, Supplies, Insurance, Taxes, Software, Professional services, Mortgage, Owner expense.",
     `Admin-entered vendor: ${input.vendor || "unknown"}`,
     `Admin-entered category: ${input.category || "unknown"}`,
@@ -256,14 +429,38 @@ function normalizeReceiptDraftAnalysis(parsed: ReceiptDraftAnalysis): ReceiptDra
     confidence: parsed.confidence,
     summary: parsed.summary.trim() || "Review the uploaded document and confirm what this expense was for.",
     reasons: parsed.reasons.map((reason) => reason.trim()).filter(Boolean).slice(0, 4),
+    lineItems: parsed.lineItems
+      ?.map((item) => ({
+        label: item.label.trim(),
+        amount: item.amount?.trim() || undefined,
+      }))
+      .filter((item) => item.label.length > 0)
+      .slice(0, 8),
     vendor: parsed.vendor?.trim() || undefined,
     amount: parsed.amount?.trim() || undefined,
     purchaseDate: parsed.purchaseDate?.trim() || undefined,
+    paymentSource: parsed.paymentSource ?? "owner_card",
+    reimbursementStatus: parsed.reimbursementStatus ?? "none",
+    claimProvider: parsed.claimProvider ?? null,
+    claimReference: parsed.claimReference?.trim() || undefined,
+    reimbursedAt: parsed.reimbursedAt?.trim() || undefined,
   };
 }
 
+function normalizeReceiptLineItems(
+  lineItems: ReceiptDraftLineItem[] | null | undefined,
+): ReceiptDraftLineItem[] {
+  return (lineItems ?? [])
+    .map((item) => ({
+      label: item.label.trim(),
+      amount: item.amount?.replace(/[$,]/g, "").trim() || undefined,
+    }))
+    .filter((item) => item.label.length > 0)
+    .slice(0, 20);
+}
+
 async function analyzeReceiptDraftWithAi(input: ReceiptDraftAnalysisInput): Promise<ReceiptDraftAnalysis | null> {
-  const apiKey = process.env.OPENROUTER_API_PARCEL ?? process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_PROXY ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
   const controller = new AbortController();
@@ -313,7 +510,7 @@ async function analyzeReceiptDraftWithAi(input: ReceiptDraftAnalysisInput): Prom
 
 async function analyzeFinanceImageWithOpenRouter(input: ReceiptDraftAnalysisInput): Promise<ReceiptDraftAnalysis | null> {
   const file = input.file;
-  const apiKey = process.env.OPENROUTER_API_PARCEL ?? process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_PROXY ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey || !file || file.size === 0) return null;
   if (!file.type.startsWith("image/") || !RECEIPT_ALLOWED_TYPES.includes(file.type) || file.size > RECEIPT_MAX_SIZE) {
     return null;
@@ -472,9 +669,7 @@ async function uploadReceiptFile(
   return { ok: true, url: data.publicUrl };
 }
 
-// ---------------------------------------------------------------------------
-// RECEIPTS
-// ---------------------------------------------------------------------------
+// Receipts
 
 export async function analyzeReceiptDraft(
   input: ReceiptDraftAnalysisInput,
@@ -524,6 +719,12 @@ export async function createReceipt(
     notifyOwner?: boolean;
     analysis?: ReceiptDraftAnalysis | null;
     analysisSource?: ReceiptAnalysisSource | null;
+    paymentSource?: ReceiptPaymentSource;
+    reimbursementStatus?: ReceiptReimbursementStatus;
+    claimProvider?: ReceiptClaimProvider | null;
+    claimReference?: string | null;
+    reimbursedAt?: string | null;
+    lineItems?: ReceiptDraftLineItem[] | null;
   },
 ): Promise<{ ok: boolean; message: string }> {
   const { supabase, userId, error: authError } = await requireAdmin();
@@ -547,6 +748,13 @@ export async function createReceipt(
     analysis_summary: data.analysis?.summary ?? null,
     analysis_reasons: data.analysis?.reasons ?? [],
     analysis_source: data.analysisSource ?? (data.analysis ? "manual" : null),
+    payment_source: data.paymentSource ?? data.analysis?.paymentSource ?? "owner_card",
+    reimbursement_status:
+      data.reimbursementStatus ?? data.analysis?.reimbursementStatus ?? "none",
+    claim_provider: data.claimProvider ?? data.analysis?.claimProvider ?? null,
+    claim_reference: data.claimReference ?? data.analysis?.claimReference ?? null,
+    reimbursed_at: data.reimbursedAt ?? data.analysis?.reimbursedAt ?? null,
+    line_items: normalizeReceiptLineItems(data.lineItems ?? data.analysis?.lineItems ?? []),
     notes: data.notes ?? null,
     visibility: data.visibility ?? "visible",
     created_by: userId,
@@ -562,7 +770,7 @@ export async function createReceipt(
       type: "receipt_available",
       title: `Receipt available: ${data.vendor}`,
       body: `${formatCurrency(data.amount)} categorized as ${data.category}.`,
-      link: "/portal/financials",
+      link: "/workspace/finances",
     });
   }
 
@@ -579,14 +787,171 @@ export async function createReceipt(
       category: data.category,
       analysis_kind: data.analysis?.kind ?? null,
       analysis_source: data.analysisSource ?? null,
+      payment_source: data.paymentSource ?? data.analysis?.paymentSource ?? "owner_card",
+      reimbursement_status:
+        data.reimbursementStatus ?? data.analysis?.reimbursementStatus ?? "none",
+      claim_provider: data.claimProvider ?? data.analysis?.claimProvider ?? null,
       has_file: Boolean(imageUrl),
     },
   });
 
   revalidatePath(`/admin/workspaces/${data.workspaceId}`);
-  revalidatePath("/portal/notifications");
-  revalidatePath("/portal/financials");
+  revalidatePath("/workspace/notifications");
+  revalidatePath("/workspace/finances");
   return { ok: true, message: "Receipt added." };
+}
+
+export async function createFinanceRequest(input: {
+  workspaceId: string;
+  contactId: string | null;
+  ownerId: string | null;
+  requestType: FinanceRequestType;
+  deliveryMethod: FinanceRequestDeliveryMethod;
+  message: string;
+  requestUrl: string;
+}): Promise<{ ok: boolean; message: string; requestId?: string }> {
+  const { supabase, error: authError } = await requireAdmin();
+  if (authError) return { ok: false, message: authError };
+  if (!input.ownerId) {
+    return { ok: false, message: "This workspace needs an owner profile before requests can be sent." };
+  }
+  if (!isFinanceRequestType(input.requestType)) {
+    return { ok: false, message: "Choose a valid finance request type." };
+  }
+  if (input.deliveryMethod !== "email" && input.deliveryMethod !== "sms") {
+    return { ok: false, message: "Choose email or SMS delivery." };
+  }
+
+  const trimmedMessage = input.message.trim();
+  if (!trimmedMessage) return { ok: false, message: "Add a request message before sending." };
+
+  const delivery = await sendMessage({
+    ownerId: input.ownerId,
+    deliveryMethod: input.deliveryMethod,
+    subject: "Finance request from Proxy",
+    body: messageToHtml(trimmedMessage),
+  });
+
+  if ("error" in delivery && delivery.error) {
+    return { ok: false, message: delivery.error };
+  }
+
+  const sentAt = new Date().toISOString();
+  const { data, error } = await (supabase as any)
+    .from("finance_requests")
+    .insert({
+      workspace_id: input.workspaceId,
+      contact_id: input.contactId,
+      request_type: input.requestType,
+      status: "sent",
+      delivery_method: input.deliveryMethod,
+      message: trimmedMessage,
+      request_url: input.requestUrl,
+      last_sent_at: sentAt,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath(`/admin/workspaces/${input.workspaceId}`);
+  return { ok: true, message: "Finance request sent.", requestId: data?.id };
+}
+
+export async function resendFinanceRequest(input: {
+  workspaceId: string;
+  ownerId: string | null;
+  requestId: string;
+}): Promise<{ ok: boolean; message: string }> {
+  const { supabase, error: authError } = await requireAdmin();
+  if (authError) return { ok: false, message: authError };
+  if (!input.ownerId) {
+    return { ok: false, message: "This workspace needs an owner profile before requests can be resent." };
+  }
+
+  const { data: request, error: requestError } = await (supabase as any)
+    .from("finance_requests")
+    .select("request_type, status, delivery_method, message")
+    .eq("id", input.requestId)
+    .eq("workspace_id", input.workspaceId)
+    .single();
+
+  if (requestError || !request) {
+    return { ok: false, message: requestError?.message ?? "Finance request not found." };
+  }
+  if (!isFinanceRequestStatus(request.status) || request.status === "completed") {
+    return { ok: false, message: "Completed requests cannot be resent." };
+  }
+
+  const body = typeof request.message === "string" ? request.message : "";
+  const deliveryMethod = request.delivery_method === "sms" ? "sms" : "email";
+  const delivery = await sendMessage({
+    ownerId: input.ownerId,
+    deliveryMethod,
+    subject: "Finance request from Proxy",
+    body: messageToHtml(body),
+  });
+
+  if ("error" in delivery && delivery.error) {
+    return { ok: false, message: delivery.error };
+  }
+
+  const { error } = await (supabase as any)
+    .from("finance_requests")
+    .update({
+      status: "sent",
+      last_sent_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.requestId)
+    .eq("workspace_id", input.workspaceId);
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath(`/admin/workspaces/${input.workspaceId}`);
+  return { ok: true, message: "Finance request resent." };
+}
+
+export async function completeFinanceRequest(input: {
+  workspaceId: string;
+  requestId: string;
+}): Promise<{ ok: boolean; message: string }> {
+  const { supabase, error: authError } = await requireAdmin();
+  if (authError) return { ok: false, message: authError };
+
+  const { error } = await (supabase as any)
+    .from("finance_requests")
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.requestId)
+    .eq("workspace_id", input.workspaceId);
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath(`/admin/workspaces/${input.workspaceId}`);
+  return { ok: true, message: "Finance request marked received." };
+}
+
+export async function cancelFinanceRequest(input: {
+  workspaceId: string;
+  requestId: string;
+}): Promise<{ ok: boolean; message: string }> {
+  const { supabase, error: authError } = await requireAdmin();
+  if (authError) return { ok: false, message: authError };
+
+  const { error } = await (supabase as any)
+    .from("finance_requests")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.requestId)
+    .eq("workspace_id", input.workspaceId);
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath(`/admin/workspaces/${input.workspaceId}`);
+  return { ok: true, message: "Finance request cancelled." };
 }
 
 export async function updateReceipt(
@@ -605,6 +970,12 @@ export async function updateReceipt(
     notifyOwner: boolean;
     analysis: ReceiptDraftAnalysis | null;
     analysisSource: ReceiptAnalysisSource | null;
+    paymentSource: ReceiptPaymentSource;
+    reimbursementStatus: ReceiptReimbursementStatus;
+    claimProvider: ReceiptClaimProvider | null;
+    claimReference: string | null;
+    reimbursedAt: string | null;
+    lineItems: ReceiptDraftLineItem[] | null;
   }>,
 ): Promise<{ ok: boolean; message: string }> {
   const { supabase, error: authError } = await requireAdmin();
@@ -633,6 +1004,14 @@ export async function updateReceipt(
   if (data.analysisSource !== undefined) {
     updatePayload.analysis_source = data.analysisSource;
   }
+  if (data.paymentSource !== undefined) updatePayload.payment_source = data.paymentSource;
+  if (data.reimbursementStatus !== undefined)
+    updatePayload.reimbursement_status = data.reimbursementStatus;
+  if (data.claimProvider !== undefined) updatePayload.claim_provider = data.claimProvider;
+  if (data.claimReference !== undefined) updatePayload.claim_reference = data.claimReference;
+  if (data.reimbursedAt !== undefined) updatePayload.reimbursed_at = data.reimbursedAt;
+  if (data.lineItems !== undefined)
+    updatePayload.line_items = normalizeReceiptLineItems(data.lineItems);
 
   const { error } = await (supabase as any)
     .from("owner_receipts")
@@ -658,14 +1037,14 @@ export async function updateReceipt(
         type: "receipt_available",
         title: `Receipt available: ${receipt.vendor}`,
         body: `${formatCurrency(Number(receipt.amount), receipt.currency ?? "USD")} categorized as ${receipt.category}.`,
-        link: "/portal/financials",
+        link: "/workspace/finances",
       });
     }
   }
 
   revalidatePath(`/admin/workspaces/${data.workspaceId ?? ownerId}`);
-  revalidatePath("/portal/notifications");
-  revalidatePath("/portal/financials");
+  revalidatePath("/workspace/notifications");
+  revalidatePath("/workspace/finances");
   return { ok: true, message: "Receipt updated." };
 }
 
@@ -708,7 +1087,7 @@ export async function deleteReceipt(
   }
 
   revalidatePath(`/admin/workspaces/${workspaceId ?? ownerId}`);
-  revalidatePath("/portal/financials");
+  revalidatePath("/workspace/finances");
   return { ok: true, message: "Receipt deleted." };
 }
 
@@ -755,9 +1134,7 @@ export async function toggleReceiptVisibility(
   };
 }
 
-// ---------------------------------------------------------------------------
-// CSV EXPORT
-// ---------------------------------------------------------------------------
+// CSV export
 
 export async function exportReceiptsCSV(
   ownerId: string,
@@ -778,6 +1155,12 @@ export async function exportReceiptsCSV(
       amount,
       currency,
       category,
+      payment_source,
+      reimbursement_status,
+      claim_provider,
+      claim_reference,
+      reimbursed_at,
+      line_items,
       visibility,
       notes,
       property:properties(name, address_line1, city, state, postal_code)
@@ -798,6 +1181,12 @@ export async function exportReceiptsCSV(
     "Amount",
     "Currency",
     "Category",
+    "Payment Source",
+    "Reimbursement Status",
+    "Claim Provider",
+    "Claim Reference",
+    "Reimbursed At",
+    "Line Items",
     "Property",
     "Visibility",
     "Notes",
@@ -831,6 +1220,12 @@ export async function exportReceiptsCSV(
       escapeCsvField(amountFormatted),
       escapeCsvField(receipt.currency ?? "USD"),
       escapeCsvField(receipt.category),
+      escapeCsvField(receipt.payment_source),
+      escapeCsvField(receipt.reimbursement_status),
+      escapeCsvField(receipt.claim_provider),
+      escapeCsvField(receipt.claim_reference),
+      escapeCsvField(receipt.reimbursed_at),
+      escapeCsvField(JSON.stringify(receipt.line_items ?? [])),
       escapeCsvField(propertyLabel),
       escapeCsvField(receipt.visibility),
       escapeCsvField(receipt.notes),
