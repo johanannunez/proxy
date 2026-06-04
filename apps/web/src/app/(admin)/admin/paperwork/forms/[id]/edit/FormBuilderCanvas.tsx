@@ -226,7 +226,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
           <button
             type="button"
             className={styles.backBtn}
-            onClick={() => router.push("/admin/documents/forms")}
+            onClick={() => router.push("/admin/paperwork/forms")}
           >
             <ArrowLeft size={16} weight="bold" />
           </button>

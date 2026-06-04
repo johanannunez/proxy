@@ -80,7 +80,7 @@ export function ResponsesHub({ form, responses, viewCount }: Props) {
         <button
           type="button"
           className={styles.backBtn}
-          onClick={() => router.push("/admin/documents/forms")}
+          onClick={() => router.push("/admin/paperwork/forms")}
         >
           <ArrowLeft size={14} weight="bold" />
           Forms

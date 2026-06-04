@@ -203,7 +203,7 @@ export function FormsHub({ forms, orgId, respondents, propertyOptions }: Props) 
         };
         await updateFormSchemaAction(result.data.id, schema);
       }
-      router.push(`/admin/documents/forms/${result.data.id}/edit`);
+      router.push(`/admin/paperwork/forms/${result.data.id}/edit`);
     } finally {
       setCreating(null);
     }
@@ -541,7 +541,7 @@ function FormCard({
             <button
               type="button"
               className={styles.actionBtn}
-              onClick={() => router.push(`/admin/documents/forms/${form.id}/responses`)}
+              onClick={() => router.push(`/admin/paperwork/forms/${form.id}/responses`)}
               title="View responses"
             >
               <ChartBar size={14} weight="bold" />
@@ -549,7 +549,7 @@ function FormCard({
             <button
               type="button"
               className={styles.actionBtn}
-              onClick={() => router.push(`/admin/documents/forms/${form.id}/edit`)}
+              onClick={() => router.push(`/admin/paperwork/forms/${form.id}/edit`)}
               title="Edit form"
             >
               <PencilSimple size={14} weight="bold" />
@@ -598,7 +598,7 @@ function FormCard({
             </div>
           )}
           <a
-            href={`/admin/documents/forms/${form.id}/responses`}
+            href={`/admin/paperwork/forms/${form.id}/responses`}
             className={styles.inlineAnswersLink}
           >
             View full response
