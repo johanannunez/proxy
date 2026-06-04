@@ -10,7 +10,7 @@
 .count {
   display: inline-flex; min-width: 22px; height: 22px; padding: 0 7px;
   align-items: center; justify-content: center;
-  border-radius: 999px; background: var(--color-brand); color: #fff;
+  border-radius: 999px; background: var(--color-brand); color: var(--color-white);
   font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .list { list-style: none; margin: 0; padding: 0; }
@@ -45,3 +45,4 @@
   font-size: 13px; font-weight: 600; color: var(--color-brand); text-decoration: none;
 }
 .more:hover { background: var(--color-warm-gray-50); }
+.more:focus-visible { outline: 2px solid var(--color-brand); outline-offset: -2px; }
