@@ -84,11 +84,13 @@ export async function fetchWorkspaceMessages(contactIds: string[]): Promise<Work
 
 export type ThreadDelivery = { channel: string; status: string };
 
+export type ThreadChannel = "in_app" | "portal" | "email" | "sms" | "call";
+
 export type WorkspaceThreadItem = {
   id: string;
-  source: "client_message" | "message";
+  source: "client_message" | "message" | "comm_event";
   contactId: string;
-  channel: "in_app" | "portal" | "email" | "sms";
+  channel: ThreadChannel;
   direction: "outbound" | "inbound";
   senderType: "admin" | "person";
   senderName: string;
@@ -98,6 +100,9 @@ export type WorkspaceThreadItem = {
   pinned: boolean;
   readAt: string | null;
   deliveries: ThreadDelivery[];
+  recordingUrl?: string | null;
+  transcript?: string | null;
+  durationSeconds?: number | null;
   createdAt: string;
 };
 
@@ -108,9 +113,12 @@ export async function fetchWorkspaceThread(
 ): Promise<WorkspaceThreadItem[]> {
   if (contactIds.length === 0) return [];
   const svc = createServiceClient();
+  // Loose handle for tables/columns not yet in the generated types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = svc as any;
 
   // 1. Legacy / prospect messages (admin notes, email/SMS to non-owners).
-  const { data: legacy } = await (svc as any)
+  const { data: legacy } = await db
     .from("client_messages")
     .select(
       `id, contact_id, sender_type, sender_id, body, channel, pinned, read_at, created_at,
@@ -147,7 +155,7 @@ export async function fetchWorkspaceThread(
   );
 
   // 2. Map owner contacts → their direct conversation.
-  const { data: contacts } = await (svc as any)
+  const { data: contacts } = await db
     .from("contacts")
     .select("id, profile_id")
     .in("id", contactIds);
@@ -172,7 +180,7 @@ export async function fetchWorkspaceThread(
     const convIds = [...convToOwner.keys()];
 
     if (convIds.length > 0) {
-      const { data: msgs } = await (svc as any)
+      const { data: msgs } = await db
         .from("messages")
         .select(
           "id, conversation_id, sender_id, body, subject, delivery_method, metadata, created_at",
@@ -193,7 +201,7 @@ export async function fetchWorkspaceThread(
       // Per-channel delivery status.
       const msgIds = msgRows.map((m) => m.id);
       const { data: dels } = msgIds.length
-        ? await (svc as any)
+        ? await db
             .from("message_deliveries")
             .select("message_id, channel, status")
             .in("message_id", msgIds)
@@ -248,7 +256,62 @@ export async function fetchWorkspaceThread(
     }
   }
 
-  // 3. Pinned first, then chronological.
+  // 3. Captured calls + inbound SMS replies (Quo / OpenPhone webhook).
+  //    Outbound SMS is skipped to avoid duplicating our own sent texts,
+  //    which already appear as message / client_message items above.
+  const ownerProfileIds = [...profileToContact.keys()];
+  const orParts = [`and(entity_type.eq.contact,entity_id.in.(${contactIds.join(",")}))`];
+  if (ownerProfileIds.length > 0) {
+    orParts.push(`and(entity_type.eq.owner,entity_id.in.(${ownerProfileIds.join(",")}))`);
+  }
+
+  const { data: events } = await db
+    .from("communication_events")
+    .select(
+      "id, channel, direction, raw_transcript, duration_seconds, recording_url, quo_summary, claude_summary, entity_type, entity_id, created_at",
+    )
+    .or(orParts.join(","))
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  for (const e of (events ?? []) as Array<Record<string, unknown>>) {
+    const channel = e.channel as string;
+    const direction = e.direction as string;
+    const isCall = channel === "call";
+    // Calls always; SMS only inbound (our outbound SMS is shown elsewhere).
+    if (!isCall && !(channel === "sms" && direction === "inbound")) continue;
+
+    const contactId =
+      e.entity_type === "contact"
+        ? (e.entity_id as string)
+        : profileToContact.get(e.entity_id as string);
+    if (!contactId || !contactIds.includes(contactId)) continue;
+
+    const inbound = direction === "inbound";
+    items.push({
+      id: e.id as string,
+      source: "comm_event",
+      contactId,
+      channel: isCall ? "call" : "sms",
+      direction: inbound ? "inbound" : "outbound",
+      senderType: inbound ? "person" : "admin",
+      senderName: inbound ? "Contact" : "Parcel",
+      subject: null,
+      body: isCall
+        ? ((e.claude_summary as string) || (e.quo_summary as string) || "Phone call")
+        : ((e.raw_transcript as string) || (e.quo_summary as string) || ""),
+      isHtml: false,
+      pinned: false,
+      readAt: null,
+      deliveries: [{ channel: isCall ? "call" : "sms", status: "delivered" }],
+      recordingUrl: (e.recording_url as string | null) ?? null,
+      transcript: isCall ? ((e.raw_transcript as string | null) ?? null) : null,
+      durationSeconds: (e.duration_seconds as number | null) ?? null,
+      createdAt: e.created_at as string,
+    });
+  }
+
+  // 4. Pinned first, then chronological.
   items.sort((a, b) => {
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return a.createdAt.localeCompare(b.createdAt);

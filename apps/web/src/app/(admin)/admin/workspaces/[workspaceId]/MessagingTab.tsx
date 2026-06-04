@@ -9,6 +9,10 @@ import {
   EnvelopeSimple,
   ChatCircleText,
   DeviceMobile,
+  PhoneCall,
+  Play,
+  CaretDown,
+  CaretUp,
   Check,
   WarningCircle,
 } from "@phosphor-icons/react";
@@ -17,7 +21,7 @@ import {
   togglePinMessage,
   type MessageChannel,
 } from "./messaging-actions";
-import type { WorkspaceThreadItem } from "@/lib/admin/workspace-messages";
+import type { WorkspaceThreadItem, ThreadChannel } from "@/lib/admin/workspace-messages";
 import type { WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 import { SafeHtml } from "@/components/messages/SafeHtml";
 import styles from "./MessagingTab.module.css";
@@ -30,15 +34,23 @@ type Props = {
   activeContactId: string;
 };
 
-const CHANNEL_META: Record<
-  MessageChannel | "in_app",
-  { label: string; Icon: typeof EnvelopeSimple }
-> = {
+const CHANNEL_META: Record<ThreadChannel, { label: string; Icon: typeof EnvelopeSimple }> = {
   portal: { label: "Portal", Icon: ChatCircleText },
   email: { label: "Email", Icon: EnvelopeSimple },
   sms: { label: "SMS", Icon: DeviceMobile },
+  call: { label: "Call", Icon: PhoneCall },
   in_app: { label: "Note", Icon: ChatCircleText },
 };
+
+type ChannelFilter = "all" | "portal" | "email" | "sms" | "call";
+
+const CHANNEL_FILTERS: { key: ChannelFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "portal", label: "Portal" },
+  { key: "email", label: "Email" },
+  { key: "sms", label: "SMS" },
+  { key: "call", label: "Calls" },
+];
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
@@ -47,6 +59,18 @@ function formatTime(iso: string): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds) return "";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function matchesChannel(channel: ThreadChannel, filter: ChannelFilter): boolean {
+  if (filter === "portal") return channel === "portal" || channel === "in_app";
+  return channel === filter;
 }
 
 function ChannelBadge({ channel }: { channel: WorkspaceThreadItem["channel"] }) {
@@ -89,8 +113,10 @@ function MessageBubble({
   onPin: (id: string, currentlyPinned: boolean) => void;
 }) {
   const [isPinning, startPinTransition] = useTransition();
+  const [expanded, setExpanded] = useState(false);
   const isAdmin = message.direction === "outbound";
   const canPin = message.source === "client_message";
+  const duration = message.channel === "call" ? formatDuration(message.durationSeconds) : "";
 
   return (
     <div className={`${styles.bubble} ${isAdmin ? styles.bubbleAdmin : styles.bubblePerson}`}>
@@ -104,7 +130,28 @@ function MessageBubble({
           )}
         </span>
         <ChannelBadge channel={message.channel} />
+        {duration && <span className={styles.duration}>{duration}</span>}
         <span className={styles.timestamp}>{formatTime(message.createdAt)}</span>
+        {message.recordingUrl && (
+          <a
+            href={message.recordingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.recordingLink}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Play size={11} weight="fill" /> Recording
+          </a>
+        )}
+        {message.transcript && (
+          <button
+            className={styles.expandBtn}
+            onClick={() => setExpanded((v) => !v)}
+            aria-label="Toggle transcript"
+          >
+            {expanded ? <CaretUp size={13} /> : <CaretDown size={13} />}
+          </button>
+        )}
         {canPin && (
           <button
             className={`${styles.pinBtn} ${message.pinned ? styles.pinBtnActive : ""}`}
@@ -123,7 +170,12 @@ function MessageBubble({
       ) : (
         <p className={styles.bubbleBody}>{message.body}</p>
       )}
-      {isAdmin && <DeliveryPills deliveries={message.deliveries} />}
+      {expanded && message.transcript && (
+        <div className={styles.transcript}>{message.transcript}</div>
+      )}
+      {isAdmin && message.source !== "comm_event" && (
+        <DeliveryPills deliveries={message.deliveries} />
+      )}
     </div>
   );
 }
@@ -146,10 +198,17 @@ export function MessagingTab({
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const filteredMessages =
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
+
+  const byContact =
     filterContactId === "all"
       ? localMessages
       : localMessages.filter((m) => m.contactId === filterContactId);
+
+  const filteredMessages =
+    channelFilter === "all"
+      ? byContact
+      : byContact.filter((m) => matchesChannel(m.channel, channelFilter));
 
   const pinned = filteredMessages.filter((m) => m.pinned);
   const thread = filteredMessages.filter((m) => !m.pinned);
@@ -272,6 +331,19 @@ export function MessagingTab({
           })}
         </div>
       )}
+
+      <div className={styles.channelFilterBar}>
+        {CHANNEL_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            className={`${styles.channelFilterBtn} ${channelFilter === f.key ? styles.channelFilterBtnActive : ""}`}
+            onClick={() => setChannelFilter(f.key)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       <div className={styles.thread}>
         {thread.length === 0 && pinned.length === 0 ? (

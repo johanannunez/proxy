@@ -384,3 +384,85 @@
 }
 .subjectInput:focus { border-color: var(--color-brand); }
 .subjectInput::placeholder { color: var(--color-text-muted); font-weight: 400; }
+
+/* ── Channel filter bar ──────────────────────────────────────────────────── */
+
+.channelFilterBar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.channelFilterBtn {
+  padding: 3px 11px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+.channelFilterBtn:hover { background: var(--color-warm-gray-50); color: var(--color-text-primary); }
+.channelFilterBtnActive,
+.channelFilterBtnActive:hover {
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  color: var(--color-brand);
+}
+
+/* ── Call / recording / transcript ───────────────────────────────────────── */
+
+.duration {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.recordingLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.85;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+.recordingLink:hover { opacity: 1; }
+
+.expandBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0.6;
+  color: inherit;
+  flex-shrink: 0;
+}
+.expandBtn:hover { opacity: 1; }
+
+.transcript {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  opacity: 0.92;
+}
