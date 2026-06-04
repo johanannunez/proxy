@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 const BUCKET = "property-documents";
 
@@ -76,7 +77,7 @@ export async function saveStrPermit(
     permitPdfUrl = urlData.publicUrl;
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await untypedDatabase(supabase)
     .from("property_forms")
     .upsert(
       {
@@ -99,8 +100,8 @@ export async function saveStrPermit(
 
   if (error) return { error: error.message };
 
-  svc
-    .from("activity_log" as any)
+  untypedDatabase(svc)
+    .from("activity_log")
     .insert({
       action: "property_updated",
       entity_type: "property",

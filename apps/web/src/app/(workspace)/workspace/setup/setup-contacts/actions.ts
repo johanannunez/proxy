@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 const schema = z.object({
   property_id: z.string().uuid("Property ID is required."),
@@ -54,7 +55,7 @@ export async function saveSetupContacts(
 
   const v = parsed.data;
 
-  const { error } = await (supabase as any)
+  const { error } = await untypedDatabase(supabase)
     .from("property_forms")
     .upsert(
       {
@@ -86,8 +87,8 @@ export async function saveSetupContacts(
   if (error) return { error: error.message };
 
   const svc = createServiceClient();
-  svc
-    .from("activity_log" as any)
+  untypedDatabase(svc)
+    .from("activity_log")
     .insert({
       action: "property_updated",
       entity_type: "property",

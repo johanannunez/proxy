@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 import { StepShell } from "@/components/workspace/setup/StepShell";
 import { ContactsForm } from "./ContactsForm";
 
@@ -31,8 +32,8 @@ export default async function SetupContactsPage({
       .maybeSingle();
     propertyUpdatedAt = prop?.updated_at ?? null;
 
-    const { data: formRow } = await (supabase as any)
-      .from("property_forms")
+    const { data: formRow } = await untypedDatabase(supabase)
+      .from<{ data: Record<string, unknown> | null; completed_at: string | null; updated_at: string | null }>("property_forms")
       .select("data, completed_at, updated_at")
       .eq("property_id", propertyId)
       .eq("form_key", "setup_contacts")
