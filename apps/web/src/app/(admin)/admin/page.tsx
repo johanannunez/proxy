@@ -85,14 +85,21 @@ export default async function AdminTodayPage() {
   // targets client render/hooks; it does not apply to a per-request server render.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
-  const pipelineAtom: PulseAtom = {
-    key: "pipeline",
-    label: "pipeline",
-    value: formatUsdShort(pipeline.totalPipelineValue),
-    tone: "brand",
-    href: "/admin/prospects",
-  };
-  const view = composeCockpit(items, now, [pipelineAtom]);
+  // Only surface the pipeline atom when there is pipeline to show. A "$0 pipeline"
+  // pill is noise, not signal.
+  const extraAtoms: PulseAtom[] =
+    pipeline.totalPipelineValue > 0
+      ? [
+          {
+            key: "pipeline",
+            label: "pipeline",
+            value: formatUsdShort(pipeline.totalPipelineValue),
+            tone: "brand",
+            href: "/admin/prospects",
+          },
+        ]
+      : [];
+  const view = composeCockpit(items, now, extraAtoms);
 
   const revenueCollected = revenueTrend.reduce((sum, p) => sum + p.value, 0);
   const healthyCount = propertyCards.length;
