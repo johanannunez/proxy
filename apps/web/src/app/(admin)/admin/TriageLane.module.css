@@ -25,5 +25,6 @@
 .item { display: flex; flex-direction: column; gap: 2px; padding: 11px 18px; text-decoration: none; border-top: 1px solid var(--color-warm-gray-100); }
 .item:first-child { border-top: none; }
 .item:hover { background: var(--color-warm-gray-50); }
+.item:focus-visible { outline: 2px solid var(--color-brand); outline-offset: -2px; }
 .itemTitle { font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
 .itemContext { font-size: 12px; color: var(--color-text-secondary); }
