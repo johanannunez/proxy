@@ -647,7 +647,7 @@ export function Hero195() {
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="group bg-white px-7 py-8 transition-colors duration-200 hover:bg-[#f7faff]"
+                className="group bg-[#ffffff] px-7 py-8 transition-colors duration-200 hover:bg-[#f7faff]"
               >
                 <div className="mb-[18px] flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#f0f4f8] transition-colors duration-200 group-hover:bg-[#e4eefa]">
                   <FeatureIcon title={f.title} />

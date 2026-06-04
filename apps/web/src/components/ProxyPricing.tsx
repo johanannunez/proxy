@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import NumberFlow from "@number-flow/react";
 import { Check, Phone } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
@@ -157,8 +157,8 @@ export function ProxyPricing() {
             className={cn(
               "relative flex flex-col rounded-2xl border p-8 transition-[box-shadow,transform] duration-300 ease-out hover:-translate-y-[3px]",
               tier.highlighted
-                ? "border-[#1b77be] bg-white shadow-[0_0_0_1px_#1b77be,0_32px_80px_rgba(27,119,190,0.18)]"
-                : "border-[#d9d2c5] bg-white shadow-[0_18px_50px_rgba(8,27,51,0.06)] hover:shadow-[0_24px_60px_rgba(8,27,51,0.12)]"
+                ? "border-[#1b77be] bg-[#ffffff] shadow-[0_0_0_1px_#1b77be,0_32px_80px_rgba(27,119,190,0.18)]"
+                : "border-[#d9d2c5] bg-[#ffffff] shadow-[0_18px_50px_rgba(8,27,51,0.06)] hover:shadow-[0_24px_60px_rgba(8,27,51,0.12)]"
             )}
           >
             {/* Glow behind highlighted card */}
@@ -209,7 +209,7 @@ export function ProxyPricing() {
                 "mt-6 flex min-h-[48px] items-center justify-center rounded-lg px-6 text-sm font-semibold transition-colors duration-200",
                 tier.highlighted
                   ? "bg-[#1b77be] text-white shadow-[0_8px_24px_rgba(27,119,190,0.28)] hover:bg-[#0f659f]"
-                  : "border border-[#d9d2c5] bg-white text-[#081b33] hover:bg-[#f8f7f3]"
+                  : "border border-[#d9d2c5] bg-[#ffffff] text-[#081b33] hover:bg-[#f8f7f3]"
               )}
             >
               {tier.cta}
