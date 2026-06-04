@@ -578,3 +578,27 @@
   flex-shrink: 0;
 }
 .summaryClose:hover { color: var(--color-text-primary); }
+
+/* ── Rich composer + footer ──────────────────────────────────────────────── */
+
+.richWrap {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+.richWrap:focus-within { border-color: var(--color-brand); }
+
+.composeFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.smsCounter {
+  margin-right: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}

@@ -145,7 +145,7 @@ export async function fetchWorkspaceThread(
         senderName: sender?.full_name ?? (isAdmin ? "Parcel" : "Contact"),
         subject: null,
         body: row.body as string,
-        isHtml: false,
+        isHtml: /<\/?[a-z][^>]*>/i.test(row.body as string),
         pinned: (row.pinned as boolean) ?? false,
         readAt: (row.read_at as string | null) ?? null,
         deliveries: [{ channel, status: "sent" }],

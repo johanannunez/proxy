@@ -39,7 +39,14 @@ import { applyTemplateVariables } from "@/lib/channels/templates";
 import type { WorkspaceThreadItem, ThreadChannel } from "@/lib/admin/workspace-messages";
 import type { WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 import { SafeHtml } from "@/components/messages/SafeHtml";
+import { RichTextEditor } from "@/components/messages/RichTextEditor";
 import styles from "./MessagingTab.module.css";
+
+// SMS GSM segment is 160 chars; we trim to ~155 + suffix when sending.
+function smsStats(body: string): { chars: number; segments: number } {
+  const chars = body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().length;
+  return { chars, segments: Math.max(1, Math.ceil(chars / 153)) };
+}
 
 type Props = {
   contactId: string;
@@ -212,6 +219,8 @@ export function MessagingTab({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Bumped to remount the rich editor (clears it) after send / template insert.
+  const [composerKey, setComposerKey] = useState(0);
 
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   useEffect(() => {
@@ -313,6 +322,7 @@ export function MessagingTab({
     };
     if (tpl.subject) setSubject(applyTemplateVariables(tpl.subject, vars));
     setBody(applyTemplateVariables(tpl.body, vars));
+    setComposerKey((k) => k + 1);
     textareaRef.current?.focus();
   }
 
@@ -367,7 +377,12 @@ export function MessagingTab({
       buildTranscript() || "(no prior messages)",
       "You are a property manager at The Parcel Company. Draft a warm, concise reply to the most recent message in this conversation. Output only the reply text — no preamble.",
     )
-      .then((out) => out && setBody(out))
+      .then((out) => {
+        if (out) {
+          setBody(out);
+          setComposerKey((k) => k + 1);
+        }
+      })
       .catch(() => setError("AI draft failed."))
       .finally(() => setAiBusy(null));
   }
@@ -377,7 +392,12 @@ export function MessagingTab({
     setAiBusy("polish");
     setError(null);
     callAssist("rephrase", body)
-      .then((out) => out && setBody(out))
+      .then((out) => {
+        if (out) {
+          setBody(out);
+          setComposerKey((k) => k + 1);
+        }
+      })
       .catch(() => setError("AI polish failed."))
       .finally(() => setAiBusy(null));
   }
@@ -411,6 +431,7 @@ export function MessagingTab({
         setSubject("");
         setScheduleAt("");
         setShowSchedule(false);
+        setComposerKey((k) => k + 1);
         textareaRef.current?.focus();
       } else {
         setError(result.message);
@@ -426,6 +447,9 @@ export function MessagingTab({
   }
 
   const noChannelAvailable = !available.portal && !available.email && !available.sms;
+  // Rich HTML composer for portal/email; plain text for SMS-only.
+  const useRich = channels.includes("portal") || channels.includes("email");
+  const sms = smsStats(body);
 
   return (
     <div className={styles.root}>
@@ -648,7 +672,16 @@ export function MessagingTab({
           />
         )}
 
-        <div className={styles.composeRow}>
+        {useRich ? (
+          <div className={styles.richWrap}>
+            <RichTextEditor
+              key={`${composeContactId}-${composerKey}`}
+              content={body}
+              placeholder="Write a message…"
+              onChange={setBody}
+            />
+          </div>
+        ) : (
           <textarea
             ref={textareaRef}
             className={styles.composeInput}
@@ -659,6 +692,14 @@ export function MessagingTab({
             rows={3}
             disabled={isPending || noChannelAvailable}
           />
+        )}
+
+        <div className={styles.composeFooter}>
+          {channels.includes("sms") && (
+            <span className={styles.smsCounter}>
+              {sms.chars} chars · {sms.segments} SMS{sms.segments > 1 ? " segments" : ""}
+            </span>
+          )}
           <button
             className={styles.sendBtn}
             onClick={handleSend}
