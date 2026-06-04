@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { sendMessage } from "@/app/(admin)/admin/inbox/actions";
-import { sendDocumentToOwner, sendDocumentReminder } from "@/app/(admin)/admin/documents/document-actions";
+import { sendDocumentToOwner, sendDocumentReminder } from "@/app/(admin)/admin/paperwork/document-actions";
 import { buildWorkspaceRequestEmail } from "@/lib/email-template";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";

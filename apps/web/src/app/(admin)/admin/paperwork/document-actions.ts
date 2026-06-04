@@ -76,7 +76,7 @@ export async function sendDocumentToOwner(
       return { ok: false, error: "Document sent but failed to record. Please refresh." };
     }
 
-    revalidatePath("/admin/documents");
+    revalidatePath("/admin/paperwork");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] sendDocumentToOwner error:", err);
@@ -107,7 +107,7 @@ export async function sendDocumentReminder(
       .update({ sent_at: now, updated_at: now })
       .eq("id", documentId);
 
-    revalidatePath("/admin/documents");
+    revalidatePath("/admin/paperwork");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] sendDocumentReminder error:", err);
@@ -130,7 +130,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
       return { ok: false, error: error.message };
     }
 
-    revalidatePath("/admin/documents");
+    revalidatePath("/admin/paperwork");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] deleteDocument error:", err);

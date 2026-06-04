@@ -123,7 +123,7 @@ export async function verifyW9(ownerId: string): Promise<VerifyW9Result> {
     return { ok: false, error: err instanceof Error ? err.message : "Verify failed." };
   }
 
-  revalidatePath("/admin/documents");
+  revalidatePath("/admin/paperwork");
   revalidatePath("/workspace/setup/w9");
   return { ok: true };
 }
@@ -173,7 +173,7 @@ export async function rejectW9(
     return { ok: false, error: err instanceof Error ? err.message : "Reject failed." };
   }
 
-  revalidatePath("/admin/documents");
+  revalidatePath("/admin/paperwork");
   revalidatePath("/workspace/setup/w9");
   return { ok: true };
 }

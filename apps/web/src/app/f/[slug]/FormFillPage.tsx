@@ -1,7 +1,7 @@
 "use client";
 
 import { FormRenderer } from "@/components/forms/FormRenderer";
-import { submitFormResponseAction } from "@/app/(admin)/admin/documents/forms/form-actions";
+import { submitFormResponseAction } from "@/app/(admin)/admin/paperwork/forms/form-actions";
 import type { Form } from "@/lib/admin/forms-types";
 import { FormViewTracker } from "./FormViewTracker";
 import styles from "./FormFillPage.module.css";
