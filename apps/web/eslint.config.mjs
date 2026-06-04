@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Static assets served as-is (minified vendor bundles, e.g. the gitignored
+    // pdf.js worker). These are not source and must never be linted.
+    "public/**",
   ]),
   {
     // eslint-plugin-react-hooks v7 ships React Compiler rules that fire on

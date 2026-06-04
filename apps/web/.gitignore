@@ -7,3 +7,6 @@ temporary screenshots
 .env*.local
 .env*.backup*
 *.backup.*
+
+# pdfjs worker copied by scripts/copy-pdf-worker.mjs
+public/pdf.worker.min.mjs
