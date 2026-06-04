@@ -15,12 +15,20 @@ import {
   CaretUp,
   Check,
   WarningCircle,
+  Clock,
+  FloppyDisk,
 } from "@phosphor-icons/react";
 import {
   sendWorkspaceMessage,
   togglePinMessage,
   type MessageChannel,
 } from "./messaging-actions";
+import {
+  listMessageTemplates,
+  createMessageTemplate,
+  type MessageTemplate,
+} from "./templates-actions";
+import { applyTemplateVariables } from "@/lib/channels/templates";
 import type { WorkspaceThreadItem, ThreadChannel } from "@/lib/admin/workspace-messages";
 import type { WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 import { SafeHtml } from "@/components/messages/SafeHtml";
@@ -198,6 +206,14 @@ export function MessagingTab({
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  useEffect(() => {
+    listMessageTemplates().then(setTemplates).catch(() => {});
+  }, []);
+
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [showSchedule, setShowSchedule] = useState(false);
+
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
 
   const byContact =
@@ -257,18 +273,49 @@ export function MessagingTab({
     });
   }
 
+  function applyTemplate(templateId: string) {
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const vars = {
+      first_name: composeContact?.firstName ?? composeContact?.fullName.split(" ")[0] ?? null,
+      full_name: composeContact?.fullName ?? null,
+    };
+    if (tpl.subject) setSubject(applyTemplateVariables(tpl.subject, vars));
+    setBody(applyTemplateVariables(tpl.body, vars));
+    textareaRef.current?.focus();
+  }
+
+  function handleSaveTemplate() {
+    if (!body.trim()) return;
+    const name = window.prompt("Template name");
+    if (!name?.trim()) return;
+    createMessageTemplate({
+      name: name.trim(),
+      channel: "any",
+      subject: subject || undefined,
+      body,
+    }).then((res) => {
+      if (res.ok) listMessageTemplates().then(setTemplates).catch(() => {});
+      else setError(res.message);
+    });
+  }
+
   function handleSend() {
     if (!body.trim() || channels.length === 0) return;
     setError(null);
+    const scheduledAt = showSchedule && scheduleAt ? new Date(scheduleAt).toISOString() : undefined;
     startTransition(async () => {
       const result = await sendWorkspaceMessage(composeContactId, {
         channels,
         subject: channels.includes("email") ? subject : undefined,
         body,
+        scheduledAt,
       });
       if (result.ok) {
         setBody("");
         setSubject("");
+        setScheduleAt("");
+        setShowSchedule(false);
         textareaRef.current?.focus();
       } else {
         setError(result.message);
@@ -399,6 +446,54 @@ export function MessagingTab({
           </div>
         </div>
 
+        <div className={styles.composerToolbar}>
+          <select
+            className={styles.templateSelect}
+            value=""
+            onChange={(e) => {
+              if (e.target.value) applyTemplate(e.target.value);
+            }}
+            disabled={isPending || templates.length === 0}
+            title={templates.length ? "Insert a template" : "No templates yet"}
+          >
+            <option value="">{templates.length ? "Templates…" : "No templates"}</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            onClick={handleSaveTemplate}
+            disabled={isPending || !body.trim()}
+            title="Save current message as a template"
+          >
+            <FloppyDisk size={14} /> Save
+          </button>
+          {available.portal && (
+            <button
+              type="button"
+              className={`${styles.toolBtn} ${showSchedule ? styles.toolBtnActive : ""}`}
+              onClick={() => setShowSchedule((v) => !v)}
+              disabled={isPending}
+              title="Schedule this message"
+            >
+              <Clock size={14} /> Schedule
+            </button>
+          )}
+          {showSchedule && (
+            <input
+              type="datetime-local"
+              className={styles.scheduleInput}
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              disabled={isPending}
+            />
+          )}
+        </div>
+
         {noChannelAvailable && (
           <p className={styles.composeError}>
             This contact has no portal access, email, or phone on file.
@@ -431,9 +526,13 @@ export function MessagingTab({
             className={styles.sendBtn}
             onClick={handleSend}
             disabled={isPending || !body.trim() || channels.length === 0}
-            aria-label="Send message"
+            aria-label={showSchedule && scheduleAt ? "Schedule message" : "Send message"}
           >
-            <PaperPlaneRight size={18} weight="fill" />
+            {showSchedule && scheduleAt ? (
+              <Clock size={18} weight="fill" />
+            ) : (
+              <PaperPlaneRight size={18} weight="fill" />
+            )}
           </button>
         </div>
       </div>

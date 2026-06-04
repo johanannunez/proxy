@@ -13,15 +13,21 @@ import {
   smsText,
   normalizePhoneE164,
 } from "@/lib/channels/send";
-import type { Json } from "@/types/supabase";
 
 export type MessageChannel = "portal" | "email" | "sms";
 
 export type ChannelDelivery = {
   channel: MessageChannel;
-  status: "sent" | "delivered" | "failed";
+  status: "sent" | "delivered" | "failed" | "scheduled";
   error?: string;
 };
+
+function parseFutureDate(s?: string): string | null {
+  if (!s) return null;
+  const t = Date.parse(s);
+  if (Number.isNaN(t) || t <= Date.now() + 30_000) return null;
+  return new Date(t).toISOString();
+}
 
 export type SendWorkspaceMessageResult =
   | { ok: true; message: string; deliveries: ChannelDelivery[] }
@@ -64,7 +70,7 @@ function plainPreview(body: string): string {
  */
 export async function sendWorkspaceMessage(
   contactId: string,
-  input: { channels: MessageChannel[]; subject?: string; body: string },
+  input: { channels: MessageChannel[]; subject?: string; body: string; scheduledAt?: string },
 ): Promise<SendWorkspaceMessageResult> {
   const body = input.body?.trim() ?? "";
   if (!body) return { ok: false, message: "Message cannot be empty." };
@@ -83,8 +89,11 @@ export async function sendWorkspaceMessage(
   }
 
   const svc = createServiceClient();
+  // Loose handle for tables/columns not yet in the generated types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = svc as any;
 
-  const { data: contactData, error: contactErr } = await (svc as any)
+  const { data: contactData, error: contactErr } = await db
     .from("contacts")
     .select("id, workspace_id, profile_id, email, phone, first_name, full_name")
     .eq("id", contactId)
@@ -160,9 +169,9 @@ export async function sendWorkspaceMessage(
       conversationId = conv.id;
     }
 
-    const metadata = { subject, channels } as unknown as Json;
+    const metadata = { subject, channels };
 
-    const { data: msg, error: msgErr } = await svc
+    const { data: msg, error: msgErr } = await db
       .from("messages")
       .insert({
         conversation_id: conversationId,
@@ -171,12 +180,39 @@ export async function sendWorkspaceMessage(
         subject,
         delivery_method: channels.includes("portal") ? "portal" : channels[0],
         metadata,
-      } as any)
+      })
       .select("id")
       .single();
 
     if (msgErr || !msg) {
       return { ok: false, message: "Failed to record message." };
+    }
+
+    // Scheduled send: persist 'scheduled' deliveries and stop. The cron
+    // (api/cron/flush-scheduled-messages) delivers them when due.
+    const scheduledAt = parseFutureDate(input.scheduledAt);
+    if (scheduledAt) {
+      await db.from("message_deliveries").insert(
+        channels.map((channel) => ({
+          message_id: msg.id,
+          channel,
+          status: "scheduled",
+          scheduled_at: scheduledAt,
+        })),
+      );
+      void db.from("activity_log").insert({
+        action: "message_scheduled",
+        entity_type: "message",
+        entity_id: msg.id,
+        actor_id: adminId,
+        metadata: { recipient_id: ownerId, channels, scheduled_at: scheduledAt },
+      });
+      revalidate();
+      return {
+        ok: true,
+        message: `Scheduled for ${new Date(scheduledAt).toLocaleString()}.`,
+        deliveries: channels.map((c) => ({ channel: c, status: "scheduled" as const })),
+      };
     }
 
     // Fan out to each channel in parallel.
@@ -208,7 +244,7 @@ export async function sendWorkspaceMessage(
 
     // Persist per-channel delivery rows.
     const now = new Date().toISOString();
-    await (svc as any).from("message_deliveries").insert(
+    await db.from("message_deliveries").insert(
       deliveries.map((d) => ({
         message_id: msg.id,
         channel: d.channel,
@@ -228,7 +264,7 @@ export async function sendWorkspaceMessage(
       visibility: "admin_only",
     });
 
-    void (svc as any).from("activity_log").insert({
+    void db.from("activity_log").insert({
       action: "message_sent",
       entity_type: "message",
       entity_id: msg.id,
@@ -258,7 +294,7 @@ export async function sendWorkspaceMessage(
     return { ok: false, message: "Portal messaging requires a linked owner account." };
   }
 
-  await (svc as any).from("client_messages").insert(
+  await db.from("client_messages").insert(
     deliveries.map((d) => ({
       contact_id: contactId,
       sender_type: "admin",
@@ -291,7 +327,9 @@ export async function togglePinMessage(
   }
 
   const svc = createServiceClient();
-  const { error } = await (svc as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = svc as any;
+  const { error } = await db
     .from("client_messages")
     .update({ pinned: !pinned })
     .eq("id", messageId);
