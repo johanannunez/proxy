@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 import { createDocumentFromTemplate, resendDocumentLink } from "@/lib/signing/boldsign";
 import { SECURE_DOC_TYPES } from "@/lib/admin/documents-hub";
 import type { SecureDocKey } from "@/lib/admin/documents-hub";
@@ -57,7 +58,7 @@ export async function sendDocumentToOwner(
     const supabase = await createClient();
     const now = new Date().toISOString();
 
-    const { error: insertErr } = await (supabase as any)
+    const { error: insertErr } = await untypedDatabase(supabase)
       .from("signed_documents")
       .insert({
         user_id: profileId,
@@ -101,7 +102,7 @@ export async function sendDocumentReminder(
     const supabase = await createClient();
     const now = new Date().toISOString();
 
-    await (supabase as any)
+    await untypedDatabase(supabase)
       .from("signed_documents")
       .update({ sent_at: now, updated_at: now })
       .eq("id", documentId);
@@ -120,7 +121,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
 
   try {
     const supabase = await createClient();
-    const { error } = await (supabase as any)
+    const { error } = await untypedDatabase(supabase)
       .from("signed_documents")
       .delete()
       .eq("id", documentId);

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { untypedDatabase } from '@/lib/supabase/untyped';
 import { generateToken, hashToken } from '@/lib/api-tokens';
+
+type ProfileRow = { id: string };
+type ApiTokenRow = { id: string; name: string; created_at: string };
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -13,12 +17,13 @@ export async function POST(request: Request) {
   const token = generateToken();
   const hash = await hashToken(token);
 
-  const { data: profile } = await (supabase as any)
-    .from('profiles').select('id').eq('user_id', user.id).single();
+  const db = untypedDatabase(supabase);
+  const { data: profile } = await db
+    .from<ProfileRow>('profiles').select('id').eq('user_id', user.id).single();
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
-  const { data, error } = await (supabase as any)
-    .from('api_tokens')
+  const { data, error } = await db
+    .from<ApiTokenRow>('api_tokens')
     .insert({ profile_id: profile.id, name: name.trim(), token_hash: hash })
     .select('id, name, created_at')
     .single();
@@ -33,12 +38,13 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
-    .from('profiles').select('id').eq('user_id', user.id).single();
+  const db = untypedDatabase(supabase);
+  const { data: profile } = await db
+    .from<ProfileRow>('profiles').select('id').eq('user_id', user.id).single();
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
-  const { data } = await (supabase as any)
-    .from('api_tokens')
+  const { data } = await db
+    .from<Array<ApiTokenRow & { last_used_at: string | null }>>('api_tokens')
     .select('id, name, last_used_at, created_at')
     .eq('profile_id', profile.id)
     .order('created_at', { ascending: false });
@@ -55,11 +61,12 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
   // Ensure the token belongs to this user's profile before deleting
-  const { data: profile } = await (supabase as any)
-    .from('profiles').select('id').eq('user_id', user.id).single();
+  const db = untypedDatabase(supabase);
+  const { data: profile } = await db
+    .from<ProfileRow>('profiles').select('id').eq('user_id', user.id).single();
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
-  const { error: deleteError } = await (supabase as any)
+  const { error: deleteError } = await db
     .from('api_tokens')
     .delete()
     .eq('id', id)

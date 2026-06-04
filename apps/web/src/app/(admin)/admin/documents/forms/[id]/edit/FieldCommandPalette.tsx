@@ -149,7 +149,7 @@ export function FieldCommandPalette({ onSelect, onClose }: Props) {
           </>
         )}
         {filtered.length === 0 && (
-          <div className={styles.empty}>No fields match "{query}"</div>
+          <div className={styles.empty}>No fields match &ldquo;{query}&rdquo;</div>
         )}
       </div>
     </div>

@@ -152,7 +152,7 @@ export function InsightDetailPanel({
                         <span className={styles.sourceName}>{src.guestFirstName}</span>
                         <span className={styles.sourceDate}>{src.approximateDate}</span>
                       </div>
-                      <p className={styles.sourceQuote}>"{src.quote}"</p>
+                      <p className={styles.sourceQuote}>&ldquo;{src.quote}&rdquo;</p>
                     </div>
                   ))}
                 </div>

@@ -5,6 +5,9 @@ import { ArrowLeft } from "@phosphor-icons/react";
 import styles from "./DocuSealBuilderView.module.css";
 
 declare module "react" {
+  // The JSX namespace augmentation is the only supported way to register a
+  // custom element (<docuseal-builder>) with TypeScript's JSX type checker.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
       "docuseal-builder": React.DetailedHTMLProps<
@@ -88,9 +91,8 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
           </div>
         )}
         {session && (
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           <docuseal-builder
-            ref={builderRef as React.RefObject<any>}
+            ref={builderRef}
             token={session.token}
             template-id={String(templateId)}
             host={session.host}

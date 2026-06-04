@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { AuthFeatureRows } from "./AuthFeatureRows";
 import { PremiumTestimonials } from "./PremiumTestimonials";
 
@@ -15,7 +16,7 @@ export function AuthLeftPanel() {
     >
       {/* Single unified block from logo through proof, centered as one unit */}
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <a
+        <Link
           href="/"
           style={{
             display: "flex",
@@ -47,7 +48,7 @@ export function AuthLeftPanel() {
           >
             The Proxy
           </span>
-        </a>
+        </Link>
 
         <h1
           style={{

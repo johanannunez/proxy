@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 // ---------------------------------------------------------------------------
 // Inspection
@@ -32,7 +33,7 @@ export async function saveInspection(
   const v = parsed.data;
   const svc = createServiceClient();
 
-  const { error } = await (svc as any)
+  const { error } = await untypedDatabase(svc)
     .from("property_forms")
     .upsert(
       {
@@ -100,7 +101,7 @@ export async function saveOffboarding(
   const v = parsed.data;
   const svc = createServiceClient();
 
-  const { error } = await (svc as any)
+  const { error } = await untypedDatabase(svc)
     .from("property_forms")
     .upsert(
       {

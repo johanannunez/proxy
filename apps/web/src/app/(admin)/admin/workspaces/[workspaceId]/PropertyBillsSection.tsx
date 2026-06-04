@@ -961,7 +961,7 @@ export function PropertyBillsSection({
           <Buildings size={20} weight="duotone" className={styles.billsEmptyIcon} />
           <div>
             <strong>No receipts in the depository yet</strong>
-            <span>Upload receipt files on the owner's behalf when they are ready.</span>
+            <span>Upload receipt files on the owner&rsquo;s behalf when they are ready.</span>
           </div>
         </div>
       ) : isSearching ? (

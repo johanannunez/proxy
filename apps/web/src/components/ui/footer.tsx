@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -37,12 +38,12 @@ export function Footer({
     <footer className="border-t border-[#d9d2c5] bg-[#f8f7f3] pb-6 pt-16 lg:pb-8 lg:pt-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div className="md:flex md:items-start md:justify-between">
-          <a href="/" className="flex items-center gap-x-3" aria-label={brandName}>
+          <Link href="/" className="flex items-center gap-x-3" aria-label={brandName}>
             {logo}
             <span className="text-xl font-semibold tracking-normal text-[#081b33]">
               {brandName}
             </span>
-          </a>
+          </Link>
           <ul className="mt-6 flex list-none space-x-3 md:mt-0">
             {socialLinks.map((link) => (
               <li key={link.label}>

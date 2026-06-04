@@ -266,7 +266,7 @@ export function ProxyPricing() {
         <Link href="mailto:hello@myproxyhost.com" className="font-medium text-[#1b77be] hover:underline">
           Email us
         </Link>{" "}
-        and we'll reply same day.
+        and we&rsquo;ll reply same day.
       </p>
     </div>
   );
