@@ -114,7 +114,7 @@ const sheetItems: SheetEntry[] = [
     storageKey: "mobile-nav-operations-expanded",
     items: [
       { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={17} weight="duotone" />, matchPrefix: "/admin/properties" },
-      { href: "/admin/documents", label: "Documents", icon: <Files size={17} weight="duotone" />, matchPrefix: "/admin/documents" },
+      { href: "/admin/paperwork", label: "Paperwork", icon: <Files size={17} weight="duotone" />, matchPrefix: "/admin/paperwork" },
       { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={17} weight="duotone" />, matchPrefix: "/admin/projects" },
       { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={17} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
     ],
