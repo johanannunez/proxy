@@ -10,7 +10,9 @@
     "build": "next build",
     "start": "doppler run -- next start",
     "lint": "eslint",
-    "gen:checklist-pdf": "tsx scripts/build-checklist-pdf.tsx"
+    "gen:checklist-pdf": "tsx scripts/build-checklist-pdf.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -69,6 +71,8 @@
     "playwright": "^1.59.1",
     "sharp": "^0.34.5",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.6"
   }
 }
