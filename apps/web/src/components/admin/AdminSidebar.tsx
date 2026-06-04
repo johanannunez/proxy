@@ -98,9 +98,18 @@ const navEntries: NavEntry[] = [
     storageKey: "nav-operations-expanded",
     items: [
       { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={16} weight="duotone" />, matchPrefix: "/admin/properties" },
-      { href: "/admin/documents", label: "Documents", icon: <Files size={16} weight="duotone" />, matchPrefix: "/admin/documents" },
-      { href: "/admin/documents/templates", label: "Templates", icon: <FileDashed size={16} weight="duotone" />, matchPrefix: "/admin/documents/templates" },
-      { href: "/admin/documents/forms", label: "Forms", icon: <Clipboard size={16} weight="duotone" />, matchPrefix: "/admin/documents/forms" },
+      {
+        kind: "subgroup" as const,
+        label: "Paperwork",
+        icon: <Files size={16} weight="duotone" />,
+        storageKey: "nav-paperwork-expanded",
+        matchPrefix: "/admin/paperwork",
+        items: [
+          { href: "/admin/paperwork", label: "Documents", icon: <Files size={15} weight="duotone" />, matchPrefix: "/admin/paperwork" },
+          { href: "/admin/paperwork/forms", label: "Forms", icon: <Clipboard size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/forms" },
+          { href: "/admin/paperwork/templates", label: "Templates", icon: <FileDashed size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/templates" },
+        ],
+      },
       { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={16} weight="duotone" />, matchPrefix: "/admin/projects" },
       { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={16} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
     ],
@@ -783,7 +792,7 @@ export function AdminTopBar({
     if (pathname.startsWith("/admin/inbox")) return "Inbox";
     if (pathname.startsWith("/admin/tasks")) return "Tasks";
     if (pathname.startsWith("/admin/projects")) return "Projects";
-    if (pathname.startsWith("/admin/documents")) return "Documents";
+    if (pathname.startsWith("/admin/paperwork")) return "Paperwork";
     if (pathname.startsWith("/admin/map")) return "Map";
     if (pathname.startsWith("/admin/help")) return "Help Center";
     if (pathname.startsWith("/admin/treasury")) return "Treasury";
@@ -900,7 +909,7 @@ const adminRailItems: Array<{
     href: "/admin/properties",
     icon: <Buildings size={20} weight="duotone" />,
     label: "Operations",
-    matchPrefixes: ["/admin/properties", "/admin/documents", "/admin/projects", "/admin/guest-pulse"],
+    matchPrefixes: ["/admin/properties", "/admin/paperwork", "/admin/projects", "/admin/guest-pulse"],
   },
   { href: "/admin/finances", icon: <Receipt size={20} weight="duotone" />, label: "Finances", matchPrefix: "/admin/finances" },
 ];
