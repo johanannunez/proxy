@@ -80,6 +80,10 @@ export default async function AdminTodayPage() {
     communications,
   });
 
+  // This is a force-dynamic server component that renders once per request, so the
+  // request-time clock is intentional and stable for this render. The purity rule
+  // targets client render/hooks; it does not apply to a per-request server render.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const pipelineAtom: PulseAtom = {
     key: "pipeline",
