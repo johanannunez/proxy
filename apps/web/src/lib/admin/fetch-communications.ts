@@ -1,6 +1,7 @@
 // apps/web/src/lib/admin/fetch-communications.ts
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import { untypedDatabase } from '@/lib/supabase/untyped';
 import type { CommunicationEvent } from './communication-types';
 import type { CommunicationInsightPayload } from './communication-types';
 import { fetchInsightsByParentWithPayload } from './ai-insights';
@@ -42,8 +43,8 @@ export async function fetchCommunications(
   workspaceId: string
 ): Promise<CommunicationsData> {
   const supabase = await createClient();
-  const { data, error } = await (supabase as any)
-    .from('communication_events')
+  const { data, error } = await untypedDatabase(supabase)
+    .from<Record<string, unknown>[]>('communication_events')
     .select('*')
     .eq('entity_type', entityType)
     .eq('entity_id', workspaceId)
@@ -88,11 +89,12 @@ export async function fetchCommunicationsDashboard(): Promise<CommunicationsDash
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(10),
-    (supabase as any)
-      .from('communication_events')
+    untypedDatabase(supabase)
+      .from<Record<string, unknown>[]>('communication_events')
       .select('phone_from, claude_summary, created_at')
       .eq('entity_type', 'unknown')
       .not('tier', 'eq', 'noise')
+      // PostgREST's `is` filter takes a null literal here ("processed_at IS NOT NULL").
       .not('processed_at', 'is', null)
       .order('created_at', { ascending: false })
       .limit(10),

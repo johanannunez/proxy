@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 async function sendViaResend(args: {
   subject: string;
@@ -36,8 +37,8 @@ export async function submitSupportTicket(input: {
   }
 
   const svc = createServiceClient();
-  // support_tickets not yet in generated types; cast through any
-  const { error } = await (svc as any).from("support_tickets").insert({
+  // support_tickets not yet in generated types; use the untyped helper.
+  const { error } = await untypedDatabase(svc).from("support_tickets").insert({
     subject: input.subject.trim(),
     message: input.message.trim(),
     priority: input.priority,
@@ -65,8 +66,8 @@ export async function submitFeedback(input: {
   }
 
   const svc = createServiceClient();
-  // feedback_submissions not yet in generated types; cast through any
-  const { error } = await (svc as any).from("feedback_submissions").insert({
+  // feedback_submissions not yet in generated types; use the untyped helper.
+  const { error } = await untypedDatabase(svc).from("feedback_submissions").insert({
     type: input.type,
     message: input.message.trim(),
   });

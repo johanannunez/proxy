@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 import {
   SECURE_DOC_TYPES,
   FORM_TYPES,
@@ -64,14 +65,75 @@ function makeInitialForms(): Record<FormKey, DocHubFormEntry> {
   ) as unknown as Record<FormKey, DocHubFormEntry>;
 }
 
+/* ─── Query result row shapes ─── */
+
+type ContactRow = {
+  id: string;
+  profile_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  property_count: { count: number }[] | number | null;
+};
+
+type SignedDocQueryRow = {
+  id: string;
+  user_id: string;
+  template_name: string;
+  status: string;
+  signed_at: string | null;
+  signed_pdf_url: string | null;
+  created_at: string;
+  sent_at: string | null;
+  boldsign_document_id: string;
+  sender: { full_name: string | null } | null;
+};
+
+type PropertyRow = {
+  id: string;
+  contact_id: string;
+  wifi_details: Record<string, unknown> | null;
+  bed_arrangements: Record<string, unknown> | null;
+  guidebook_spots: unknown[] | null;
+  house_rules: unknown;
+};
+
+type KycRow = {
+  user_id: string;
+  legal_name: string | null;
+  license_number: string | null;
+  issuing_state: string | null;
+  expiration_date: string | null;
+  consent_given: boolean | null;
+};
+
+type PropertyFormRow = {
+  property_id: string;
+  form_key: string;
+  data: Record<string, unknown> | null;
+  completed_at: string | null;
+};
+
+type FormEntry = { data: Record<string, unknown>; completed_at: string | null };
+
+/** Coerce a JSON form-field value to the `string | null` shape DocHubFormEntry.data expects. */
+function asText(v: unknown): string | null {
+  if (v == null) return null;
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return null;
+}
+
 /* ─── Main data fetcher ─── */
 
 export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
   const supabase = await createClient();
+  const db = untypedDatabase(supabase);
 
   // 1. All active/onboarding contacts with profile info and property count
-  const { data: contacts, error: contactsErr } = await (supabase as any)
-    .from("contacts")
+  const { data: contacts, error: contactsErr } = await db
+    .from<ContactRow[]>("contacts")
     .select(`
       id,
       profile_id,
@@ -91,15 +153,15 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
 
   if (!contacts || contacts.length === 0) return [];
 
-  const profileIds = (contacts as any[])
-    .map((c: any) => c.profile_id)
-    .filter(Boolean) as string[];
+  const profileIds = contacts
+    .map((c) => c.profile_id)
+    .filter((id): id is string => Boolean(id));
 
-  const contactIds = (contacts as any[]).map((c: any) => c.id);
+  const contactIds = contacts.map((c) => c.id);
 
   // 2. All signed_documents for these profile IDs, join sender profile
-  const { data: signedDocs, error: docsErr } = await (supabase as any)
-    .from("signed_documents")
+  const { data: signedDocs, error: docsErr } = await db
+    .from<SignedDocQueryRow[]>("signed_documents")
     .select(`
       id, user_id, template_name, status, signed_at, signed_pdf_url,
       created_at, sent_at, boldsign_document_id,
@@ -113,8 +175,8 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
   }
 
   // 3. Properties for legacy form data (wifi, bed_arrangements, guidebook_spots) + IDs for property_forms
-  const { data: properties, error: propsErr } = await (supabase as any)
-    .from("properties")
+  const { data: properties, error: propsErr } = await db
+    .from<PropertyRow[]>("properties")
     .select(`
       id, contact_id,
       wifi_details,
@@ -129,8 +191,8 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
   }
 
   // 4. Owner KYC for identity verification
-  const { data: kycRows, error: kycErr } = await (supabase as any)
-    .from("owner_kyc")
+  const { data: kycRows, error: kycErr } = await db
+    .from<KycRow[]>("owner_kyc")
     .select(`user_id, legal_name, license_number, issuing_state, expiration_date, consent_given`)
     .in("user_id", profileIds);
 
@@ -139,14 +201,14 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
   }
 
   // 5. Property forms (setup sections + compliance forms + new forms)
-  const propertyIds = ((properties ?? []) as any[]).map((p: any) => p.id);
+  const propertyIds = (properties ?? []).map((p) => p.id);
 
   const { data: propertyForms, error: formsErr } = propertyIds.length > 0
-    ? await (supabase as any)
-        .from("property_forms")
+    ? await db
+        .from<PropertyFormRow[]>("property_forms")
         .select("property_id, form_key, data, completed_at")
         .in("property_id", propertyIds)
-    : { data: [], error: null };
+    : { data: [] as PropertyFormRow[], error: null };
 
   if (formsErr) {
     console.error("[documents-hub] property_forms fetch error:", formsErr.message);
@@ -154,32 +216,32 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
 
   // ─── Build lookup maps ───
 
-  const docsByProfileId = new Map<string, any[]>();
-  for (const doc of (signedDocs ?? []) as any[]) {
+  const docsByProfileId = new Map<string, SignedDocQueryRow[]>();
+  for (const doc of signedDocs ?? []) {
     const list = docsByProfileId.get(doc.user_id) ?? [];
     list.push(doc);
     docsByProfileId.set(doc.user_id, list);
   }
 
   // Primary property per contact (first one)
-  const firstPropByContactId = new Map<string, any>();
-  for (const prop of (properties ?? []) as any[]) {
+  const firstPropByContactId = new Map<string, PropertyRow>();
+  for (const prop of properties ?? []) {
     if (!firstPropByContactId.has(prop.contact_id)) {
       firstPropByContactId.set(prop.contact_id, prop);
     }
   }
 
   // All properties per contact (needed to compute per-contact form coverage)
-  const propsByContactId = new Map<string, any[]>();
-  for (const prop of (properties ?? []) as any[]) {
+  const propsByContactId = new Map<string, PropertyRow[]>();
+  for (const prop of properties ?? []) {
     const list = propsByContactId.get(prop.contact_id) ?? [];
     list.push(prop);
     propsByContactId.set(prop.contact_id, list);
   }
 
   // property_forms keyed by property_id → form_key → { data, completed_at }
-  const formsByPropertyId = new Map<string, Map<string, { data: any; completed_at: string | null }>>();
-  for (const pf of (propertyForms ?? []) as any[]) {
+  const formsByPropertyId = new Map<string, Map<string, FormEntry>>();
+  for (const pf of propertyForms ?? []) {
     if (!formsByPropertyId.has(pf.property_id)) {
       formsByPropertyId.set(pf.property_id, new Map());
     }
@@ -189,14 +251,14 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     });
   }
 
-  const kycByProfileId = new Map<string, any>();
-  for (const kyc of (kycRows ?? []) as any[]) {
+  const kycByProfileId = new Map<string, KycRow>();
+  for (const kyc of kycRows ?? []) {
     kycByProfileId.set(kyc.user_id, kyc);
   }
 
   // ─── Assemble owners ───
 
-  return (contacts as any[]).map((contact: any): DocHubOwner => {
+  return contacts.map((contact): DocHubOwner => {
     const profileId: string | null = contact.profile_id ?? null;
     const propertyCount = Array.isArray(contact.property_count)
       ? (contact.property_count[0]?.count ?? 0)
@@ -254,7 +316,9 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     const forms = makeInitialForms();
     const firstProp = firstPropByContactId.get(contact.id) ?? null;
     const firstPropId: string | null = firstProp?.id ?? null;
-    const firstPropForms = firstPropId ? (formsByPropertyId.get(firstPropId) ?? new Map()) : new Map<string, any>();
+    const firstPropForms: Map<string, FormEntry> = firstPropId
+      ? (formsByPropertyId.get(firstPropId) ?? new Map<string, FormEntry>())
+      : new Map<string, FormEntry>();
 
     // ─── property_setup: aggregate all 11 setup sections ───
     const sectionCompletion: Partial<Record<SetupSectionKey, boolean>> = {};
@@ -268,7 +332,7 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     // Fall back to legacy bed_arrangements if setup_basic not in property_forms yet
     const hasSetupInForms = completedCount > 0;
     if (!hasSetupInForms && firstProp?.bed_arrangements) {
-      const b = firstProp.bed_arrangements as Record<string, any>;
+      const b = firstProp.bed_arrangements;
       sectionCompletion.setup_basic = true;
       const newCompleted = Object.values(sectionCompletion).filter(Boolean).length;
       forms.property_setup = {
@@ -304,19 +368,19 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.wifi_info = {
         submitted: true,
         data: {
-          "Network Name (SSID)": techRow.data.wifi_ssid   ?? null,
-          "Password":            techRow.data.wifi_password ?? null,
-          "Router Location":     techRow.data.wifi_router_location ?? null,
+          "Network Name (SSID)": asText(techRow.data.wifi_ssid),
+          "Password":            asText(techRow.data.wifi_password),
+          "Router Location":     asText(techRow.data.wifi_router_location),
         },
       };
     } else if (firstProp?.wifi_details && typeof firstProp.wifi_details === "object") {
-      const w = firstProp.wifi_details as Record<string, string>;
+      const w = firstProp.wifi_details;
       forms.wifi_info = {
         submitted: !!(w.ssid || w.password),
         data: {
-          "Network Name (SSID)": w.ssid           ?? null,
-          "Password":            w.password        ?? null,
-          "Router Location":     w.router_location ?? null,
+          "Network Name (SSID)": asText(w.ssid),
+          "Password":            asText(w.password),
+          "Router Location":     asText(w.router_location),
         },
       };
     }
@@ -332,7 +396,7 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
         },
       };
     } else if (firstProp?.guidebook_spots && typeof firstProp.guidebook_spots === "object") {
-      const spots = firstProp.guidebook_spots as any[];
+      const spots = firstProp.guidebook_spots;
       forms.guidebook = {
         submitted: Array.isArray(spots) && spots.length > 0,
         data: {
@@ -348,10 +412,10 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.str_permit = {
         submitted: true,
         data: {
-          "Permit Required": d.is_permit_required ?? null,
-          "Permit Number":   d.permit_number      ?? null,
-          "Issuing Authority": d.issuing_authority ?? null,
-          "Expires":         d.expiration_date    ?? null,
+          "Permit Required": asText(d.is_permit_required),
+          "Permit Number":   asText(d.permit_number),
+          "Issuing Authority": asText(d.issuing_authority),
+          "Expires":         asText(d.expiration_date),
         },
       };
     }
@@ -363,10 +427,10 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.hoa_info = {
         submitted: true,
         data: {
-          "Has HOA":          d.has_hoa          ?? null,
-          "HOA Name":         d.hoa_name         ?? null,
-          "Management Co.":   d.management_company ?? null,
-          "Contact Phone":    d.contact_phone    ?? null,
+          "Has HOA":          asText(d.has_hoa),
+          "HOA Name":         asText(d.hoa_name),
+          "Management Co.":   asText(d.management_company),
+          "Contact Phone":    asText(d.contact_phone),
         },
       };
     }
@@ -378,10 +442,10 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.insurance_certificate = {
         submitted: true,
         data: {
-          "Carrier":       d.carrier_name     ?? null,
-          "Policy Type":   d.policy_type      ?? null,
-          "Policy Number": d.policy_number    ?? null,
-          "Expires":       d.expiration_date  ?? null,
+          "Carrier":       asText(d.carrier_name),
+          "Policy Type":   asText(d.policy_type),
+          "Policy Number": asText(d.policy_number),
+          "Expires":       asText(d.expiration_date),
         },
       };
     }
@@ -389,12 +453,15 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     // ─── Platform Authorization ───
     const platformRow = firstPropForms.get("platform_authorization");
     if (platformRow?.completed_at) {
-      const platforms = Array.isArray(platformRow.data.platforms) ? platformRow.data.platforms : [];
+      const platforms: unknown[] = Array.isArray(platformRow.data.platforms) ? platformRow.data.platforms : [];
       forms.platform_authorization = {
         submitted: platforms.length > 0,
         data: {
           "Platforms Authorized": String(platforms.length),
-          "Platforms": platforms.map((p: any) => p.platform).join(", "),
+          "Platforms": platforms
+            .map((p) => (p && typeof p === "object" ? asText((p as Record<string, unknown>).platform) : null))
+            .filter((name): name is string => name != null)
+            .join(", "),
         },
       };
     }
@@ -406,9 +473,9 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.onboarding_inspection = {
         submitted: true,
         data: {
-          "Overall Condition": d.overall_condition ?? null,
-          "Inspector":         d.inspector_name    ?? null,
-          "Date":              d.inspection_date   ?? null,
+          "Overall Condition": asText(d.overall_condition),
+          "Inspector":         asText(d.inspector_name),
+          "Date":              asText(d.inspection_date),
         },
       };
     }
@@ -420,9 +487,9 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       forms.property_offboarding = {
         submitted: !!(offboardingRow.completed_at),
         data: {
-          "Notice Date":    d.notice_date    ?? null,
-          "End Date":       d.end_date       ?? null,
-          "Final Payout":   d.final_payout   ?? null,
+          "Notice Date":    asText(d.notice_date),
+          "End Date":       asText(d.end_date),
+          "Final Payout":   asText(d.final_payout),
         },
       };
     }

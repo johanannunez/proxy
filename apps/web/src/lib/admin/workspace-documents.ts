@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 export type WorkspaceDocument = {
   id: string;
@@ -224,15 +225,14 @@ export async function fetchWorkspaceDocuments(profileId: string, propertyIds: st
     .eq("user_id", profileId)
     .order("created_at", { ascending: false });
 
-  // Supabase generated types are stale for property_forms.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Supabase generated types are stale for property_forms; use the untyped helper.
   const propertyFormsPromise = propertyIds.length > 0
-    ? (supabase as any)
-        .from("property_forms")
+    ? untypedDatabase(supabase)
+        .from<PropertyFormRow[]>("property_forms")
         .select("id, property_id, form_key, data, completed_at, updated_at, property:properties(address_line1, city, state)")
         .in("property_id", propertyIds)
         .order("updated_at", { ascending: false })
-    : Promise.resolve({ data: [], error: null });
+    : Promise.resolve({ data: [] as PropertyFormRow[], error: null });
 
   // Supabase generated types are stale for owner_kyc.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
