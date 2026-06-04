@@ -105,7 +105,7 @@ const navEntries: NavEntry[] = [
         storageKey: "nav-paperwork-expanded",
         matchPrefix: "/admin/paperwork",
         items: [
-          { href: "/admin/paperwork", label: "Documents", icon: <Files size={15} weight="duotone" />, matchPrefix: "/admin/paperwork" },
+          { href: "/admin/paperwork", label: "Documents", icon: <Files size={15} weight="duotone" /> },
           { href: "/admin/paperwork/forms", label: "Forms", icon: <Clipboard size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/forms" },
           { href: "/admin/paperwork/templates", label: "Templates", icon: <FileDashed size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/templates" },
         ],
