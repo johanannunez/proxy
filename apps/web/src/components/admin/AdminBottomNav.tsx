@@ -64,7 +64,7 @@ type SheetEntry = SheetNavItem | SheetNavGroup;
 const navItems: NavItem[] = [
   {
     href: "/admin",
-    label: "Dashboard",
+    label: "Today",
     icon: <Gauge size={22} weight="regular" />,
     activeIcon: <Gauge size={22} weight="fill" />,
   },

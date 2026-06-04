@@ -64,7 +64,7 @@ type NavEntry = NavItem | NavGroup;
 /* ─── Nav data ─── */
 
 const navEntries: NavEntry[] = [
-  { kind: "item", href: "/admin", label: "Dashboard", icon: <Gauge size={18} weight="duotone" /> },
+  { kind: "item", href: "/admin", label: "Today", icon: <Gauge size={18} weight="duotone" /> },
   { kind: "item", href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={18} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
   { kind: "item", href: "/admin/inbox", label: "Inbox", icon: <ChatsCircle size={18} weight="duotone" />, matchPrefix: "/admin/inbox" },
   { kind: "item", href: "/admin/tasks", label: "Tasks", icon: <ListChecks size={18} weight="duotone" />, matchPrefix: "/admin/tasks" },
@@ -692,7 +692,7 @@ const adminRailItems: Array<{
   matchPrefix?: string;
   matchPrefixes?: string[];
 }> = [
-  { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Dashboard" },
+  { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Today" },
   { href: "/admin/guest-pulse", icon: <Pulse size={20} weight="duotone" />, label: "Pulse", matchPrefix: "/admin/guest-pulse" },
   { href: "/admin/inbox", icon: <ChatsCircle size={20} weight="duotone" />, label: "Inbox", matchPrefix: "/admin/inbox" },
   { href: "/admin/tasks", icon: <ListChecks size={20} weight="duotone" />, label: "Tasks", matchPrefix: "/admin/tasks" },

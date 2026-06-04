@@ -64,7 +64,7 @@ function AdminClock() {
 }
 
 const SECTION_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
+  dashboard: "Today",
   inbox: "Inbox",
   tasks: "Tasks",
   calendar: "Calendar",
