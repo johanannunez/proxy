@@ -44,6 +44,8 @@ const nextConfig = {
       { source: "/workspace/members/:path*", destination: "/workspace/team/:path*", permanent: true },
       { source: "/workspace/reserve", destination: "/workspace/home", permanent: false },
       { source: "/workspace/reserve/:path*", destination: "/workspace/home", permanent: false },
+      { source: "/admin/documents", destination: "/admin/paperwork", permanent: true },
+      { source: "/admin/documents/:path+", destination: "/admin/paperwork/:path+", permanent: true },
     ];
   },
   async headers() {
