@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChatCircle, ChartLineUp } from "@phosphor-icons/react";
@@ -67,24 +68,6 @@ const FEATURES = [
     description:
       "Action items, deadlines, and follow-ups connected to the owner and property they belong to.",
   },
-];
-
-const SIDEBAR_NAV = [
-  { label: "Workspace", group: true },
-  { label: "Overview", active: true },
-  { label: "Properties", active: false },
-  { label: "Documents", active: false },
-  { label: "Finance", group: true },
-  { label: "Financials", active: false },
-  { label: "Messages", active: false },
-  { label: "Operations", group: true },
-  { label: "Tasks", active: false },
-];
-
-const MOCKUP_PROPS = [
-  { addr: "4 Chateau Terrace", city: "Scottsdale, AZ", live: true },
-  { addr: "18 Palazzo Blvd, Unit 3", city: "Naples, FL", live: true },
-  { addr: "22 Grand Estate Dr", city: "Sedona, AZ", live: false },
 ];
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -162,7 +145,34 @@ function FeatureIcon({ title }: { title: string }) {
   return paths[title] ?? null;
 }
 
+const HERO_TABS = [
+  { src: "/marketing/screenshots/workspace-hero-home-v1.png", path: "the-olive-family" },
+  {
+    src: "/marketing/screenshots/workspace-hero-documents-v1.png",
+    path: "the-olive-family/documents",
+  },
+  {
+    src: "/marketing/screenshots/workspace-hero-finances-v1.png",
+    path: "the-olive-family/finances",
+  },
+  {
+    src: "/marketing/screenshots/workspace-hero-properties-v1.png",
+    path: "the-olive-family/properties",
+  },
+];
+
 function DarkWorkspaceMockup() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(
+      () => setActive((a) => (a + 1) % HERO_TABS.length),
+      3200,
+    );
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div
       className="overflow-hidden rounded-[14px] border"
@@ -183,264 +193,27 @@ function DarkWorkspaceMockup() {
           <span className="h-[10px] w-[10px] rounded-full" style={{ background: "#51cf66" }} />
         </div>
         <div
-          className="flex-1 rounded-[5px] px-[10px] py-[5px] text-[11px]"
+          className="flex-1 truncate rounded-[5px] px-[10px] py-[5px] text-[11px]"
           style={{ background: "#edf0f5", color: "#94a3b8" }}
         >
-          app.myproxyhost.com/admin/workspace
+          app.myproxyhost.com/admin/workspaces/{HERO_TABS[active].path}
         </div>
       </div>
 
-      {/* App shell */}
-      <div className="flex" style={{ height: 460 }}>
-        {/* Sidebar */}
-        <div
-          className="flex shrink-0 flex-col"
-          style={{ width: 196, background: "#0c1e30", borderRight: "1px solid rgba(255,255,255,0.04)" }}
-        >
-          {/* Logo row */}
-          <div
-            className="flex items-center gap-[9px] border-b px-[18px] pb-[18px] pt-[14px]"
-            style={{ borderColor: "rgba(255,255,255,0.05)" }}
-          >
-            <div
-              className="flex h-6 w-6 items-center justify-center rounded-[5px]"
-              style={{ background: "linear-gradient(135deg,#1a5fa6 0%,#0b2540 100%)" }}
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <circle cx="6" cy="6" r="4.5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" />
-                <circle cx="6" cy="6" r="2" fill="rgba(255,255,255,0.8)" />
-              </svg>
-            </div>
-            <span
-              className="text-[12.5px] font-semibold"
-              style={{ fontFamily: "var(--font-sora)", color: "rgba(255,255,255,0.85)" }}
-            >
-              Proxy
-            </span>
-          </div>
-
-          {/* Nav */}
-          {SIDEBAR_NAV.map((item, i) =>
-            item.group ? (
-              <p
-                key={i}
-                className="px-[18px] pb-[5px] pt-[10px] text-[9px] font-bold uppercase tracking-[0.09em]"
-                style={{ color: "rgba(255,255,255,0.22)" }}
-              >
-                {item.label}
-              </p>
-            ) : (
-              <div
-                key={i}
-                className="px-[18px] py-[7px] text-[12px]"
-                style={{
-                  color: item.active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.42)",
-                  background: item.active ? "rgba(255,255,255,0.06)" : undefined,
-                  borderRight: item.active ? "2px solid #1a5fa6" : undefined,
-                  fontWeight: item.active ? 600 : undefined,
-                }}
-              >
-                {item.label}
-              </div>
-            )
-          )}
-        </div>
-
-        {/* Main content */}
-        <div className="flex flex-1 flex-col overflow-hidden" style={{ background: "#0f2540" }}>
-          {/* Breadcrumb */}
-          <div
-            className="border-b px-[18px] py-[12px]"
-            style={{ background: "#0c1e30", borderColor: "rgba(255,255,255,0.05)" }}
-          >
-            <div
-              className="flex items-center gap-[5px] text-[10.5px]"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
-              <span>Workspaces</span>
-              <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
-                <path d="M2 1.5l2 2-2 2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-              </svg>
-              <span style={{ color: "rgba(255,255,255,0.65)", fontWeight: 500 }}>
-                Versailles Portfolio Group
-              </span>
-            </div>
-          </div>
-
-          {/* Workspace header */}
-          <div className="px-[18px] pt-[14px]">
-            <p
-              className="mb-[5px] text-[15px] font-bold"
-              style={{
-                fontFamily: "var(--font-sora)",
-                color: "rgba(255,255,255,0.92)",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Versailles Portfolio Group
-            </p>
-            <div className="mb-3 flex items-center gap-2">
-              <span
-                className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold"
-                style={{ background: "rgba(74,222,128,0.12)", color: "#4ade80" }}
-              >
-                Active
-              </span>
-              <span
-                className="rounded-full px-2 py-0.5 text-[9.5px] font-semibold"
-                style={{ background: "rgba(26,95,166,0.2)", color: "#7ab9f7" }}
-              >
-                6/8 signed
-              </span>
-              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-                8 properties · 2h ago
-              </span>
-            </div>
-            {/* Tabs */}
-            <div className="flex border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-              {["Overview", "Documents", "Financials", "Messages", "Tasks"].map((tab, i) => (
-                <div
-                  key={tab}
-                  className="border-b-2 px-[14px] py-[8px] text-[11px]"
-                  style={{
-                    color: i === 0 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.35)",
-                    borderBottomColor: i === 0 ? "#1a5fa6" : "transparent",
-                    fontWeight: i === 0 ? 600 : 500,
-                    marginBottom: -1,
-                  }}
-                >
-                  {tab}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dashboard grid */}
-          <div
-            className="grid grid-cols-3 gap-[10px] overflow-hidden p-[14px]"
-            style={{ flex: 1, gridTemplateRows: "auto auto" }}
-          >
-            {/* AI Brief */}
-            <div
-              className="relative col-span-3 overflow-hidden rounded-[9px] border p-[12px]"
-              style={{
-                background: "linear-gradient(135deg,#0e2a46 0%,#0b2040 100%)",
-                borderColor: "rgba(26,95,166,0.3)",
-              }}
-            >
-              <div
-                className="pointer-events-none absolute -right-[30px] -top-[30px] h-[120px] w-[120px] rounded-full"
-                style={{ background: "radial-gradient(circle,rgba(26,95,166,0.2) 0%,transparent 70%)" }}
-              />
-              <div
-                className="mb-[7px] inline-flex items-center gap-[5px] rounded-full border px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.06em]"
-                style={{
-                  background: "rgba(26,95,166,0.2)",
-                  borderColor: "rgba(26,95,166,0.3)",
-                  color: "#7ab9f7",
-                }}
-              >
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                  <circle cx="4.5" cy="4.5" r="3" stroke="#7ab9f7" strokeWidth="1.2" />
-                  <circle cx="4.5" cy="4.5" r="1.2" fill="#7ab9f7" />
-                </svg>
-                AI Relationship Brief
-              </div>
-              <p className="text-[11.5px] leading-[1.55]" style={{ color: "rgba(255,255,255,0.65)" }}>
-                <strong style={{ color: "rgba(255,255,255,0.88)" }}>2 lease renewals due in 18 days.</strong>{" "}
-                Owner response rate is strong. March payout summary is ready to send.
-              </p>
-            </div>
-
-            {/* Metrics */}
-            <div
-              className="rounded-[9px] border p-[12px]"
-              style={{ background: "#162d48", borderColor: "rgba(255,255,255,0.06)" }}
-            >
-              <p
-                className="mb-2 text-[9.5px] font-semibold uppercase tracking-[0.07em]"
-                style={{ color: "rgba(255,255,255,0.3)" }}
-              >
-                Open Tasks
-              </p>
-              <p
-                className="text-[18px] font-bold"
-                style={{ color: "rgba(255,255,255,0.9)", letterSpacing: "-0.02em" }}
-              >
-                3
-              </p>
-              <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.28)" }}>
-                1 overdue
-              </p>
-            </div>
-            <div
-              className="rounded-[9px] border p-[12px]"
-              style={{ background: "#162d48", borderColor: "rgba(255,255,255,0.06)" }}
-            >
-              <p
-                className="mb-2 text-[9.5px] font-semibold uppercase tracking-[0.07em]"
-                style={{ color: "rgba(255,255,255,0.3)" }}
-              >
-                Next Payout
-              </p>
-              <p
-                className="text-[18px] font-bold"
-                style={{ color: "rgba(255,255,255,0.9)", letterSpacing: "-0.02em" }}
-              >
-                $8,200
-              </p>
-              <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.28)" }}>
-                March statement
-              </p>
-            </div>
-
-            {/* Properties card */}
-            <div
-              className="col-span-2 overflow-hidden rounded-[9px] border"
-              style={{ background: "#162d48", borderColor: "rgba(255,255,255,0.06)" }}
-            >
-              <div
-                className="flex items-center justify-between border-b px-[14px] py-[10px]"
-                style={{ borderColor: "rgba(255,255,255,0.05)" }}
-              >
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-[0.07em]"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
-                >
-                  Properties
-                </p>
-                <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                  8 total
-                </p>
-              </div>
-              {MOCKUP_PROPS.map((p) => (
-                <div
-                  key={p.addr}
-                  className="flex items-center justify-between border-b px-[14px] py-[8px]"
-                  style={{ borderColor: "rgba(255,255,255,0.04)" }}
-                >
-                  <div>
-                    <p className="text-[11.5px]" style={{ color: "rgba(255,255,255,0.72)" }}>
-                      {p.addr}
-                    </p>
-                    <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.28)" }}>
-                      {p.city}
-                    </p>
-                  </div>
-                  <span
-                    className="rounded-full px-[7px] py-[2px] text-[9.5px] font-semibold"
-                    style={{
-                      background: p.live ? "rgba(74,222,128,0.1)" : "rgba(200,133,58,0.15)",
-                      color: p.live ? "#4ade80" : "#c8853a",
-                    }}
-                  >
-                    {p.live ? "Live" : "Setup"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* Rotating real product screenshots (one per workspace tab) */}
+      <div className="relative w-full" style={{ aspectRatio: "1440 / 900" }}>
+        {HERO_TABS.map((tab, i) => (
+          <Image
+            key={tab.src}
+            src={tab.src}
+            alt="The Proxy workspace: documents, financials, properties, and owner updates in one surface"
+            width={1440}
+            height={900}
+            priority={i === 0}
+            className="absolute inset-0 h-full w-full transition-opacity duration-700 ease-out"
+            style={{ opacity: i === active ? 1 : 0 }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -450,7 +223,20 @@ function DarkWorkspaceMockup() {
 
 export function Hero195() {
   return (
-    <main className="min-h-screen" style={{ background: "#ffffff", color: "#0b1929" }}>
+    <main
+      className="min-h-screen"
+      style={
+        {
+          background: "#ffffff",
+          color: "#0b1929",
+          // Landing is an always-light brand surface. The app's dark mode
+          // redefines --color-white to #141414, which would turn every
+          // `text-white` CTA dark-on-dark. Pin the token back to real white
+          // for this subtree so the page renders correctly in either mode.
+          "--color-white": "#ffffff",
+        } as React.CSSProperties
+      }
+    >
       {/* NAV */}
       <header
         className="sticky top-0 z-30 border-b"
@@ -510,9 +296,9 @@ export function Hero195() {
 
       {/* HERO */}
       <section id="workspace" className="scroll-mt-16" style={{ background: "#ffffff" }}>
-        <div className="mx-auto flex max-w-[1360px] items-center gap-[52px] px-[60px] py-[86px]">
+        <div className="mx-auto flex max-w-[1180px] flex-col items-start gap-10 px-6 py-12 sm:px-[60px] lg:flex-row lg:items-center lg:gap-[52px] lg:py-[64px]">
           {/* Left column */}
-          <div style={{ flex: "0 0 530px" }}>
+          <div className="w-full lg:w-[530px] lg:shrink-0">
             {/* Badge */}
             <div
               className="mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]"
@@ -530,8 +316,8 @@ export function Hero195() {
               className="mb-[22px]"
               style={{
                 fontFamily: "var(--font-sora)",
-                fontSize: "clamp(48px, 4.6vw, 66px)",
-                lineHeight: 1.0,
+                fontSize: "clamp(36px, 3.6vw, 52px)",
+                lineHeight: 1.02,
                 fontWeight: 800,
                 letterSpacing: "-0.04em",
                 color: "#0b1929",
@@ -597,8 +383,53 @@ export function Hero195() {
           </div>
 
           {/* Right column: mockup */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="w-full min-w-0 lg:flex-1">
             <DarkWorkspaceMockup />
+          </div>
+        </div>
+      </section>
+
+      {/* PROOF BAND */}
+      <section style={{ background: "#0b2540" }} className="px-6 py-[68px] sm:px-[60px]">
+        <div className="mx-auto max-w-[1240px]">
+          <p
+            className="mb-11 text-center text-[10.5px] font-semibold uppercase tracking-[0.14em]"
+            style={{ color: "rgba(255,255,255,0.62)" }}
+          >
+            Built for the co-hosting model
+          </p>
+          <div className="grid grid-cols-2 gap-y-12 md:grid-cols-4">
+            {[
+              { figure: "1", label: "Workspace for documents, financials, messages, and tasks" },
+              { figure: "3", label: "Stay types supported — short, mid, and long" },
+              { figure: "5", label: "Disconnected tools, now replaced by one system" },
+              { figure: "0", label: "Spreadsheets or copy-paste busywork" },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="px-6 text-center md:border-l md:first:border-l-0"
+                style={{ borderColor: "rgba(255,255,255,0.1)" }}
+              >
+                <p
+                  style={{
+                    fontFamily: "var(--font-sora)",
+                    fontSize: "clamp(40px, 4vw, 56px)",
+                    fontWeight: 800,
+                    letterSpacing: "-0.04em",
+                    lineHeight: 1,
+                    color: "#ffffff",
+                  }}
+                >
+                  {stat.figure}
+                </p>
+                <p
+                  className="mx-auto mt-[14px] max-w-[210px] text-[13px] leading-[1.5]"
+                  style={{ color: "rgba(255,255,255,0.55)" }}
+                >
+                  {stat.label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -610,7 +441,7 @@ export function Hero195() {
       >
         <p
           className="mb-5 text-center text-[10px] font-semibold uppercase tracking-[0.1em]"
-          style={{ color: "#94a3b8" }}
+          style={{ color: "#546880" }}
         >
           Works with your platforms
         </p>
@@ -643,7 +474,7 @@ export function Hero195() {
       {/* COMPARISON SECTION */}
       <section
         id="compare"
-        className="scroll-mt-16 border-t px-[60px] py-24"
+        className="scroll-mt-16 border-t px-6 py-20 sm:px-[60px] sm:py-24"
         style={{ borderColor: "#eef0f4", background: "#ffffff" }}
       >
         <div className="mx-auto max-w-[1100px]">
@@ -678,41 +509,42 @@ export function Hero195() {
             </p>
           </div>
 
-          <div
-            className="grid grid-cols-2 gap-[3px] overflow-hidden rounded-[14px]"
-            style={{ background: "#e8ecf2" }}
-          >
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {/* Before */}
-            <div style={{ background: "#fafafa" }}>
+            <div
+              className="overflow-hidden rounded-[18px] border"
+              style={{ background: "#fbfaf8", borderColor: "#ece6dd" }}
+            >
               <div
-                className="border-b px-7 py-5"
-                style={{ borderColor: "#ede8e0" }}
-              >
+                className="h-[3px] w-full"
+                style={{ background: "linear-gradient(90deg,#e0794f,#c0392b)" }}
+              />
+              <div className="border-b px-8 pb-5 pt-7" style={{ borderColor: "#efe9e0" }}>
                 <p
-                  className="mb-2 text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                  className="mb-[10px] text-[10px] font-bold uppercase tracking-[0.1em]"
                   style={{ color: "#c0392b" }}
                 >
                   Without Proxy
                 </p>
                 <p
-                  className="text-base font-bold"
+                  className="text-[17px] font-bold"
                   style={{
                     fontFamily: "var(--font-sora)",
-                    color: "#0b1929",
+                    color: "#5c4a42",
                     letterSpacing: "-0.02em",
                   }}
                 >
                   How most co-hosts operate today
                 </p>
               </div>
-              <div className="py-2">
+              <div className="px-8 py-2">
                 {BEFORE_ITEMS.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 px-7 py-[10px] text-[13.5px] leading-[1.5]"
+                    className="flex items-start gap-3 py-[12px] text-[13.5px] leading-[1.5]"
                     style={{
-                      background: i % 2 === 0 ? "rgba(0,0,0,0.015)" : undefined,
-                      color: "#3d2020",
+                      borderTop: i === 0 ? "none" : "1px solid #f1ece4",
+                      color: "#6b554c",
                     }}
                   >
                     <XMark />
@@ -723,16 +555,28 @@ export function Hero195() {
             </div>
 
             {/* After */}
-            <div style={{ background: "#fff" }}>
-              <div className="border-b px-7 py-5" style={{ borderColor: "#eef0f4" }}>
+            <div
+              className="overflow-hidden rounded-[18px] border"
+              style={{
+                background: "#ffffff",
+                borderColor: "#d7e6f4",
+                boxShadow:
+                  "0 24px 60px -20px rgba(12,40,75,0.22),0 8px 24px -14px rgba(12,40,75,0.12)",
+              }}
+            >
+              <div
+                className="h-[3px] w-full"
+                style={{ background: "linear-gradient(90deg,#02aaeb,#1b77be)" }}
+              />
+              <div className="border-b px-8 pb-5 pt-7" style={{ borderColor: "#eef3f8" }}>
                 <p
-                  className="mb-2 text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                  className="mb-[10px] text-[10px] font-bold uppercase tracking-[0.1em]"
                   style={{ color: "#1a5fa6" }}
                 >
                   With Proxy
                 </p>
                 <p
-                  className="text-base font-bold"
+                  className="text-[17px] font-bold"
                   style={{
                     fontFamily: "var(--font-sora)",
                     color: "#0b1929",
@@ -742,14 +586,14 @@ export function Hero195() {
                   What Proxy makes possible
                 </p>
               </div>
-              <div className="py-2">
+              <div className="px-8 py-2">
                 {AFTER_ITEMS.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 px-7 py-[10px] text-[13.5px] leading-[1.5]"
+                    className="flex items-start gap-3 py-[12px] text-[13.5px] leading-[1.5]"
                     style={{
-                      background: i % 2 === 0 ? "rgba(0,0,0,0.015)" : undefined,
-                      color: "#1e3a52",
+                      borderTop: i === 0 ? "none" : "1px solid #eef3f8",
+                      color: "#274157",
                     }}
                   >
                     <CheckMark size={20} />
@@ -764,7 +608,7 @@ export function Hero195() {
 
       {/* FEATURES */}
       <section
-        className="border-t px-[60px] py-24"
+        className="border-t px-6 py-20 sm:px-[60px] sm:py-24"
         style={{ borderColor: "#eef0f4", background: "#f7f9fc" }}
       >
         <div className="mx-auto max-w-[1240px]">
@@ -797,15 +641,15 @@ export function Hero195() {
             operators, owners, properties, documents, and money movement.
           </p>
           <div
-            className="grid grid-cols-3 gap-[2px] overflow-hidden rounded-[12px]"
+            className="grid grid-cols-1 gap-[2px] overflow-hidden rounded-[14px] sm:grid-cols-2 lg:grid-cols-3"
             style={{ background: "#eef0f4", border: "1px solid #eef0f4" }}
           >
             {FEATURES.map((f) => (
-              <div key={f.title} className="px-7 py-8" style={{ background: "#ffffff" }}>
-                <div
-                  className="mb-[18px] flex h-10 w-10 items-center justify-center rounded-[10px]"
-                  style={{ background: "#f0f4f8" }}
-                >
+              <div
+                key={f.title}
+                className="group bg-white px-7 py-8 transition-colors duration-200 hover:bg-[#f7faff]"
+              >
+                <div className="mb-[18px] flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#f0f4f8] transition-colors duration-200 group-hover:bg-[#e4eefa]">
                   <FeatureIcon title={f.title} />
                 </div>
                 <p
@@ -830,10 +674,10 @@ export function Hero195() {
       {/* SPLIT: CONFIDENCE */}
       <section
         id="proof"
-        className="scroll-mt-16 border-t px-[60px] py-24"
+        className="scroll-mt-16 border-t px-6 py-20 sm:px-[60px] sm:py-24"
         style={{ borderColor: "#eef0f4", background: "#ffffff" }}
       >
-        <div className="mx-auto flex max-w-[1240px] items-center gap-[72px]">
+        <div className="mx-auto flex max-w-[1240px] flex-col items-start gap-12 lg:flex-row lg:items-center lg:gap-[72px]">
           <div style={{ flex: 1 }}>
             <p
               className="mb-[18px] text-[10.5px] font-semibold uppercase tracking-[0.08em]"
@@ -889,9 +733,8 @@ export function Hero195() {
             </Link>
           </div>
           <div
-            className="overflow-hidden rounded-[16px]"
+            className="w-full overflow-hidden rounded-[16px] lg:w-[480px] lg:shrink-0"
             style={{
-              flex: "0 0 480px",
               boxShadow: "0 20px 60px rgba(12,40,75,0.12),0 4px 16px rgba(12,40,75,0.07)",
             }}
           >
@@ -907,11 +750,30 @@ export function Hero195() {
       </section>
 
       {/* CTA SECTION */}
-      <section className="px-[60px] py-24" style={{ background: "#0b2540" }}>
-        <div className="mx-auto max-w-[760px] text-center">
+      <section
+        className="relative overflow-hidden px-6 py-28 sm:px-[60px]"
+        style={{ background: "#0b2540" }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(60% 80% at 50% -10%, rgba(2,170,235,0.18), transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(45% 60% at 85% 110%, rgba(27,119,190,0.16), transparent 70%)",
+          }}
+        />
+        <div className="relative mx-auto max-w-[760px] text-center">
           <p
             className="mb-5 text-[10.5px] font-semibold uppercase tracking-[0.1em]"
-            style={{ color: "rgba(255,255,255,0.35)" }}
+            style={{ color: "rgba(255,255,255,0.62)" }}
           >
             Get early access
           </p>
@@ -937,19 +799,23 @@ export function Hero195() {
             Proxy is built for operators who take owner relationships seriously. Request access
             and see it with your own portfolio.
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-[9px] px-8 py-[15px] text-[15px] font-semibold text-white"
-              style={{ background: "#c8853a" }}
+              className="inline-flex items-center gap-2 rounded-[10px] px-8 py-[15px] text-[15px] font-semibold transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
+              style={{
+                background: "#c8853a",
+                color: "#0b2540",
+                boxShadow: "0 14px 32px -10px rgba(200,133,58,0.55)",
+              }}
             >
               Request access
               <ArrowRight size={15} weight="bold" />
             </Link>
             <Link
               href="#workspace"
-              className="inline-flex items-center rounded-[9px] border px-7 py-[14px] text-sm font-medium"
-              style={{ borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.65)" }}
+              className="inline-flex items-center rounded-[10px] border px-7 py-[14px] text-sm font-medium transition-colors duration-200 hover:bg-white/5"
+              style={{ borderColor: "rgba(255,255,255,0.28)", color: "rgba(255,255,255,0.82)" }}
             >
               See how it works
             </Link>

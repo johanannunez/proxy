@@ -38,6 +38,10 @@ export type OwnerReceiptRow = {
   line_items: unknown;
   file_hash: string | null;
   property: ReceiptPropertyRow | null;
+  starred_at: string | null;
+  archived_at: string | null;
+  review_notes: string | null;
+  tags: string[];
 };
 
 export type TreeFolder = {

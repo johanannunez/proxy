@@ -149,7 +149,7 @@ export function FieldBlock({ field }: Props) {
     case "section_header":
       return (
         <div className={styles.sectionHeader}>
-          <span>{label || "Section Header"}</span>
+          {label || "Section Header"}
         </div>
       );
 
@@ -160,8 +160,18 @@ export function FieldBlock({ field }: Props) {
         </div>
       );
 
-    case "divider":
-      return <div className={styles.divider} />;
+    case "divider": {
+      const dividerLabel = label && label !== "Divider" ? label : null;
+      return (
+        <div className={styles.divider}>
+          <span className={styles.dividerLine} />
+          {dividerLabel && (
+            <span className={styles.dividerLabel}>{dividerLabel}</span>
+          )}
+          <span className={styles.dividerLine} />
+        </div>
+      );
+    }
 
     default:
       return (

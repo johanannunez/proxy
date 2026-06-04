@@ -20,17 +20,25 @@ function generateSlug(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 }
 
-export async function listForms(orgId: string): Promise<Form[]> {
+export type FormWithCount = Form & { response_count: number };
+
+export async function listForms(orgId: string): Promise<FormWithCount[]> {
+  // form_responses is not in generated types; cast via any-typed db().
   const { data, error } = await db()
     .from("forms")
-    .select("*")
+    .select("*, form_responses(count)")
     .eq("org_id", orgId)
     .order("created_at", { ascending: false });
   if (error) {
     console.error("[forms] list:", error.message);
     return [];
   }
-  return (data ?? []) as Form[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((item: any) => ({
+    ...item,
+    form_responses: undefined,
+    response_count: (item.form_responses as Array<{ count: number }>)?.[0]?.count ?? 0,
+  })) as FormWithCount[];
 }
 
 export async function getForm(id: string): Promise<Form | null> {
@@ -120,6 +128,10 @@ export async function createFormResponse(
       property_id: input.property_id ?? null,
       data: input.data,
       metadata: input.metadata ?? {},
+      // completed_at marks when the respondent fully submitted the form.
+      // The column was added in migration 20260603100000_form_tracking.
+      // DB types are stale; cast happens via the any-typed db() helper above.
+      completed_at: new Date().toISOString(),
     })
     .select("*")
     .single();
@@ -136,4 +148,152 @@ export async function countFormResponses(formId: string): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("form_id", formId);
   return count ?? 0;
+}
+
+export type FormResponseWithProfile = {
+  id: string;
+  form_id: string;
+  respondent_profile_id: string | null;
+  property_id: string | null;
+  data: Record<string, unknown>;
+  submitted_at: string;
+  metadata: Record<string, unknown>;
+  started_at: string | null;
+  completed_at: string | null;
+  respondent_name: string | null;
+};
+
+export async function listFormResponsesDetailed(
+  formId: string,
+): Promise<FormResponseWithProfile[]> {
+  // Supabase types are stale — form_responses columns (started_at, completed_at)
+  // were added in migration 20260603100000_form_tracking. Cast via any-typed db().
+  const { data, error } = await db()
+    .from("form_responses")
+    .select(
+      `id, form_id, respondent_profile_id, property_id, data,
+       submitted_at, metadata, started_at, completed_at,
+       profiles:respondent_profile_id(full_name)`,
+    )
+    .eq("form_id", formId)
+    .order("submitted_at", { ascending: false });
+  if (error) {
+    console.error("[forms] listResponsesDetailed:", error.message);
+    return [];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    form_id: r.form_id,
+    respondent_profile_id: r.respondent_profile_id,
+    property_id: r.property_id,
+    data: r.data ?? {},
+    submitted_at: r.submitted_at,
+    metadata: r.metadata ?? {},
+    started_at: r.started_at ?? null,
+    completed_at: r.completed_at ?? null,
+    respondent_name: r.profiles?.full_name ?? null,
+  }));
+}
+
+export async function getFormViewCount(formId: string): Promise<number> {
+  // form_views was added in migration 20260603100000_form_tracking; types are stale.
+  const { count, error } = await db()
+    .from("form_views" as string)
+    .select("id", { count: "exact", head: true })
+    .eq("form_id", formId);
+  if (error) return 0;
+  return count ?? 0;
+}
+
+// ── Cross-form respondent filter ──────────────────────────────────────────────
+
+export type RespondentProfile = { id: string; name: string };
+
+export async function listRespondentProfiles(orgId: string): Promise<RespondentProfile[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await db()
+    .from("form_responses")
+    .select(
+      "respondent_profile_id, profiles:respondent_profile_id(full_name), forms!inner(org_id)",
+    )
+    .eq("forms.org_id", orgId)
+    .not("respondent_profile_id", "is", null);
+  if (error) return [];
+  const seen = new Set<string>();
+  const result: RespondentProfile[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (data ?? []) as any[]) {
+    if (r.respondent_profile_id && !seen.has(r.respondent_profile_id)) {
+      seen.add(r.respondent_profile_id);
+      result.push({
+        id: r.respondent_profile_id,
+        name: r.profiles?.full_name ?? "Unknown",
+      });
+    }
+  }
+  return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export type FormPropertyOption = { id: string; name: string };
+
+export async function listPropertyOptionsForForms(
+  orgId: string,
+): Promise<FormPropertyOption[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await db()
+    .from("form_responses")
+    .select("property_id, properties:property_id(name), forms!inner(org_id)")
+    .eq("forms.org_id", orgId)
+    .not("property_id", "is", null);
+  if (error) return [];
+  const seen = new Set<string>();
+  const result: FormPropertyOption[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (data ?? []) as any[]) {
+    if (r.property_id && !seen.has(r.property_id)) {
+      seen.add(r.property_id);
+      result.push({
+        id: r.property_id,
+        name: r.properties?.name ?? r.property_id,
+      });
+    }
+  }
+  return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export type RespondentFormEntry = {
+  form_id: string;
+  response_id: string;
+  submitted_at: string;
+  completed_at: string | null;
+  data: Record<string, unknown>;
+  property_id: string | null;
+};
+
+export async function getRespondentCrossFormData(
+  orgId: string,
+  profileId: string,
+  propertyId?: string,
+): Promise<RespondentFormEntry[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q = db()
+    .from("form_responses")
+    .select(
+      "id, form_id, submitted_at, completed_at, data, property_id, forms!inner(org_id)",
+    )
+    .eq("forms.org_id", orgId)
+    .eq("respondent_profile_id", profileId);
+  if (propertyId) q = q.eq("property_id", propertyId);
+  const { data, error } = await q.order("submitted_at", { ascending: false });
+  if (error) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    form_id: r.form_id,
+    response_id: r.id,
+    submitted_at: r.submitted_at,
+    completed_at: r.completed_at ?? null,
+    data: r.data ?? {},
+    property_id: r.property_id ?? null,
+  }));
 }

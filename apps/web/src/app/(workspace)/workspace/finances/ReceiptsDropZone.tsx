@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { ArrowDown, FilePdf, FileImage, File } from "@phosphor-icons/react";
 
 function getFileTypeIcon(file: File) {
@@ -12,9 +12,11 @@ function getFileTypeIcon(file: File) {
 export function ReceiptsDropZone({
   active,
   onDrop,
+  containerRef,
 }: {
   active: boolean;
   onDrop: (files: File[]) => void;
+  containerRef: RefObject<HTMLElement | null>;
 }) {
   const [visible, setVisible] = useState(false);
   const [dragFiles, setDragFiles] = useState<DataTransferItem[]>([]);
@@ -22,6 +24,8 @@ export function ReceiptsDropZone({
 
   useEffect(() => {
     if (!active) return;
+    const el = containerRef.current;
+    if (!el) return;
 
     function onDragEnter(e: DragEvent) {
       e.preventDefault();
@@ -54,18 +58,18 @@ export function ReceiptsDropZone({
       if (files.length > 0) onDrop(files);
     }
 
-    document.addEventListener("dragenter", onDragEnter);
-    document.addEventListener("dragover", onDragOver);
-    document.addEventListener("dragleave", onDragLeave);
-    document.addEventListener("drop", onDropEvent);
+    el.addEventListener("dragenter", onDragEnter);
+    el.addEventListener("dragover", onDragOver);
+    el.addEventListener("dragleave", onDragLeave);
+    el.addEventListener("drop", onDropEvent);
 
     return () => {
-      document.removeEventListener("dragenter", onDragEnter);
-      document.removeEventListener("dragover", onDragOver);
-      document.removeEventListener("dragleave", onDragLeave);
-      document.removeEventListener("drop", onDropEvent);
+      el.removeEventListener("dragenter", onDragEnter);
+      el.removeEventListener("dragover", onDragOver);
+      el.removeEventListener("dragleave", onDragLeave);
+      el.removeEventListener("drop", onDropEvent);
     };
-  }, [active, onDrop]);
+  }, [active, onDrop, containerRef]);
 
   if (!visible) return null;
 
@@ -89,9 +93,9 @@ export function ReceiptsDropZone({
       `}</style>
       <div
         style={{
-          position: "fixed",
+          position: "absolute",
           inset: 0,
-          zIndex: 9999,
+          zIndex: 10,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -158,9 +162,9 @@ export function ReceiptsDropZone({
         {fileCount > 0 && (
           <div
             style={{
-              position: "fixed",
-              top: "20px",
-              right: "20px",
+              position: "absolute",
+              top: "12px",
+              right: "12px",
               display: "flex",
               alignItems: "center",
               gap: "8px",

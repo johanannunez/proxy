@@ -278,6 +278,17 @@ async function evaluateMfaGate(
   pathname: string,
   isAdminRoute: boolean,
 ): Promise<NextResponse | null> {
+  // Dev-only escape hatch: when running locally with DEV_SKIP_MFA enabled,
+  // bypass the 2FA gate so automated tooling (screenshots, agents) can reach
+  // admin without a rotating TOTP code. Dead in production — NODE_ENV is never
+  // "development" there, and /api/dev/auth already 404s in prod.
+  if (
+    process.env.NODE_ENV === "development" &&
+    process.env.DEV_SKIP_MFA === "true"
+  ) {
+    return null;
+  }
+
   if (isMfaExempt(pathname)) return null;
 
   // `currentLevel` comes from the JWT aal claim (read locally from the session)

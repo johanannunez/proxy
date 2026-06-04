@@ -5,6 +5,7 @@ import {
   useCallback,
   useRef,
   useTransition,
+  useEffect,
   type KeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -34,6 +35,8 @@ import {
   Trash,
   Plus,
   CheckCircle,
+  ShareNetwork,
+  CopySimple,
 } from "@phosphor-icons/react";
 import {
   updateFormSchemaAction,
@@ -42,11 +45,13 @@ import {
   unpublishFormAction,
 } from "../../form-actions";
 import { AiGenerateSlideOver } from "./AiGenerateSlideOver";
+import { ShareModal } from "./ShareModal";
 import { FieldBlock } from "./FieldBlock";
 import { FieldCommandPalette } from "./FieldCommandPalette";
 import { FieldPropertyPopover } from "./FieldPropertyPopover";
 import { FieldTypePanel } from "./FieldTypePanel";
 import { FormPreviewPanel } from "./FormPreviewPanel";
+import { FormSettingsPanel } from "./FormSettingsPanel";
 import type { Form, FormField, FormSchema } from "@/lib/admin/forms-types";
 import styles from "./FormBuilderCanvas.module.css";
 
@@ -62,10 +67,17 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [paletteAnchorIndex, setPaletteAnchorIndex] = useState<number | null>(null);
   const [showAiSlideOver, setShowAiSlideOver] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [formIsPublic, setFormIsPublic] = useState(initialForm.is_public);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [publishing, startPublishing] = useTransition();
+  const [rightPanelTab, setRightPanelTab] = useState<"preview" | "settings">("preview");
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Undo/redo stacks — refs avoid triggering re-renders for the stacks themselves
+  const historyRef = useRef<FormSchema[]>([]);
+  const futureRef = useRef<FormSchema[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -77,7 +89,6 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const fields = schema.fields;
   const selectedField = fields.find((f) => f.id === selectedFieldId) ?? null;
 
-  // Construct a live form object so the preview always reflects current state
   const liveForm: Form = { ...initialForm, name: formName, schema };
 
   const scheduleAutoSave = useCallback(
@@ -95,10 +106,37 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   );
 
   function updateFields(next: FormField[]) {
+    historyRef.current = [...historyRef.current.slice(-49), schema];
+    futureRef.current = [];
     const nextSchema = { ...schema, fields: next };
     setSchema(nextSchema);
     scheduleAutoSave(nextSchema);
   }
+
+  // Undo/redo keyboard handler
+  useEffect(() => {
+    function handleUndoRedo(e: globalThis.KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        const prev = historyRef.current.pop();
+        if (!prev) return;
+        futureRef.current = [schema, ...futureRef.current];
+        setSchema(prev);
+        scheduleAutoSave(prev);
+      }
+      if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+        e.preventDefault();
+        const next = futureRef.current.shift();
+        if (!next) return;
+        historyRef.current = [...historyRef.current, schema];
+        setSchema(next);
+        scheduleAutoSave(next);
+      }
+    }
+    document.addEventListener("keydown", handleUndoRedo);
+    return () => document.removeEventListener("keydown", handleUndoRedo);
+  }, [schema, scheduleAutoSave]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -176,6 +214,10 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
     }
   }
 
+  const fieldCount = fields.length;
+  const fieldCountLabel = fieldCount === 1 ? "1 field" : `${fieldCount} fields`;
+  const statusLabel = isPublished ? "Published" : "Draft";
+
   return (
     <div className={styles.root} onKeyDown={handleCanvasKeyDown} tabIndex={0}>
       {/* ── Top bar (spans all columns) ────────────── */}
@@ -206,6 +248,11 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
               </>
             ) : null}
           </span>
+          {fieldCount > 0 && (
+            <span className={styles.fieldCounter}>
+              {fieldCountLabel} · {statusLabel}
+            </span>
+          )}
         </div>
 
         <div className={styles.topRight}>
@@ -216,6 +263,14 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
           >
             <Sparkle size={14} weight="bold" />
             Generate with AI
+          </button>
+          <button
+            type="button"
+            className={styles.shareBtn}
+            onClick={() => setShowShareModal(true)}
+          >
+            <ShareNetwork size={14} weight="bold" />
+            Share
           </button>
           <a
             href={isPublished && initialForm.slug ? `/f/${initialForm.slug}` : undefined}
@@ -265,11 +320,20 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
                   key={field.id}
                   field={field}
                   isSelected={selectedFieldId === field.id}
+                  isLayout={isLayoutField(field.type)}
                   onSelect={() =>
                     setSelectedFieldId((prev) => (prev === field.id ? null : field.id))
                   }
                   onUpdate={(patch) => updateField(field.id, patch)}
                   onRemove={() => removeField(field.id)}
+                  onDuplicate={() => {
+                    const newId = `field_${Date.now().toString(36)}`;
+                    const clone = { ...field, id: newId };
+                    const next = [...fields];
+                    next.splice(index + 1, 0, clone);
+                    updateFields(next);
+                    setSelectedFieldId(newId);
+                  }}
                   onAddBelow={() => setPaletteAnchorIndex(index)}
                   showPaletteBelow={paletteAnchorIndex === index}
                   onPaletteSelect={(type) => addField(type, index)}
@@ -306,7 +370,40 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
             onClose={() => setSelectedFieldId(null)}
           />
         ) : (
-          <FormPreviewPanel form={liveForm} />
+          <div className={styles.rightPanelTabbed}>
+            <div className={styles.rightPanelTabs}>
+              <button
+                type="button"
+                className={`${styles.rightPanelTab} ${rightPanelTab === "preview" ? styles.rightPanelTabActive : ""}`}
+                onClick={() => setRightPanelTab("preview")}
+              >
+                Preview
+              </button>
+              <button
+                type="button"
+                className={`${styles.rightPanelTab} ${rightPanelTab === "settings" ? styles.rightPanelTabActive : ""}`}
+                onClick={() => setRightPanelTab("settings")}
+              >
+                Settings
+              </button>
+            </div>
+            {rightPanelTab === "preview" ? (
+              <FormPreviewPanel form={liveForm} />
+            ) : (
+              <FormSettingsPanel
+                form={initialForm}
+                formName={formName}
+                schema={schema}
+                onUpdateMeta={(updates) => {
+                  updateFormMetaAction(initialForm.id, updates);
+                }}
+                onUpdateSchema={(nextSchema) => {
+                  setSchema(nextSchema);
+                  scheduleAutoSave(nextSchema);
+                }}
+              />
+            )}
+          </div>
         )}
       </div>
 
@@ -317,8 +414,23 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
         onConfirm={handleAiFieldsConfirm}
         onClose={() => setShowAiSlideOver(false)}
       />
+
+      {/* ── Share modal ────────────────────────────── */}
+      {showShareModal && (
+        <ShareModal
+          form={{ ...initialForm, is_active: isPublished, is_public: formIsPublic }}
+          onClose={() => setShowShareModal(false)}
+          onIsPublicChange={(val) => setFormIsPublic(val)}
+        />
+      )}
     </div>
   );
+}
+
+/* ── Layout field helper ──────────────────────────────────── */
+
+function isLayoutField(type: FormField["type"]): boolean {
+  return type === "section_header" || type === "description" || type === "divider";
 }
 
 /* ── Sortable wrapper ─────────────────────────────────────── */
@@ -326,9 +438,11 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
 function SortableFieldItem({
   field,
   isSelected,
+  isLayout,
   onSelect,
   onUpdate,
   onRemove,
+  onDuplicate,
   onAddBelow,
   showPaletteBelow,
   onPaletteSelect,
@@ -336,9 +450,11 @@ function SortableFieldItem({
 }: {
   field: FormField;
   isSelected: boolean;
+  isLayout: boolean;
   onSelect: () => void;
   onUpdate: (patch: Partial<FormField>) => void;
   onRemove: () => void;
+  onDuplicate: () => void;
   onAddBelow: () => void;
   showPaletteBelow: boolean;
   onPaletteSelect: (type: FormField["type"]) => void;
@@ -352,10 +468,18 @@ function SortableFieldItem({
     transition,
   };
 
+  const rowClass = [
+    isLayout ? styles.fieldRowLayout : styles.fieldRow,
+    isSelected && !isLayout ? styles.fieldRowSelected : "",
+    isDragging ? styles.fieldRowDragging : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div ref={setNodeRef} style={style} className={styles.sortableItem}>
       <div
-        className={`${styles.fieldRow} ${isSelected ? styles.fieldRowSelected : ""} ${isDragging ? styles.fieldRowDragging : ""}`}
+        className={rowClass}
         onClick={onSelect}
         role="button"
         tabIndex={0}
@@ -377,6 +501,19 @@ function SortableFieldItem({
         <div className={styles.fieldContent}>
           <FieldBlock field={field} />
         </div>
+
+        {/* Duplicate */}
+        <button
+          type="button"
+          className={styles.duplicateBtn}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDuplicate();
+          }}
+          aria-label="Duplicate field"
+        >
+          <CopySimple size={13} weight="bold" />
+        </button>
 
         {/* Remove */}
         <button

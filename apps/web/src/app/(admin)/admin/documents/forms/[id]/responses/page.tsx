@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
-import { getForm, listFormResponses } from "@/lib/admin/forms";
-import { FormResponsesHub } from "./FormResponsesHub";
+import {
+  getForm,
+  listFormResponsesDetailed,
+  getFormViewCount,
+} from "@/lib/admin/forms";
+import { ResponsesHub } from "./ResponsesHub";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +14,11 @@ type Props = {
 
 export default async function FormResponsesPage({ params }: Props) {
   const { id } = await params;
-  const form = await getForm(id);
+  const [form, responses, viewCount] = await Promise.all([
+    getForm(id),
+    listFormResponsesDetailed(id),
+    getFormViewCount(id),
+  ]);
   if (!form) notFound();
-
-  const responses = await listFormResponses(id);
-
-  return <FormResponsesHub form={form} responses={responses} />;
+  return <ResponsesHub form={form} responses={responses} viewCount={viewCount} />;
 }

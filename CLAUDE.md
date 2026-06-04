@@ -15,9 +15,9 @@ Workspace-wide rules in the parent CLAUDE.md apply as the base. This file adds p
 
 **Proxy** (formerly Parcel) is a full-stack co-hosting and short-term rental management platform. Owners list properties; Proxy handles operations, documents, financials, and guest communication.
 
-Production: https://www.theparcelco.com
-Vercel project: `parcel` (rename pending)
-GitHub: `johanannunez/parcel` (rename pending)
+Production: https://www.myproxyhost.com (live). `theparcelco.com` is the legacy Parcel domain, now dropped and not attached to the live project (returns Vercel `DEPLOYMENT_NOT_FOUND`). Do not use it.
+Vercel project: `proxy`
+GitHub: `johanannunez/proxy`
 
 ---
 

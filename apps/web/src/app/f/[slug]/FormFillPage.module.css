@@ -1,4 +1,25 @@
 .page {
+  /*
+   * Public guest form: always render in the light theme regardless of the
+   * visitor's OS/app dark-mode setting. The global `.dark` class on <html>
+   * flips design tokens (e.g. --color-white -> #141414, --color-text-primary
+   * -> near-white), which would put light text on the form's white card.
+   * Re-pin the light token values for this self-contained surface only.
+   */
+  color-scheme: light;
+  --color-white: #ffffff;
+  --color-warm-gray-50: #f8f7f6;
+  --color-warm-gray-100: #f0eeec;
+  --color-warm-gray-200: #e2dfdc;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #767170;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --border: #e5e7eb;
+  --color-border: #e5e7eb;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.06);
+
   min-height: 100vh;
   background: var(--color-warm-gray-50, #f8f7f6);
   display: flex;

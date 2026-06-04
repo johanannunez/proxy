@@ -10,6 +10,8 @@ import {
   deleteForm,
   createFormResponse,
   getForm,
+  getRespondentCrossFormData,
+  type RespondentFormEntry,
 } from "@/lib/admin/forms";
 import type { FormSchema } from "@/lib/admin/forms-types";
 
@@ -143,6 +145,14 @@ export async function updateFormSlugAction(
     const msg = err instanceof Error ? err.message : "Slug already in use";
     return { error: msg };
   }
+}
+
+export async function getRespondentDataAction(
+  orgId: string,
+  profileId: string,
+  propertyId?: string,
+): Promise<RespondentFormEntry[]> {
+  return getRespondentCrossFormData(orgId, profileId, propertyId);
 }
 
 export async function submitFormResponseAction(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X, Plus, Trash } from "@phosphor-icons/react";
 import type { FormField } from "@/lib/admin/forms-types";
 import { FIELD_TYPE_LABELS } from "@/lib/admin/forms-types";
@@ -13,6 +13,11 @@ type Props = {
 };
 
 export function FieldPropertyPopover({ field, onUpdate, onClose }: Props) {
+  const labelInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    labelInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(e: globalThis.KeyboardEvent) {
@@ -72,6 +77,7 @@ export function FieldPropertyPopover({ field, onUpdate, onClose }: Props) {
           <div className={styles.field}>
             <label className={styles.label}>Label</label>
             <input
+              ref={labelInputRef}
               className={styles.input}
               value={field.label}
               onChange={(e) => onUpdate({ label: e.target.value })}
@@ -83,6 +89,7 @@ export function FieldPropertyPopover({ field, onUpdate, onClose }: Props) {
             <label className={styles.label}>{field.type === "divider" ? "Divider" : "Text"}</label>
             {field.type !== "divider" && (
               <input
+                ref={labelInputRef}
                 className={styles.input}
                 value={field.label}
                 onChange={(e) => onUpdate({ label: e.target.value })}

@@ -1041,3 +1041,11 @@ body:has(.auth-page-root) {
 .proxy-marquee-track:hover {
   animation-play-state: paused;
 }
+@media (prefers-reduced-motion: reduce) {
+  .proxy-marquee-track {
+    animation: none;
+    /* Show one static set of logos, evenly distributed, when motion is off. */
+    justify-content: space-around;
+    width: 100%;
+  }
+}

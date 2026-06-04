@@ -3,6 +3,7 @@
 import { FormRenderer } from "@/components/forms/FormRenderer";
 import { submitFormResponseAction } from "@/app/(admin)/admin/documents/forms/form-actions";
 import type { Form } from "@/lib/admin/forms-types";
+import { FormViewTracker } from "./FormViewTracker";
 import styles from "./FormFillPage.module.css";
 
 type Props = {
@@ -16,6 +17,7 @@ export function FormFillPage({ form }: Props) {
 
   return (
     <div className={styles.page}>
+      <FormViewTracker formId={form.id} />
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h1 className={styles.formTitle}>{form.name}</h1>

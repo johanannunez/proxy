@@ -33,6 +33,7 @@ export type FormSchema = {
     submitButtonText?: string;
     successMessage?: string;
     notifyEmail?: string | null;
+    redirectUrl?: string;
   };
 };
 

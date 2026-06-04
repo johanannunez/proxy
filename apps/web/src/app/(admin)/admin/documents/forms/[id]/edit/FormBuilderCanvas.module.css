@@ -114,6 +114,26 @@
   border-color: color-mix(in srgb, var(--color-brand) 40%, var(--color-border));
 }
 
+.shareBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.shareBtn:hover {
+  background: color-mix(in srgb, var(--color-success, #16a34a) 6%, transparent);
+  color: var(--color-success, #16a34a);
+  border-color: color-mix(in srgb, var(--color-success, #16a34a) 40%, var(--color-border));
+}
+
 .previewBtn {
   display: flex;
   align-items: center;
@@ -219,6 +239,28 @@
   opacity: 0.5;
 }
 
+.fieldRowLayout {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0.375rem 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.375rem;
+}
+.fieldRowLayout:hover {
+  background: color-mix(in srgb, var(--color-border) 20%, transparent);
+}
+.fieldRowLayout .dragHandle {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.fieldRowLayout:hover .dragHandle {
+  opacity: 0.5;
+}
+
 .dragHandle {
   display: flex;
   align-items: center;
@@ -253,7 +295,8 @@
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .fieldRow:hover .removeBtn,
-.fieldRowSelected .removeBtn {
+.fieldRowSelected .removeBtn,
+.fieldRowLayout:hover .removeBtn {
   opacity: 1;
 }
 .removeBtn:hover {
@@ -339,6 +382,76 @@
 }
 .emptyAiLink:hover {
   opacity: 0.8;
+}
+
+/* ── Field counter ───────────────────────────────────────── */
+
+.fieldCounter {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Duplicate button ────────────────────────────────────── */
+
+.duplicateBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: var(--radius-sm, 0.375rem);
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.fieldRow:hover .duplicateBtn,
+.fieldRowSelected .duplicateBtn,
+.fieldRowLayout:hover .duplicateBtn {
+  opacity: 1;
+}
+.duplicateBtn:hover {
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  color: var(--color-brand);
+}
+
+/* ── Right panel tabs ────────────────────────────────────── */
+
+.rightPanelTabbed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rightPanelTabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.rightPanelTab {
+  flex: 1;
+  padding: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  border: none;
+  background: var(--color-surface-elevated);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.rightPanelTab:hover {
+  color: var(--color-text-primary);
+}
+.rightPanelTabActive {
+  color: var(--color-brand);
+  border-bottom-color: var(--color-brand);
 }
 
 /* ── Spin ────────────────────────────────────────────────── */

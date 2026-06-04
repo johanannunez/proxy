@@ -45,7 +45,7 @@ export function FinanceTab({
       </div>
 
       {ownerId && (
-        <div style={{ paddingBottom: "32px" }}>
+        <div style={{ paddingBottom: "32px", paddingLeft: "32px", paddingRight: "32px" }}>
           <AdminReceiptsView
             receipts={receiptsForExplorer}
             ownerId={ownerId}

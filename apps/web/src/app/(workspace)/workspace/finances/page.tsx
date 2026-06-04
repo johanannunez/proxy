@@ -118,7 +118,9 @@ export default async function FinancialsPage() {
         )}
       </div>
 
-      <ReceiptsExplorer initialReceipts={receipts} />
+      <div className="px-4 sm:px-6 lg:px-10">
+        <ReceiptsExplorer initialReceipts={receipts} />
+      </div>
 
       <div className="flex flex-col gap-5 px-4 pb-20 pt-5 sm:px-6 lg:px-10 md:pb-6">
         <section

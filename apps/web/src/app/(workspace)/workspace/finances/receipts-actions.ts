@@ -1,5 +1,6 @@
 "use server";
 
+import "server-only";
 import { createHash } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -23,9 +24,13 @@ Respond ONLY with JSON in this exact format:
   "documentType": "receipt",
   "summary": "One or two sentence description of what this document shows.",
   "vendor": "Vendor or company name",
+  "vendorConfidence": "high",
   "amount": 127.43,
+  "amountConfidence": "medium",
   "date": "2026-03-15",
-  "category": "Maintenance"
+  "dateConfidence": "high",
+  "category": "Maintenance",
+  "categoryConfidence": "high"
 }
 
 Rules:
@@ -34,16 +39,26 @@ Rules:
 - date: The transaction date, document date, or statement date in YYYY-MM-DD format. Look carefully — it is almost always present. Only fall back to today if truly absent.
 - category: One of: Maintenance, Cleaning, Supplies, Utilities, Insurance, Taxes, Furnishings, Marketing, Travel, Professional Services, Other.
 - documentType: "receipt" for most documents. Use "invoice" for unpaid bills. Use "other" if not a financial document at all.
-- summary: A concise factual sentence describing what this document shows (e.g. "Amazon receipt for cleaning supplies totaling $45.99 on March 3, 2026").`;
+- summary: A concise factual sentence describing what this document shows (e.g. "Amazon receipt for cleaning supplies totaling $45.99 on March 3, 2026").
+- For each extracted field, also output a confidence level: "high" (clearly visible), "medium" (reasonable inference), or "low" (uncertain guess). Include vendorConfidence, amountConfidence, dateConfidence, categoryConfidence.`;
 
 type AiResult = {
   summary: string;
   vendor: string;
+  vendorConfidence: "high" | "medium" | "low";
   amount: number;
+  amountConfidence: "high" | "medium" | "low";
   date: string;
+  dateConfidence: "high" | "medium" | "low";
   category: string;
+  categoryConfidence: "high" | "medium" | "low";
   documentType: string;
 };
+
+function parseConfidence(val: unknown): "high" | "medium" | "low" {
+  if (val === "medium" || val === "low") return val;
+  return "high";
+}
 
 async function analyzeFile(buffer: Buffer, mimeType: string, fileName: string): Promise<AiResult | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -98,9 +113,13 @@ async function analyzeFile(buffer: Buffer, mimeType: string, fileName: string): 
     return {
       summary: parsed.summary ?? "",
       vendor: parsed.vendor ?? "Unknown vendor",
+      vendorConfidence: parseConfidence(parsed.vendorConfidence),
       amount: typeof parsed.amount === "number" ? parsed.amount : parseFloat(String(parsed.amount).replace(/[^0-9.]/g, "")) || 0,
+      amountConfidence: parseConfidence(parsed.amountConfidence),
       date: parsed.date ?? new Date().toISOString().split("T")[0],
+      dateConfidence: parseConfidence(parsed.dateConfidence),
       category: parsed.category ?? "Other",
+      categoryConfidence: parseConfidence(parsed.categoryConfidence),
       documentType: parsed.documentType ?? "receipt",
     };
   } catch {
@@ -108,13 +127,66 @@ async function analyzeFile(buffer: Buffer, mimeType: string, fileName: string): 
   }
 }
 
+function buildAnalysisSummary(aiResult: AiResult): string {
+  const confJson = JSON.stringify({
+    v: aiResult.vendorConfidence,
+    a: aiResult.amountConfidence,
+    d: aiResult.dateConfidence,
+    c: aiResult.categoryConfidence,
+  });
+  return `${aiResult.summary}|CONF:${confJson}`;
+}
+
 const RECEIPT_SELECT =
-  "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, file_hash, property:properties(name, address_line1, city, state)";
+  "id, vendor, amount, currency, category, purchase_date, notes, image_url, storage_path, reviewed_at, analysis_kind, analysis_summary, analysis_source, payment_source, reimbursement_status, line_items, file_hash, starred_at, archived_at, review_notes, tags, property:properties(name, address_line1, city, state)";
+
+const EDITABLE_FIELDS = new Set([
+  "vendor",
+  "amount",
+  "currency",
+  "category",
+  "purchase_date",
+  "notes",
+  "review_notes",
+  "tags",
+]);
 
 function mapDocumentKind(type: string | undefined): "receipt" | "invoice" | "recurring" | "to_pay" {
   if (type === "invoice") return "invoice";
   if (type === "recurring") return "recurring";
   return "receipt";
+}
+
+async function requireUserId(): Promise<{ userId: string } | { error: string }> {
+  const client = await createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  return { userId: user.id };
+}
+
+async function writeAuditLog(
+  db: ReturnType<typeof untypedDatabase>,
+  receiptId: string,
+  userId: string,
+  action: string,
+  field?: string | null,
+  oldValue?: string | null,
+  newValue?: string | null,
+): Promise<void> {
+  try {
+    await db.from("receipt_audit_log").insert({
+      receipt_id: receiptId,
+      changed_by: userId,
+      action,
+      field: field ?? null,
+      old_value: oldValue ?? null,
+      new_value: newValue ?? null,
+    } as unknown);
+  } catch {
+    // Audit log failures are non-blocking
+  }
 }
 
 export async function uploadReceipt(formData: FormData): Promise<
@@ -157,9 +229,12 @@ export async function uploadReceipt(formData: FormData): Promise<
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storagePath = `${user.id}/${year}/${month}/${now.getTime()}_${safeName}`;
 
-  const { error: uploadError } = await client.storage
-    .from("receipts")
-    .upload(storagePath, buffer, { contentType: file.type, cacheControl: "3600" });
+  // Run storage upload and AI analysis in parallel — they are independent
+  const [uploadResult, aiResult] = await Promise.all([
+    client.storage.from("receipts").upload(storagePath, buffer, { contentType: file.type, cacheControl: "3600" }),
+    analyzeFile(buffer, file.type, file.name),
+  ]);
+  const { error: uploadError } = uploadResult;
   if (uploadError) return { error: uploadError.message };
 
   const { data: urlData } = await client.storage
@@ -167,10 +242,36 @@ export async function uploadReceipt(formData: FormData): Promise<
     .createSignedUrl(storagePath, 3600);
   const signedUrl = urlData?.signedUrl ?? "";
 
-  const aiResult = await analyzeFile(buffer, file.type, file.name);
-
   const purchaseDate = aiResult?.date ?? now.toISOString().split("T")[0];
   const vendor = aiResult?.vendor ?? file.name.replace(/\.[^.]+$/, "");
+
+  // Check for recurring: same vendor (case-insensitive) + amount within 10% + date within 32 days
+  let resolvedKind = mapDocumentKind(aiResult?.documentType);
+  if (aiResult && resolvedKind === "receipt") {
+    const amount = aiResult.amount;
+    const dateStr = aiResult.date;
+    const thirtyTwoDaysAgo = new Date(dateStr);
+    thirtyTwoDaysAgo.setDate(thirtyTwoDaysAgo.getDate() - 32);
+    const thirtyTwoDaysLater = new Date(dateStr);
+    thirtyTwoDaysLater.setDate(thirtyTwoDaysLater.getDate() + 32);
+
+    const { data: recurringMatch } = await db
+      .from("owner_receipts")
+      .select("id")
+      .eq("owner_id", user.id)
+      .filter("vendor", "ilike", aiResult.vendor)
+      .filter("amount", "gte", String(amount * 0.9))
+      .filter("amount", "lte", String(amount * 1.1))
+      .filter("purchase_date", "gte", thirtyTwoDaysAgo.toISOString().split("T")[0])
+      .filter("purchase_date", "lte", thirtyTwoDaysLater.toISOString().split("T")[0])
+      .limit(1);
+
+    if (Array.isArray(recurringMatch) && recurringMatch.length > 0) {
+      resolvedKind = "recurring";
+    }
+  }
+
+  const analysisSummary = aiResult ? buildAnalysisSummary(aiResult) : null;
 
   const { data: receipt, error: insertError } = await db
     .from<OwnerReceiptRow>("owner_receipts")
@@ -186,9 +287,9 @@ export async function uploadReceipt(formData: FormData): Promise<
       image_url: null,
       storage_path: storagePath,
       reviewed_at: null,
-      analysis_kind: mapDocumentKind(aiResult?.documentType),
+      analysis_kind: resolvedKind,
       analysis_source: aiResult ? "document" : "manual",
-      analysis_summary: aiResult?.summary ?? null,
+      analysis_summary: analysisSummary,
       payment_source: "owner_paid",
       reimbursement_status: "none",
       visibility: "visible",
@@ -199,6 +300,8 @@ export async function uploadReceipt(formData: FormData): Promise<
 
   if (insertError || !receipt) return { error: insertError?.message ?? "Failed to create receipt" };
 
+  await writeAuditLog(db, receipt.id, user.id, "upload");
+
   revalidatePath("/workspace/finances");
   return { receiptId: receipt.id, storagePath, signedUrl, receipt };
 }
@@ -208,41 +311,187 @@ export async function updateReceiptField(
   field: string,
   value: unknown,
 ): Promise<void> {
+  if (!EDITABLE_FIELDS.has(field)) throw new Error(`Field '${field}' is not editable.`);
+
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+
   const client = await createClient();
   const db = untypedDatabase(client);
   await db
     .from("owner_receipts")
     .update({ [field]: value } as unknown)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", auth.userId);
   revalidatePath("/workspace/finances");
 }
 
 export async function markReceiptReviewed(id: string): Promise<void> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+
   const client = await createClient();
   const db = untypedDatabase(client);
   await db
     .from("owner_receipts")
     .update({ reviewed_at: new Date().toISOString() } as unknown)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", auth.userId);
   revalidatePath("/workspace/finances");
 }
 
 export async function deleteReceipt(id: string, storagePath: string | null): Promise<void> {
-  const svc = createServiceClient();
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
 
-  if (storagePath) {
-    await svc.storage.from("receipts").remove([storagePath]);
+  const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+  const { data: receipt } = await db
+    .from("owner_receipts")
+    .select("id, storage_path")
+    .eq("id", id)
+    .eq("owner_id", auth.userId)
+    .maybeSingle();
+
+  if (!receipt) throw new Error("Receipt not found.");
+
+  const receiptRow = receipt as { storage_path?: unknown };
+  const ownedStoragePath =
+    typeof receiptRow.storage_path === "string" ? receiptRow.storage_path : null;
+  if (storagePath && storagePath !== ownedStoragePath) {
+    throw new Error("Receipt file does not match.");
   }
 
-  const db = untypedDatabase(svc);
-  await db.from("owner_receipts").delete().eq("id", id);
+  await writeAuditLog(db, id, auth.userId, "delete");
+
+  if (ownedStoragePath) {
+    await svc.storage.from("receipts").remove([ownedStoragePath]);
+  }
+
+  await db.from("owner_receipts").delete().eq("id", id).eq("owner_id", auth.userId);
   revalidatePath("/workspace/finances");
 }
 
 export async function getReceiptSignedUrl(storagePath: string): Promise<string | null> {
+  const auth = await requireUserId();
+  if ("error" in auth) return null;
+
   const client = await createClient();
+  const db = untypedDatabase(client);
+  const { data: receipt } = await db
+    .from("owner_receipts")
+    .select("id")
+    .eq("storage_path", storagePath)
+    .eq("owner_id", auth.userId)
+    .maybeSingle();
+  if (!receipt) return null;
+
   const { data } = await client.storage
     .from("receipts")
     .createSignedUrl(storagePath, 3600);
   return data?.signedUrl ?? null;
+}
+
+export async function starReceipt(id: string): Promise<void> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+  const client = await createClient();
+  const db = untypedDatabase(client);
+  await db.from("owner_receipts").update({ starred_at: new Date().toISOString() } as unknown).eq("id", id).eq("owner_id", auth.userId);
+  revalidatePath("/workspace/finances");
+}
+
+export async function unstarReceipt(id: string): Promise<void> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+  const client = await createClient();
+  const db = untypedDatabase(client);
+  await db.from("owner_receipts").update({ starred_at: null } as unknown).eq("id", id).eq("owner_id", auth.userId);
+  revalidatePath("/workspace/finances");
+}
+
+export async function archiveReceipt(id: string): Promise<void> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+  const client = await createClient();
+  const db = untypedDatabase(client);
+  await db.from("owner_receipts").update({ archived_at: new Date().toISOString() } as unknown).eq("id", id).eq("owner_id", auth.userId);
+  revalidatePath("/workspace/finances");
+}
+
+export async function unarchiveReceipt(id: string): Promise<void> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+  const client = await createClient();
+  const db = untypedDatabase(client);
+  await db.from("owner_receipts").update({ archived_at: null } as unknown).eq("id", id).eq("owner_id", auth.userId);
+  revalidatePath("/workspace/finances");
+}
+
+export async function updateReceiptTags(id: string, tags: string[]): Promise<void> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+  const client = await createClient();
+  const db = untypedDatabase(client);
+  await db.from("owner_receipts").update({ tags } as unknown).eq("id", id).eq("owner_id", auth.userId);
+  revalidatePath("/workspace/finances");
+}
+
+export async function exportReceiptsAsCsv(): Promise<string> {
+  const auth = await requireUserId();
+  if ("error" in auth) throw new Error(auth.error);
+  const client = await createClient();
+  const db = untypedDatabase(client);
+
+  const { data, error } = await db
+    .from("owner_receipts")
+    .select(RECEIPT_SELECT)
+    .eq("owner_id", auth.userId)
+    .eq("visibility", "visible")
+    .order("purchase_date", { ascending: false });
+
+  if (error || !data) return "";
+
+  const rows = data as unknown as OwnerReceiptRow[];
+
+  const headers = ["Vendor", "Amount", "Currency", "Category", "Date", "Type", "Reviewed", "Tags", "Notes", "Summary"];
+  const escape = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+  const csvRows = rows.map((r) => [
+    escape(r.vendor),
+    escape(r.amount),
+    escape(r.currency ?? "USD"),
+    escape(r.category),
+    escape(r.purchase_date),
+    escape(r.analysis_kind ?? "receipt"),
+    escape(r.reviewed_at ? "Yes" : "No"),
+    escape((r.tags ?? []).join(", ")),
+    escape(r.notes),
+    escape(r.analysis_summary ? r.analysis_summary.split("|CONF:")[0].trim() : ""),
+  ].join(","));
+
+  return [headers.join(","), ...csvRows].join("\n");
+}
+
+export type AuditLogEntry = {
+  id: string;
+  action: string;
+  field: string | null;
+  old_value: string | null;
+  new_value: string | null;
+  changed_at: string;
+};
+
+export async function getReceiptAuditLog(receiptId: string): Promise<AuditLogEntry[]> {
+  const auth = await requireUserId();
+  if ("error" in auth) return [];
+  const client = await createClient();
+  const db = untypedDatabase(client);
+  const { data } = await db
+    .from("receipt_audit_log")
+    .select("id, action, field, old_value, new_value, changed_at")
+    .eq("receipt_id", receiptId)
+    .order("changed_at", { ascending: false })
+    .limit(10);
+  return (data ?? []) as AuditLogEntry[];
 }
