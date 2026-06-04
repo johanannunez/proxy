@@ -23,15 +23,33 @@ import {
 import {
   SECURE_DOC_TYPES,
   FORM_TYPES,
+  SETUP_SECTION_KEYS,
   fmtDate,
   avatarColor,
   type DocHubOwner,
   type SecureDocKey,
   type FormKey,
+  type PropertyFormKey,
   type SignedDocRow,
 } from "@/lib/admin/documents-hub-shared";
+import { DocumentView } from "@/components/documents/DocumentView";
+import { FORM_REGISTRY } from "@/lib/forms/form-registry";
+import { saveFormAnswersAsAdmin } from "@/lib/forms/save-form";
 import { sendDocumentToOwner, sendDocumentReminder } from "./document-actions";
 import styles from "./DocumentDrawer.module.css";
+
+/* Maps a curated hub FormKey to the underlying registry form(s). */
+const FORM_KEY_TO_REGISTRY: Record<FormKey, PropertyFormKey[]> = {
+  property_setup: [...SETUP_SECTION_KEYS],
+  wifi_info: ["setup_tech"],
+  guidebook: ["guidebook"],
+  str_permit: ["str_permit"],
+  hoa_info: ["hoa_info"],
+  insurance_certificate: ["insurance_certificate"],
+  platform_authorization: ["platform_authorization"],
+  onboarding_inspection: ["onboarding_inspection"],
+  property_offboarding: ["property_offboarding"],
+};
 
 type DocKey = SecureDocKey | FormKey;
 
@@ -276,52 +294,39 @@ function SecureDocBody({
   );
 }
 
-/* ─── Form body ─── */
+/* ─── Form body — registry-driven, shows every question (filled or not) ─── */
 function FormBody({ docKey, owner }: { docKey: FormKey; owner: DocHubOwner }) {
-  const entry = owner.forms[docKey];
-  const def = FORM_TYPES[docKey];
-
-  const hasPartialData = Object.keys(entry.data).length > 0;
-  if (!entry.submitted && !hasPartialData) {
-    return (
-      <div>
-        <div className={styles.sectionLabel}>Form Responses</div>
-        <div className={styles.drawerEmptyState}>
-          <FileText size={28} style={{ color: "#d1d5db" }} />
-          <p className={styles.drawerEmptyTitle}>Not submitted</p>
-          <p className={styles.drawerEmptyBody}>
-            {owner.fullName} has not submitted the {def.label} form yet.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const fields = Object.entries(entry.data).filter(([, v]) => v !== undefined);
+  const registryKeys = FORM_KEY_TO_REGISTRY[docKey];
+  // Edit-on-behalf requires both the owner's profile and a property to write to.
+  const canEdit = Boolean(owner.profileId && owner.firstPropertyId);
 
   return (
     <div>
       <div className={styles.sectionLabel}>Form Responses</div>
-      <div className={styles.fieldGrid}>
-        {fields.map(([label, value]) => (
-          <FieldRow
-            key={label}
-            label={label}
-            value={value}
-            mono={
-              label.toLowerCase().includes("password") ||
-              label.toLowerCase().includes("ssid")
+      {!owner.firstPropertyId && (
+        <div className={styles.noteBlock} style={{ marginBottom: 12 }}>
+          <Info size={14} weight="duotone" style={{ flexShrink: 0, marginTop: 1 }} />
+          {owner.fullName} has no property yet, so these answers are read-only.
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        {registryKeys.map((key) => (
+          <DocumentView
+            key={key}
+            def={FORM_REGISTRY[key]}
+            data={owner.rawForms[key] ?? {}}
+            action={canEdit ? saveFormAnswersAsAdmin : undefined}
+            hiddenFields={
+              canEdit
+                ? {
+                    form_key: key,
+                    property_id: owner.firstPropertyId as string,
+                    profile_id: owner.profileId as string,
+                  }
+                : undefined
             }
           />
         ))}
-        {fields.length === 0 && (
-          <div className={styles.fieldRow}>
-            <div className={styles.fieldLabel}>—</div>
-            <div className={`${styles.fieldValue} ${styles.fieldValueEmpty}`}>
-              No fields recorded
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

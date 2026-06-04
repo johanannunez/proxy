@@ -18,7 +18,7 @@ import { fetchInsightsByParent } from "@/lib/admin/ai-insights";
 import { BillingTab } from "./BillingTab";
 import { fetchWorkspaceBilling } from "@/lib/admin/workspace-billing";
 import { DocumentsTab } from "./DocumentsTab";
-import { fetchWorkspaceDocuments } from "@/lib/admin/workspace-documents";
+import { fetchWorkspaceDocuments, fetchWorkspaceFormData } from "@/lib/admin/workspace-documents";
 import { MessagingTab } from "./MessagingTab";
 import { fetchWorkspacePersonMessages, fetchWorkspaceMessages } from "@/lib/admin/workspace-messages";
 import { WorkspaceOverviewTab } from "./WorkspaceOverviewTab";
@@ -118,6 +118,10 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
   const workspaceDocuments = (tab === "documents" || isOverview) && workspaceContact.profileId
     ? await fetchWorkspaceDocuments(workspaceContact.profileId)
     : [];
+
+  const workspaceFormData = tab === "documents" && workspaceContact.profileId
+    ? await fetchWorkspaceFormData(workspaceContact.profileId)
+    : undefined;
 
   const messagingContactIds = members.map((m) => m.id);
   const allWorkspaceMessages = tab === "messaging"
@@ -271,7 +275,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
             />
           );
         }
-        return <DocumentsTab documents={workspaceDocuments} />;
+        return <DocumentsTab documents={workspaceDocuments} forms={workspaceFormData} />;
 
       case "settings":
         if (!workspaceData) {

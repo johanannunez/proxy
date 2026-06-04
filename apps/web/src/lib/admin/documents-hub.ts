@@ -427,6 +427,13 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       };
     }
 
+    // Raw per-form data passthrough for the primary property — full answers,
+    // keyed by form_key, for the registry-driven all-questions view.
+    const rawForms: Partial<Record<string, Record<string, unknown>>> = {};
+    for (const [formKey, row] of firstPropForms.entries()) {
+      rawForms[formKey] = (row?.data as Record<string, unknown>) ?? {};
+    }
+
     return {
       contactId: contact.id,
       profileId,
@@ -435,8 +442,10 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       phone: contact.phone ?? null,
       avatarUrl: contact.avatar_url ?? null,
       propertyCount: Number(propertyCount),
+      firstPropertyId: firstPropId,
       secureDocs,
       forms,
+      rawForms: rawForms as DocHubOwner["rawForms"],
     };
   });
 }

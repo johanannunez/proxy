@@ -197,8 +197,13 @@ export type DocHubOwner = {
   phone: string | null;
   avatarUrl: string | null;
   propertyCount: number;
+  /** Primary property used for form data/edits (first property today). */
+  firstPropertyId: string | null;
   secureDocs: Record<SecureDocKey, DocHubSecureEntry>;
   forms: Record<FormKey, DocHubFormEntry>;
+  /** Full property_forms.data for the primary property, keyed by form_key.
+   *  Powers the registry-driven all-questions view (filled or not). */
+  rawForms: Partial<Record<PropertyFormKey, Record<string, unknown>>>;
 };
 
 export type DocTypeStats = {

@@ -10,7 +10,11 @@ import {
   XCircle,
   DownloadSimple,
 } from "@phosphor-icons/react/dist/ssr";
-import type { WorkspaceDocument } from "@/lib/admin/workspace-documents";
+import type { WorkspaceDocument, WorkspaceFormData } from "@/lib/admin/workspace-documents";
+import { DocumentCard } from "@/components/documents/DocumentCard";
+import { FORM_REGISTRY } from "@/lib/forms/form-registry";
+import { saveFormAnswersAsAdmin } from "@/lib/forms/save-form";
+import { PROPERTY_FORM_KEYS } from "@/lib/admin/documents-hub-shared";
 import styles from "./DocumentsTab.module.css";
 
 const CATEGORY_META: Record<WorkspaceDocument["category"], { label: string; icon: ElementType }> = {
@@ -48,7 +52,13 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function DocumentsTab({ documents }: { documents: WorkspaceDocument[] }) {
+export function DocumentsTab({
+  documents,
+  forms,
+}: {
+  documents: WorkspaceDocument[];
+  forms?: WorkspaceFormData;
+}) {
   const byCategory = new Map<WorkspaceDocument["category"], WorkspaceDocument[]>();
   for (const doc of documents) {
     const list = byCategory.get(doc.category) ?? [];
@@ -58,12 +68,45 @@ export function DocumentsTab({ documents }: { documents: WorkspaceDocument[] }) 
 
   const categoryOrder: WorkspaceDocument["category"][] = ["legal", "financial", "property"];
 
+  const formPropertyId = forms?.propertyId ?? null;
+  const formProfileId = forms?.profileId ?? null;
+
   return (
     <div className={styles.root}>
       <div className={styles.header}>
         <h2 className={styles.title}>Documents</h2>
         <p className={styles.subtitle}>Agreements, tax forms, and property-specific documents.</p>
       </div>
+
+      {forms ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+          <div className={styles.categoryHeader}>
+            <FileText size={15} weight="duotone" className={styles.categoryIcon} />
+            <h3 className={styles.categoryTitle}>Property forms</h3>
+          </div>
+          {!formPropertyId || !formProfileId ? (
+            <p className={styles.subtitle}>
+              This owner has no property yet, so there are no forms to complete.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {PROPERTY_FORM_KEYS.map((key) => (
+                <DocumentCard
+                  key={key}
+                  def={FORM_REGISTRY[key]}
+                  data={forms.rawForms[key] ?? {}}
+                  action={saveFormAnswersAsAdmin}
+                  hiddenFields={{
+                    form_key: key,
+                    property_id: formPropertyId,
+                    profile_id: formProfileId,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {documents.length === 0 ? (
         <div className={styles.emptyState}>
