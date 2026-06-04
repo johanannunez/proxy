@@ -53,15 +53,24 @@ type NavSubItem = {
   matchPrefix?: string;
 };
 
+type NavSubGroup = {
+  kind: "subgroup";
+  label: string;
+  icon: ReactNode;
+  storageKey: string;
+  matchPrefix: string;
+  items: NavSubItem[];
+};
+
 type NavGroup = {
   kind: "group";
   label: string;
   icon: ReactNode;
   storageKey: string;
-  items: NavSubItem[];
+  items: (NavSubItem | NavSubGroup)[];
 };
 
-type NavEntry = NavItem | NavGroup;
+type NavEntry = NavItem | NavGroup | NavSubGroup;
 
 /* ─── Nav data ─── */
 
@@ -288,11 +297,14 @@ function NavGroupRow({
     });
   };
 
-  const isAnySubActive = group.items.some((item) =>
-    item.matchPrefix
+  const isAnySubActive = group.items.some((item) => {
+    if ("kind" in item && item.kind === "subgroup") {
+      return pathname?.startsWith(item.matchPrefix) ?? false;
+    }
+    return item.matchPrefix
       ? pathname?.startsWith(item.matchPrefix)
-      : pathname === item.href
-  );
+      : pathname === (item as NavSubItem).href;
+  });
 
   return (
     <li style={{ listStyle: "none" }}>
@@ -408,6 +420,166 @@ function NavGroupRow({
               }}
             />
             {group.items.map((item) => {
+              if ("kind" in item && item.kind === "subgroup") {
+                return (
+                  <NavSubGroupRow
+                    key={item.label}
+                    entry={item}
+                    pathname={pathname}
+                  />
+                );
+              }
+
+              const subItem = item as NavSubItem;
+              const active = subItem.matchPrefix
+                ? !!pathname?.startsWith(subItem.matchPrefix)
+                : pathname === subItem.href;
+
+              return (
+                <NavItemRow
+                  key={subItem.href}
+                  href={subItem.href}
+                  label={subItem.label}
+                  icon={subItem.icon}
+                  active={active}
+                  sub
+                />
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </li>
+  );
+}
+
+/* ─── NavSubGroupRow ─── */
+
+function NavSubGroupRow({
+  entry,
+  pathname,
+}: {
+  entry: NavSubGroup;
+  pathname: string | null;
+}) {
+  const [expanded, setExpanded] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = localStorage.getItem(entry.storageKey);
+    return stored === null ? true : stored === "true";
+  });
+
+  const toggle = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      localStorage.setItem(entry.storageKey, String(next));
+      return next;
+    });
+  };
+
+  const isAnySubActive = entry.items.some((item) =>
+    item.matchPrefix
+      ? pathname?.startsWith(item.matchPrefix)
+      : pathname === item.href
+  );
+
+  return (
+    <li style={{ listStyle: "none" }}>
+      <motion.button
+        type="button"
+        onClick={toggle}
+        initial="idle"
+        whileHover="hovered"
+        animate="idle"
+        className={css.navLink}
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "6px 12px 6px 36px",
+          width: "100%",
+          borderRadius: "9px",
+          background: "transparent",
+          border: "none",
+          fontSize: "13px",
+          fontWeight: 500,
+          letterSpacing: "0.01em",
+          lineHeight: 1.2,
+          color: isAnySubActive ? T.activeTextColor : T.inactiveTextColor,
+          cursor: "pointer",
+          fontFamily: "inherit",
+        }}
+      >
+        {/* Hover overlay */}
+        <motion.span
+          aria-hidden
+          variants={{ idle: { opacity: 0 }, hovered: { opacity: 1 } }}
+          transition={easeFade}
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "9px",
+            backgroundColor: T.hoverBg,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Icon */}
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            width: "16px",
+            height: "16px",
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            color: isAnySubActive ? T.activeIconColor : T.inactiveIconColor,
+            transition: "color 0.15s ease",
+          }}
+        >
+          {entry.icon}
+        </span>
+
+        {/* Label */}
+        <span style={{ flex: 1, textAlign: "left" }}>{entry.label}</span>
+
+        {/* Chevron */}
+        <motion.span
+          aria-hidden
+          animate={{ rotate: expanded ? 0 : -90 }}
+          transition={springCollapse}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "rgba(255,255,255,0.28)",
+          }}
+        >
+          <CaretDown size={10} weight="bold" />
+        </motion.span>
+      </motion.button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.ul
+            role="list"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={springCollapse}
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              listStyle: "none",
+              margin: "1px 0 0",
+              padding: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "1px",
+            }}
+          >
+            {entry.items.map((item) => {
               const active = item.matchPrefix
                 ? !!pathname?.startsWith(item.matchPrefix)
                 : pathname === item.href;
@@ -546,6 +718,16 @@ export function AdminSidebar({
                   <NavGroupRow
                     key={entry.label}
                     group={entry}
+                    pathname={pathname}
+                  />
+                );
+              }
+
+              if (entry.kind === "subgroup") {
+                return (
+                  <NavSubGroupRow
+                    key={entry.label}
+                    entry={entry}
                     pathname={pathname}
                   />
                 );
