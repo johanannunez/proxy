@@ -75,7 +75,7 @@ type NavEntry = NavItem | NavGroup | NavSubGroup;
 /* ─── Nav data ─── */
 
 const navEntries: NavEntry[] = [
-  { kind: "item", href: "/admin", label: "Dashboard", icon: <Gauge size={18} weight="duotone" /> },
+  { kind: "item", href: "/admin", label: "Today", icon: <Gauge size={18} weight="duotone" /> },
   { kind: "item", href: "/admin/inbox", label: "Inbox", icon: <ChatsCircle size={18} weight="duotone" />, matchPrefix: "/admin/inbox" },
   { kind: "item", href: "/admin/tasks", label: "Tasks", icon: <ListChecks size={18} weight="duotone" />, matchPrefix: "/admin/tasks" },
   { kind: "item", href: "/admin/meetings", label: "Meetings", icon: <CalendarDots size={18} weight="duotone" />, matchPrefix: "/admin/meetings" },
@@ -894,7 +894,7 @@ const adminRailItems: Array<{
   matchPrefix?: string;
   matchPrefixes?: string[];
 }> = [
-  { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Dashboard" },
+  { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Today" },
   { href: "/admin/inbox", icon: <ChatsCircle size={20} weight="duotone" />, label: "Inbox", matchPrefix: "/admin/inbox" },
   { href: "/admin/tasks", icon: <ListChecks size={20} weight="duotone" />, label: "Tasks", matchPrefix: "/admin/tasks" },
   { href: "/admin/meetings", icon: <CalendarDots size={20} weight="duotone" />, label: "Meetings", matchPrefix: "/admin/meetings" },
