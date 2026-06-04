@@ -1,248 +1,307 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   FileText,
   DownloadSimple,
-  Buildings,
+  ShieldCheck,
 } from "@phosphor-icons/react/dist/ssr";
 import { getPortalContext } from "@/lib/portal-context";
 import { EmptyState } from "@/components/portal/EmptyState";
-import { formatMedium } from "@/lib/format";
 import { propertyLabel } from "@/lib/address";
+import {
+  FORM_REGISTRY,
+  computeFormCompletion,
+} from "@/lib/forms/form-registry";
+import {
+  SECURE_DOC_TYPES,
+  fmtDate,
+  type SecureDocKey,
+} from "@/lib/admin/documents-hub-shared";
+import { DocumentCard } from "@/components/documents/DocumentCard";
+import { saveFormAnswers } from "@/lib/forms/save-form";
 
 export const metadata: Metadata = { title: "Documents" };
 export const dynamic = "force-dynamic";
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  w9: "W-9",
-  ach_authorization: "ACH Authorization",
-  debit_card_auth: "Debit Card Authorization",
-  host_agreement: "Host Agreement",
-  insurance: "Insurance",
-  identity_verification: "Identity Verification",
-  tax_form: "Tax Form",
-  lease: "Lease",
-  compliance: "Compliance",
-  other: "Other",
-};
+/* Which registry forms appear in each portal group, in display order. */
+const FORM_GROUPS: { title: string; description: string; keys: (keyof typeof FORM_REGISTRY)[] }[] = [
+  {
+    title: "Property setup",
+    description: "Everything about the home itself.",
+    keys: [
+      "setup_basic",
+      "setup_access",
+      "setup_security",
+      "setup_utilities",
+      "setup_appliances",
+      "setup_contacts",
+      "setup_tech",
+      "setup_house_rules",
+      "setup_amenities",
+      "setup_listing",
+      "setup_communication",
+      "guidebook",
+    ],
+  },
+  {
+    title: "Compliance & operations",
+    description: "Permits, insurance, platforms, and lifecycle.",
+    keys: [
+      "str_permit",
+      "hoa_info",
+      "insurance_certificate",
+      "platform_authorization",
+      "onboarding_inspection",
+      "property_offboarding",
+    ],
+  },
+];
 
-const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> = {
+const SECURE_STATUS_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+  completed: { bg: "rgba(22, 163, 74, 0.12)", fg: "#15803d", label: "Signed" },
   pending: { bg: "rgba(245, 158, 11, 0.14)", fg: "#b45309", label: "Pending" },
-  signed: { bg: "rgba(22, 163, 74, 0.12)", fg: "#15803d", label: "Signed" },
-  uploaded: { bg: "rgba(2, 170, 235, 0.12)", fg: "#0c6fae", label: "Uploaded" },
-  expired: { bg: "rgba(220, 38, 38, 0.12)", fg: "#b91c1c", label: "Expired" },
+  not_sent: { bg: "var(--color-warm-gray-100)", fg: "var(--color-text-tertiary)", label: "Not sent" },
 };
 
-type DocumentRow = {
+type SignedDocRow = {
   id: string;
-  title: string;
-  doc_type: string;
+  template_name: string;
   status: string;
-  scope: string;
-  file_url: string | null;
-  notes: string | null;
+  signed_at: string | null;
+  signed_pdf_url: string | null;
   created_at: string;
-  updated_at: string;
 };
 
-export default async function DocumentsPage() {
-  const { userId, client } = await getPortalContext();
+type PropertyRow = {
+  id: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+};
 
+export default async function DocumentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ property?: string }>;
+}) {
+  const { userId, client } = await getPortalContext();
+  const params = await searchParams;
+
+  // 1. Owner's properties
   const { data: properties } = await client
     .from("properties")
-    .select("id, address_line1, address_line2")
-    .eq("owner_id", userId);
+    .select("id, address_line1, address_line2, city, state, postal_code")
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: true });
 
-  // Documents tables may not exist yet (pending migration)
-  let documents: DocumentRow[] = [];
-  let docProperties: Array<{ document_id: string; property_id: string }> = [];
-  const propertyIds = (properties ?? []).map((p) => p.id);
-  try {
-    const [docsResult, dpResult] = await Promise.all([
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (client as any)
-        .from("documents")
-        .select("id, title, doc_type, status, scope, file_url, notes, created_at, updated_at")
-        .eq("owner_id", userId)
-        .order("created_at", { ascending: false }),
-      propertyIds.length > 0
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ? (client as any)
-            .from("document_properties")
-            .select("document_id, property_id")
-            .in("property_id", propertyIds)
-        : Promise.resolve({ data: [] }),
-    ]);
-    documents = docsResult.data ?? [];
-    docProperties = dpResult.data ?? [];
-  } catch {
-    // tables don't exist yet
+  const propList = (properties ?? []) as PropertyRow[];
+
+  if (propList.length === 0) {
+    return (
+      <div className="flex flex-col gap-10">
+        <EmptyState
+          icon={<FileText size={26} weight="duotone" />}
+          title="No properties yet"
+          body="Once your first property is added, every document and form for it will appear here — ready to view and complete."
+        />
+      </div>
+    );
   }
 
-  const rows = (documents ?? []) as DocumentRow[];
-  const propertyNameById = new Map(
+  // 2. Selected property (from ?property=, else first)
+  const selected = propList.find((p) => p.id === params.property) ?? propList[0];
+
+  // 3. Forms for the selected property + signed docs for the owner
+  const [formsResult, signedResult] = await Promise.all([
+    // property_forms is not in the generated Supabase types yet.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (properties ?? []).map((p: any) => [p.id, propertyLabel(p)]),
-  );
+    (client as any)
+      .from("property_forms")
+      .select("form_key, data")
+      .eq("property_id", selected.id),
+    client
+      .from("signed_documents")
+      .select("id, template_name, status, signed_at, signed_pdf_url, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  // Build property scope map
-  const docPropertyMap = new Map<string, string[]>();
-  for (const dp of docProperties ?? []) {
-    const list = docPropertyMap.get(dp.document_id) ?? [];
-    list.push(dp.property_id);
-    docPropertyMap.set(dp.document_id, list);
+  const formDataByKey = new Map<string, Record<string, unknown>>();
+  for (const row of (formsResult.data ?? []) as Array<{ form_key: string; data: unknown }>) {
+    formDataByKey.set(row.form_key, (row.data as Record<string, unknown>) ?? {});
   }
 
-  // Group by doc_type
-  const grouped = new Map<string, DocumentRow[]>();
-  for (const doc of rows) {
-    const list = grouped.get(doc.doc_type) ?? [];
-    list.push(doc);
-    grouped.set(doc.doc_type, list);
+  const signedDocs = (signedResult.data ?? []) as SignedDocRow[];
+
+  // Overall form completion across the selected property
+  const allKeys = FORM_GROUPS.flatMap((g) => g.keys);
+  let totalFilled = 0;
+  let totalFields = 0;
+  for (const key of allKeys) {
+    const c = computeFormCompletion(FORM_REGISTRY[key], formDataByKey.get(key));
+    totalFilled += c.filled;
+    totalFields += c.total;
   }
-
-  // Sort groups by predefined order
-  const typeOrder = Object.keys(DOC_TYPE_LABELS);
-  const sortedGroups = [...grouped.entries()].sort(
-    (a, b) => typeOrder.indexOf(a[0]) - typeOrder.indexOf(b[0]),
-  );
-
-  const pendingCount = rows.filter((r) => r.status === "pending").length;
+  const overallPct = totalFields > 0 ? Math.round((totalFilled / totalFields) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-10">
-      {/* Summary strip */}
-      {rows.length > 0 ? (
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <span
+            className="text-[11px] font-semibold uppercase tracking-[0.14em] sm:text-[12px]"
+            style={{ color: "var(--color-text-tertiary)" }}
+          >
+            Documents
+          </span>
+          <h1 className="text-[28px] font-semibold tracking-tight sm:text-[34px]" style={{ color: "var(--color-text-primary)" }}>
+            Your documents
+          </h1>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Every question for your property — view and update any field at any time. Prefer a guided walkthrough?{" "}
+            <Link href="/portal/setup" className="font-medium underline" style={{ color: "var(--color-brand)" }}>
+              Complete guided setup
+            </Link>
+            .
+          </p>
+        </div>
+
+        {/* Overall completion */}
         <div className="flex flex-wrap items-center gap-3">
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: "var(--color-warm-gray-100)",
-              color: "var(--color-text-secondary)",
-            }}
+            style={{ backgroundColor: "var(--color-warm-gray-100)", color: "var(--color-text-secondary)" }}
           >
-            {rows.length} {rows.length === 1 ? "document" : "documents"} on file
+            {overallPct}% of fields complete
           </span>
-          {pendingCount > 0 ? (
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-              style={{
-                backgroundColor: "rgba(245, 158, 11, 0.14)",
-                color: "#b45309",
-              }}
-            >
-              {pendingCount} pending your action
-            </span>
-          ) : null}
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+            style={{ backgroundColor: "var(--color-warm-gray-100)", color: "var(--color-text-secondary)" }}
+          >
+            {totalFilled} of {totalFields} fields filled
+          </span>
         </div>
-      ) : null}
+      </div>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={<FileText size={26} weight="duotone" />}
-          title="No documents yet"
-          body="Once Parcel adds documents to your account (W-9, host agreement, insurance, etc.), they will appear here. You will be able to view, download, and track their status."
-        />
-      ) : (
-        <div className="flex flex-col gap-8">
-          {sortedGroups.map(([docType, docs]) => (
-            <section key={docType}>
-              <h2
-                className="mb-3 text-sm font-semibold uppercase tracking-[0.12em]"
-                style={{ color: "var(--color-text-tertiary)" }}
+      {/* Property switcher */}
+      {propList.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {propList.map((p) => {
+            const active = p.id === selected.id;
+            return (
+              <Link
+                key={p.id}
+                href={`/portal/documents?property=${p.id}`}
+                className="inline-flex items-center rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors"
+                style={{
+                  borderColor: active ? "var(--color-text-primary)" : "var(--color-warm-gray-200)",
+                  backgroundColor: active ? "var(--color-text-primary)" : "var(--color-white)",
+                  color: active ? "var(--color-white)" : "var(--color-text-secondary)",
+                }}
               >
-                {DOC_TYPE_LABELS[docType] ?? docType}
-              </h2>
-
-              <div className="flex flex-col gap-3">
-                {docs.map((doc) => {
-                  const statusStyle =
-                    STATUS_STYLES[doc.status] ?? STATUS_STYLES.pending;
-                  const scopePropertyIds = docPropertyMap.get(doc.id) ?? [];
-                  const isAllProperties =
-                    doc.scope === "all" || scopePropertyIds.length === 0;
-
-                  return (
-                    <div
-                      key={doc.id}
-                      className="flex items-center gap-4 rounded-2xl border p-5 transition-colors"
-                      style={{
-                        backgroundColor: "var(--color-white)",
-                        borderColor: "var(--color-warm-gray-200)",
-                      }}
-                    >
-                      <span
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                        style={{
-                          backgroundColor: "var(--color-warm-gray-100)",
-                          color: "var(--color-text-primary)",
-                        }}
-                      >
-                        <FileText size={18} weight="duotone" />
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="truncate text-sm font-semibold"
-                          style={{ color: "var(--color-text-primary)" }}
-                        >
-                          {doc.title}
-                        </div>
-                        <div
-                          className="mt-1 flex flex-wrap items-center gap-2 text-xs"
-                          style={{ color: "var(--color-text-secondary)" }}
-                        >
-                          <span>{formatMedium(doc.created_at)}</span>
-                          <span
-                            style={{ color: "var(--color-warm-gray-200)" }}
-                          >
-                            |
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Buildings size={12} weight="duotone" />
-                            {isAllProperties
-                              ? "All properties"
-                              : scopePropertyIds
-                                  .map(
-                                    (pid) =>
-                                      propertyNameById.get(pid) ?? "Property",
-                                  )
-                                  .join(", ")}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span
-                        className="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                        style={{
-                          backgroundColor: statusStyle.bg,
-                          color: statusStyle.fg,
-                        }}
-                      >
-                        {statusStyle.label}
-                      </span>
-
-                      {doc.file_url ? (
-                        <a
-                          href={doc.file_url}
-                          download
-                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-[var(--color-warm-gray-50)]"
-                          style={{
-                            borderColor: "var(--color-warm-gray-200)",
-                            color: "var(--color-text-secondary)",
-                          }}
-                          aria-label={`Download ${doc.title}`}
-                        >
-                          <DownloadSimple size={16} weight="bold" />
-                        </a>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                {propertyLabel(p)}
+              </Link>
+            );
+          })}
         </div>
       )}
+
+      {/* Form groups */}
+      {FORM_GROUPS.map((group) => (
+        <section key={group.title} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-0.5">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--color-text-tertiary)" }}>
+              {group.title}
+            </h2>
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              {group.description}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            {group.keys.map((key) => (
+              <DocumentCard
+                key={key}
+                def={FORM_REGISTRY[key]}
+                data={formDataByKey.get(key) ?? {}}
+                action={saveFormAnswers}
+                hiddenFields={{ form_key: key, property_id: selected.id }}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {/* Signed documents */}
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--color-text-tertiary)" }}>
+            Signed documents
+          </h2>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Legal and financial documents handled through secure e-signature.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {(Object.keys(SECURE_DOC_TYPES) as SecureDocKey[]).map((key) => {
+            const def = SECURE_DOC_TYPES[key];
+            const match = signedDocs.find((d) =>
+              def.templateNames.some((n) => n.toLowerCase() === d.template_name.toLowerCase()),
+            );
+            const status = match
+              ? match.status?.toLowerCase() === "completed"
+                ? "completed"
+                : "pending"
+              : "not_sent";
+            const style = SECURE_STATUS_STYLE[status];
+
+            return (
+              <div
+                key={key}
+                className="flex items-center gap-4 rounded-2xl border p-5"
+                style={{ backgroundColor: "var(--color-white)", borderColor: "var(--color-warm-gray-200)" }}
+              >
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: `${def.color}18`, color: def.color }}
+                >
+                  <ShieldCheck size={18} weight="duotone" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                    {def.label}
+                  </div>
+                  <div className="mt-0.5 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                    {def.description}
+                    {match?.signed_at ? ` · Signed ${fmtDate(match.signed_at)}` : ""}
+                  </div>
+                </div>
+                <span
+                  className="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  style={{ backgroundColor: style.bg, color: style.fg }}
+                >
+                  {style.label}
+                </span>
+                {match?.signed_pdf_url ? (
+                  <a
+                    href={match.signed_pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-[var(--color-warm-gray-50)]"
+                    style={{ borderColor: "var(--color-warm-gray-200)", color: "var(--color-text-secondary)" }}
+                    aria-label={`Download ${def.label}`}
+                  >
+                    <DownloadSimple size={16} weight="bold" />
+                  </a>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

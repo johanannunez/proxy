@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { PropertyFormKey } from "@/lib/admin/documents-hub-shared";
 
 export type WorkspaceDocument = {
   id: string;
@@ -53,4 +54,45 @@ export async function fetchWorkspaceDocuments(profileId: string): Promise<Worksp
       createdAt: row.created_at,
     };
   });
+}
+
+export type WorkspaceFormData = {
+  /** Primary property whose forms are shown/edited (first property today). */
+  propertyId: string | null;
+  /** Owner profile id, needed for admin edit-on-behalf. */
+  profileId: string;
+  /** Full property_forms.data keyed by form_key for the primary property. */
+  rawForms: Partial<Record<PropertyFormKey, Record<string, unknown>>>;
+};
+
+/**
+ * Loads the property_forms answers for a workspace owner's primary property,
+ * so the admin can view every question (filled or not) and edit on behalf.
+ */
+export async function fetchWorkspaceFormData(profileId: string): Promise<WorkspaceFormData> {
+  const supabase = await createClient();
+
+  const { data: props } = await supabase
+    .from("properties")
+    .select("id")
+    .eq("owner_id", profileId)
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  const propertyId = (props?.[0] as { id: string } | undefined)?.id ?? null;
+  if (!propertyId) return { propertyId: null, profileId, rawForms: {} };
+
+  // property_forms is not in the generated Supabase types yet.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: forms } = await (supabase as any)
+    .from("property_forms")
+    .select("form_key, data")
+    .eq("property_id", propertyId);
+
+  const rawForms: Partial<Record<string, Record<string, unknown>>> = {};
+  for (const row of (forms ?? []) as Array<{ form_key: string; data: unknown }>) {
+    rawForms[row.form_key] = (row.data as Record<string, unknown>) ?? {};
+  }
+
+  return { propertyId, profileId, rawForms: rawForms as WorkspaceFormData["rawForms"] };
 }
