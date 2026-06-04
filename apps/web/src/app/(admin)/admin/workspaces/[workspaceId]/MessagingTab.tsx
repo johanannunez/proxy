@@ -110,13 +110,20 @@ function DeliveryPills({ deliveries }: { deliveries: WorkspaceThreadItem["delive
     <div className={styles.deliveryPills}>
       {deliveries.map((d) => {
         const failed = d.status === "failed";
+        const pending = d.status === "scheduled" || d.status === "queued";
         return (
           <span
             key={d.channel}
-            className={`${styles.deliveryPill} ${failed ? styles.deliveryPillFailed : ""}`}
+            className={`${styles.deliveryPill} ${failed ? styles.deliveryPillFailed : pending ? styles.deliveryPillPending : ""}`}
             title={`${d.channel}: ${d.status}`}
           >
-            {failed ? <WarningCircle size={10} weight="fill" /> : <Check size={10} weight="bold" />}
+            {failed ? (
+              <WarningCircle size={10} weight="fill" />
+            ) : pending ? (
+              <Clock size={10} weight="fill" />
+            ) : (
+              <Check size={10} weight="bold" />
+            )}
             {d.channel}
           </span>
         );

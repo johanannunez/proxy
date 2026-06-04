@@ -324,6 +324,11 @@
   opacity: 1;
 }
 
+.deliveryPillPending {
+  background: color-mix(in srgb, #b45309 16%, transparent);
+  opacity: 0.9;
+}
+
 /* ── Compose meta row (target + channel chips) ───────────────────────────── */
 
 .composeMeta {

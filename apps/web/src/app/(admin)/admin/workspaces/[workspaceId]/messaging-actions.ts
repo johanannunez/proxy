@@ -147,20 +147,24 @@ export async function sendWorkspaceMessage(
   // =========================================================================
   if (contact.profile_id) {
     const ownerId = contact.profile_id;
+    const inPortal = channels.includes("portal");
 
-    // Find or create the 1:1 direct conversation with this owner.
+    // Portal sends live in the two-way 'direct' thread; email/SMS-only
+    // sends are logged to 'email_log' (comm history) so they don't appear
+    // in the owner's live portal chat when Portal wasn't selected.
+    const convType = inPortal ? "direct" : "email_log";
     const { data: existing } = await svc
       .from("conversations")
       .select("id")
       .eq("owner_id", ownerId)
-      .eq("type", "direct")
+      .eq("type", convType)
       .maybeSingle();
 
     let conversationId = existing?.id;
     if (!conversationId) {
       const { data: conv, error: convErr } = await svc
         .from("conversations")
-        .insert({ owner_id: ownerId, type: "direct", subject })
+        .insert({ owner_id: ownerId, type: convType, subject })
         .select("id")
         .single();
       if (convErr || !conv) {
@@ -178,7 +182,8 @@ export async function sendWorkspaceMessage(
         sender_id: adminId,
         body,
         subject,
-        delivery_method: channels.includes("portal") ? "portal" : channels[0],
+        is_system: !inPortal,
+        delivery_method: inPortal ? "portal" : channels[0],
         metadata,
       })
       .select("id")

@@ -170,7 +170,7 @@ export async function fetchWorkspaceThread(
     const { data: convs } = await svc
       .from("conversations")
       .select("id, owner_id")
-      .eq("type", "direct")
+      .in("type", ["direct", "email_log"])
       .in("owner_id", ownerIds);
 
     const convToOwner = new Map<string, string>();
