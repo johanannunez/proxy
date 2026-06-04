@@ -1,0 +1,141 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-sora), var(--font-sans), sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 16px;
+  background-color: var(--color-warm-gray-50);
+  border: 1.5px solid var(--color-warm-gray-200);
+  border-radius: var(--radius-md);
+}
+
+.code {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-primary);
+  text-align: center;
+  padding: 8px 4px;
+  background-color: var(--color-off-white);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: var(--radius-sm);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.secondaryButton {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-brand);
+  background-color: transparent;
+  border: 1.5px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s var(--ease-spring);
+}
+
+.secondaryButton:hover {
+  background-color: rgba(2, 170, 235, 0.08);
+}
+
+.secondaryButton:active {
+  transform: scale(0.99);
+}
+
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--color-brand-light);
+  outline-offset: 2px;
+}
+
+.confirmRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+
+.confirmText {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.continueButton {
+  width: 100%;
+  padding: 11px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  background: var(--color-brand-gradient);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s var(--ease-spring);
+}
+
+.continueButton:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.continueButton:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.continueButton:focus-visible {
+  outline: 2px solid var(--color-brand-light);
+  outline-offset: 2px;
+}
+
+.continueButton:disabled {
+  background: var(--color-warm-gray-200);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}

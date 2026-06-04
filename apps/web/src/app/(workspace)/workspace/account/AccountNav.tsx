@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   UserCircle,
   Lock,
+  ShieldCheck,
   Devices,
   Bell,
   DeviceMobile,
@@ -22,6 +23,7 @@ type NavEntry = {
 const NAV_ITEMS: NavEntry[] = [
   { id: "profile", label: "Profile", icon: UserCircle },
   { id: "security", label: "Email & Password", icon: Lock },
+  { id: "two-factor", label: "Two-factor", icon: ShieldCheck },
   { id: "sessions", label: "Sessions", icon: Devices },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "install", label: "Install web app", icon: DeviceMobile },

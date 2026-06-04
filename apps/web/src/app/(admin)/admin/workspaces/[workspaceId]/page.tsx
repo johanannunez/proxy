@@ -30,6 +30,7 @@ import { WorkspaceOverviewTab } from "./WorkspaceOverviewTab";
 import { fetchWorkspaceContactOpenTasks } from "@/lib/admin/workspace-overview";
 import { TasksTab } from "@/components/admin/tasks/TasksTab";
 import { fetchWorkspaceProjects } from "@/lib/admin/workspace-projects";
+import { getMemberTwoFactorEnabled } from "@/app/(admin)/admin/workspaces/[workspaceId]/settings/two-factor-admin-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -196,10 +197,14 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
   let sessions: SessionRow[] = [];
   let connections: ConnectionRow[] = [];
   let workspaceDetail: { id: string; name: string; type: string | null; ein: string | null; notes: string | null } | null = null;
+  let memberTwoFactorEnabled = false;
 
   if (workspaceData) {
     const supabase = await createClient();
     const profileId = workspaceData.primaryMember.id;
+
+    // Live factor status for the member being viewed (service-role read).
+    memberTwoFactorEnabled = await getMemberTwoFactorEnabled(profileId);
 
     const [{ data: extras }, fetchedNote, { data: rawSessions }, { data: rawConnections }] =
       await Promise.all([
@@ -350,6 +355,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
         sessions={sessions}
         connections={connections}
         workspaceDetail={workspaceDetail}
+        memberTwoFactorEnabled={memberTwoFactorEnabled}
         basePath={`/admin/workspaces/${workspaceId}`}
       />
     ) : (

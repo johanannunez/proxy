@@ -83,6 +83,8 @@ export type SettingsTabProps = {
     ein: string | null;
     notes: string | null;
   } | null;
+  /** Whether the member being viewed has a verified TOTP factor. */
+  memberTwoFactorEnabled: boolean;
   /** Override the base path for section routing. Defaults to /admin/workspaces/:id. */
   basePath?: string;
 };
@@ -95,6 +97,7 @@ export function SettingsTab({
   sessions,
   connections,
   workspaceDetail,
+  memberTwoFactorEnabled,
   basePath,
 }: SettingsTabProps) {
   const router = useRouter();
@@ -162,7 +165,9 @@ export function SettingsTab({
         {activeSection === "account" && (
           <AccountSecuritySection
             email={primaryMember.email}
-            twoFactorEnabled={false}
+            memberUserId={primaryMember.id}
+            workspaceId={workspace.id}
+            twoFactorEnabled={memberTwoFactorEnabled}
             lastPasswordChangeAt={null}
             sessions={sessions}
           />

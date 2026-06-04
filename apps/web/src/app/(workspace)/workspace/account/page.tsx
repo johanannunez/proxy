@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import { getWorkspaceContext } from "@/lib/workspace-context";
+import {
+  hasVerifiedTotp,
+  countRemainingBackupCodes,
+  generateBackupCodes,
+} from "@/lib/auth/mfa";
 import { AccountNav } from "./AccountNav";
 import ProfileSection from "./components/ProfileSection";
 import SecuritySection from "./components/SecuritySection";
+import TwoFactorSection from "./components/TwoFactorSection";
 import { SessionsSection } from "./components/SessionsSection";
 import { NotificationsSection } from "./components/NotificationsSection";
 import { InstallAppSection } from "./components/InstallAppSection";
@@ -15,15 +21,42 @@ import { getWorkspaceNotificationPreferences } from "@/lib/workspace/notificatio
 export const metadata: Metadata = { title: "Account" };
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
-  const { userId, client, isImpersonating, ownerProfile } =
+type AccountPageProps = {
+  searchParams: Promise<{ twofa?: string }>;
+};
+
+export default async function AccountPage({ searchParams }: AccountPageProps) {
+  const { userId, realUserId, client, isImpersonating, ownerProfile } =
     await getWorkspaceContext();
+  const { twofa } = await searchParams;
 
   const { data: profile } = await client
     .from("profiles")
     .select("*")
     .eq("id", userId)
     .single();
+
+  // Two-factor status + one-time backup codes are scoped to the real signed-in
+  // user and only shown when not impersonating (the security UI is hidden then).
+  let twoFactorEnabled = false;
+  let backupCodesRemaining = 0;
+  let backupCodes: string[] | null = null;
+  let backupCodesContext: "enroll" | "regen" | null = null;
+  const isAdminUser = profile?.role === "admin";
+
+  if (!isImpersonating) {
+    twoFactorEnabled = await hasVerifiedTotp();
+
+    // Generate-and-show backup codes when arriving from enroll or regenerate.
+    // Only meaningful once a verified factor exists.
+    if (twoFactorEnabled && (twofa === "backup" || twofa === "regen")) {
+      backupCodes = await generateBackupCodes(realUserId);
+      backupCodesContext = twofa === "backup" ? "enroll" : "regen";
+      backupCodesRemaining = backupCodes.length;
+    } else if (twoFactorEnabled) {
+      backupCodesRemaining = await countRemainingBackupCodes(realUserId);
+    }
+  }
 
   let workspace = null;
   let workspaceMembers: Array<{
@@ -107,6 +140,13 @@ export default async function AccountPage() {
           {!isImpersonating ? (
             <>
               <SecuritySection userEmail={displayEmail} />
+              <TwoFactorSection
+                enabled={twoFactorEnabled}
+                backupCodesRemaining={backupCodesRemaining}
+                isAdmin={isAdminUser}
+                backupCodes={backupCodes}
+                backupCodesContext={backupCodesContext}
+              />
               <SessionsSection />
             </>
           ) : null}

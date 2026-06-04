@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/supabase";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { verifyApiToken } from "@/lib/api-tokens";
 import { taskToVTodo, generateETag, parseVTodoStatus } from "@/lib/caldav-utils";
 
@@ -105,6 +105,18 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    // Two-factor gate on protected routes (enrolled-but-unverified, or admins
+    // missing a factor). Runs before letting the request through.
+    if (isAppRoute) {
+      const mfaRedirect = await evaluateMfaGate(
+        supabase,
+        request,
+        pathname,
+        isAdminRoute,
+      );
+      if (mfaRedirect) return mfaRedirect;
+    }
+
     if (pathname.startsWith("/admin/treasury")) {
       proxyResponse.headers.set(
         "Content-Security-Policy",
@@ -172,6 +184,17 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Two-factor gate on protected routes (dev/localhost).
+  if (isAppRoute && user) {
+    const mfaRedirect = await evaluateMfaGate(
+      supabase,
+      request,
+      pathname,
+      isAdminRoute,
+    );
+    if (mfaRedirect) return mfaRedirect;
+  }
+
   if (isAuthPage && user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -206,6 +229,102 @@ export const config = {
     "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
+
+// ---------------------------------------------------------------------------
+// Two-factor (AAL) gate
+// ---------------------------------------------------------------------------
+
+/**
+ * Path prefixes that must never be gated by the 2FA middleware, to avoid
+ * redirect loops (the verify/enroll/recover screens and auth plumbing) and to
+ * leave public/auth routes untouched.
+ */
+const MFA_EXEMPT_PREFIXES = [
+  "/verify-2fa",
+  "/enroll-2fa",
+  "/recover-2fa",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth",
+  "/api",
+  "/caldav",
+  "/.well-known",
+  "/_next",
+];
+
+function isMfaExempt(pathname: string): boolean {
+  return MFA_EXEMPT_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * Decide whether a logged-in user on a protected route must be redirected for
+ * two-factor reasons. Uses the Supabase MFA API directly on the middleware
+ * client (the server-only mfa.ts lib must not be imported here).
+ *
+ *   a) Enrolled but unverified this session (next aal2, current aal1)
+ *      → /verify-2fa.
+ *   b) Admin on /admin/* with no verified factor → /enroll-2fa (required).
+ *   c) Owners with no factor are left untouched (2FA is optional for them).
+ *
+ * Returns a redirect response, or null to let the request continue.
+ */
+async function evaluateMfaGate(
+  supabase: SupabaseClient<Database>,
+  request: NextRequest,
+  pathname: string,
+  isAdminRoute: boolean,
+): Promise<NextResponse | null> {
+  if (isMfaExempt(pathname)) return null;
+
+  // `currentLevel` comes from the JWT aal claim (read locally from the session)
+  // and is reliable. `nextLevel` is NOT: it is derived from session.user.factors
+  // which is not consistently populated in the middleware session, so we never
+  // gate on it. Fail open if the read returns nothing so a transient hiccup
+  // cannot trap a user in a redirect loop.
+  const { data: aal } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (!aal) return null;
+
+  // A session already elevated to aal2 has cleared its second factor this
+  // session. Nothing to enforce, and this skips the listFactors call below on
+  // the hot path for verified users.
+  if (aal.currentLevel === "aal2") return null;
+
+  // Authoritative enrollment check. listFactors performs a /user fetch, the
+  // same source the /enroll-2fa page uses, which keeps the two in lockstep and
+  // prevents an enroll <-> admin redirect loop. (Perf note: this runs once per
+  // protected navigation for non-elevated sessions; a future optimization could
+  // cache enrollment status in a cookie or custom JWT claim.)
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const hasVerifiedTotp = (factors?.totp ?? []).some(
+    (factor) => factor.status === "verified",
+  );
+
+  // (a) Enrolled but session still at aal1 → force the login-time verify screen.
+  if (hasVerifiedTotp) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/verify-2fa";
+    url.search = "";
+    url.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // (b) Admins are required to enroll. No verified factor on an admin route →
+  // force the enrollment wizard.
+  if (isAdminRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/enroll-2fa";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // (c) Owners with no factor: untouched (2FA is optional for them).
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // CalDAV handler (Fantastical integration)

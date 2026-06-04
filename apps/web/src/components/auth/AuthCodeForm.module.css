@@ -1,0 +1,125 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-secondary);
+}
+
+.codeInput {
+  width: 100%;
+  border: 1.5px solid #dce8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 18px;
+  font-family: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--color-text-primary);
+  background: #f7fbfd;
+  outline: none;
+  text-align: center;
+  letter-spacing: 0.35em;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.codeInput::placeholder {
+  letter-spacing: 0.35em;
+  color: #9fb3c2;
+}
+
+.codeInput:focus-visible {
+  border-color: var(--color-brand);
+  background: #ffffff;
+}
+
+.codeInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.codeInputError {
+  border-color: var(--color-error);
+}
+
+.recoveryInput {
+  font-size: 16px;
+  letter-spacing: 0.12em;
+}
+
+.errorText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-error);
+  line-height: 1.4;
+}
+
+.submit {
+  width: 100%;
+  background: linear-gradient(135deg, #02aaeb 0%, #1b77be 60%, #155fa0 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  margin-top: 4px;
+  box-shadow: 0 4px 16px rgba(27, 119, 190, 0.28);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.submit:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.helperRow {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.helperLink {
+  color: var(--color-brand);
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.helperLink:hover {
+  opacity: 0.8;
+}
+
+.helperLink:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}

@@ -1,6 +1,10 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { LockKey, DeviceMobile, DesktopTower, SignOut } from "@phosphor-icons/react";
+import ConfirmModal from "@/components/admin/ConfirmModal";
+import { resetMemberTwoFactor } from "./two-factor-admin-actions";
 import s from "./PersonalInfoSection.module.css";
 import x from "./SettingsShared.module.css";
 
@@ -16,6 +20,10 @@ export type SessionRow = {
 
 type Props = {
   email: string;
+  /** Auth user id of the member being viewed. Needed for the admin reset. */
+  memberUserId: string;
+  /** Workspace id, used to revalidate after a reset. */
+  workspaceId: string;
   twoFactorEnabled: boolean;
   lastPasswordChangeAt: string | null;
   sessions: SessionRow[];
@@ -23,10 +31,32 @@ type Props = {
 
 export function AccountSecuritySection({
   email,
+  memberUserId,
+  workspaceId,
   twoFactorEnabled,
   lastPasswordChangeAt,
   sessions,
 }: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  const handleConfirmReset = () => {
+    setConfirmResetOpen(false);
+    setResetError(null);
+    startTransition(async () => {
+      const result = await resetMemberTwoFactor(memberUserId, workspaceId);
+      if (!result.ok) {
+        setResetError(result.error ?? "Could not reset two-factor.");
+        return;
+      }
+      setResetDone(true);
+      router.refresh();
+    });
+  };
+
   return (
     <div>
       <header className={s.sectionHeader}>
@@ -95,20 +125,32 @@ export function AccountSecuritySection({
               {twoFactorEnabled ? (
                 <>
                   <span className={`${x.pill} ${x.pillGreen}`}>Enabled</span>
-                  <button type="button" className={s.btnSecondary}>
-                    Reset 2FA
+                  <button
+                    type="button"
+                    className={s.btnSecondary}
+                    onClick={() => setConfirmResetOpen(true)}
+                    disabled={isPending}
+                  >
+                    {isPending ? "Resetting..." : "Reset 2FA"}
                   </button>
                 </>
               ) : (
                 <>
                   <span className={`${x.pill} ${x.pillSlate}`}>Not set up</span>
-                  <button type="button" className={s.btnSecondary}>
-                    Send enrollment link
-                  </button>
+                  <p className={s.fieldHint} style={{ margin: 0, textAlign: "right", maxWidth: 280 }}>
+                    {resetDone
+                      ? "Two-factor was reset. The member can set it up again from their own account security settings."
+                      : "This member can turn on two-factor authentication from their own account security settings."}
+                  </p>
                 </>
               )}
             </div>
           </div>
+          {resetError ? (
+            <div className={s.row}>
+              <p className={x.errorMsg}>{resetError}</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -183,6 +225,17 @@ export function AccountSecuritySection({
           </button>
         </div>
       </section>
+
+      <ConfirmModal
+        open={confirmResetOpen}
+        variant="danger"
+        title="Reset this member's two-factor?"
+        description="This removes their authenticator and backup codes. They will sign in with their password only until they set two-factor up again. Use this when a member has lost access to their authenticator."
+        confirmLabel="Reset 2FA"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmReset}
+        onCancel={() => setConfirmResetOpen(false)}
+      />
     </div>
   );
 }

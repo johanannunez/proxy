@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { recordSessionLogin } from "@/lib/session-log";
 import { logTimelineEvent } from "@/lib/timeline";
+import { hasVerifiedTotp } from "@/lib/auth/mfa";
 
 export type LoginState = {
   error?: string;
@@ -87,6 +88,17 @@ export async function login(
       safeRedirect === "/workspace/home" && profile?.role === "admin"
         ? "/admin"
         : safeRedirect;
+
+    // Second factor gate: a password sign-in always leaves the session at aal1,
+    // so if the user has a verified authenticator factor they must clear the
+    // login-time verify screen before we honor their destination. We check
+    // factors authoritatively via listFactors (a /user fetch) rather than the
+    // assurance level's nextLevel, which is not reliably populated in the
+    // freshly stored session right after sign-in.
+    if (await hasVerifiedTotp()) {
+      const verifyUrl = `/verify-2fa?redirect=${encodeURIComponent(destination)}`;
+      redirect(verifyUrl);
+    }
 
     redirect(destination);
   }
