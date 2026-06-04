@@ -258,5 +258,129 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--color-text-tertiary);
-  padding: 0 0 6px;
 }
+
+/* ── Channel badge (per message) ─────────────────────────────────────────── */
+
+.channelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* ── Subject line (email messages) ───────────────────────────────────────── */
+
+.bubbleSubject {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.bubbleBodyHtml {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.bubbleBodyHtml :global(p) { margin: 0 0 6px; }
+.bubbleBodyHtml :global(p:last-child) { margin-bottom: 0; }
+.bubbleBodyHtml :global(img) { max-width: 100%; height: auto; border-radius: 6px; }
+.bubbleBodyHtml :global(a) { color: inherit; text-decoration: underline; }
+
+/* ── Delivery status pills ───────────────────────────────────────────────── */
+
+.deliveryPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.deliveryPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  opacity: 0.85;
+}
+
+.deliveryPillFailed {
+  background: color-mix(in srgb, var(--color-error) 88%, #fff);
+  color: #fff;
+  opacity: 1;
+}
+
+/* ── Compose meta row (target + channel chips) ───────────────────────────── */
+
+.composeMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.channelChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.channelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--color-warm-gray-200);
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+.channelChip:hover:not(:disabled) {
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-primary);
+}
+.channelChip:disabled { opacity: 0.4; cursor: not-allowed; }
+.channelChipActive,
+.channelChipActive:hover {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+}
+
+/* ── Subject input ───────────────────────────────────────────────────────── */
+
+.subjectInput {
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 120ms ease;
+}
+.subjectInput:focus { border-color: var(--color-brand); }
+.subjectInput::placeholder { color: var(--color-text-muted); font-weight: 400; }

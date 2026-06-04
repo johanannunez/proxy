@@ -20,7 +20,7 @@ import { fetchWorkspaceBilling } from "@/lib/admin/workspace-billing";
 import { DocumentsTab } from "./DocumentsTab";
 import { fetchWorkspaceDocuments } from "@/lib/admin/workspace-documents";
 import { MessagingTab } from "./MessagingTab";
-import { fetchWorkspacePersonMessages, fetchWorkspaceMessages } from "@/lib/admin/workspace-messages";
+import { fetchWorkspacePersonMessages, fetchWorkspaceThread } from "@/lib/admin/workspace-messages";
 import { WorkspaceOverviewTab } from "./WorkspaceOverviewTab";
 import { fetchWorkspaceContactOpenTasks } from "@/lib/admin/workspace-overview";
 import { TasksTab } from "@/components/admin/tasks/TasksTab";
@@ -121,7 +121,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
 
   const messagingContactIds = members.map((m) => m.id);
   const allWorkspaceMessages = tab === "messaging"
-    ? await fetchWorkspaceMessages(messagingContactIds)
+    ? await fetchWorkspaceThread(messagingContactIds)
     : [];
   const overviewMessages = isOverview
     ? await fetchWorkspacePersonMessages(activeContactId)
@@ -256,6 +256,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
         return (
           <MessagingTab
             contactId={activeContactId}
+            workspaceId={workspaceId}
             messages={allWorkspaceMessages}
             members={members}
             activeContactId={activeContactId}
