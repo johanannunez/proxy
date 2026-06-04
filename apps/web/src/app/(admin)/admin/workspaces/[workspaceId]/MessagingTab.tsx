@@ -17,7 +17,14 @@ import {
   WarningCircle,
   Clock,
   FloppyDisk,
+  Sparkle,
+  MagicWand,
+  Notepad,
+  Spinner,
+  X,
 } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   sendWorkspaceMessage,
   togglePinMessage,
@@ -214,6 +221,30 @@ export function MessagingTab({
   const [scheduleAt, setScheduleAt] = useState("");
   const [showSchedule, setShowSchedule] = useState(false);
 
+  const router = useRouter();
+  const [aiBusy, setAiBusy] = useState<null | "draft" | "polish" | "summarize">(null);
+  const [summary, setSummary] = useState<string | null>(null);
+
+  // Realtime: refresh the thread when a message lands or a delivery
+  // status changes (incoming portal replies, send results, etc.).
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`ws-comm-${workspaceId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () =>
+        router.refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "message_deliveries" },
+        () => router.refresh(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [workspaceId, router]);
+
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
 
   const byContact =
@@ -298,6 +329,70 @@ export function MessagingTab({
       if (res.ok) listMessageTemplates().then(setTemplates).catch(() => {});
       else setError(res.message);
     });
+  }
+
+  function buildTranscript(): string {
+    return filteredMessages
+      .slice(-20)
+      .map(
+        (m) =>
+          `${m.direction === "inbound" ? "Contact" : "Parcel"}: ${m.body
+            .replace(/<[^>]*>/g, "")
+            .replace(/\s+/g, " ")
+            .trim()}`,
+      )
+      .join("\n");
+  }
+
+  async function callAssist(
+    mode: "rephrase" | "custom",
+    text: string,
+    instruction?: string,
+  ): Promise<string> {
+    const res = await fetch("/api/ai/assist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode, text, instruction }),
+    });
+    if (!res.ok) throw new Error("AI request failed");
+    const data = (await res.json()) as { output?: string };
+    return data.output ?? "";
+  }
+
+  function handleDraft() {
+    setAiBusy("draft");
+    setError(null);
+    callAssist(
+      "custom",
+      buildTranscript() || "(no prior messages)",
+      "You are a property manager at The Parcel Company. Draft a warm, concise reply to the most recent message in this conversation. Output only the reply text — no preamble.",
+    )
+      .then((out) => out && setBody(out))
+      .catch(() => setError("AI draft failed."))
+      .finally(() => setAiBusy(null));
+  }
+
+  function handlePolish() {
+    if (!body.trim()) return;
+    setAiBusy("polish");
+    setError(null);
+    callAssist("rephrase", body)
+      .then((out) => out && setBody(out))
+      .catch(() => setError("AI polish failed."))
+      .finally(() => setAiBusy(null));
+  }
+
+  function handleSummarize() {
+    setAiBusy("summarize");
+    setError(null);
+    callAssist(
+      "custom",
+      buildTranscript() || "(no messages yet)",
+      "Summarize this conversation in 2-3 sentences for an internal admin note. Be specific about any open requests or commitments.",
+    )
+      .then((out) => setSummary(out || "No summary available."))
+      .catch(() => setError("AI summary failed."))
+      .finally(() => setAiBusy(null));
   }
 
   function handleSend() {
@@ -419,6 +514,20 @@ export function MessagingTab({
       </div>
 
       <div className={styles.compose}>
+        {summary && (
+          <div className={styles.summaryBanner}>
+            <Notepad size={15} weight="fill" className={styles.summaryIcon} />
+            <p className={styles.summaryText}>{summary}</p>
+            <button
+              type="button"
+              className={styles.summaryClose}
+              onClick={() => setSummary(null)}
+              aria-label="Dismiss summary"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
         <div className={styles.composeMeta}>
           {filterContactId === "all" && composeContact && (
             <span className={styles.composeTarget}>
@@ -471,6 +580,34 @@ export function MessagingTab({
             title="Save current message as a template"
           >
             <FloppyDisk size={14} /> Save
+          </button>
+          <span className={styles.toolDivider} />
+          <button
+            type="button"
+            className={styles.toolBtn}
+            onClick={handleDraft}
+            disabled={isPending || aiBusy !== null}
+            title="AI: draft a reply from the conversation"
+          >
+            {aiBusy === "draft" ? <Spinner size={14} className={styles.spin} /> : <Sparkle size={14} />} Draft
+          </button>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            onClick={handlePolish}
+            disabled={isPending || aiBusy !== null || !body.trim()}
+            title="AI: polish the current draft"
+          >
+            {aiBusy === "polish" ? <Spinner size={14} className={styles.spin} /> : <MagicWand size={14} />} Polish
+          </button>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            onClick={handleSummarize}
+            disabled={isPending || aiBusy !== null}
+            title="AI: summarize the conversation"
+          >
+            {aiBusy === "summarize" ? <Spinner size={14} className={styles.spin} /> : <Notepad size={14} />} Summarize
           </button>
           {available.portal && (
             <button
