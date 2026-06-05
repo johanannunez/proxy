@@ -23,9 +23,12 @@
       "unrs-resolver"
     ],
     "overrides": {
-      "protobufjs": ">=7.5.5",
+      "protobufjs": ">=8.0.2",
       "follow-redirects": ">=1.16.0",
-      "dompurify": ">=3.4.0"
+      "dompurify": ">=3.4.0",
+      "axios": ">=1.16.0",
+      "fast-uri": ">=3.1.2",
+      "next": ">=16.2.6"
     }
   }
 }
