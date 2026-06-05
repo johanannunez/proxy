@@ -9,14 +9,19 @@ import { Footer, ProxyFooterLogo } from "@/components/ui/footer";
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const PLATFORMS = [
-  { src: "/images/platforms/airbnb.svg", alt: "Airbnb" },
-  { src: "/images/platforms/vrbo.svg", alt: "Vrbo" },
-  { src: "/images/platforms/booking.svg", alt: "Booking.com" },
-  { src: "/images/platforms/furnished-finder.svg", alt: "Furnished Finder" },
-  { src: "/images/platforms/hospitable.svg", alt: "Hospitable" },
-  { src: "/images/platforms/turbotenant.svg", alt: "TurboTenant" },
-  { src: "/images/platforms/housinganywhere.svg", alt: "HousingAnywhere" },
-  { src: "/images/platforms/kayak.svg", alt: "Kayak" },
+  { name: "Stripe", href: "https://stripe.com/", src: "/images/integrations-logo/stripe.svg", width: 76 },
+  { name: "QuickBooks", href: "https://quickbooks.intuit.com/", src: "/images/integrations-logo/quickbooks-full.svg", width: 138 },
+  { name: "Xero", href: "https://www.xero.com/us/", src: "/images/integrations-logo/xero.svg", width: 72 },
+  { name: "DocuSign", href: "https://www.docusign.com/", src: "/images/integrations-logo/docusign-full.svg", width: 128 },
+  { name: "Dropbox Sign", href: "https://sign.dropbox.com/", src: "/images/integrations-logo/dropbox-sign.svg", width: 36 },
+  { name: "Google Drive", href: "https://drive.google.com/", src: "/images/integrations-logo/google-drive.svg", width: 38 },
+  { name: "Google Meet", href: "https://meet.google.com/", src: "/images/integrations-logo/google-meet.svg", width: 38 },
+  { name: "Gmail", href: "https://mail.google.com/", src: "/images/integrations-logo/gmail.svg", width: 40 },
+  { name: "Outlook", href: "https://outlook.live.com/", src: "/images/integrations-logo/outlook-full.svg", width: 42 },
+  { name: "Slack", href: "https://slack.com/", src: "/images/integrations-logo/slack.svg", width: 38 },
+  { name: "Zapier", href: "https://zapier.com/", src: "/images/integrations-logo/zapier.svg", width: 78 },
+  { name: "Make", href: "https://www.make.com/", src: "/images/integrations-logo/make.svg", width: 42 },
+  { name: "Calendly", href: "https://calendly.com/", src: "/images/integrations-logo/calendly.svg", width: 40 },
 ];
 
 const BEFORE_ITEMS = [
@@ -443,7 +448,7 @@ export function Hero195() {
           className="mb-5 text-center text-[10px] font-semibold uppercase tracking-[0.1em]"
           style={{ color: "#546880" }}
         >
-          Works with your platforms
+          Connects with your operator stack
         </p>
         <div
           className="overflow-hidden"
@@ -456,16 +461,24 @@ export function Hero195() {
         >
           <div className="proxy-marquee-track flex items-center" style={{ gap: 48 }}>
             {[...PLATFORMS, ...PLATFORMS].map((p, i) => (
-              <Image
-                key={i}
-                src={p.src}
-                alt={p.alt}
-                width={120}
-                height={32}
-                className="h-[24px] w-auto object-contain"
-                style={{ opacity: 0.75 }}
-                unoptimized
-              />
+              <a
+                key={`${p.name}-${i}`}
+                href={p.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${p.name} homepage`}
+                className="inline-flex h-10 shrink-0 items-center justify-center rounded-sm outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-[#0b2540] focus-visible:ring-offset-4 focus-visible:ring-offset-[#f7f9fc]"
+                style={{ opacity: 0.92 }}
+              >
+                <Image
+                  src={p.src}
+                  alt={p.name}
+                  width={p.width}
+                  height={34}
+                  className="h-[34px] w-auto object-contain"
+                  unoptimized
+                />
+              </a>
             ))}
           </div>
         </div>
@@ -826,6 +839,8 @@ export function Hero195() {
       <Footer
         logo={<ProxyFooterLogo />}
         brandName="Proxy"
+        defaultMode="dark"
+        showModeToggle
         socialLinks={[
           {
             icon: <ChatCircle size={18} weight="duotone" />,
@@ -838,23 +853,6 @@ export function Hero195() {
             label: "Proxy website",
           },
         ]}
-        mainLinks={[
-          { href: "#workspace", label: "Workspace" },
-          { href: "#compare", label: "Operators" },
-          { href: "/pricing", label: "Pricing" },
-          { href: "#proof", label: "Proof" },
-          { href: "/help", label: "Help" },
-          { href: "/login", label: "Log in" },
-        ]}
-        legalLinks={[
-          { href: "/privacy", label: "Privacy" },
-          { href: "/terms", label: "Terms" },
-          { href: "/cookies", label: "Cookies" },
-        ]}
-        copyright={{
-          text: `© ${new Date().getFullYear()} Proxy`,
-          license: "All rights reserved",
-        }}
       />
     </main>
   );

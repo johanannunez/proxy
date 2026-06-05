@@ -1,11 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import FloatingActionMenu from "@/components/ui/floating-action-menu";
 import { ArrowRight, Monitor, EnvelopeSimple } from "@phosphor-icons/react";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const showFloatingMenu = pathname !== "/pricing";
 
   const actions = [
     {
@@ -28,10 +30,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   return (
     <>
       {children}
-      <FloatingActionMenu
-        options={actions}
-        className="z-50"
-      />
+      {showFloatingMenu ? (
+        <FloatingActionMenu
+          options={actions}
+          className="z-50"
+        />
+      ) : null}
     </>
   );
 }

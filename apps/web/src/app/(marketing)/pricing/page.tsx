@@ -67,6 +67,8 @@ export default function PricingPage() {
       <Footer
         logo={<ProxyFooterLogo />}
         brandName="Proxy"
+        defaultMode="light"
+        showModeToggle
         socialLinks={[
           {
             icon: <ChatCircle size={18} weight="duotone" />,
@@ -79,21 +81,6 @@ export default function PricingPage() {
             label: "Proxy website",
           },
         ]}
-        mainLinks={[
-          { href: "/", label: "Home" },
-          { href: "/pricing", label: "Pricing" },
-          { href: "/help", label: "Help" },
-          { href: "/login", label: "Log in" },
-        ]}
-        legalLinks={[
-          { href: "/privacy", label: "Privacy" },
-          { href: "/terms", label: "Terms" },
-          { href: "/cookies", label: "Cookies" },
-        ]}
-        copyright={{
-          text: `© ${new Date().getFullYear()} Proxy`,
-          license: "All rights reserved",
-        }}
       />
     </main>
   );
