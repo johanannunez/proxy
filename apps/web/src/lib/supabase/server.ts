@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { Database } from "@/types/supabase";
+import { authCookieDomain } from "./cookie-domain";
 
 /**
  * Server-side Supabase client for Server Components, Server Actions,
@@ -18,6 +19,7 @@ import type { Database } from "@/types/supabase";
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  const domain = authCookieDomain((await headers()).get("host"));
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +32,10 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
+              cookieStore.set(name, value, {
+                ...options,
+                ...(domain ? { domain } : {}),
+              }),
             );
           } catch {
             // Called from a Server Component which cannot set cookies.
