@@ -67,6 +67,11 @@ export default async function AdminTodayPage() {
     houseActions: [],
   }));
 
+  // Risk digest and guest intelligence both read ai_insights, so a guest warning
+  // would otherwise surface twice (once per adapter) and double-count "on fire".
+  const riskInsightIds = new Set(risk.insights.map((i) => i.id));
+  const dedupedHouseActions = houseActions.filter((a) => !riskInsightIds.has(a.id));
+
   const items = buildActionItems({
     invoices,
     schedule,
@@ -76,7 +81,7 @@ export default async function AdminTodayPage() {
     projects,
     coldLeads,
     winback,
-    houseActions,
+    houseActions: dedupedHouseActions,
     communications,
   });
 
