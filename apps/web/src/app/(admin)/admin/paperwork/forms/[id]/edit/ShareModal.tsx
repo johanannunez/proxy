@@ -25,7 +25,7 @@ export function ShareModal({ form, onClose, onIsPublicChange }: Props) {
   const appUrl =
     typeof window !== "undefined"
       ? window.location.origin
-      : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.theparcelco.com");
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.myproxyhost.com");
 
   const publicUrl = form.slug ? `${appUrl}/f/${form.slug}` : null;
   const isActive = form.is_active;

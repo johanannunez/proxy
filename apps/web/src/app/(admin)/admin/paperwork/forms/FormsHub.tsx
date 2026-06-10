@@ -177,7 +177,7 @@ export function FormsHub({ forms, orgId, respondents, propertyOptions }: Props) 
   });
 
   function handleCopyLink(form: FormWithCount) {
-    const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.theparcelco.com"}/f/${form.slug}`;
+    const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://www.myproxyhost.com"}/f/${form.slug}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(form.id);
       setTimeout(() => setCopiedId(null), 1500);

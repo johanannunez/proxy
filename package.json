@@ -1,5 +1,5 @@
 {
-  "name": "parcel",
+  "name": "proxy",
   "private": true,
   "version": "0.0.0",
   "engines": {
@@ -7,6 +7,7 @@
   },
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",

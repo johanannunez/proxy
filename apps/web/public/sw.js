@@ -1,4 +1,4 @@
-// Parcel push-only service worker.
+// Proxy push-only service worker.
 //
 // INTENTIONAL SCOPE: this SW exists ONLY to handle Web Push notifications
 // and their click events. It does NOT cache any resources and does NOT
@@ -33,16 +33,16 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Parcel", body: event.data.text() };
+    payload = { title: "Proxy", body: event.data.text() };
   }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || "Parcel", {
+    self.registration.showNotification(payload.title || "Proxy", {
       body: payload.body || "",
       icon: "/brand/app-icon-light-192.png",
       badge: "/brand/favicon-32.png",
       data: payload.data || { url: "/portal/messages" },
-      tag: payload.tag || "parcel-message",
+      tag: payload.tag || "proxy-message",
       renotify: true,
     }),
   );
