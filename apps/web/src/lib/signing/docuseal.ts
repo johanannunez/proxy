@@ -11,6 +11,9 @@ import "server-only";
  *                         Self-host: https://sign.myproxyhost.com/api
  *   DOCUSEAL_APP_URL    — app base for constructing signer URLs, defaults to
  *                         https://docuseal.com. Self-host: https://sign.myproxyhost.com
+ *   DOCUSEAL_BRAND_LOGO_URL — optional; operator logo shown inside the signing
+ *                         form. Replaced by per-org branding settings in Phase 3.
+ *   DOCUSEAL_BRAND_COLOR — optional; primary color for the signing form.
  */
 
 const DEFAULT_BASE_URL = "https://api.docuseal.com";
@@ -33,6 +36,20 @@ export function isDocuSealConfigured(): boolean {
 
 function headers(): HeadersInit {
   return { "X-Auth-Token": token() as string, "Content-Type": "application/json" };
+}
+
+/**
+ * Branded signing: the operator's logo and primary color appear inside the
+ * DocuSeal signing form instead of DocuSeal's defaults. Sourced from env vars
+ * for now; per-org branding settings replace this in Phase 3.
+ */
+function brandingCustomization(): { logo_url: string; primary_color: string } | null {
+  const logoUrl = process.env.DOCUSEAL_BRAND_LOGO_URL ?? null;
+  if (!logoUrl) return null;
+  return {
+    logo_url: logoUrl,
+    primary_color: process.env.DOCUSEAL_BRAND_COLOR ?? "#0F172A",
+  };
 }
 
 export type SubmissionSubmitterInput = {
@@ -93,6 +110,7 @@ export async function createSubmission(opts: {
 }): Promise<CreateSubmissionResult> {
   if (!isDocuSealConfigured()) return null;
 
+  const customization = brandingCustomization();
   const res = await fetch(`${baseUrl()}/submissions`, {
     method: "POST",
     headers: headers(),
@@ -106,6 +124,7 @@ export async function createSubmission(opts: {
         name: s.name,
         external_id: s.externalId,
       })),
+      ...(customization && { customization }),
     }),
   });
 

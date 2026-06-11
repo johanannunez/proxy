@@ -1,0 +1,113 @@
+.wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 64px 24px 72px;
+  text-align: center;
+  border: 1px solid rgba(22, 163, 74, 0.18);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(2, 170, 235, 0.07), transparent 55%),
+    radial-gradient(90% 70% at 50% 100%, rgba(22, 163, 74, 0.06), transparent 60%),
+    var(--color-white);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 16px 48px rgba(22, 163, 74, 0.1);
+}
+
+.checkRing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(22, 163, 74, 0.08);
+  box-shadow: 0 0 0 10px rgba(22, 163, 74, 0.05);
+}
+
+.headline {
+  margin-top: 24px;
+  font-family: var(--font-sora);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.summary {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryLine {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.next {
+  margin-top: 28px;
+  max-width: 480px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-warm-gray-200);
+  background: var(--color-warm-gray-50);
+  padding: 18px 22px;
+}
+
+.nextTitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.nextBody {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+/* Confetti — pure CSS, transform + opacity only */
+.confetti {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confettiFall 2.6s var(--ease-spring) 0.45s 1 forwards;
+  pointer-events: none;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(420px) rotate(var(--confetti-spin, 540deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    animation: none;
+    opacity: 0;
+  }
+}
