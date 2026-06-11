@@ -33,6 +33,8 @@ export type QueryBuilder<T> = PromiseLike<QueryResult<T>> & {
 
 export type UntypedDatabaseClient = {
   from<T = unknown>(table: string): QueryBuilder<T>;
+  /** Call a Postgres function not yet present in the generated types. */
+  rpc<T = unknown>(fn: string, args?: Record<string, unknown>): Promise<QueryResult<T>>;
 };
 
 export function untypedDatabase(client: unknown): UntypedDatabaseClient {
