@@ -1,6 +1,6 @@
 /* ─── Client-safe constants, types, and helpers for Documents Hub ─── */
 
-/* ─── Setup section keys (each is one form_key row in property_forms) ─── */
+/* ─── Setup section keys (each is one form_key row on the documents spine) ─── */
 export const SETUP_SECTION_KEYS = [
   "setup_basic",
   "setup_access",
@@ -31,7 +31,7 @@ export const SETUP_SECTION_LABELS: Record<SetupSectionKey, string> = {
   setup_communication:  "Communication Preferences",
 };
 
-/* All form keys that live in the property_forms table */
+/* All form keys stored as raw form rows on the documents spine */
 export const PROPERTY_FORM_KEYS = [
   ...SETUP_SECTION_KEYS,
   "guidebook",
@@ -504,7 +504,7 @@ export type DocHubSecureEntry = {
 export type DocHubFormEntry = {
   submitted: boolean;
   data: Record<string, string | null>;
-  /** Only present on property_setup — per-section completion from property_forms */
+  /** Only present on property_setup — per-section completion from spine form rows */
   sections?: Partial<Record<SetupSectionKey, boolean>>;
   /** 0-100, only present on property_setup */
   completionPct?: number;

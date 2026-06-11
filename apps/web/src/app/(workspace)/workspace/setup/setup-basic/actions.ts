@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
+import { upsertPropertyForm } from "@/lib/workspace/property-forms";
 
 const schema = z.object({
   property_id: z.string().uuid("Property ID is required."),
@@ -49,13 +50,7 @@ export async function saveSetupBasic(
 
   const v = parsed.data;
 
-  const { error } = await untypedDatabase(supabase)
-    .from("property_forms")
-    .upsert(
-      {
-        property_id: v.property_id,
-        form_key: "setup_basic",
-        data: {
+  const saveError = await upsertPropertyForm(v.property_id, "setup_basic", {
           property_type: v.property_type,
           year_built: v.year_built,
           sqft: v.sqft,
@@ -65,14 +60,9 @@ export async function saveSetupBasic(
           bed_count: v.bed_count,
           has_adu: v.has_adu,
           arrangements: v.arrangements,
-        },
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "property_id,form_key" },
-    );
+        });
 
-  if (error) return { error: error.message };
+  if (saveError) return { error: saveError };
 
   const svc = createServiceClient();
   untypedDatabase(svc)

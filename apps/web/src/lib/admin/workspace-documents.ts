@@ -22,14 +22,15 @@ export type WorkspaceDocument = {
 
 type WorkspaceDocumentRow = {
   id: string;
-  template_name: string;
+  document_key: string | null;
+  title: string;
   status: string;
-  signed_at: string | null;
-  signed_pdf_url: string | null;
+  completed_at: string | null;
+  file_url: string | null;
   property_id: string | null;
   created_at: string;
   sent_at: string | null;
-  boldsign_document_id: string | null;
+  source_ref: string | null;
   property: { address_line1: string | null; city: string | null; state: string | null } | null;
 };
 
@@ -38,6 +39,16 @@ type PropertyFormRow = {
   property_id: string;
   form_key: string;
   data: Record<string, unknown> | null;
+  completed_at: string | null;
+  updated_at: string | null;
+  property: { address_line1: string | null; city: string | null; state: string | null } | null;
+};
+
+type RawFormDocRow = {
+  id: string;
+  property_id: string;
+  form_key: string;
+  form_data: Record<string, unknown> | null;
   completed_at: string | null;
   updated_at: string | null;
   property: { address_line1: string | null; city: string | null; state: string | null } | null;
@@ -97,6 +108,18 @@ const FORM_KEY_TO_DOCUMENT_KEY: Record<string, string> = {
   block_dates_calendar: "block_dates_calendar",
   property_offboarding: "property_offboarding",
 };
+
+/**
+ * Map a documents-spine status to the legacy display vocabulary this admin view
+ * was built around (pending / completed / expired / declined).
+ */
+function spineStatusToDocStatus(status: string): string {
+  const s = status.toLowerCase();
+  if (s === "on_file" || s === "completed") return "completed";
+  if (s === "expired") return "expired";
+  if (s === "action_required" || s === "declined") return "declined";
+  return "pending";
+}
 
 function deriveCategory(templateName: string): WorkspaceDocument["category"] {
   const lower = templateName.toLowerCase();
@@ -213,26 +236,28 @@ function createPropertySetupDocument(rows: PropertyFormRow[], propertyCount: num
 
 export async function fetchWorkspaceDocuments(profileId: string, propertyIds: string[] = []): Promise<WorkspaceDocument[]> {
   const supabase = await createClient();
-  // Supabase generated types are stale for signed_documents lifecycle fields.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const signedDocumentsPromise = (supabase as any)
-    .from("signed_documents")
+  // Signature documents live on the documents spine (source = 'signed_document').
+  const signedDocumentsPromise = untypedDatabase(supabase)
+    .from<WorkspaceDocumentRow[]>("documents")
     .select(`
-      id, template_name, status, signed_at, signed_pdf_url, property_id, created_at,
-      sent_at, boldsign_document_id,
+      id, document_key, title, status, completed_at, file_url, property_id, created_at,
+      sent_at, source_ref,
       property:properties(address_line1, city, state)
     `)
-    .eq("user_id", profileId)
+    .eq("owner_id", profileId)
+    .eq("source", "signed_document")
     .order("created_at", { ascending: false });
 
-  // Supabase generated types are stale for property_forms; use the untyped helper.
+  // Raw form rows on the spine (source = 'property_form', form_key set).
   const propertyFormsPromise = propertyIds.length > 0
     ? untypedDatabase(supabase)
-        .from<PropertyFormRow[]>("property_forms")
-        .select("id, property_id, form_key, data, completed_at, updated_at, property:properties(address_line1, city, state)")
+        .from<RawFormDocRow[]>("documents")
+        .select("id, property_id, form_key, form_data, completed_at, updated_at, property:properties(address_line1, city, state)")
+        .eq("source", "property_form")
+        .not("form_key", "is", null)
         .in("property_id", propertyIds)
         .order("updated_at", { ascending: false })
-    : Promise.resolve({ data: [] as PropertyFormRow[], error: null });
+    : Promise.resolve({ data: [] as RawFormDocRow[], error: null });
 
   // Supabase generated types are stale for owner_kyc.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -248,31 +273,39 @@ export async function fetchWorkspaceDocuments(profileId: string, propertyIds: st
   if (error) {
     console.error("[workspace-documents] fetch error:", error.message);
   }
-  if (formsError) console.error("[workspace-documents] property_forms fetch error:", formsError.message);
+  if (formsError) console.error("[workspace-documents] form rows fetch error:", formsError.message);
   if (ownerKycError) console.error("[workspace-documents] owner_kyc fetch error:", ownerKycError.message);
 
   const signedDocuments = ((data ?? []) as WorkspaceDocumentRow[]).map((row) => {
     const prop = row.property;
     return {
       id: row.id,
-      documentKey: null,
+      documentKey: row.document_key,
       source: "signed_document" as const,
-      templateName: row.template_name,
-      category: deriveCategory(row.template_name),
-      status: row.status,
-      signedAt: row.signed_at,
-      signedPdfUrl: row.signed_pdf_url,
+      templateName: row.title,
+      category: deriveCategory(row.title),
+      status: spineStatusToDocStatus(row.status),
+      signedAt: row.completed_at,
+      signedPdfUrl: row.file_url,
       propertyId: row.property_id,
       propertyLabel: propertyLabel(prop),
       createdAt: row.created_at,
       sentAt: row.sent_at,
-      boldsignDocumentId: row.boldsign_document_id,
+      boldsignDocumentId: row.source_ref,
       expiresAt: null,
       renewalDueAt: null,
     };
   });
 
-  const forms = (formRows ?? []) as PropertyFormRow[];
+  const forms: PropertyFormRow[] = ((formRows ?? []) as RawFormDocRow[]).map((row) => ({
+    id: row.id,
+    property_id: row.property_id,
+    form_key: row.form_key,
+    data: row.form_data,
+    completed_at: row.completed_at,
+    updated_at: row.updated_at,
+    property: row.property,
+  }));
   const docsByKey = new Map<string, PropertyFormRow[]>();
   for (const row of forms) {
     const documentKey = FORM_KEY_TO_DOCUMENT_KEY[row.form_key];

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
+import { upsertPropertyForm } from "@/lib/workspace/property-forms";
 
 const BUCKET = "property-documents";
 
@@ -77,13 +78,7 @@ export async function saveStrPermit(
     permitPdfUrl = urlData.publicUrl;
   }
 
-  const { error } = await untypedDatabase(supabase)
-    .from("property_forms")
-    .upsert(
-      {
-        property_id: v.property_id,
-        form_key: "str_permit",
-        data: {
+  const saveError = await upsertPropertyForm(v.property_id, "str_permit", {
           is_permit_required: v.is_permit_required,
           permit_number: v.permit_number,
           issuing_authority: v.issuing_authority,
@@ -91,14 +86,9 @@ export async function saveStrPermit(
           expiration_date: v.expiration_date,
           notes: v.notes,
           permit_pdf_url: permitPdfUrl,
-        },
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "property_id,form_key" },
-    );
+        });
 
-  if (error) return { error: error.message };
+  if (saveError) return { error: saveError };
 
   untypedDatabase(svc)
     .from("activity_log")

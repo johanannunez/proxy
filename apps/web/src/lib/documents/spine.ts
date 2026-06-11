@@ -1,11 +1,13 @@
 import "server-only";
 /**
- * Documents spine — the single derivation + sync layer. It reads the detail
- * tables (signed_documents, property_forms, owner_kyc, tax_profiles), computes
- * the canonical status for every catalog document, and materializes one row per
- * (owner, document_key, property) in `public.documents`. Both backfill and the
- * per-event write paths call `syncOwnerDocuments`; the portal and admin read the
- * resulting spine rows.
+ * Documents spine — the single derivation + sync layer. The `documents` table is
+ * the single source of truth: raw form rows (source = 'property_form', form_key
+ * set) hold submitted form payloads, signature documents carry their lifecycle
+ * directly on the catalog row, and owner_kyc / tax_profiles remain the only
+ * external detail tables. Sync computes the canonical status for every catalog
+ * document and materializes one row per (owner, document_key, property). Both
+ * backfill and the per-event write paths call `syncOwnerDocuments`; the portal
+ * and admin read the resulting spine rows.
  *
  * Server-only: uses the Supabase service client to bypass RLS during sync.
  */
@@ -27,7 +29,7 @@ const SETUP_SECTION_KEYS = [
   "setup_amenities", "setup_listing", "setup_communication",
 ] as const;
 
-/** Catalog form_key in property_forms → catalog document key. */
+/** Raw form row form_key → catalog document key. */
 const FORM_KEY_TO_DOCUMENT_KEY: Record<string, WorkspaceDocumentKey> = {
   paid_onboarding_fee: "paid_onboarding_fee",
   wifi_info: "wifi_info",
@@ -42,17 +44,8 @@ const FORM_KEY_TO_DOCUMENT_KEY: Record<string, WorkspaceDocumentKey> = {
   property_offboarding: "property_offboarding",
 };
 
-type SignedDocRow = {
-  id: string;
-  template_name: string;
-  status: string;
-  signed_at: string | null;
-  signed_pdf_url: string | null;
-  property_id: string | null;
-  boldsign_document_id: string | null;
-  fully_executed_at: string | null;
-};
 type FormRow = { id: string; property_id: string; form_key: string; data: Record<string, unknown> | null; completed_at: string | null };
+type RawFormDocRow = { id: string; property_id: string; form_key: string; form_data: Record<string, unknown> | null; completed_at: string | null };
 type KycRow = { id: string; consent_given: boolean | null; front_photo_url: string | null; back_photo_url: string | null; expiration_date: string | null; updated_at: string | null };
 type TaxRow = { id: string; status: string | null; updated_at: string | null };
 
@@ -82,14 +75,6 @@ const STATUS_RANK: Record<DocumentStatus, number> = {
   expired: 8,
 };
 
-function secureKeyForTemplate(templateName: string): SecureDocKey | null {
-  const lower = templateName.toLowerCase();
-  for (const [key, def] of Object.entries(SECURE_DOC_TYPES) as [SecureDocKey, (typeof SECURE_DOC_TYPES)[SecureDocKey]][]) {
-    if (def.templateNames.some((n) => n.toLowerCase() === lower)) return key;
-  }
-  return null;
-}
-
 function expirationToStatus(expiresAt: string | null, base: DocumentStatus): DocumentStatus {
   if (!expiresAt) return base;
   const today = new Date();
@@ -106,28 +91,18 @@ function getString(data: Record<string, unknown> | null, key: string): string | 
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-/** Map a BoldSign signed_documents row to a spine status. */
-function statusFromSignedDoc(row: SignedDocRow): DocumentStatus {
-  if (row.fully_executed_at) return "on_file";
-  const s = normalizeStatus(row.status);
-  if (s === "on_file") return "on_file"; // legacy "completed" with no countersign tracking
-  if (s === "needed") return "sent"; // a signed_documents row exists => it was sent
-  return s;
-}
-
 /**
  * Derive the full set of desired spine rows for one owner across their
  * properties. Every client-visible catalog key gets a row (defaulting to
  * `needed`) so the portal renders a complete checklist.
  */
 function deriveDesiredRows(input: {
-  signedDocs: SignedDocRow[];
   forms: FormRow[];
   kyc: KycRow | null;
   tax: TaxRow | null;
   propertyIds: string[];
 }): DesiredRow[] {
-  const { signedDocs, forms, kyc, tax, propertyIds } = input;
+  const { forms, kyc, tax, propertyIds } = input;
   const rows: DesiredRow[] = [];
   const props = propertyIds.length > 0 ? propertyIds : [null];
 
@@ -159,25 +134,12 @@ function deriveDesiredRows(input: {
         completed_at: null,
       };
 
-      // --- Signature documents (BoldSign): agreement, ach, card ---
+      // --- Signature documents: agreement, ach, card ---
+      // Their lifecycle lives directly on the spine row (written by the signing
+      // orchestration and webhooks); derivation only guarantees the row exists.
+      // The non-regressive merge below preserves whatever state the row holds.
       const secureKey = key in SECURE_DOC_TYPES ? (key as SecureDocKey) : null;
       if (secureKey && SECURE_DOC_TYPES[secureKey].templateId) {
-        const matches = signedDocs.filter((d) => {
-          const k = secureKeyForTemplate(d.template_name);
-          if (k !== secureKey) return false;
-          return lifecycle.scope === "property" ? d.property_id === propertyId : true;
-        });
-        const latest = matches[0];
-        if (latest) {
-          row = {
-            ...row,
-            status: statusFromSignedDoc(latest),
-            source: "signed_document",
-            source_ref: latest.id,
-            file_url: latest.signed_pdf_url,
-            completed_at: latest.fully_executed_at ?? latest.signed_at,
-          };
-        }
         rows.push(row);
         continue;
       }
@@ -225,7 +187,7 @@ function deriveDesiredRows(input: {
         continue;
       }
 
-      // --- Other forms: property_forms by mapped key ---
+      // --- Other forms: raw form rows by mapped key ---
       const formKey = (Object.entries(FORM_KEY_TO_DOCUMENT_KEY).find(([, dk]) => dk === key)?.[0]) ?? key;
       const candidates = (formsByKey.get(formKey) ?? []).filter((f) => (propertyId ? f.property_id === propertyId : true));
       const completedForm = candidates.find((f) => f.completed_at || Object.keys(f.data ?? {}).length > 0);
@@ -261,21 +223,26 @@ export async function syncOwnerDocuments(input: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = createServiceClient() as any;
 
-  const [signed, forms, kyc, tax] = await Promise.all([
-    db.from("signed_documents")
-      .select("id, template_name, status, signed_at, signed_pdf_url, property_id, boldsign_document_id, fully_executed_at")
-      .eq("user_id", ownerProfileId)
-      .order("created_at", { ascending: false }),
+  const [forms, kyc, tax] = await Promise.all([
     propertyIds.length > 0
-      ? db.from("property_forms").select("id, property_id, form_key, data, completed_at").in("property_id", propertyIds)
+      ? db.from("documents")
+          .select("id, property_id, form_key, form_data, completed_at")
+          .eq("source", "property_form")
+          .not("form_key", "is", null)
+          .in("property_id", propertyIds)
       : Promise.resolve({ data: [] }),
     db.from("owner_kyc").select("id, consent_given, front_photo_url, back_photo_url, expiration_date, updated_at").eq("user_id", ownerProfileId).maybeSingle(),
     db.from("tax_profiles").select("id, status, updated_at").eq("owner_id", ownerProfileId).maybeSingle(),
   ]);
 
   const desired = deriveDesiredRows({
-    signedDocs: (signed.data ?? []) as SignedDocRow[],
-    forms: (forms.data ?? []) as FormRow[],
+    forms: ((forms.data ?? []) as RawFormDocRow[]).map((r) => ({
+      id: r.id,
+      property_id: r.property_id,
+      form_key: r.form_key,
+      data: r.form_data,
+      completed_at: r.completed_at,
+    })),
     kyc: (kyc.data ?? null) as KycRow | null,
     tax: (tax.data ?? null) as TaxRow | null,
     propertyIds,
@@ -283,10 +250,13 @@ export async function syncOwnerDocuments(input: {
 
   let written = 0;
   for (const d of desired) {
+    // form_key is null filters the catalog rows; raw form rows (form_key set)
+    // are the storage layer and must never be matched as catalog rows.
     let q = db.from("documents")
       .select("id, status, source, source_ref, file_url, expires_at, submitted_at, completed_at")
       .eq("owner_id", ownerProfileId)
-      .eq("document_key", d.document_key);
+      .eq("document_key", d.document_key)
+      .is("form_key", null);
     q = d.property_id ? q.eq("property_id", d.property_id) : q.is("property_id", null);
     const { data: existing } = await q.maybeSingle();
 
@@ -482,6 +452,7 @@ export async function fetchOwnerSpine(ownerProfileId: string): Promise<SpineDocu
     .from("documents")
     .select(SPINE_SELECT)
     .eq("owner_id", ownerProfileId)
+    .is("form_key", null) // catalog rows only, not raw form storage rows
     .order("sequence", { ascending: true });
   if (error) {
     console.error("[spine] fetchOwnerSpine error:", error.message);
@@ -504,6 +475,7 @@ export async function fetchSpineWithClient(
     .select(SPINE_SELECT)
     .eq("owner_id", ownerProfileId)
     .eq("visibility", "client")
+    .is("form_key", null) // catalog rows only, not raw form storage rows
     .order("sequence", { ascending: true });
   if (error) {
     console.error("[spine] fetchSpineWithClient error:", error.message);

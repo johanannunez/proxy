@@ -2644,60 +2644,6 @@ export type Database = {
           },
         ]
       }
-      signed_documents: {
-        Row: {
-          boldsign_document_id: string
-          created_at: string
-          id: string
-          property_id: string | null
-          signed_at: string | null
-          signed_pdf_url: string | null
-          status: string
-          template_name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          boldsign_document_id: string
-          created_at?: string
-          id?: string
-          property_id?: string | null
-          signed_at?: string | null
-          signed_pdf_url?: string | null
-          status?: string
-          template_name: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          boldsign_document_id?: string
-          created_at?: string
-          id?: string
-          property_id?: string | null
-          signed_at?: string | null
-          signed_pdf_url?: string | null
-          status?: string
-          template_name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "signed_documents_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "signed_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       stripe_customers: {
         Row: {
           created_at: string

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { untypedDatabase } from "@/lib/supabase/untyped";
 import { StepShell } from "@/components/workspace/setup/StepShell";
 import { AccessForm } from "./AccessForm";
+import { getPropertyForm } from "@/lib/workspace/property-forms";
 
 export const metadata: Metadata = { title: "Access and Entry" };
 export const dynamic = "force-dynamic";
@@ -32,12 +32,7 @@ export default async function SetupAccessPage({
       .maybeSingle();
     propertyUpdatedAt = prop?.updated_at ?? null;
 
-    const { data: formRow } = await untypedDatabase(supabase)
-      .from<{ data: Record<string, unknown> | null; completed_at: string | null; updated_at: string | null }>("property_forms")
-      .select("data, completed_at, updated_at")
-      .eq("property_id", propertyId)
-      .eq("form_key", "setup_access")
-      .maybeSingle();
+    const formRow = await getPropertyForm(propertyId, "setup_access");
     if (formRow?.data) saved = formRow.data as Record<string, unknown>;
     if (formRow?.updated_at) propertyUpdatedAt = formRow.updated_at;
   }

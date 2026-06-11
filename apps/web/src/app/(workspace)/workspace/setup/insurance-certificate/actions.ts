@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
+import { upsertPropertyForm } from "@/lib/workspace/property-forms";
 
 const BUCKET = "property-documents";
 
@@ -79,13 +80,7 @@ export async function saveInsuranceCertificate(
     certificatePdfUrl = urlData.publicUrl;
   }
 
-  const { error } = await untypedDatabase(supabase)
-    .from("property_forms")
-    .upsert(
-      {
-        property_id: v.property_id,
-        form_key: "insurance_certificate",
-        data: {
+  const saveError = await upsertPropertyForm(v.property_id, "insurance_certificate", {
           carrier_name: v.carrier_name,
           policy_type: v.policy_type,
           policy_number: v.policy_number,
@@ -95,14 +90,9 @@ export async function saveInsuranceCertificate(
           agent_name: v.agent_name,
           agent_phone: v.agent_phone,
           certificate_pdf_url: certificatePdfUrl,
-        },
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "property_id,form_key" },
-    );
+        });
 
-  if (error) return { error: error.message };
+  if (saveError) return { error: saveError };
 
   untypedDatabase(svc)
     .from("activity_log")

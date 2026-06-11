@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { untypedDatabase } from "@/lib/supabase/untyped";
 import { StepShell } from "@/components/workspace/setup/StepShell";
 import { RecommendationsForm } from "./RecommendationsForm";
+import { getPropertyForm } from "@/lib/workspace/property-forms";
 
 export const metadata: Metadata = { title: "Local Recommendations" };
 export const dynamic = "force-dynamic";
@@ -23,12 +23,7 @@ export default async function RecommendationsPage({
   let saved: Record<string, unknown> = {};
 
   if (propertyId) {
-    const { data: formRow } = await untypedDatabase(supabase)
-      .from<{ data: Record<string, unknown> | null; completed_at: string | null; updated_at: string | null }>("property_forms")
-      .select("data, completed_at, updated_at")
-      .eq("property_id", propertyId)
-      .eq("form_key", "guidebook")
-      .maybeSingle();
+    const formRow = await getPropertyForm(propertyId, "guidebook");
     if (formRow?.data) saved = formRow.data as Record<string, unknown>;
     if (formRow?.updated_at) lastUpdated = formRow.updated_at;
   }

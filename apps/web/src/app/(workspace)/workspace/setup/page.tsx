@@ -11,6 +11,7 @@ import {
   User,
 } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/server";
+import { getCompletedFormKeys } from "@/lib/workspace/property-forms";
 import { PropertySelector } from "@/components/workspace/PropertySelector";
 import { OwnerLocalTime } from "@/components/workspace/OwnerLocalTime";
 import {
@@ -42,7 +43,7 @@ type PropertyRow = {
 
 /**
  * Resolve step state for a property step.
- * propertyFormsDone: set of form_keys with completed_at in property_forms.
+ * propertyFormsDone: set of form_keys with a completed form row on the documents spine.
  */
 function resolvePropertyStepState(
   stepKey: string,
@@ -70,7 +71,7 @@ function resolvePropertyStepState(
     compliance: false,
     "host-agreement": false,
     review: false,
-    // property_forms-backed sections
+    // form-row-backed sections (documents spine)
     setup_basic: propertyFormsDone.has("setup_basic"),
     setup_access: propertyFormsDone.has("setup_access"),
     setup_security: propertyFormsDone.has("setup_security"),
@@ -174,18 +175,10 @@ export default async function SetupHubPage({
       : undefined) ??
     ((properties?.[0] as PropertyRow | undefined) ?? null);
 
-  // Fetch property_forms completion for the selected property
-  const propertyFormsDone = new Set<string>();
-  if (selected?.id) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: formRows } = await (supabase as any)
-      .from("property_forms")
-      .select("form_key, completed_at")
-      .eq("property_id", selected.id);
-    for (const row of (formRows ?? []) as { form_key: string; completed_at: string | null }[]) {
-      if (row.completed_at) propertyFormsDone.add(row.form_key);
-    }
-  }
+  // Fetch form-row completion (documents spine) for the selected property
+  const propertyFormsDone = selected?.id
+    ? await getCompletedFormKeys(selected.id)
+    : new Set<string>();
 
   const propertyGroups = groupStepsByGroup("property");
   const ownerGroups = groupStepsByGroup("owner");

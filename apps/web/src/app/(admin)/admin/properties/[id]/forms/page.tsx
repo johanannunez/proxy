@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { untypedDatabase } from "@/lib/supabase/untyped";
+import { getPropertyForm } from "@/lib/workspace/property-forms";
 import { InspectionForm } from "./InspectionForm";
 import { OffboardingForm } from "./OffboardingForm";
-
-type PropertyFormRow = {
-  data: Record<string, unknown> | null;
-  completed_at: string | null;
-  updated_at: string | null;
-};
 
 export const metadata: Metadata = { title: "Property Forms" };
 export const dynamic = "force-dynamic";
@@ -38,21 +32,10 @@ export default async function PropertyFormsPage({
 
   if (!property) notFound();
 
-  const db = untypedDatabase(supabase);
-
-  const { data: inspectionRow } = await db
-    .from<PropertyFormRow>("property_forms")
-    .select("data, completed_at, updated_at")
-    .eq("property_id", id)
-    .eq("form_key", "onboarding_inspection")
-    .maybeSingle();
-
-  const { data: offboardingRow } = await db
-    .from<PropertyFormRow>("property_forms")
-    .select("data, completed_at, updated_at")
-    .eq("property_id", id)
-    .eq("form_key", "property_offboarding")
-    .maybeSingle();
+  const [inspectionRow, offboardingRow] = await Promise.all([
+    getPropertyForm(id, "onboarding_inspection"),
+    getPropertyForm(id, "property_offboarding"),
+  ]);
 
   const inspectionSaved: Record<string, unknown> = inspectionRow?.data ?? {};
   const offboardingSaved: Record<string, unknown> = offboardingRow?.data ?? {};

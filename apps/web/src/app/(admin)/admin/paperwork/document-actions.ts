@@ -12,7 +12,7 @@ export type ActionResult = { ok: boolean; error?: string };
 /**
  * These are "use server" actions imported by client components, so they are
  * callable by any authenticated user. Gate them to admins — without this an
- * owner could send BoldSign documents or delete signed_documents rows.
+ * owner could send BoldSign documents or reset documents-spine rows.
  */
 async function requireAdmin(): Promise<{ userId: string | null; error: string | null }> {
   const supabase = await createClient();
@@ -56,23 +56,42 @@ export async function sendDocumentToOwner(
 
     const sentBy = adminId;
     const supabase = await createClient();
+    const db = untypedDatabase(supabase);
     const now = new Date().toISOString();
 
-    const { error: insertErr } = await untypedDatabase(supabase)
-      .from("signed_documents")
-      .insert({
-        user_id: profileId,
-        boldsign_document_id: result.documentId,
-        template_name: def.templateNames[0],
-        status: "pending",
-        sent_by: sentBy,
-        sent_at: now,
-        created_at: now,
-        updated_at: now,
-      });
+    // The documents spine holds one catalog row per (owner, document key).
+    // Sending marks that row sent and records the provider id in source_ref.
+    const { data: existing } = await db
+      .from<{ id: string }>("documents")
+      .select("id")
+      .eq("owner_id", profileId)
+      .eq("document_key", docKey)
+      .is("form_key", null)
+      .is("property_id", null)
+      .maybeSingle();
 
-    if (insertErr) {
-      console.error("[document-actions] insert error:", insertErr.message);
+    const sentFields = {
+      status: "sent",
+      source: "signed_document",
+      source_ref: result.documentId,
+      sent_by: sentBy,
+      sent_at: now,
+    };
+
+    const { error: writeErr } = existing
+      ? await db.from("documents").update(sentFields).eq("id", existing.id)
+      : await db.from("documents").insert({
+          owner_id: profileId,
+          document_key: docKey,
+          doc_type: docKey,
+          title: def.templateNames[0],
+          scope_kind: "owner",
+          visibility: "client",
+          ...sentFields,
+        });
+
+    if (writeErr) {
+      console.error("[document-actions] spine write error:", writeErr.message);
       return { ok: false, error: "Document sent but failed to record. Please refresh." };
     }
 
@@ -100,11 +119,22 @@ export async function sendDocumentReminder(
     }
 
     const supabase = await createClient();
+    const db = untypedDatabase(supabase);
     const now = new Date().toISOString();
 
-    await untypedDatabase(supabase)
-      .from("signed_documents")
-      .update({ sent_at: now, updated_at: now })
+    const { data: doc } = await db
+      .from<{ reminder_count: number | null }>("documents")
+      .select("reminder_count")
+      .eq("id", documentId)
+      .maybeSingle();
+
+    await db
+      .from("documents")
+      .update({
+        sent_at: now,
+        reminder_sent_at: now,
+        reminder_count: (doc?.reminder_count ?? 0) + 1,
+      })
       .eq("id", documentId);
 
     revalidatePath("/admin/paperwork");
@@ -121,10 +151,24 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
 
   try {
     const supabase = await createClient();
+    // The spine keeps one catalog row per (owner, document key), so "deleting"
+    // a sent signature document resets that row to its unsent state rather than
+    // removing it from the checklist.
     const { error } = await untypedDatabase(supabase)
-      .from("signed_documents")
-      .delete()
-      .eq("id", documentId);
+      .from("documents")
+      .update({
+        status: "needed",
+        source: "manual",
+        source_ref: null,
+        file_url: null,
+        sent_at: null,
+        sent_by: null,
+        completed_at: null,
+        reminder_sent_at: null,
+        reminder_count: 0,
+      })
+      .eq("id", documentId)
+      .eq("source", "signed_document");
 
     if (error) {
       return { ok: false, error: error.message };

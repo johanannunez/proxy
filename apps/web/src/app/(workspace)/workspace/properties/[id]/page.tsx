@@ -207,6 +207,7 @@ export default async function PropertyDetailPage({
     const { data } = await (supabase as any)
       .from("documents")
       .select("id, title, doc_type, status, file_url, created_at")
+      .is("form_key", null) // catalog documents only, not raw form storage rows
       .order("created_at", { ascending: false })
       .limit(6);
     documents = data ?? [];

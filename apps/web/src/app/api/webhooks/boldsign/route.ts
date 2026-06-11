@@ -9,7 +9,13 @@ export const dynamic = 'force-dynamic';
 // Only these events trigger database writes
 const HANDLED_EVENTS = new Set(['Completed', 'Declined', 'Expired', 'Revoked', 'Viewed']);
 
-const TERMINAL_STATUSES = ['completed', 'declined', 'expired', 'revoked'];
+// Spine statuses a webhook event maps to. Viewed is logged, never a status.
+const EVENT_TO_STATUS: Record<string, string> = {
+  Completed: 'on_file',
+  Declined: 'action_required',
+  Revoked: 'action_required',
+  Expired: 'expired',
+};
 
 // BoldSign sends the secret as a plain header value (X-BoldSign-Secret).
 // Use timingSafeEqual to prevent timing attacks.
@@ -109,38 +115,38 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createServiceClient() as any;
 
-  // Look up the document record
+  // Look up the spine document. For signature documents, source_ref stores the
+  // provider document id (legacy BoldSign id or DocuSeal submission id).
   const { data: docRow } = await supabase
-    .from('signed_documents')
-    .select('id, user_id, template_name')
-    .eq('boldsign_document_id', documentId)
+    .from('documents')
+    .select('id, owner_id, document_key, title')
+    .eq('source', 'signed_document')
+    .eq('source_ref', documentId)
     .maybeSingle();
 
   if (!docRow) {
-    console.warn('[boldsign-webhook] no signed_documents row for:', documentId);
+    console.warn('[boldsign-webhook] no documents row for provider id:', documentId);
     return NextResponse.json({ ok: true, skipped: 'document not found' });
   }
 
-  // Update document status
-  // For Viewed: only write if not already in a terminal state (completed/declined/expired/revoked).
-  // This prevents a late Viewed event from overwriting a final status.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let updateError: any = null;
   if (eventType === 'Viewed') {
-    const { error } = await supabase
-      .from('signed_documents')
-      .update({ status: 'viewed', updated_at: new Date().toISOString() })
-      .eq('id', docRow.id)
-      .not('status', 'in', `(${TERMINAL_STATUSES.join(',')})`);
+    // Viewed is an activity event, never a status transition — a late Viewed
+    // must not overwrite a final status.
+    const { error } = await supabase.from('document_events').insert({
+      document_id: docRow.id,
+      event_type: 'form.viewed',
+      occurred_at: new Date().toISOString(),
+    });
     updateError = error;
   } else {
-    const status = eventType === 'Completed' ? 'completed' : eventType.toLowerCase();
+    const status = EVENT_TO_STATUS[eventType] ?? 'action_required';
     const { error } = await supabase
-      .from('signed_documents')
+      .from('documents')
       .update({
         status,
-        ...(eventType === 'Completed' ? { signed_at: new Date().toISOString() } : {}),
-        updated_at: new Date().toISOString(),
+        ...(eventType === 'Completed' ? { completed_at: new Date().toISOString() } : {}),
       })
       .eq('id', docRow.id);
     updateError = error;
@@ -152,11 +158,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Completing the host rental agreement triggers the onboarding flow
-  if (eventType === 'Completed' && docRow.template_name === 'hostRentalAgreement') {
+  if (
+    eventType === 'Completed' &&
+    (docRow.document_key === 'host_rental_agreement' || docRow.title === 'hostRentalAgreement')
+  ) {
     const { data: contact } = await supabase
       .from('contacts')
       .select('id')
-      .eq('profile_id', docRow.user_id)
+      .eq('profile_id', docRow.owner_id)
       .maybeSingle();
 
     if (contact) {

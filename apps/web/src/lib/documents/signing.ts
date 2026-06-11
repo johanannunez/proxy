@@ -189,24 +189,17 @@ export async function applyDocuSealEvent(event: DocuSealEvent): Promise<void> {
       : "signed";
 
   const now = new Date().toISOString();
+  // The spine row is the single signature record: status, completion timestamp,
+  // and the signed PDF all live here. source_ref holds the provider submission id.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const docUpdate: Record<string, any> = { status: nextStatus };
   if (fullyExecuted) docUpdate.completed_at = now;
   if (event.signedPdfUrl) docUpdate.file_url = event.signedPdfUrl;
   await db.from("documents").update(docUpdate).eq("id", documentId);
 
-  // Update the signed_documents record (provider submission id lives there).
-  const { data: docRow } = await db.from("documents").select("owner_id, source_ref").eq("id", documentId).maybeSingle();
-  if (docRow?.source_ref) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sd: Record<string, any> = { status: fullyExecuted ? "completed" : "pending", updated_at: now };
-    if (fullyExecuted) { sd.fully_executed_at = now; sd.signed_at = now; }
-    if (event.signedPdfUrl) sd.signed_pdf_url = event.signedPdfUrl;
-    await db.from("signed_documents").update(sd).eq("id", docRow.source_ref);
-  }
-
-  if (fullyExecuted && docRow?.owner_id) {
-    await syncSpineForOwner(docRow.owner_id as string);
+  if (fullyExecuted) {
+    const { data: docRow } = await db.from("documents").select("owner_id").eq("id", documentId).maybeSingle();
+    if (docRow?.owner_id) await syncSpineForOwner(docRow.owner_id as string);
   }
 }
 
@@ -239,24 +232,15 @@ async function persistSubmission(
   const def = spine.document_key ? WORKSPACE_DOCUMENT_DEFINITIONS[spine.document_key as WorkspaceDocumentKey] : null;
   const now = new Date().toISOString();
 
-  // signed_documents record holds the provider submission id.
-  const { data: sd } = await db
-    .from("signed_documents")
-    .insert({
-      user_id: ownerProfileId,
-      property_id: null,
-      boldsign_document_id: String(submissionId),
-      template_name: def?.label ?? spine.document_key ?? "Document",
-      status: "pending",
-      sent_at: now,
-      created_at: now,
-      updated_at: now,
-    })
-    .select("id")
-    .single();
-
-  // Link spine row → submission, mark sent.
-  await db.from("documents").update({ status: "sent", source: "signed_document", source_ref: sd?.id ?? null }).eq("id", spine.id);
+  // The spine row IS the signature record: store the provider submission id in
+  // source_ref, keep the catalog title, and mark the document sent.
+  await db.from("documents").update({
+    status: "sent",
+    source: "signed_document",
+    source_ref: String(submissionId),
+    title: def?.label ?? spine.document_key ?? "Document",
+    sent_at: now,
+  }).eq("id", spine.id);
 
   // One document_signers row per submitter.
   const rows = submitters.map((s, index) => ({

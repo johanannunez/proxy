@@ -43,7 +43,7 @@ export type GenerateW9SignedUrlResult =
  * is forbidden because it would skip the audit log.
  *
  * Either `target.storagePath` (raw upload) or `target.signedDocumentId`
- * (BoldSign-signed W-9 with a stored `file_url` in `signed_documents`)
+ * (a documents-spine row whose `file_url` points at a bucket object)
  * must be provided.
  */
 export async function generateW9SignedUrl(
@@ -64,24 +64,22 @@ export async function generateW9SignedUrl(
     signedDocumentId = input.target.signedDocumentId;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (client as any)
-      .from("signed_documents")
-      .select("id, signed_pdf_url, file_url")
+      .from("documents")
+      .select("id, file_url")
       .eq("id", signedDocumentId)
       .single();
     if (error || !data) {
-      return { ok: false, error: "signed_document not found" };
+      return { ok: false, error: "signed document not found" };
     }
-    // BoldSign-signed W-9 PDFs may be stored as either a hosted URL
-    // (data.file_url / data.signed_pdf_url) or a path within the
-    // documents bucket. Storage paths use the `documents://` prefix.
+    // Signed W-9 PDFs may be stored as either a hosted URL (file_url) or a
+    // path within the documents bucket. Storage paths use the `documents://`
+    // prefix.
     const candidate: string =
-      (data as { signed_pdf_url?: string | null; file_url?: string | null }).signed_pdf_url ??
-      (data as { file_url?: string | null }).file_url ??
-      "";
+      (data as { file_url?: string | null }).file_url ?? "";
     if (!candidate.startsWith(`${BUCKET}://`)) {
       return {
         ok: false,
-        error: "signed_document is not backed by a bucket object",
+        error: "signed document is not backed by a bucket object",
       };
     }
     storagePath = candidate.slice(BUCKET.length + 3);

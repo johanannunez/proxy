@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createServiceClient } from "@/lib/supabase/service";
-import { untypedDatabase } from "@/lib/supabase/untyped";
+import { upsertPropertyForm } from "@/lib/workspace/property-forms";
 
 // ---------------------------------------------------------------------------
 // Inspection
@@ -31,30 +30,20 @@ export async function saveInspection(
   if (!parsed.success) return { error: "Invalid form data." };
 
   const v = parsed.data;
-  const svc = createServiceClient();
 
-  const { error } = await untypedDatabase(svc)
-    .from("property_forms")
-    .upsert(
-      {
-        property_id: v.property_id,
-        form_key: "onboarding_inspection",
-        data: {
-          overall_condition: v.overall_condition,
-          inspection_date: v.inspection_date,
-          inspector_name: v.inspector_name,
-          rooms: v.rooms,
-          appliance_inventory: v.appliance_inventory,
-          pre_existing_damage: v.pre_existing_damage,
-          notes: v.notes,
-        },
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "property_id,form_key" },
-    );
+  // Writes to the documents spine; verifies the caller is the property owner
+  // or an admin before saving.
+  const saveError = await upsertPropertyForm(v.property_id, "onboarding_inspection", {
+    overall_condition: v.overall_condition,
+    inspection_date: v.inspection_date,
+    inspector_name: v.inspector_name,
+    rooms: v.rooms,
+    appliance_inventory: v.appliance_inventory,
+    pre_existing_damage: v.pre_existing_damage,
+    notes: v.notes,
+  });
 
-  if (error) return { error: error.message };
+  if (saveError) return { error: saveError };
 
   revalidatePath(`/admin/properties/${v.property_id}/forms`);
   return { success: true };
@@ -99,33 +88,23 @@ export async function saveOffboarding(
   if (!parsed.success) return { error: "Invalid form data." };
 
   const v = parsed.data;
-  const svc = createServiceClient();
 
-  const { error } = await untypedDatabase(svc)
-    .from("property_forms")
-    .upsert(
-      {
-        property_id: v.property_id,
-        form_key: "property_offboarding",
-        data: {
-          termination_notice_date: v.termination_notice_date,
-          end_date: v.end_date,
-          calendar_block_date: v.calendar_block_date,
-          active_reservations_at_notice: v.active_reservations_at_notice,
-          final_payout_estimate: v.final_payout_estimate,
-          platform_transfer_notes: v.platform_transfer_notes,
-          key_lockbox_returned: v.key_lockbox_returned,
-          final_statement_sent: v.final_statement_sent,
-          owner_acknowledged_protocol: v.owner_acknowledged_protocol,
-          notes: v.notes,
-        },
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "property_id,form_key" },
-    );
+  // Writes to the documents spine; verifies the caller is the property owner
+  // or an admin before saving.
+  const saveError = await upsertPropertyForm(v.property_id, "property_offboarding", {
+    termination_notice_date: v.termination_notice_date,
+    end_date: v.end_date,
+    calendar_block_date: v.calendar_block_date,
+    active_reservations_at_notice: v.active_reservations_at_notice,
+    final_payout_estimate: v.final_payout_estimate,
+    platform_transfer_notes: v.platform_transfer_notes,
+    key_lockbox_returned: v.key_lockbox_returned,
+    final_statement_sent: v.final_statement_sent,
+    owner_acknowledged_protocol: v.owner_acknowledged_protocol,
+    notes: v.notes,
+  });
 
-  if (error) return { error: error.message };
+  if (saveError) return { error: saveError };
 
   revalidatePath(`/admin/properties/${v.property_id}/forms`);
   return { success: true };

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
+import { upsertPropertyForm } from "@/lib/workspace/property-forms";
 
 const schema = z.object({
   property_id: z.string().uuid("Property ID is required."),
@@ -47,13 +48,7 @@ export async function savePlatformAuthorization(
 
   const v = parsed.data;
 
-  const { error } = await untypedDatabase(supabase)
-    .from("property_forms")
-    .upsert(
-      {
-        property_id: v.property_id,
-        form_key: "platform_authorization",
-        data: {
+  const saveError = await upsertPropertyForm(v.property_id, "platform_authorization", {
           platforms: [
             {
               platform: v.platform,
@@ -65,14 +60,9 @@ export async function savePlatformAuthorization(
               notes: v.notes,
             },
           ],
-        },
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "property_id,form_key" },
-    );
+        });
 
-  if (error) return { error: error.message };
+  if (saveError) return { error: saveError };
 
   const svc = createServiceClient();
   untypedDatabase(svc)

@@ -193,7 +193,7 @@ export const setupSearchIndex: SetupStepEntry[] = [
     estimateMinutes: 3,
   },
 
-  // ── Property Data (saves to property_forms table) ───────
+  // ── Property Data (saves to documents spine form rows) ───────
   // Group: Property data — disabled: true until Phase 2 portal routes are built
   {
     stepKey: "setup_basic",

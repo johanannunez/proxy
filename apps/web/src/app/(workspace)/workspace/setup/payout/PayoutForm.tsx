@@ -19,7 +19,7 @@ export function PayoutForm({
   const [method, setMethod] = useState<PayoutMethod>("ach");
 
   // BoldSign signing URLs will be generated server-side once
-  // BOLDSIGN_API_KEY and signed_documents table exist.
+  // BOLDSIGN_API_KEY is configured and the documents spine row exists.
   // For now, always show the placeholder.
   const signUrl: string | null = null;
 

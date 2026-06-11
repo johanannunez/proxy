@@ -77,16 +77,17 @@ type ContactRow = {
   property_count: { count: number }[] | number | null;
 };
 
-type SignedDocQueryRow = {
+type SignatureDocQueryRow = {
   id: string;
-  user_id: string;
-  template_name: string;
+  owner_id: string;
+  document_key: string | null;
+  title: string;
   status: string;
-  signed_at: string | null;
-  signed_pdf_url: string | null;
+  completed_at: string | null;
+  file_url: string | null;
   created_at: string;
   sent_at: string | null;
-  boldsign_document_id: string;
+  source_ref: string | null;
   sender: { full_name: string | null } | null;
 };
 
@@ -159,22 +160,23 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
 
   const contactIds = contacts.map((c) => c.id);
 
-  // 2. All signed_documents for these profile IDs, join sender profile
+  // 2. All signature documents on the spine for these profile IDs, join sender profile
   const { data: signedDocs, error: docsErr } = await db
-    .from<SignedDocQueryRow[]>("signed_documents")
+    .from<SignatureDocQueryRow[]>("documents")
     .select(`
-      id, user_id, template_name, status, signed_at, signed_pdf_url,
-      created_at, sent_at, boldsign_document_id,
-      sender:profiles!signed_documents_sent_by_fkey(full_name)
+      id, owner_id, document_key, title, status, completed_at, file_url,
+      created_at, sent_at, source_ref,
+      sender:profiles!documents_sent_by_fkey(full_name)
     `)
-    .in("user_id", profileIds)
+    .eq("source", "signed_document")
+    .in("owner_id", profileIds)
     .order("created_at", { ascending: false });
 
   if (docsErr) {
-    console.error("[documents-hub] signed_documents fetch error:", docsErr.message);
+    console.error("[documents-hub] signature documents fetch error:", docsErr.message);
   }
 
-  // 3. Properties for legacy form data (wifi, bed_arrangements, guidebook_spots) + IDs for property_forms
+  // 3. Properties for legacy form data (wifi, bed_arrangements, guidebook_spots) + IDs for form rows
   const { data: properties, error: propsErr } = await db
     .from<PropertyRow[]>("properties")
     .select(`
@@ -200,27 +202,36 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     console.error("[documents-hub] owner_kyc fetch error:", kycErr.message);
   }
 
-  // 5. Property forms (setup sections + compliance forms + new forms)
+  // 5. Property form rows on the spine (setup sections + compliance forms)
   const propertyIds = (properties ?? []).map((p) => p.id);
 
-  const { data: propertyForms, error: formsErr } = propertyIds.length > 0
+  const { data: rawFormRows, error: formsErr } = propertyIds.length > 0
     ? await db
-        .from<PropertyFormRow[]>("property_forms")
-        .select("property_id, form_key, data, completed_at")
+        .from<Array<{ property_id: string; form_key: string; form_data: Record<string, unknown> | null; completed_at: string | null }>>("documents")
+        .select("property_id, form_key, form_data, completed_at")
+        .eq("source", "property_form")
+        .not("form_key", "is", null)
         .in("property_id", propertyIds)
-    : { data: [] as PropertyFormRow[], error: null };
+    : { data: [], error: null };
 
   if (formsErr) {
-    console.error("[documents-hub] property_forms fetch error:", formsErr.message);
+    console.error("[documents-hub] property form rows fetch error:", formsErr.message);
   }
+
+  const propertyForms: PropertyFormRow[] = (rawFormRows ?? []).map((r) => ({
+    property_id: r.property_id,
+    form_key: r.form_key,
+    data: r.form_data,
+    completed_at: r.completed_at,
+  }));
 
   // ─── Build lookup maps ───
 
-  const docsByProfileId = new Map<string, SignedDocQueryRow[]>();
+  const docsByProfileId = new Map<string, SignatureDocQueryRow[]>();
   for (const doc of signedDocs ?? []) {
-    const list = docsByProfileId.get(doc.user_id) ?? [];
+    const list = docsByProfileId.get(doc.owner_id) ?? [];
     list.push(doc);
-    docsByProfileId.set(doc.user_id, list);
+    docsByProfileId.set(doc.owner_id, list);
   }
 
   // Primary property per contact (first one)
@@ -239,7 +250,7 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     propsByContactId.set(prop.contact_id, list);
   }
 
-  // property_forms keyed by property_id → form_key → { data, completed_at }
+  // form rows keyed by property_id → form_key → { data, completed_at }
   const formsByPropertyId = new Map<string, Map<string, FormEntry>>();
   for (const pf of propertyForms ?? []) {
     if (!formsByPropertyId.has(pf.property_id)) {
@@ -269,19 +280,23 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     const ownerDocs = profileId ? (docsByProfileId.get(profileId) ?? []) : [];
 
     for (const doc of ownerDocs) {
-      const key = normalizeTemplateName(doc.template_name);
+      // Prefer the spine's catalog key; fall back to template-name matching for
+      // rows that predate catalog keys.
+      const key = doc.document_key && doc.document_key in SECURE_DOC_TYPES
+        ? (doc.document_key as SecureDocKey)
+        : normalizeTemplateName(doc.title);
       if (!key) continue;
 
       const row: SignedDocRow = {
         id: doc.id,
-        templateName: doc.template_name,
+        templateName: doc.title,
         status: doc.status,
-        signedAt: doc.signed_at,
-        signedPdfUrl: doc.signed_pdf_url,
+        signedAt: doc.completed_at,
+        signedPdfUrl: doc.file_url,
         createdAt: doc.created_at,
         sentAt: doc.sent_at,
         sentByName: doc.sender?.full_name ?? null,
-        boldsignDocumentId: doc.boldsign_document_id,
+        boldsignDocumentId: doc.source_ref ?? "",
       };
 
       secureDocs[key].versions.push(row);
@@ -296,7 +311,8 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       } else {
         secureDocs[key].latest = versions[0];
         const s = versions[0].status?.toLowerCase();
-        secureDocs[key].status = s === "completed" ? "completed" : "pending";
+        // Spine statuses: 'on_file' is complete; legacy rows may still say 'completed'.
+        secureDocs[key].status = s === "on_file" || s === "completed" ? "completed" : "pending";
       }
     }
 
@@ -329,7 +345,7 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     const completedCount = Object.values(sectionCompletion).filter(Boolean).length;
     const completionPct = Math.round((completedCount / SETUP_SECTION_KEYS.length) * 100);
 
-    // Fall back to legacy bed_arrangements if setup_basic not in property_forms yet
+    // Fall back to legacy bed_arrangements if setup_basic has no form row yet
     const hasSetupInForms = completedCount > 0;
     if (!hasSetupInForms && firstProp?.bed_arrangements) {
       const b = firstProp.bed_arrangements;
@@ -385,7 +401,7 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       };
     }
 
-    // ─── guidebook: read from property_forms first, fall back to legacy ───
+    // ─── guidebook: read from the form row first, fall back to legacy ───
     const guidebookRow = firstPropForms.get("guidebook");
     if (guidebookRow?.completed_at) {
       const spots = guidebookRow.data.spots;

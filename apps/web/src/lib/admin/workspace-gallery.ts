@@ -10,9 +10,8 @@ type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type PropertyRow = Database["public"]["Tables"]["properties"]["Row"];
 type PropertyOwnerRow = Database["public"]["Tables"]["property_owners"]["Row"];
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
-type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
+type DocumentRow = Database["public"]["Tables"]["documents"]["Row"] & { source?: string | null; form_key?: string | null };
 type OwnerMeetingRow = Database["public"]["Tables"]["owner_meetings"]["Row"];
-type SignedDocumentRow = Database["public"]["Tables"]["signed_documents"]["Row"];
 type ContactRowWithOwnership = ContactRow & { ownership_percentage?: number | null };
 
 type ClientMessageRow = {
@@ -530,7 +529,12 @@ function isCompletedTaskStatus(status: string): boolean {
 
 function isCompletedDocumentStatus(status: string): boolean {
   const normalizedStatus = status.toLowerCase();
-  return normalizedStatus === "signed" || normalizedStatus === "completed" || normalizedStatus === "complete";
+  return (
+    normalizedStatus === "on_file" ||
+    normalizedStatus === "signed" ||
+    normalizedStatus === "completed" ||
+    normalizedStatus === "complete"
+  );
 }
 
 function isPendingDocumentStatus(status: string): boolean {
@@ -565,7 +569,6 @@ export async function fetchWorkspaceGallery(options: FetchWorkspaceGalleryOption
     { data: propertyOwners },
     { data: tasks },
     { data: documents },
-    { data: signedDocuments },
     { data: ownerMeetings },
     { data: clientMessages },
   ] = await Promise.all([
@@ -575,8 +578,7 @@ export async function fetchWorkspaceGallery(options: FetchWorkspaceGalleryOption
     supabase.from("properties").select("*").order("created_at", { ascending: true }),
     supabase.from("property_owners").select("owner_id, property_id, role, created_at"),
     supabase.from("tasks").select("id, parent_type, parent_id, linked_contact_id, linked_property_id, status, due_at"),
-    supabase.from("documents").select("id, owner_id, status"),
-    supabase.from("signed_documents").select("id, user_id, status"),
+    untypedSupabase.from<DocumentRow[]>("documents").select("id, owner_id, status, source, form_key"),
     supabase
       .from("owner_meetings")
       .select("id, owner_id, scheduled_at, status")
@@ -652,13 +654,17 @@ export async function fetchWorkspaceGallery(options: FetchWorkspaceGalleryOption
 
   const documentsByWorkspace = new Map<string, number>();
   const documentCountsByWorkspace = new Map<string, { pending: number; completed: number; total: number }>();
-  for (const doc of (documents ?? []) as Pick<DocumentRow, "owner_id">[]) {
+  const documentRows = (documents ?? []) as Pick<DocumentRow, "owner_id" | "status" | "source" | "form_key">[];
+  for (const doc of documentRows) {
+    // Raw form rows (form_key set) are storage detail, not catalog documents.
+    if (doc.form_key) continue;
     const workspaceId = workspaceByProfile.get(doc.owner_id);
     if (!workspaceId) continue;
     documentsByWorkspace.set(workspaceId, (documentsByWorkspace.get(workspaceId) ?? 0) + 1);
   }
-  for (const doc of (signedDocuments ?? []) as Pick<SignedDocumentRow, "user_id" | "status">[]) {
-    const workspaceId = workspaceByProfile.get(doc.user_id);
+  for (const doc of documentRows) {
+    if (doc.source !== "signed_document") continue;
+    const workspaceId = workspaceByProfile.get(doc.owner_id);
     if (!workspaceId) continue;
     const counts = documentCountsByWorkspace.get(workspaceId) ?? { pending: 0, completed: 0, total: 0 };
     counts.total += 1;
