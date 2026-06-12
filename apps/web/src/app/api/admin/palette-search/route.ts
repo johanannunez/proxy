@@ -58,6 +58,8 @@ export async function GET(request: Request) {
       properties: scope === "properties" ? list : [],
       tasks: scope === "tasks" ? list : [],
       projects: scope === "projects" ? list : [],
+      documents: [],
+      templates: [],
     };
     return NextResponse.json(response, {
       headers: { "Cache-Control": "no-store" },
@@ -65,7 +67,10 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json(
-    { contacts: [], owners: [], properties: [], tasks: [], projects: [] } satisfies PaletteSearchResponse,
+    {
+      contacts: [], owners: [], properties: [], tasks: [], projects: [],
+      documents: [], templates: [],
+    } satisfies PaletteSearchResponse,
     { headers: { "Cache-Control": "no-store" } },
   );
 }
