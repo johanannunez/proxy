@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { cookies } from "next/headers";
@@ -16,6 +17,9 @@ import { ServiceWorkerRegistration } from "@/components/workspace/ServiceWorkerR
 import { ImpersonationBanner } from "@/components/workspace/ImpersonationBanner";
 import { WorkspaceMain } from "@/components/workspace/WorkspaceMainContent";
 import { getWorkspaceNotificationPreferences } from "@/lib/workspace/notification-preferences-server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
+import type { OrganizationBranding } from "@/types/organizations";
+import { PROXY_ORG_ID } from "@/types/organizations";
 import { SignOutButton } from "./SignOutButton";
 
 /** Inline unread count query (cannot call "use server" actions from server components) */
@@ -78,6 +82,28 @@ export default async function WorkspaceLayout({
     .select("full_name, role, avatar_url")
     .eq("id", user.id)
     .single();
+
+  // Fetch org branding to inject CSS custom properties for white-label orgs.
+  // The x-org-id header is set by middleware from the request hostname.
+  const headerList = await headers();
+  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const service = createServiceClient();
+  const { data: orgBranding } = await untypedDatabase(service)
+    .from<OrganizationBranding>("organization_branding")
+    .select("primary_color, accent_color")
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  // Only inject inline CSS vars when the org has custom colors set.
+  // Default Proxy palette values from globals.css serve as the fallback.
+  const brandStyle: React.CSSProperties | undefined =
+    orgBranding?.primary_color
+      ? ({
+          "--color-brand": orgBranding.primary_color,
+          "--color-brand-light": orgBranding.accent_color ?? orgBranding.primary_color,
+          "--color-brand-gradient": `linear-gradient(135deg, ${orgBranding.accent_color ?? orgBranding.primary_color}, ${orgBranding.primary_color})`,
+        } as React.CSSProperties)
+      : undefined;
 
   const isAdmin = realProfile?.role === "admin";
 
@@ -186,7 +212,7 @@ export default async function WorkspaceLayout({
       <WorkspaceHeaderProvider>
         <div
           className="flex h-screen overflow-hidden"
-          style={{ backgroundColor: "var(--color-off-white)" }}
+          style={{ backgroundColor: "var(--color-off-white)", ...brandStyle }}
         >
           <WorkspaceIconRail />
           <WorkspaceSidebar
