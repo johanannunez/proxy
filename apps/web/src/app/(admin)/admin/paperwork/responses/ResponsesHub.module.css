@@ -73,9 +73,9 @@
   margin: 0 32px 12px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #b91c1c;
+  background: color-mix(in srgb, var(--color-error, #dc2626) 7%, var(--surface-base, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-error, #dc2626) 35%, transparent);
+  color: var(--status-danger-fg, #b91c1c);
   font-size: 13px;
 }
 
@@ -121,7 +121,7 @@
 
 .clearFiltersBtn:hover {
   color: var(--text-primary, #111827);
-  background: rgba(0, 0, 0, 0.04);
+  background: color-mix(in srgb, var(--text-primary, #111827) 5%, transparent);
 }
 
 .clearFiltersBtn:focus-visible {

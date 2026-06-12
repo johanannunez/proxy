@@ -6,6 +6,25 @@
   padding: 0 32px 32px;
 }
 
+@media (max-width: 640px) {
+  .queue {
+    padding: 0 16px 24px;
+  }
+
+  .emptyState {
+    margin: 0 16px 24px;
+  }
+
+  .card {
+    flex-wrap: wrap;
+  }
+
+  .cardActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 /* ─── Card ─── */
 .card {
   display: flex;
@@ -15,22 +34,28 @@
   border-radius: var(--radius-md, 12px);
   background: var(--surface-base, #fff);
   border: 1px solid var(--border, #e5e7eb);
-  border-left-width: 3px;
+  border-left-width: 4px;
   box-shadow: var(--shadow-card);
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s var(--ease-spring, ease);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--border-strong, #d1d5db);
+  transform: translateY(-1px);
 }
 
+/* Urgency rail: red = high, amber = medium, slate = low */
 .cardHigh {
-  border-left-color: var(--color-error, #dc2626);
+  border-left-color: var(--color-error, #dc2626) !important;
 }
 
 .cardMedium {
-  border-left-color: #d97706;
+  border-left-color: var(--status-warning, #d97706) !important;
+}
+
+.cardLow {
+  border-left-color: var(--text-tertiary, #94a3b8) !important;
 }
 
 /* ─── Avatar ─── */
@@ -87,8 +112,8 @@
 }
 
 .badgeDeclined {
-  background: rgba(220, 38, 38, 0.09);
-  color: #b91c1c;
+  background: color-mix(in srgb, var(--color-error, #dc2626) 9%, transparent);
+  color: var(--status-danger-fg, #b91c1c);
 }
 
 .badgeStuck {
@@ -97,18 +122,18 @@
 }
 
 .badgeExpiring {
-  background: rgba(217, 119, 6, 0.1);
-  color: #b45309;
+  background: color-mix(in srgb, var(--status-warning, #d97706) 10%, transparent);
+  color: var(--status-warning-fg, #b45309);
 }
 
 .badgeCountersign {
   background: rgba(2, 170, 235, 0.1);
-  color: #0369a1;
+  color: var(--status-info-fg, #0369a1);
 }
 
 .badgeOverdue {
-  background: rgba(220, 38, 38, 0.09);
-  color: #b91c1c;
+  background: color-mix(in srgb, var(--color-error, #dc2626) 9%, transparent);
+  color: var(--status-danger-fg, #b91c1c);
 }
 
 .cardBottomRow {
@@ -145,7 +170,7 @@
 }
 
 .waitAmber {
-  color: #b45309;
+  color: var(--status-warning-fg, #b45309);
 }
 
 .waitRed {
@@ -246,12 +271,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  background: rgba(22, 163, 74, 0.1);
+  background: color-mix(in srgb, var(--color-success, #16a34a) 9%, var(--surface-base, #fff));
   color: var(--color-success, #16a34a);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.emptyBody {
+  max-width: 380px;
 }
 
 .emptyTitle {

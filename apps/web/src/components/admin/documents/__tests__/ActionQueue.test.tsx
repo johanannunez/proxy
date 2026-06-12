@@ -26,7 +26,7 @@ describe("ActionQueue", () => {
   it("renders the all-caught-up empty state", () => {
     render(<ActionQueue items={[]} onAction={vi.fn()} onView={vi.fn()} />);
     expect(screen.getByText("No actions needed")).toBeInTheDocument();
-    expect(screen.getByText("You're all caught up.")).toBeInTheDocument();
+    expect(screen.getByText(/You're all caught up\./)).toBeInTheDocument();
   });
 
   it("renders owner, document, kind badge, and waiting time", () => {
