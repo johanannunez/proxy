@@ -51,7 +51,6 @@ export async function saveBrandingSettings(
 ): Promise<BrandingActionResult> {
   const headerList = await headers();
   const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
-  const planTier = headerList.get("x-org-plan") ?? "starter";
 
   const denied = await requireBrandingAccess(orgId);
   if (denied) return { success: false, error: denied };
@@ -61,10 +60,19 @@ export async function saveBrandingSettings(
   }
 
   // Custom domains are a white-label feature. The UI hides the field on lower
-  // tiers, but the server is the enforcement point.
+  // tiers, but the server is the enforcement point. Plan tier comes from the
+  // database, not the x-org-plan header: the header reflects a cached
+  // middleware lookup and entitlement checks need the source of truth.
   const normalizedDomain = customDomain?.trim().toLowerCase() || null;
-  if (normalizedDomain && planTier !== "white_label") {
-    return { success: false, error: "Custom domains require the White-label plan." };
+  if (normalizedDomain) {
+    const { data: org } = await untypedDatabase(createServiceClient())
+      .from<{ plan_tier: string }>("organizations")
+      .select("plan_tier")
+      .eq("id", orgId)
+      .maybeSingle();
+    if (org?.plan_tier !== "white_label") {
+      return { success: false, error: "Custom domains require the White-label plan." };
+    }
   }
   if (normalizedDomain && !HOSTNAME.test(normalizedDomain)) {
     return { success: false, error: "Enter a valid domain like docs.yourcompany.com." };
