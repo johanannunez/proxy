@@ -37,7 +37,13 @@ export async function listDocumentTemplates(orgId?: string): Promise<DocumentTem
     console.error("[document-templates] list:", error.message);
     return [];
   }
-  return (data ?? []) as DocumentTemplate[];
+  return ((data ?? []) as DocumentTemplate[]).map(normalizeTemplate);
+}
+
+/** Tracking columns ship in migration 20260612090000; rows read before it is
+    applied lack them, so default to untracked rather than undefined. */
+function normalizeTemplate(row: DocumentTemplate): DocumentTemplate {
+  return { ...row, tracked: row.tracked ?? false, category: row.category ?? null };
 }
 
 /**
@@ -120,7 +126,8 @@ export async function getDocumentTemplate(id: string): Promise<DocumentTemplate 
     .select("*")
     .eq("id", id)
     .maybeSingle();
-  return (data as DocumentTemplate | null) ?? null;
+  const row = data as DocumentTemplate | null;
+  return row ? normalizeTemplate(row) : null;
 }
 
 export async function createDocumentTemplateRecord(

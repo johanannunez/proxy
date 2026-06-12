@@ -87,6 +87,12 @@ export type Form = {
   slug: string | null;
   is_active: boolean;
   created_by: string | null;
+  /** Coverage tracking + archive (migration 20260612090000_template_tracking).
+      Rows read before the migration runs lack these columns; the forms helpers
+      normalize to false/null. */
+  tracked: boolean;
+  category: string | null;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -107,6 +113,9 @@ export type UpdateFormInput = {
   is_public?: boolean;
   slug?: string | null;
   is_active?: boolean;
+  tracked?: boolean;
+  category?: string | null;
+  archived_at?: string | null;
 };
 
 export type FormResponse = {

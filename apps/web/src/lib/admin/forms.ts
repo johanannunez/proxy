@@ -33,6 +33,17 @@ function generateSlug(): string {
 
 export type FormWithCount = Form & { response_count: number };
 
+/** Tracking/archive columns ship in migration 20260612090000; rows read
+    before it is applied lack them, so normalize to safe defaults. */
+function normalizeForm<T extends Form>(row: T): T {
+  return {
+    ...row,
+    tracked: row.tracked ?? false,
+    category: row.category ?? null,
+    archived_at: row.archived_at ?? null,
+  };
+}
+
 export async function listForms(orgId: string): Promise<FormWithCount[]> {
   // form_responses is not in generated types; cast via any-typed db().
   const { data, error } = await db()
@@ -45,21 +56,23 @@ export async function listForms(orgId: string): Promise<FormWithCount[]> {
     return [];
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((item: any) => ({
+  return ((data ?? []).map((item: any) => ({
     ...item,
     form_responses: undefined,
     response_count: (item.form_responses as Array<{ count: number }>)?.[0]?.count ?? 0,
-  })) as FormWithCount[];
+  })) as FormWithCount[]).map(normalizeForm);
 }
 
 export async function getForm(id: string): Promise<Form | null> {
   const { data } = await db().from("forms").select("*").eq("id", id).maybeSingle();
-  return (data as Form | null) ?? null;
+  const row = data as Form | null;
+  return row ? normalizeForm(row) : null;
 }
 
 export async function getFormBySlug(slug: string): Promise<Form | null> {
   const { data } = await db().from("forms").select("*").eq("slug", slug).maybeSingle();
-  return (data as Form | null) ?? null;
+  const row = data as Form | null;
+  return row ? normalizeForm(row) : null;
 }
 
 export async function createForm(input: CreateFormInput): Promise<Form | null> {
@@ -95,7 +108,7 @@ export async function updateForm(id: string, updates: UpdateFormInput): Promise<
     console.error("[forms] update:", error.message);
     return null;
   }
-  return data as Form;
+  return normalizeForm(data as Form);
 }
 
 export async function publishForm(id: string): Promise<Form | null> {

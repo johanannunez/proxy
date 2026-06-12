@@ -28,6 +28,9 @@ function buildForm(fields: FormField[]): Form {
     slug: "test",
     is_active: true,
     created_by: null,
+    tracked: false,
+    category: null,
+    archived_at: null,
     created_at: "2026-06-01T00:00:00Z",
     updated_at: "2026-06-01T00:00:00Z",
   };

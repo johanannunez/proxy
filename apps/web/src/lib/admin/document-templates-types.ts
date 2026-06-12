@@ -12,6 +12,11 @@ export type DocumentTemplate = {
   gate_step: number | null;
   is_system: boolean;
   is_active: boolean;
+  /** Coverage tracking (migration 20260612090000_template_tracking). Until the
+      migration runs the DB rows lack these columns; helpers normalize to
+      false/null so the code path stays safe either way. */
+  tracked: boolean;
+  category: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -36,4 +41,6 @@ export type UpdateDocumentTemplateInput = Partial<Pick<
   | "requires_countersignature"
   | "gate_step"
   | "is_active"
+  | "tracked"
+  | "category"
 >>;
