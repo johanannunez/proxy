@@ -60,7 +60,7 @@
     "posthog-js": "^1.367.0",
     "qrcode.react": "^4.2.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react-dom": "19.2.5",
     "react-easy-crop": "^5.5.7",
     "react-email": "^5.2.10",
     "react-map-gl": "^8.1.1",
