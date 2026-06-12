@@ -9,6 +9,7 @@ import type {
   FormSchema,
 } from "./forms-types";
 import { DEFAULT_FORM_SCHEMA } from "./forms-types";
+import type { UnifiedFormResponse } from "./responses-csv";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = any;
@@ -295,5 +296,36 @@ export async function getRespondentCrossFormData(
     completed_at: r.completed_at ?? null,
     data: r.data ?? {},
     property_id: r.property_id ?? null,
+  }));
+}
+
+// ── Unified cross-form responses view (admin/paperwork/responses) ─────────────
+
+export async function listAllFormResponses(): Promise<UnifiedFormResponse[]> {
+  const { data, error } = await db()
+    .from("form_responses")
+    .select(
+      `id, form_id, property_id, data, submitted_at, completed_at,
+       forms:form_id(name),
+       profiles:respondent_profile_id(full_name, email),
+       properties:property_id(name)`,
+    )
+    .order("submitted_at", { ascending: false });
+  if (error) {
+    console.error("[forms] listAllFormResponses:", error.message);
+    return [];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    form_id: r.form_id,
+    form_name: r.forms?.name ?? "Untitled form",
+    respondent_name: r.profiles?.full_name ?? null,
+    respondent_email: r.profiles?.email ?? null,
+    property_id: r.property_id ?? null,
+    property_name: r.properties?.name ?? null,
+    submitted_at: r.submitted_at,
+    completed_at: r.completed_at ?? null,
+    data: r.data ?? {},
   }));
 }

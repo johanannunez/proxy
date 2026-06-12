@@ -1,0 +1,269 @@
+/* ─── Queue list ─── */
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 32px 32px;
+}
+
+/* ─── Card ─── */
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px 14px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-left-width: 3px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong, #d1d5db);
+}
+
+.cardHigh {
+  border-left-color: var(--color-error, #dc2626);
+}
+
+.cardMedium {
+  border-left-color: #d97706;
+}
+
+/* ─── Avatar ─── */
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ─── Body ─── */
+.cardBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ownerName {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kindBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badgeDeclined {
+  background: rgba(220, 38, 38, 0.09);
+  color: #b91c1c;
+}
+
+.badgeStuck {
+  background: rgba(27, 119, 190, 0.1);
+  color: var(--color-brand, #1b77be);
+}
+
+.badgeExpiring {
+  background: rgba(217, 119, 6, 0.1);
+  color: #b45309;
+}
+
+.badgeCountersign {
+  background: rgba(2, 170, 235, 0.1);
+  color: #0369a1;
+}
+
+.badgeOverdue {
+  background: rgba(220, 38, 38, 0.09);
+  color: #b91c1c;
+}
+
+.cardBottomRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.docTitle {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metaSep {
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+  flex-shrink: 0;
+}
+
+.waiting {
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.waitNeutral {
+  color: var(--text-tertiary, #9ca3af);
+  font-weight: 500;
+}
+
+.waitAmber {
+  color: #b45309;
+}
+
+.waitRed {
+  color: var(--color-error, #dc2626);
+}
+
+/* ─── Actions ─── */
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.viewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.viewLink:hover {
+  color: var(--text-primary, #111827);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.viewLink:focus-visible {
+  outline: 2px solid var(--color-brand-light, #02aaeb);
+  outline-offset: 2px;
+}
+
+.viewLink:active {
+  opacity: 0.8;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-brand, #1b77be);
+  background: var(--color-brand, #1b77be);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(27, 119, 190, 0.3);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: #15619c;
+  border-color: #15619c;
+  box-shadow: 0 2px 6px rgba(27, 119, 190, 0.35);
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid var(--color-brand-light, #02aaeb);
+  outline-offset: 2px;
+}
+
+.primaryBtn:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 32px;
+  margin: 0 32px 32px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-base, #fff);
+  border: 1px dashed var(--border, #e5e7eb);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--color-success, #16a34a);
+  margin-bottom: 4px;
+}
+
+.emptyTitle {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.emptyBody {
+  font-size: 12.5px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}

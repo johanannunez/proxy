@@ -220,17 +220,18 @@
 
 /*
   Matrix grid:
-  Col 1: Owner (flexible)
-  Cols 2-6: 5 SecureDoc columns (76px each)
-  Col 7: visual gap/divider (20px)
-  Cols 8-10: 3 Form columns (76px each)
-  Col 11: count
+  Col 1: bulk-select checkbox (28px)
+  Col 2: Owner (flexible)
+  Cols 3-7: 5 SecureDoc columns (76px each)
+  Col 8: visual gap/divider (20px)
+  Cols 9-11: 3 Form columns (76px each)
+  Col 12: count
 */
 .matrixGroupHeader,
 .matrixSubHeader,
 .matrixRow {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) repeat(5, 76px) 20px repeat(3, 76px) 62px;
+  grid-template-columns: 28px minmax(180px, 1fr) repeat(5, 76px) 20px repeat(3, 76px) 62px;
   align-items: stretch;
 }
 
@@ -242,7 +243,7 @@
 }
 
 .thSecure {
-  grid-column: 2 / 7;
+  grid-column: 3 / 8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,7 +258,7 @@
 }
 
 .thForms {
-  grid-column: 8 / 11;
+  grid-column: 9 / 12;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -540,5 +541,99 @@
   background: #fef2f2;
   border: 1px solid #fca5a5;
   color: #b91c1c;
+  font-size: 13px;
+}
+
+/* ─── Header right cluster (search + filter chips) ─── */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* ─── Needs Action chip attention state ─── */
+.chipAttention {
+  border-color: rgba(220, 38, 38, 0.35);
+  color: #b91c1c;
+}
+
+.chipAttention .chipCount {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+.chipAttention:hover:not(.chipActive) {
+  border-color: rgba(220, 38, 38, 0.55);
+  color: #991b1b;
+}
+
+/* ─── Bulk-select checkboxes ─── */
+.checkCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: default;
+}
+
+.rowCheckbox {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-strong, #d1d5db);
+  background: var(--surface-base, #fff);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+.rowCheckbox:hover {
+  border-color: var(--color-brand, #1b77be);
+}
+
+.rowCheckbox:focus-visible {
+  outline: 2px solid var(--color-brand-light, #02aaeb);
+  outline-offset: 2px;
+}
+
+.rowCheckbox:checked {
+  background: var(--color-brand, #1b77be);
+  border-color: var(--color-brand, #1b77be);
+}
+
+.rowCheckbox:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ─── Selected matrix row ─── */
+.matrixRowSelected {
+  background: rgba(2, 170, 235, 0.045);
+  border-left-color: var(--color-brand, #1b77be);
+}
+
+.matrixRowSelected:hover {
+  border-left-color: var(--color-brand, #1b77be);
+}
+
+/* ─── Success banner (mirrors errorBanner) ─── */
+.successBanner {
+  margin: 0 32px 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.35);
+  color: #15803d;
   font-size: 13px;
 }
