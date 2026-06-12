@@ -181,6 +181,35 @@ export async function createStripeSubscription(params: {
   planTier: "pro" | "white_label";
   paymentMethodId: string;
 }): Promise<CreateSubscriptionResult> {
+  // Server actions are directly callable endpoints: without this gate any
+  // caller could attach payment methods or rewrite Stripe ids on an arbitrary
+  // org. The signup flow always has the org_owner membership in place before
+  // step 4 (createOrganization seeds it), so legitimate callers pass.
+  const authClient = await createClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+  if (!user) {
+    return {
+      subscriptionId: "",
+      error: "Your session expired. Log in and upgrade from Settings.",
+    };
+  }
+
+  const membershipDb = untypedDatabase(createServiceClient());
+  const { data: membership } = await membershipDb
+    .from<{ role: string }>("organization_members")
+    .select("role")
+    .eq("org_id", params.orgId)
+    .eq("profile_id", user.id)
+    .maybeSingle();
+  if (!membership || !["org_owner", "org_admin"].includes(membership.role)) {
+    return {
+      subscriptionId: "",
+      error: "You are not authorized to manage billing for this workspace.",
+    };
+  }
+
   if (!isStripeConfigured()) {
     return {
       subscriptionId: "",
