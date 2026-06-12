@@ -111,6 +111,39 @@ export async function updateForm(id: string, updates: UpdateFormInput): Promise<
   return normalizeForm(data as Form);
 }
 
+/** Copy a form master (schema + meta) into a new unpublished draft. */
+export async function duplicateForm(id: string, createdBy?: string): Promise<Form | null> {
+  const source = await getForm(id);
+  if (!source) return null;
+  const { data, error } = await db()
+    .from("forms")
+    .insert({
+      org_id: source.org_id,
+      name: `${source.name} (copy)`,
+      description: source.description,
+      schema: source.schema,
+      is_public: source.is_public,
+      is_active: false,
+      created_by: createdBy ?? null,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    console.error("[forms] duplicate:", error.message);
+    return null;
+  }
+  return normalizeForm(data as Form);
+}
+
+/** Archive hides the form from the active list and unpublishes it. */
+export async function archiveForm(id: string): Promise<Form | null> {
+  return updateForm(id, { archived_at: new Date().toISOString(), is_active: false });
+}
+
+export async function unarchiveForm(id: string): Promise<Form | null> {
+  return updateForm(id, { archived_at: null });
+}
+
 export async function publishForm(id: string): Promise<Form | null> {
   const form = await getForm(id);
   if (!form) return null;

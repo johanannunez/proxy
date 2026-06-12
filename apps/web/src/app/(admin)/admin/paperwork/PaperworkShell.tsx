@@ -2,10 +2,11 @@
 
 /**
  * PaperworkShell — the shared chrome for the unified Paperwork section.
- * One page, two tabs (Documents | Templates), one global "+ New document"
- * button that opens the three-path create chooser. Per the 2026-06-12
- * paperwork unification design, Forms and Responses stop being nav concepts:
- * everything created here is saved as a template automatically.
+ * Three tabs (Documents | Forms | Templates) and one global "+ New document"
+ * button that opens the three-path create chooser. Per the 2026-06-12 IA
+ * amendment: Documents holds tracked instances, Forms holds form masters
+ * (Hubflo-style library), Templates holds signature/PDF masters plus the
+ * Proxy library. Everything created here is saved as a master automatically.
  */
 
 import { useState, type ReactNode } from "react";
@@ -24,10 +25,11 @@ import {
 import { createFormAction } from "./templates/form-actions";
 import styles from "./PaperworkShell.module.css";
 
-type PaperworkTab = "documents" | "templates";
+type PaperworkTab = "documents" | "forms" | "templates";
 
 const TABS: Array<{ key: PaperworkTab; label: string; href: string }> = [
   { key: "documents", label: "Documents", href: "/admin/paperwork" },
+  { key: "forms", label: "Forms", href: "/admin/paperwork/forms" },
   { key: "templates", label: "Templates", href: "/admin/paperwork/templates" },
 ];
 
