@@ -20,7 +20,11 @@ import {
   ShieldCheck,
   Signature,
 } from "@phosphor-icons/react";
-import { getDocusealCustomCss, DOCUSEAL_I18N } from "@/lib/signing/docuseal-theme";
+import {
+  getDocusealCustomCss,
+  getDocusealPageBgHex,
+  DOCUSEAL_I18N,
+} from "@/lib/signing/docuseal-theme";
 import type { DocumentHub, HubItem } from "@/lib/documents/workspace";
 import { DocumentPacket } from "@/components/workspace/documents/DocumentPacket";
 import { PacketStepper } from "@/components/workspace/documents/PacketStepper";
@@ -312,7 +316,7 @@ function SignDrawer({ item, onClose }: { item: PacketItem; onClose: () => void }
               customCss={customCss}
               i18n={DOCUSEAL_I18N}
               withTitle={false}
-              backgroundColor={isDark ? "#1a1a1a" : "#f8f7f6"}
+              backgroundColor={getDocusealPageBgHex(isDark)}
               onLoad={() => setFormLoaded(true)}
               onComplete={() => setSigned(true)}
             />

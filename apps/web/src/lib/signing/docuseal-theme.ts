@@ -19,33 +19,59 @@ type ThemeColors = {
   brandLight: string;
 };
 
+/**
+ * Values are var(--token, #fallback): inside the app the globals.css tokens
+ * inherit through DocuSeal's shadow boundary; the hex fallbacks keep the form
+ * branded in any context without the tokens (previews, tests).
+ * Note globals.css dark tokens reuse the same names, so LIGHT/DARK here only
+ * differ in fallbacks and the values with no matching token.
+ */
 const LIGHT: ThemeColors = {
-  pageBg: "#f8f7f6",
-  cardBg: "#ffffff",
-  cardBorder: "#e2dfdc",
-  inputBg: "#ffffff",
-  inputBorder: "#e2dfdc",
-  textPrimary: "#1a1a1a",
-  textSecondary: "#6b7280",
-  brand: "#1b77be",
-  brandLight: "#02aaeb",
+  pageBg: "var(--color-warm-gray-50, #f8f7f6)",
+  cardBg: "var(--color-white, #ffffff)",
+  cardBorder: "var(--color-warm-gray-200, #e2dfdc)",
+  inputBg: "var(--color-white, #ffffff)",
+  inputBorder: "var(--color-warm-gray-200, #e2dfdc)",
+  textPrimary: "var(--color-text-primary, #1a1a1a)",
+  textSecondary: "var(--color-text-secondary, #6b7280)",
+  brand: "var(--color-brand, #1b77be)",
+  brandLight: "var(--color-brand-light, #02aaeb)",
 };
 
 const DARK: ThemeColors = {
-  pageBg: "#1a1a1a",
-  cardBg: "#141414",
-  cardBorder: "#3a3a3a",
-  inputBg: "#222222",
-  inputBorder: "#3a3a3a",
-  textPrimary: "#ececec",
-  textSecondary: "#a0a0a0",
-  brand: "#1b77be",
-  brandLight: "#02aaeb",
+  pageBg: "var(--color-off-white, #1a1a1a)",
+  cardBg: "var(--color-white, #141414)",
+  cardBorder: "var(--color-warm-gray-200, #3a3a3a)",
+  inputBg: "var(--color-warm-gray-50, #222222)",
+  inputBorder: "var(--color-warm-gray-200, #3a3a3a)",
+  textPrimary: "var(--color-text-primary, #ececec)",
+  textSecondary: "var(--color-text-secondary, #a0a0a0)",
+  brand: "var(--color-brand, #1b77be)",
+  brandLight: "var(--color-brand-light, #02aaeb)",
 };
+
+/**
+ * Page background behind the form. The DocusealForm backgroundColor prop
+ * requires a plain HEX value, so this cannot be a var() reference.
+ */
+export function getDocusealPageBgHex(isDark: boolean): string {
+  return isDark ? "#1a1a1a" : "#f8f7f6";
+}
 
 function buildCss(c: ThemeColors): string {
   return `
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Geist:wght@400;500;600;700&display=swap');
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Sora';
+  src: url('/fonts/sora-variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-display: swap;
+}
 
 /* Base */
 body, .form-container, .modal-box, input, button, select, textarea {
@@ -83,6 +109,7 @@ body, #scrollbox { background-color: ${c.pageBg} !important; }
 }
 
 /* Inputs */
+textarea.base-input { height: auto !important; }
 .base-input {
   border: 1.5px solid ${c.inputBorder} !important;
   border-radius: 10px !important;
@@ -102,6 +129,22 @@ body, #scrollbox { background-color: ${c.pageBg} !important; }
   outline: none !important;
 }
 .base-input::placeholder { color: ${c.textSecondary} !important; }
+
+/* Multiline variant: same treatment, natural height */
+.base-textarea {
+  border: 1.5px solid ${c.inputBorder} !important;
+  border-radius: 10px !important;
+  background: ${c.inputBg} !important;
+  color: ${c.textPrimary} !important;
+  font-size: 15px !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease !important;
+}
+.base-textarea:focus {
+  border-color: ${c.brand} !important;
+  box-shadow: 0 0 0 3px rgba(2,170,235,0.18) !important;
+  outline: none !important;
+}
 
 /* Primary buttons */
 .base-button, .submit-form-button, #submit_form_button {
