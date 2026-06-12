@@ -33,7 +33,9 @@ export function FormPreviewPanel({ form }: Props) {
                 <p className={styles.formDescription}>{form.description}</p>
               )}
             </div>
-            <FormRenderer form={form} readOnly />
+            {/* Interactive preview so conditional visibility can be exercised
+                live; entered values persist while conditions are edited. */}
+            <FormRenderer form={form} preview />
           </div>
         )}
       </div>

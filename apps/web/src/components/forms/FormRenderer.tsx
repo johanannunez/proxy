@@ -3,6 +3,10 @@
 import { useState, useRef, type FormEvent } from "react";
 import { SpinnerGap } from "@phosphor-icons/react";
 import type { Form, FormField } from "@/lib/admin/forms-types";
+import {
+  getVisibleFieldIds,
+  stripHiddenValues,
+} from "@/lib/admin/forms-conditions";
 import styles from "./FormRenderer.module.css";
 import { FieldRenderer } from "./FieldRenderer";
 
@@ -10,6 +14,11 @@ type Props = {
   form: Form;
   onSubmit?: (data: Record<string, unknown>) => Promise<void>;
   readOnly?: boolean;
+  /**
+   * Builder preview mode: fields stay interactive so conditional visibility
+   * can be exercised live, but the form cannot be submitted.
+   */
+  preview?: boolean;
 };
 
 function validateField(field: FormField, value: unknown): string | null {
@@ -29,12 +38,20 @@ function validateField(field: FormField, value: unknown): string | null {
   return null;
 }
 
-export function FormRenderer({ form, onSubmit, readOnly = false }: Props) {
+export function FormRenderer({
+  form,
+  onSubmit,
+  readOnly = false,
+  preview = false,
+}: Props) {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Conditional visibility, resolved against live values on every render.
+  const visibleFieldIds = getVisibleFieldIds(form.schema.fields, values);
 
   function setValue(id: string, value: unknown) {
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -45,8 +62,10 @@ export function FormRenderer({ form, onSubmit, readOnly = false }: Props) {
     e.preventDefault();
     if (!onSubmit) return;
 
+    // Hidden fields never block submission and never reach the payload.
     const newErrors: Record<string, string> = {};
     for (const field of form.schema.fields) {
+      if (!visibleFieldIds.has(field.id)) continue;
       const err = validateField(field, values[field.id]);
       if (err) newErrors[field.id] = err;
     }
@@ -55,7 +74,7 @@ export function FormRenderer({ form, onSubmit, readOnly = false }: Props) {
 
     setSubmitting(true);
     try {
-      await onSubmit(values);
+      await onSubmit(stripHiddenValues(form.schema.fields, values));
       setSubmitted(true);
     } finally {
       setSubmitting(false);
@@ -77,7 +96,14 @@ export function FormRenderer({ form, onSubmit, readOnly = false }: Props) {
   return (
     <form ref={formRef} onSubmit={handleSubmit} className={styles.form} noValidate>
       {form.schema.fields.map((field) => (
-        <div key={field.id} className={styles.fieldWrap}>
+        <div
+          key={field.id}
+          className={styles.fieldWrap}
+          // Hidden, not unmounted, so values survive visibility flips.
+          style={visibleFieldIds.has(field.id) ? undefined : { display: "none" }}
+          data-field-id={field.id}
+          data-hidden={visibleFieldIds.has(field.id) ? undefined : "true"}
+        >
           <FieldRenderer
             field={field}
             value={values[field.id]}
@@ -88,7 +114,7 @@ export function FormRenderer({ form, onSubmit, readOnly = false }: Props) {
         </div>
       ))}
 
-      {!readOnly && (
+      {!readOnly && !preview && (
         <div className={styles.submitRow}>
           <button
             type="submit"

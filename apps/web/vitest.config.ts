@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       "src/**/*.test.ts",
       "src/components/**/__tests__/**/*.test.{ts,tsx}",
+      "src/app/**/__tests__/**/*.test.{ts,tsx}",
     ],
     // Component tests opt into jsdom via a `// @vitest-environment jsdom`
     // docblock; lib tests stay on node.

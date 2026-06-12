@@ -11,6 +11,16 @@ import type {
 import { DEFAULT_FORM_SCHEMA } from "./forms-types";
 import type { UnifiedFormResponse } from "./responses-csv";
 
+// Conditional visibility engine lives in the client-safe forms-conditions
+// module (the builder UI and public renderer import it directly); re-export
+// here so server-side code keeps a single entry point.
+export {
+  evaluateConditions,
+  getVisibleFieldIds,
+  stripHiddenValues,
+  MAX_FIELD_CONDITIONS,
+} from "./forms-conditions";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DB = any;
 function db(): DB {

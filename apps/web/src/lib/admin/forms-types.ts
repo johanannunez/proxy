@@ -15,6 +15,44 @@ export type FormFieldType =
   | "description"
   | "divider";
 
+export type ConditionOperator =
+  | "equals"
+  | "not_equals"
+  | "contains"
+  | "not_contains"
+  | "is_empty"
+  | "is_not_empty";
+
+export type FieldCondition = {
+  /** fieldId of the field whose value is checked. */
+  field: string;
+  operator: ConditionOperator;
+  /** Not needed for is_empty / is_not_empty. */
+  value?: string;
+};
+
+export type FieldConditionGroup = {
+  combinator: "and" | "or";
+  conditions: FieldCondition[];
+};
+
+export const CONDITION_OPERATOR_LABELS: Record<ConditionOperator, string> = {
+  equals: "equals",
+  not_equals: "does not equal",
+  contains: "contains",
+  not_contains: "does not contain",
+  is_empty: "is empty",
+  is_not_empty: "is not empty",
+};
+
+/** Operators that compare against a typed value. */
+export const VALUE_OPERATORS: ConditionOperator[] = [
+  "equals",
+  "not_equals",
+  "contains",
+  "not_contains",
+];
+
 export type FormField = {
   id: string;
   type: FormFieldType;
@@ -24,6 +62,8 @@ export type FormField = {
   options?: string[];
   validation?: Record<string, unknown>;
   ratingMax?: number;
+  /** If set, the field is hidden unless the conditions pass. */
+  conditions?: FieldConditionGroup;
 };
 
 export type FormSchema = {

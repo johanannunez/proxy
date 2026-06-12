@@ -11,6 +11,7 @@ import {
   createFormResponse,
   getForm,
   getRespondentCrossFormData,
+  stripHiddenValues,
   type RespondentFormEntry,
 } from "@/lib/admin/forms";
 import type { FormSchema } from "@/lib/admin/forms-types";
@@ -166,11 +167,16 @@ export async function submitFormResponseAction(
   }
   const userId = await getOptionalUserId();
 
+  // Trust boundary: re-resolve conditional visibility server-side so values
+  // for hidden fields (or keys not in the schema) never reach storage, even
+  // from a tampered client.
+  const visibleData = stripHiddenValues(form.schema.fields, data);
+
   const result = await createFormResponse({
     form_id: formId,
     respondent_profile_id: userId,
     property_id: propertyId ?? null,
-    data,
+    data: visibleData,
     metadata: {},
   });
   if (!result) return { ok: false, error: "Failed to submit response." };

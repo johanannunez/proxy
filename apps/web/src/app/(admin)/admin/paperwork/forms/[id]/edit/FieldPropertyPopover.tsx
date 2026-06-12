@@ -4,15 +4,17 @@ import { useEffect, useRef } from "react";
 import { X, Plus, Trash } from "@phosphor-icons/react";
 import type { FormField } from "@/lib/admin/forms-types";
 import { FIELD_TYPE_LABELS } from "@/lib/admin/forms-types";
+import { ConditionEditor } from "./ConditionEditor";
 import styles from "./FieldPropertyPopover.module.css";
 
 type Props = {
   field: FormField;
+  allFields: FormField[];
   onUpdate: (patch: Partial<FormField>) => void;
   onClose: () => void;
 };
 
-export function FieldPropertyPopover({ field, onUpdate, onClose }: Props) {
+export function FieldPropertyPopover({ field, allFields, onUpdate, onClose }: Props) {
   const labelInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -181,6 +183,13 @@ export function FieldPropertyPopover({ field, onUpdate, onClose }: Props) {
             </div>
           </div>
         )}
+
+        {/* Conditional visibility */}
+        <ConditionEditor
+          field={field}
+          allFields={allFields}
+          onChange={(conditions) => onUpdate({ conditions })}
+        />
       </div>
     </div>
   );

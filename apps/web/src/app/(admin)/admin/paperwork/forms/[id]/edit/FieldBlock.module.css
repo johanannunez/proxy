@@ -24,6 +24,23 @@
   font-size: 0.875rem;
 }
 
+.conditionalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1875rem;
+  margin-left: 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  color: var(--color-brand);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  align-self: center;
+  flex-shrink: 0;
+}
+
 .inputMock {
   padding: 0.5625rem 0.75rem;
   background: var(--color-warm-gray-50, #f8f7f6);

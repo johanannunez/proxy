@@ -169,7 +169,21 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   }
 
   function removeField(id: string) {
-    updateFields(fields.filter((f) => f.id !== id));
+    // Strip conditions that reference the removed field so dependents never
+    // evaluate against a controller that no longer exists.
+    const next = fields
+      .filter((f) => f.id !== id)
+      .map((f) => {
+        if (!f.conditions) return f;
+        const conditions = f.conditions.conditions.filter((c) => c.field !== id);
+        if (conditions.length === f.conditions.conditions.length) return f;
+        return {
+          ...f,
+          conditions:
+            conditions.length === 0 ? undefined : { ...f.conditions, conditions },
+        };
+      });
+    updateFields(next);
     if (selectedFieldId === id) setSelectedFieldId(null);
   }
 
@@ -366,6 +380,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
         {selectedField ? (
           <FieldPropertyPopover
             field={selectedField}
+            allFields={fields}
             onUpdate={(patch) => updateField(selectedField.id, patch)}
             onClose={() => setSelectedFieldId(null)}
           />

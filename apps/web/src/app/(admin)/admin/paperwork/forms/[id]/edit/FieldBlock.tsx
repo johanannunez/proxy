@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowsSplit } from "@phosphor-icons/react";
 import type { FormField } from "@/lib/admin/forms-types";
 import styles from "./FieldBlock.module.css";
 
@@ -10,10 +11,18 @@ type Props = {
 export function FieldBlock({ field }: Props) {
   const { type, label, required, placeholder, options, ratingMax } = field;
 
+  const isConditional = (field.conditions?.conditions.length ?? 0) > 0;
+
   const labelEl = (
     <div className={styles.label}>
       {label || <span className={styles.placeholder}>Untitled field</span>}
       {required && <span className={styles.required}>*</span>}
+      {isConditional && (
+        <span className={styles.conditionalBadge} title="Shown conditionally">
+          <ArrowsSplit size={10} weight="bold" />
+          Conditional
+        </span>
+      )}
     </div>
   );
 
