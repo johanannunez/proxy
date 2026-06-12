@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import {
   listForms,
   listRespondentProfiles,
@@ -6,23 +7,25 @@ import {
   type RespondentProfile,
   type FormPropertyOption,
 } from "@/lib/admin/forms";
+import { PROXY_ORG_ID } from "@/types/organizations";
 import { FormsHub } from "./FormsHub";
 
 export const dynamic = "force-dynamic";
 
-const PROXY_ORG_ID = process.env.PROXY_ORG_ID ?? "00000000-0000-0000-0000-000000000001";
-
 export default async function FormsPage() {
+  const headerList = await headers();
+  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+
   const [forms, respondents, propertyOptions] = await Promise.all([
-    listForms(PROXY_ORG_ID),
-    listRespondentProfiles(PROXY_ORG_ID),
-    listPropertyOptionsForForms(PROXY_ORG_ID),
+    listForms(orgId),
+    listRespondentProfiles(orgId),
+    listPropertyOptionsForForms(orgId),
   ]) as [FormWithCount[], RespondentProfile[], FormPropertyOption[]];
 
   return (
     <FormsHub
       forms={forms}
-      orgId={PROXY_ORG_ID}
+      orgId={orgId}
       respondents={respondents}
       propertyOptions={propertyOptions}
     />
