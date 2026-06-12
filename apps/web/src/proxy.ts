@@ -4,18 +4,23 @@ import type { Database } from "@/types/supabase";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { verifyApiToken } from "@/lib/api-tokens";
 import { taskToVTodo, generateETag, parseVTodoStatus } from "@/lib/caldav-utils";
+import { resolveOrgForRequestHost } from "@/lib/organizations/cache";
 
 /**
  * Proxy proxy (formerly middleware): CalDAV server + session refresh + route protection.
  *
  * Responsibilities:
  *   1. Serve CalDAV requests for Fantastical integration (/caldav/*, /.well-known/caldav).
- *   2. Refresh the Supabase session cookie on every request.
- *   3. Subdomain routing: app.myproxyhost.com serves the authenticated workspace;
+ *   2. Resolve the organization for the request host (multi-tenant subdomains
+ *      and white-label custom domains) and inject x-org-* request headers.
+ *      First-party hosts (www/app/localhost/previews) always resolve to the
+ *      Proxy org with no database lookup.
+ *   3. Refresh the Supabase session cookie on every request.
+ *   4. Subdomain routing: app.myproxyhost.com serves the authenticated workspace;
  *      www.myproxyhost.com serves the marketing site and login.
- *   4. Gate /workspace/* and /admin/* behind authentication.
- *   5. Redirect non-admins away from /admin.
- *   6. Redirect already-logged-in users away from /login and /signup.
+ *   5. Gate /workspace/* and /admin/* behind authentication.
+ *   6. Redirect non-admins away from /admin.
+ *   7. Redirect already-logged-in users away from /login and /signup.
  */
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -38,6 +43,25 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/caldav")) {
     return handleCalDAV(request, pathname);
   }
+
+  // ── Organization context (multi-tenant routing) ────────────────────────────
+  // Strip any client-supplied org headers first: downstream server code must
+  // only ever trust values set by this proxy, never by the caller.
+  request.headers.delete("x-org-id");
+  request.headers.delete("x-org-slug");
+  request.headers.delete("x-org-plan");
+
+  const org = await resolveOrgForRequestHost(hostname);
+  if (!org) {
+    // Unknown *.myproxyhost.com subdomain: send to the main site.
+    return NextResponse.redirect("https://www.myproxyhost.com/");
+  }
+  // Mutating request.headers before every NextResponse.next({ request }) call
+  // (including the one recreated inside the cookie setAll handler) forwards
+  // these headers to all downstream server components and route handlers.
+  request.headers.set("x-org-id", org.id);
+  request.headers.set("x-org-slug", org.slug);
+  request.headers.set("x-org-plan", org.planTier);
 
   const isApp = hostname === "app.myproxyhost.com";
   const isWww = hostname === "www.myproxyhost.com";
