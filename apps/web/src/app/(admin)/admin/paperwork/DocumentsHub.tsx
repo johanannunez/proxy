@@ -8,6 +8,8 @@ import {
   ShieldCheck,
   HouseSimple,
   Lightning,
+  PenNib,
+  FileArrowUp,
 } from "@phosphor-icons/react";
 import {
   SECURE_DOC_TYPES,
@@ -37,7 +39,7 @@ import {
 } from "./bulk-actions";
 import styles from "./DocumentsHub.module.css";
 
-type FilterKind = "needs_action" | "all" | "secure" | "forms";
+type FilterKind = "needs_action" | "all" | "signatures" | "forms" | "files";
 type DocKey = SecureDocKey | FormKey;
 
 function isSecureKey(key: DocKey): key is SecureDocKey {
@@ -46,6 +48,25 @@ function isSecureKey(key: DocKey): key is SecureDocKey {
 
 const secureKeys = Object.keys(SECURE_DOC_TYPES) as SecureDocKey[];
 const formKeys = Object.keys(FORM_TYPES) as FormKey[];
+
+/* ─── Kind taxonomy (design doc: "Kind, Not Place") ───
+   A document's kind is what it is, not where it lives:
+   signatures = e-sign documents, files = uploads we collect, forms = data forms. */
+const signatureKeys: SecureDocKey[] = [
+  "host_rental_agreement",
+  "card_authorization",
+  "ach_authorization",
+];
+const fileSecureKeys: SecureDocKey[] = ["w9", "identity"];
+const fileFormKeys: FormKey[] = ["str_permit", "insurance_certificate"];
+const dataFormKeys: FormKey[] = formKeys.filter((k) => !fileFormKeys.includes(k));
+
+function kindOfDocKey(key: DocKey): "signatures" | "files" | "forms" {
+  if (isSecureKey(key)) {
+    return signatureKeys.includes(key) ? "signatures" : "files";
+  }
+  return fileFormKeys.includes(key) ? "files" : "forms";
+}
 
 /* Only these 3 form types appear as matrix columns. The rest show in cards only. */
 const matrixFormKeys: FormKey[] = ["property_setup", "wifi_info", "guidebook"];
@@ -329,14 +350,18 @@ export function DocumentsHub({
 
     const docKey = docParam as DocKey;
     setSelectedDocKey(docKey);
-    setFilter(isSecureKey(docKey) ? "secure" : "forms");
+    setFilter(kindOfDocKey(docKey));
     setDrawerEntry({ owner, docKey });
   }, [owners]);
 
-  const visibleCards: DocKey[] = [
-    ...(filter !== "forms" ? secureKeys : []),
-    ...(filter !== "secure" ? formKeys : []),
-  ];
+  const visibleCards: DocKey[] =
+    filter === "signatures"
+      ? signatureKeys
+      : filter === "files"
+      ? [...fileSecureKeys, ...fileFormKeys]
+      : filter === "forms"
+      ? dataFormKeys
+      : [...secureKeys, ...formKeys];
 
   /* Stats strip totals (SecureDocs only for now) */
   let totalCompleted = 0;
@@ -353,8 +378,9 @@ export function DocumentsHub({
 
   function handleFilterChange(f: FilterKind) {
     setFilter(f);
-    if (f === "secure") setSelectedDocKey(secureKeys[0]);
-    else if (f === "forms") setSelectedDocKey(formKeys[0]);
+    if (f === "signatures") setSelectedDocKey(signatureKeys[0]);
+    else if (f === "files") setSelectedDocKey(fileSecureKeys[0]);
+    else if (f === "forms") setSelectedDocKey(dataFormKeys[0]);
     else setSelectedDocKey(null);
   }
 
@@ -564,7 +590,6 @@ export function DocumentsHub({
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Documents</h1>
           <div className={styles.statsStrip}>
             <span className={styles.statChip}>
               <span className={styles.statDot} style={{ background: "var(--text-secondary)" }} />
@@ -592,7 +617,9 @@ export function DocumentsHub({
           <DocumentSearch onSelect={handleSearchSelect} />
 
           <div className={styles.filterChips}>
-            {(["needs_action", "all", "secure", "forms"] as FilterKind[]).map((f) => (
+            {(
+              ["needs_action", "all", "signatures", "forms", "files"] as FilterKind[]
+            ).map((f) => (
               <button
                 key={f}
                 className={`${styles.chip} ${filter === f ? styles.chipActive : ""} ${
@@ -605,23 +632,28 @@ export function DocumentsHub({
               >
                 {f === "needs_action" && <Lightning size={13} weight="duotone" />}
                 {f === "all" && <Files size={13} weight="duotone" />}
-                {f === "secure" && <ShieldCheck size={13} weight="duotone" />}
+                {f === "signatures" && <PenNib size={13} weight="duotone" />}
                 {f === "forms" && <HouseSimple size={13} weight="duotone" />}
+                {f === "files" && <FileArrowUp size={13} weight="duotone" />}
                 {f === "needs_action"
                   ? "Needs Action"
                   : f === "all"
                   ? "All"
-                  : f === "secure"
-                  ? "SecureDocs"
-                  : "Setup"}
+                  : f === "signatures"
+                  ? "Signatures"
+                  : f === "forms"
+                  ? "Forms"
+                  : "Files"}
                 <span className={styles.chipCount}>
                   {f === "needs_action"
                     ? actionQueue.length
                     : f === "all"
                     ? secureKeys.length + formKeys.length
-                    : f === "secure"
-                    ? secureKeys.length
-                    : formKeys.length}
+                    : f === "signatures"
+                    ? signatureKeys.length
+                    : f === "forms"
+                    ? dataFormKeys.length
+                    : fileSecureKeys.length + fileFormKeys.length}
                 </span>
               </button>
             ))}
@@ -763,7 +795,7 @@ export function DocumentsHub({
             onClear={clearSelection}
             busy={bulkBusy}
             docTypeHint={
-              activeSecureKey ? null : "Select a SecureDoc card first to choose the document type"
+              activeSecureKey ? null : "Select a signature card first to choose the document type"
             }
           />
         )}
