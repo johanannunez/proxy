@@ -309,7 +309,7 @@ export async function getRespondentCrossFormData(
   }));
 }
 
-// ── Unified cross-form responses view (admin/paperwork/responses) ─────────────
+// ── Unified cross-form responses view (Today cockpit / cross-form consumers) ──
 
 export async function listAllFormResponses(): Promise<UnifiedFormResponse[]> {
   const { data, error } = await db()

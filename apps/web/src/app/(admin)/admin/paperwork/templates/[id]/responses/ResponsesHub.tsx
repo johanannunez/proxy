@@ -83,7 +83,7 @@ export function ResponsesHub({ form, responses, viewCount }: Props) {
           onClick={() => router.push("/admin/paperwork/templates")}
         >
           <ArrowLeft size={14} weight="bold" />
-          Forms
+          Templates
         </button>
 
         <div className={styles.headerMain}>
