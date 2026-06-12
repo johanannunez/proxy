@@ -93,6 +93,27 @@ export async function isSignatureDocumentKey(
   return data !== null;
 }
 
+/**
+ * How many signature document instances have been sent per document key.
+ * Powers the "Sent N times" meta on unified template cards.
+ */
+export async function listTemplateSendCounts(): Promise<Record<string, number>> {
+  const { data, error } = await db()
+    .from("documents")
+    .select("document_key")
+    .eq("source", "signed_document")
+    .not("document_key", "is", null);
+  if (error) {
+    console.error("[document-templates] send counts:", error.message);
+    return {};
+  }
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as Array<{ document_key: string }>) {
+    counts[row.document_key] = (counts[row.document_key] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function getDocumentTemplate(id: string): Promise<DocumentTemplate | null> {
   const { data } = await db()
     .from("document_templates")

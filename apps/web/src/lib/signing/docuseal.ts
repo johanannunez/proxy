@@ -176,6 +176,27 @@ export async function getSubmitterEmbedUrl(submitterSlug: string): Promise<strin
   return `${appUrl()}/s/${submitterSlug}`;
 }
 
+/**
+ * First-page preview image of a template's uploaded document. DocuSeal
+ * generates these on upload; used for real thumbnails on template cards.
+ */
+export async function getTemplatePreviewUrl(templateId: number): Promise<string | null> {
+  if (!isDocuSealConfigured()) return null;
+
+  try {
+    const res = await fetch(`${baseUrl()}/templates/${templateId}`, {
+      headers: headers(),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      documents?: Array<{ preview_image_url?: string | null }>;
+    };
+    return data.documents?.[0]?.preview_image_url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type CreateTemplateResult = {
   templateId: number;
   name: string;

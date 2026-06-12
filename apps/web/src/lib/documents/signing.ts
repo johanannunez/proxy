@@ -107,6 +107,117 @@ export async function ensureSignatureSubmission(input: {
   return { ok: true, embedUrl: mine?.embedUrl ?? null, status: "ready" };
 }
 
+/**
+ * Send any signature template (system or custom DocuSeal template) to one
+ * owner: ensures a spine catalog row, creates the DocuSeal submission with the
+ * email notification on, and persists the signer rows. Powers the unified
+ * Templates tab send sheet. Statuses already out for signature are guarded.
+ */
+export async function sendTemplateToOwner(input: {
+  templateRecordId: string;
+  ownerProfileId: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = createServiceClient() as any;
+
+  const { data: tpl } = await db
+    .from("document_templates")
+    .select("id, document_key, display_name, docuseal_template_id, is_active")
+    .eq("id", input.templateRecordId)
+    .maybeSingle();
+  const template = tpl as {
+    document_key: string;
+    display_name: string;
+    docuseal_template_id: number | null;
+    is_active: boolean;
+  } | null;
+  if (!template) return { ok: false, error: "Template not found." };
+  if (!template.docuseal_template_id || !template.is_active) {
+    return { ok: false, error: "This template is not ready to send. Finish its field layout first." };
+  }
+  if (!isDocuSealConfigured()) {
+    return { ok: false, error: "The e-signature engine is not configured." };
+  }
+
+  const { data: ownerRow } = await db
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("id", input.ownerProfileId)
+    .maybeSingle();
+  const owner = ownerRow as { id: string; full_name: string | null; email: string | null } | null;
+  if (!owner?.email) return { ok: false, error: "That recipient has no email on file." };
+
+  // Ensure the spine catalog row for (owner, document key).
+  const { data: existingRow } = await db
+    .from("documents")
+    .select("id, owner_id, workspace_id, document_key, status, source_ref")
+    .eq("owner_id", owner.id)
+    .eq("document_key", template.document_key)
+    .is("form_key", null)
+    .is("property_id", null)
+    .maybeSingle();
+  let spine = existingRow as SpineDocRow | null;
+
+  const activeStatuses = ["sent", "signed", "awaiting_countersignature", "on_file"];
+  if (spine && activeStatuses.includes(normalizeStatus(spine.status))) {
+    return { ok: false, error: `${owner.full_name ?? "This recipient"} already has ${template.display_name} out for signature or on file.` };
+  }
+
+  if (!spine) {
+    const { data: inserted, error: insertErr } = await db
+      .from("documents")
+      .insert({
+        owner_id: owner.id,
+        document_key: template.document_key,
+        doc_type: template.document_key,
+        title: template.display_name,
+        scope_kind: "owner",
+        visibility: "client",
+        source: "manual",
+        status: "needed",
+      })
+      .select("id, owner_id, workspace_id, document_key, status, source_ref")
+      .single();
+    if (insertErr || !inserted) {
+      console.error("[signing] sendTemplateToOwner spine insert:", insertErr?.message);
+      return { ok: false, error: "Could not create the document record." };
+    }
+    spine = inserted as SpineDocRow;
+  }
+
+  const cs = countersigner();
+  const submitters = [
+    {
+      role: SIGNER_ROLE,
+      email: owner.email,
+      name: owner.full_name ?? undefined,
+      externalId: owner.id,
+    },
+    ...(cs ? [{ role: COUNTERSIGNER_ROLE, email: cs.email, name: cs.name }] : []),
+  ];
+
+  const submission = await createSubmission({
+    templateId: template.docuseal_template_id,
+    submitters,
+    sendEmail: true,
+    orderPreserved: true,
+  });
+  if (!submission) {
+    return { ok: false, error: "Could not start the signing request. Try again shortly." };
+  }
+
+  await persistSubmission(
+    db,
+    spine,
+    submission.submissionId,
+    submission.submitters,
+    owner.id,
+    cs?.email ?? null,
+  );
+
+  return { ok: true };
+}
+
 /** Get the embedded signing URL for a signer if they still need to sign. */
 export async function getSignerEmbedUrl(documentId: string, signerProfileId: string): Promise<string | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,11 +345,12 @@ async function persistSubmission(
 
   // The spine row IS the signature record: store the provider submission id in
   // source_ref, keep the catalog title, and mark the document sent.
+  // Keep the existing catalog title for custom template keys (no lifecycle def).
   await db.from("documents").update({
     status: "sent",
     source: "signed_document",
     source_ref: String(submissionId),
-    title: def?.label ?? spine.document_key ?? "Document",
+    ...(def ? { title: def.label } : {}),
     sent_at: now,
   }).eq("id", spine.id);
 
