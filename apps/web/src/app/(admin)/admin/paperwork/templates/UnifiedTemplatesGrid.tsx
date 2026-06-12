@@ -24,7 +24,7 @@ import {
   FileDashed,
 } from "@phosphor-icons/react";
 import ConfirmModal from "@/components/admin/ConfirmModal";
-import { deleteFormAction } from "../forms/form-actions";
+import { deleteFormAction } from "./form-actions";
 import type { UnifiedTemplate, UnifiedTemplateKind } from "./unified-types";
 import styles from "./UnifiedTemplatesGrid.module.css";
 

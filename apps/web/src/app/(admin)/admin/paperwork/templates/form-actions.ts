@@ -55,7 +55,7 @@ export async function createFormAction(
   const form = await createForm({ org_id: orgId, name, created_by: userId });
   if (!form) return { ok: false, error: "Failed to create form." };
 
-  revalidatePath("/admin/paperwork/forms");
+  revalidatePath("/admin/paperwork/templates");
   return { ok: true, data: { id: form.id } };
 }
 
@@ -86,7 +86,7 @@ export async function updateFormMetaAction(
 
   const result = await updateForm(id, updates);
   if (!result) return { ok: false, error: "Failed to update form." };
-  revalidatePath("/admin/paperwork/forms");
+  revalidatePath("/admin/paperwork/templates");
   return { ok: true, data: undefined };
 }
 
@@ -96,7 +96,7 @@ export async function publishFormAction(id: string): Promise<FormActionResult> {
 
   const result = await publishForm(id);
   if (!result) return { ok: false, error: "Failed to publish form." };
-  revalidatePath("/admin/paperwork/forms");
+  revalidatePath("/admin/paperwork/templates");
   return { ok: true, data: undefined };
 }
 
@@ -106,7 +106,7 @@ export async function unpublishFormAction(id: string): Promise<FormActionResult>
 
   const result = await updateForm(id, { is_active: false });
   if (!result) return { ok: false, error: "Failed to unpublish form." };
-  revalidatePath("/admin/paperwork/forms");
+  revalidatePath("/admin/paperwork/templates");
   return { ok: true, data: undefined };
 }
 
@@ -116,7 +116,7 @@ export async function deleteFormAction(id: string): Promise<FormActionResult> {
 
   const ok = await deleteForm(id);
   if (!ok) return { ok: false, error: "Failed to delete form." };
-  revalidatePath("/admin/paperwork/forms");
+  revalidatePath("/admin/paperwork/templates");
   return { ok: true, data: undefined };
 }
 
@@ -127,7 +127,7 @@ export async function toggleFormPublicAction(
   const { error } = await requireAdmin();
   if (error) return;
   await updateForm(id, { is_public: isPublic });
-  revalidatePath(`/admin/paperwork/forms`);
+  revalidatePath("/admin/paperwork/templates");
 }
 
 export async function updateFormSlugAction(
@@ -140,7 +140,7 @@ export async function updateFormSlugAction(
   if (!trimmed) return { error: "Slug cannot be empty" };
   try {
     await updateForm(id, { slug: trimmed });
-    revalidatePath(`/admin/paperwork/forms`);
+    revalidatePath("/admin/paperwork/templates");
     return {};
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Slug already in use";

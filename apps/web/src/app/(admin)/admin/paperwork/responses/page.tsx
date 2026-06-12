@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import { listAllFormResponses } from "@/lib/admin/forms";
-import { ResponsesHub } from "./ResponsesHub";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Form Responses" };
-export const dynamic = "force-dynamic";
-
-export default async function ResponsesPage() {
-  const responses = await listAllFormResponses();
-  return <ResponsesHub responses={responses} />;
+/**
+ * The global Responses roll-up was deleted in the 2026-06-12 paperwork
+ * unification (per-form-only decision): each form's responses live on its
+ * template detail page. Recent submissions still surface in the Today cockpit
+ * and the Needs Action queue.
+ */
+export default function ResponsesRedirect() {
+  redirect("/admin/paperwork/templates?type=form");
 }

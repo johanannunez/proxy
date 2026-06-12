@@ -240,7 +240,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
           <button
             type="button"
             className={styles.backBtn}
-            onClick={() => router.push("/admin/paperwork/forms")}
+            onClick={() => router.push("/admin/paperwork/templates")}
           >
             <ArrowLeft size={16} weight="bold" />
           </button>

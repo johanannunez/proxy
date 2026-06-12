@@ -21,7 +21,7 @@ import {
   Rows,
   SpinnerGap,
 } from "@phosphor-icons/react";
-import { createFormAction } from "./forms/form-actions";
+import { createFormAction } from "./templates/form-actions";
 import styles from "./PaperworkShell.module.css";
 
 type PaperworkTab = "documents" | "templates";

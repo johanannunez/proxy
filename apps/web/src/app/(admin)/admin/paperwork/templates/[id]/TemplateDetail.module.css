@@ -1,0 +1,339 @@
+/* ─── Template detail — Build/Fields | Responses | Settings tabs ─── */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.tabBar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 24px 0;
+  border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 14px;
+  padding: 6px 10px 9px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary, var(--color-text-secondary));
+  text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.crumb:hover {
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-hover, rgba(0, 0, 0, 0.03));
+}
+
+.crumb:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, var(--color-text-secondary));
+  background: transparent;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-hover, rgba(0, 0, 0, 0.03));
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+.tabActive {
+  color: var(--text-primary, var(--color-text-primary));
+  font-weight: 600;
+}
+
+.tabIndicator {
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: -1px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+}
+
+.tabCount {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Settings tab ─── */
+
+.settingsWrap {
+  max-width: 640px;
+  padding: 22px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settingsCard {
+  background: var(--surface-elevated, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-md, 12px);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settingsTitle {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text-primary));
+  margin: 0;
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.settingMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settingLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.settingDesc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.fieldRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.fieldLabel {
+  width: 140px;
+  flex-shrink: 0;
+  color: var(--text-secondary, var(--color-text-secondary));
+  font-size: 12.5px;
+}
+
+.fieldValue {
+  color: var(--text-primary, var(--color-text-primary));
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fieldValueMono {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12px;
+}
+
+.toggleBtn {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.1));
+  background: transparent;
+  color: var(--text-primary, var(--color-text-primary));
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.toggleBtn:hover {
+  border-color: var(--border-strong, rgba(0, 0, 0, 0.2));
+  background: var(--surface-hover, rgba(0, 0, 0, 0.025));
+}
+
+.toggleBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.toggleBtn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.toggleBtnPrimary {
+  border: none;
+  color: #fff;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+}
+
+.toggleBtnPrimary:hover {
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  opacity: 0.92;
+}
+
+.toggleBtnDanger {
+  color: var(--color-error, #dc2626);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.toggleBtnDanger:hover {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: rgba(220, 38, 38, 0.45);
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.statusLive {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--color-success, #16a34a);
+}
+
+.statusDraft {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-base, var(--color-warm-gray-50));
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
+  border-radius: 9px;
+  padding: 8px 11px;
+}
+
+.linkText {
+  flex: 1;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12px;
+  color: var(--text-primary, var(--color-text-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linkActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.1));
+  background: #fff;
+  color: var(--text-primary, var(--color-text-primary));
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+.linkActionBtn:hover {
+  border-color: var(--border-strong, rgba(0, 0, 0, 0.2));
+}
+
+.linkActionBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.linkActionCopied {
+  color: var(--color-success, #16a34a);
+  border-color: rgba(22, 163, 74, 0.4);
+}
+
+.errorNote {
+  font-size: 12.5px;
+  color: var(--color-error, #dc2626);
+}
+
+.builderEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 72px 24px;
+  text-align: center;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.builderEmptyTitle {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+  margin: 0;
+}
+
+.builderEmptyBody {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 400px;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .tabBar {
+    padding: 8px 14px 0;
+    overflow-x: auto;
+  }
+  .settingsWrap {
+    padding: 18px 16px 32px;
+  }
+  .fieldLabel {
+    width: 110px;
+  }
+}
