@@ -54,7 +54,7 @@ const STEPS = [
     detail:
       "Forms collect structured information you can act on: applications, property details, W-9s. Responses land in one place, ready to review.",
     icon: Rows,
-    href: "/admin/paperwork/templates?type=form",
+    href: "/admin/paperwork/forms",
     linkLabel: "Open form builder",
   },
 ] as const;

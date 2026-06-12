@@ -20,6 +20,8 @@ import {
   ClockCounterClockwise,
   Wallet,
   ChatCircle,
+  Files,
+  FileDashed,
   type Icon,
 } from "@phosphor-icons/react";
 import type {
@@ -65,6 +67,8 @@ const KIND_META: Record<PaletteHit["kind"], { icon: Icon; group: string }> = {
   property: { icon: Buildings,   group: "Properties" },
   task:     { icon: CheckSquare, group: "Tasks"      },
   project:  { icon: Kanban,      group: "Projects"   },
+  document: { icon: Files,       group: "Documents"  },
+  template: { icon: FileDashed,  group: "Templates"  },
 };
 
 const GROUP_ORDER: Array<keyof PaletteSearchResponse> = [
@@ -73,6 +77,8 @@ const GROUP_ORDER: Array<keyof PaletteSearchResponse> = [
   "properties",
   "tasks",
   "projects",
+  "documents",
+  "templates",
 ];
 
 /* ───── Recent tracking (localStorage) ───── */
@@ -179,6 +185,7 @@ export function CommandPalette() {
   const [isMac, setIsMac] = useState(true);
   const [results, setResults] = useState<PaletteSearchResponse>({
     contacts: [], owners: [], properties: [], tasks: [], projects: [],
+    documents: [], templates: [],
   });
   const [scopeList, setScopeList] = useState<PaletteHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -233,7 +240,10 @@ export function CommandPalette() {
     }
     setQuery("");
     setActiveIndex(0);
-    setResults({ contacts: [], owners: [], properties: [], tasks: [], projects: [] });
+    setResults({
+      contacts: [], owners: [], properties: [], tasks: [], projects: [],
+      documents: [], templates: [],
+    });
   }, [open]);
 
   /* Bulletproof scroll lock via position: fixed */
@@ -298,7 +308,10 @@ export function CommandPalette() {
     if (!open) return;
     const q = query.trim();
     if (q.length < 1) {
-      setResults({ contacts: [], owners: [], properties: [], tasks: [], projects: [] });
+      setResults({
+        contacts: [], owners: [], properties: [], tasks: [], projects: [],
+        documents: [], templates: [],
+      });
       setSearching(false);
       return;
     }
@@ -317,7 +330,10 @@ export function CommandPalette() {
         setResults(data);
       } catch (err: unknown) {
         if ((err as { name?: string } | null)?.name !== "AbortError") {
-          setResults({ contacts: [], owners: [], properties: [], tasks: [], projects: [] });
+          setResults({
+            contacts: [], owners: [], properties: [], tasks: [], projects: [],
+            documents: [], templates: [],
+          });
         }
       } finally {
         setSearching(false);
@@ -392,7 +408,9 @@ export function CommandPalette() {
     results.owners.length +
     results.properties.length +
     results.tasks.length +
-    results.projects.length;
+    results.projects.length +
+    results.documents.length +
+    results.templates.length;
 
   const palette = (
     <div
@@ -411,7 +429,7 @@ export function CommandPalette() {
           <input
             ref={inputRef}
             className={styles.input}
-            placeholder="Search people, Workspaces, properties, tasks, projects"
+            placeholder="Search people, Workspaces, properties, tasks, documents, templates"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onInputKeyDown}

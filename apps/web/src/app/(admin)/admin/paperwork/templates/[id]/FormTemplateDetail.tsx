@@ -28,7 +28,9 @@ import {
   publishFormAction,
   unpublishFormAction,
   toggleFormPublicAction,
+  updateFormMetaAction,
 } from "../form-actions";
+import { CoverageSettingsCard } from "./CoverageSettingsCard";
 import styles from "./TemplateDetail.module.css";
 
 type TabKey = "build" | "responses" | "settings";
@@ -124,6 +126,15 @@ function FormSettings({ form }: { form: Form }) {
           </button>
         </div>
       </div>
+
+      <CoverageSettingsCard
+        tracked={form.tracked}
+        category={form.category}
+        onSave={async (updates) => {
+          const res = await updateFormMetaAction(form.id, updates);
+          return res.ok ? { ok: true } : { ok: false, error: res.error };
+        }}
+      />
 
       {form.is_active && publicUrl && (
         <div className={styles.settingsCard}>

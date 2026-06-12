@@ -1,46 +1,45 @@
 "use client";
 
+/**
+ * Documents tab — tracked instances only (2026-06-12 IA amendment). The page
+ * opens directly onto the Needs Action queue, then the instance list with
+ * kind chips (All · Signatures · Forms · Files). The owner-by-template
+ * matrix lives behind the List | Coverage view switch. No page-local search
+ * (the global command palette covers it), no stats pills, no per-kind cards.
+ */
+
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { AnimatePresence } from "motion/react";
 import {
   Files,
-  FileText,
-  ShieldCheck,
   HouseSimple,
-  Lightning,
   PenNib,
   FileArrowUp,
+  ListBullets,
+  GridNine,
 } from "@phosphor-icons/react";
 import {
   SECURE_DOC_TYPES,
   FORM_TYPES,
-  SETUP_SECTION_KEYS,
-  SETUP_SECTION_LABELS,
   avatarColor,
+  stageOfSignedDoc,
+  fmtRelativeTime,
   type DocHubOwner,
-  type DocHubStats,
   type SecureDocKey,
   type FormKey,
-  type SetupSectionKey,
   type SignedDocRow,
+  type DocumentStage,
 } from "@/lib/admin/documents-hub-shared";
 import type { ActionQueueItem } from "@/lib/admin/action-queue-types";
-import { BulkActionBar } from "@/components/admin/documents/BulkActionBar";
-import ConfirmModal from "@/components/admin/ConfirmModal";
+import type { CoverageColumnGroup } from "@/lib/admin/coverage-shared";
+import { StageMeter } from "./StageMeter";
 import { DocumentDrawer } from "./DocumentDrawer";
 import { ActionQueue } from "./ActionQueue";
-import { DocumentSearch } from "./DocumentSearch";
-import type { DocumentSearchResult } from "./search-actions";
+import { CoverageView } from "./CoverageView";
 import { sendDocumentToOwner, sendDocumentReminder } from "./document-actions";
-import {
-  bulkRemindOwners,
-  bulkRequestDocuments,
-  bulkSendDocuments,
-  bulkWaiveDocuments,
-} from "./bulk-actions";
 import styles from "./DocumentsHub.module.css";
 
-type FilterKind = "needs_action" | "all" | "signatures" | "forms" | "files";
+type FilterKind = "all" | "signatures" | "forms" | "files";
 type DocKey = SecureDocKey | FormKey;
 
 function isSecureKey(key: DocKey): key is SecureDocKey {
@@ -60,58 +59,12 @@ const signatureKeys: SecureDocKey[] = [
 ];
 const fileSecureKeys: SecureDocKey[] = ["w9", "identity"];
 const fileFormKeys: FormKey[] = ["str_permit", "insurance_certificate"];
-const dataFormKeys: FormKey[] = formKeys.filter((k) => !fileFormKeys.includes(k));
 
 function kindOfDocKey(key: DocKey): "signatures" | "files" | "forms" {
   if (isSecureKey(key)) {
     return signatureKeys.includes(key) ? "signatures" : "files";
   }
   return fileFormKeys.includes(key) ? "files" : "forms";
-}
-
-/* Only these 3 form types appear as matrix columns. The rest show in cards only. */
-const matrixFormKeys: FormKey[] = ["property_setup", "wifi_info", "guidebook"];
-
-/* ─── Status pill — tinted background + border + colored text ─── */
-function StatusPill({
-  status,
-  label,
-}: {
-  status: "completed" | "pending" | "not_sent" | "submitted" | "not_submitted";
-  label: string;
-}) {
-  const tone =
-    status === "completed" || status === "submitted"
-      ? styles.pillDone
-      : status === "pending"
-      ? styles.pillPending
-      : styles.pillIdle;
-  return <span className={`${styles.statusPill} ${tone}`}>{label}</span>;
-}
-
-/* ─── Setup section mini dots ─── */
-function SetupSectionDots({
-  sections,
-  completionPct,
-}: {
-  sections: Partial<Record<SetupSectionKey, boolean>> | undefined;
-  completionPct: number | undefined;
-}) {
-  const pct = completionPct ?? 0;
-  return (
-    <div className={styles.setupDots}>
-      <div className={styles.setupDotsGrid}>
-        {SETUP_SECTION_KEYS.map((key) => (
-          <div
-            key={key}
-            title={SETUP_SECTION_LABELS[key]}
-            className={`${styles.setupDot} ${sections?.[key] ? styles.setupDotDone : ""}`}
-          />
-        ))}
-      </div>
-      <span className={styles.setupDotsPct}>{pct > 0 ? `${pct}%` : "—"}</span>
-    </div>
-  );
 }
 
 /* ─── Avatar ─── */
@@ -134,195 +87,77 @@ function OwnerAvatar({ name, url }: { name: string; url: string | null }) {
   );
 }
 
-/* ─── Doc type card ─── */
-function DocCard({
-  docKey,
-  cardStats,
-  active,
-  onClick,
-}: {
-  docKey: DocKey;
-  cardStats: { completed: number; pending: number; notSent: number; total: number };
-  active: boolean;
-  onClick: () => void;
-}) {
-  const isSecure = isSecureKey(docKey);
-  const def = isSecure
-    ? SECURE_DOC_TYPES[docKey as SecureDocKey]
-    : FORM_TYPES[docKey as FormKey];
-  return (
-    <button
-      className={`${styles.docCard} ${active ? styles.docCardActive : ""}`}
-      onClick={onClick}
-      type="button"
-    >
-      <div
-        className={styles.docCardIcon}
-        style={{ background: `${def.color}18`, color: def.color }}
-      >
-        {isSecure ? (
-          <ShieldCheck size={15} weight="duotone" />
-        ) : (
-          <FileText size={15} weight="duotone" />
-        )}
-      </div>
-      <div className={styles.docCardName}>{def.shortLabel}</div>
-      <div className={styles.docCardCount}>{cardStats.completed}</div>
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-        {cardStats.pending > 0 && (
-          <div className={styles.docCardPending}>{cardStats.pending} pending</div>
-        )}
-        {cardStats.notSent > 0 && (
-          <div className={styles.docCardNotSent}>{cardStats.notSent} not sent</div>
-        )}
-      </div>
-    </button>
-  );
-}
+/* ─── Instance flattening ─── */
 
-/* ─── Owner matrix row ─── */
-function OwnerMatrixRow({
-  owner,
-  activeDocKey,
-  selected,
-  onToggleSelect,
-  onOpen,
-}: {
+type DocInstance = {
   owner: DocHubOwner;
-  activeDocKey: DocKey | null;
-  selected: boolean;
-  onToggleSelect: () => void;
-  onOpen: (docKey: DocKey) => void;
-}) {
-  const secureCompleted = secureKeys.filter((k) => owner.secureDocs[k].status === "completed").length;
-  const setupSections = owner.forms.property_setup.sections ?? {};
-  const setupCompleted = SETUP_SECTION_KEYS.filter((k) => setupSections[k] === true).length;
-  const otherFormsCompleted = matrixFormKeys
-    .filter((k) => k !== "property_setup")
-    .filter((k) => owner.forms[k].submitted).length;
-  const completedCount = secureCompleted + setupCompleted + otherFormsCompleted;
-  const totalDocs = secureKeys.length + SETUP_SECTION_KEYS.length + (matrixFormKeys.length - 1);
+  docKey: DocKey;
+  title: string;
+  kind: FilterKind;
+  /** Signature documents only — powers the stage meter. */
+  stage: DocumentStage | null;
+  statusLabel: string;
+  statusTone: "done" | "pending" | "idle";
+  updatedAt: string | null;
+};
 
-  function handleRowClick() {
-    onOpen(activeDocKey ?? secureKeys[0]);
+function buildInstances(owners: DocHubOwner[]): DocInstance[] {
+  const instances: DocInstance[] = [];
+  for (const owner of owners) {
+    for (const key of secureKeys) {
+      const entry = owner.secureDocs[key];
+      if (!entry.latest) continue;
+      const row = entry.latest;
+      instances.push({
+        owner,
+        docKey: key,
+        title: SECURE_DOC_TYPES[key].label,
+        kind: kindOfDocKey(key),
+        stage: stageOfSignedDoc(row),
+        statusLabel: entry.status === "completed" ? "Done" : "Waiting",
+        statusTone: entry.status === "completed" ? "done" : "pending",
+        updatedAt: row.signedAt ?? row.sentAt ?? row.createdAt,
+      });
+    }
+    for (const key of formKeys) {
+      const entry = owner.forms[key];
+      if (!entry.submitted) continue;
+      instances.push({
+        owner,
+        docKey: key,
+        title: FORM_TYPES[key].label,
+        kind: kindOfDocKey(key),
+        stage: null,
+        statusLabel: "Submitted",
+        statusTone: "done",
+        updatedAt: null,
+      });
+    }
   }
-
-  return (
-    <div
-      className={`${styles.matrixRow} ${selected ? styles.matrixRowSelected : ""}`}
-      onClick={handleRowClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && handleRowClick()}
-    >
-      {/* Select checkbox */}
-      <div
-        className={`${styles.checkCell} ${styles.stickyCheck}`}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <input
-          type="checkbox"
-          className={styles.rowCheckbox}
-          checked={selected}
-          onChange={onToggleSelect}
-          aria-label={`Select ${owner.fullName}`}
-        />
-      </div>
-
-      {/* Owner */}
-      <div className={`${styles.ownerCell} ${styles.stickyOwner}`}>
-        <OwnerAvatar name={owner.fullName} url={owner.avatarUrl} />
-        <div style={{ minWidth: 0 }}>
-          <div className={styles.ownerName}>{owner.fullName}</div>
-          <div className={styles.ownerSub}>
-            {owner.propertyCount} {owner.propertyCount === 1 ? "property" : "properties"}
-          </div>
-        </div>
-      </div>
-
-      {/* SecureDoc dots */}
-      {secureKeys.map((k) => {
-        const s = owner.secureDocs[k].status;
-        const isActive = activeDocKey === k;
-        const pillLabel = s === "completed" ? "Done" : s === "pending" ? "Sent" : "—";
-        return (
-          <div
-            key={k}
-            className={`${styles.matrixCell} ${styles.secureColData} ${isActive ? styles.matrixCellActive : ""}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen(k);
-            }}
-          >
-            <StatusPill status={s} label={pillLabel} />
-          </div>
-        );
-      })}
-
-      {/* Divider */}
-      <div className={styles.matrixDivider} />
-
-      {/* Form dots — only the 3 matrix columns */}
-      {matrixFormKeys.map((k) => {
-        const isActive = activeDocKey === k;
-        const isSetup = k === "property_setup";
-        return (
-          <div
-            key={k}
-            className={`${styles.matrixCell} ${styles.formColData} ${isActive ? styles.matrixCellActive : ""}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen(k);
-            }}
-          >
-            {isSetup ? (
-              <SetupSectionDots
-                sections={owner.forms.property_setup.sections}
-                completionPct={owner.forms.property_setup.completionPct}
-              />
-            ) : (
-              <StatusPill
-                status={owner.forms[k].submitted ? "submitted" : "not_submitted"}
-                label={owner.forms[k].submitted ? "Done" : "—"}
-              />
-            )}
-          </div>
-        );
-      })}
-
-      {/* Count */}
-      <div className={styles.matrixCount}>
-        <span className={styles.matrixCountNum}>{completedCount}</span>
-        <span className={styles.matrixCountTotal}>/{totalDocs}</span>
-      </div>
-    </div>
-  );
+  return instances.sort((a, b) => {
+    if (a.updatedAt && b.updatedAt) return b.updatedAt.localeCompare(a.updatedAt);
+    if (a.updatedAt) return -1;
+    if (b.updatedAt) return 1;
+    return a.owner.fullName.localeCompare(b.owner.fullName);
+  });
 }
 
 /* ─── Main hub ─── */
 export function DocumentsHub({
   owners,
-  stats,
   actionQueue,
+  coverageGroups,
 }: {
   owners: DocHubOwner[];
-  stats: DocHubStats;
   actionQueue: ActionQueueItem[];
+  coverageGroups: CoverageColumnGroup[];
 }) {
-  const [filter, setFilter] = useState<FilterKind>(
-    actionQueue.length > 0 ? "needs_action" : "all",
-  );
-  const [selectedDocKey, setSelectedDocKey] = useState<DocKey | null>(null);
+  const [filter, setFilter] = useState<FilterKind>("all");
+  const [view, setView] = useState<"list" | "coverage">("list");
   const [drawerEntry, setDrawerEntry] = useState<{
     owner: DocHubOwner;
     docKey: DocKey;
   } | null>(null);
-
-  /* Bulk selection (keyed by contactId) */
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [waiveConfirmOpen, setWaiveConfirmOpen] = useState(false);
-  const [bulkBusy, startBulkTransition] = useTransition();
   const [notice, setNotice] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   /* Action queue primary-action progress */
@@ -350,6 +185,8 @@ export function DocumentsHub({
     return map;
   }, [owners]);
 
+  const instances = useMemo(() => buildInstances(owners), [owners]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ownerParam = params.get("owner");
@@ -363,163 +200,25 @@ export function DocumentsHub({
     if (!owner) return;
 
     const docKey = docParam as DocKey;
-    setSelectedDocKey(docKey);
     setFilter(kindOfDocKey(docKey));
     setDrawerEntry({ owner, docKey });
   }, [owners]);
 
-  const visibleCards: DocKey[] =
-    filter === "signatures"
-      ? signatureKeys
-      : filter === "files"
-      ? [...fileSecureKeys, ...fileFormKeys]
-      : filter === "forms"
-      ? dataFormKeys
-      : [...secureKeys, ...formKeys];
-
-  /* Stats strip totals (SecureDocs only for now) */
-  let totalCompleted = 0;
-  let totalPending = 0;
-  let totalNotSent = 0;
-  for (const o of owners) {
-    for (const k of secureKeys) {
-      const s = o.secureDocs[k].status;
-      if (s === "completed") totalCompleted++;
-      else if (s === "pending") totalPending++;
-      else totalNotSent++;
-    }
-  }
-
-  function handleFilterChange(f: FilterKind) {
-    setFilter(f);
-    if (f === "signatures") setSelectedDocKey(signatureKeys[0]);
-    else if (f === "files") setSelectedDocKey(fileSecureKeys[0]);
-    else if (f === "forms") setSelectedDocKey(dataFormKeys[0]);
-    else setSelectedDocKey(null);
-  }
-
-  function handleCardClick(key: DocKey) {
-    setSelectedDocKey((prev) => (prev === key ? null : key));
-  }
-
-  /* ─── Selection helpers ─── */
-
-  function toggleOwner(contactId: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(contactId)) next.delete(contactId);
-      else next.add(contactId);
-      return next;
-    });
-  }
-
-  const allSelected = owners.length > 0 && selectedIds.size === owners.length;
-
-  function toggleAll() {
-    setSelectedIds(allSelected ? new Set() : new Set(owners.map((o) => o.contactId)));
-  }
-
-  function clearSelection() {
-    setSelectedIds(new Set());
-  }
-
-  const selectedOwners = useMemo(
-    () => owners.filter((o) => selectedIds.has(o.contactId)),
-    [owners, selectedIds],
+  const visibleInstances = useMemo(
+    () => (filter === "all" ? instances : instances.filter((i) => i.kind === filter)),
+    [instances, filter],
   );
 
-  /* The doc type targeted by Request/Send: the active SecureDoc card. */
-  const activeSecureKey: SecureDocKey | null =
-    selectedDocKey && isSecureKey(selectedDocKey) ? selectedDocKey : null;
-
-  /* ─── Bulk actions ─── */
-
-  function runBulk(run: () => Promise<{ tone: "success" | "error"; text: string }>) {
-    setNotice(null);
-    startBulkTransition(async () => {
-      const result = await run();
-      setNotice(result);
-      if (result.tone === "success") clearSelection();
-    });
-  }
-
-  function handleBulkRemind() {
-    const profileIds = selectedOwners
-      .map((o) => o.profileId)
-      .filter((id): id is string => Boolean(id));
-    runBulk(async () => {
-      const res = await bulkRemindOwners(profileIds);
-      if (!res.ok) return { tone: "error", text: res.error ?? "Reminders failed." };
-      return {
-        tone: "success",
-        text: res.sent === 0
-          ? "No awaiting-signature documents found for that selection."
-          : `Sent ${res.sent} ${res.sent === 1 ? "reminder" : "reminders"}.`,
-      };
-    });
-  }
-
-  function handleBulkRequest() {
-    if (!activeSecureKey) return;
-    const profileIds = selectedOwners
-      .map((o) => o.profileId)
-      .filter((id): id is string => Boolean(id));
-    runBulk(async () => {
-      const res = await bulkRequestDocuments(profileIds, activeSecureKey);
-      if (!res.ok) return { tone: "error", text: res.error ?? "Request failed." };
-      return {
-        tone: "success",
-        text: `Requested ${SECURE_DOC_TYPES[activeSecureKey].label} from ${res.affected} ${res.affected === 1 ? "owner" : "owners"}.`,
-      };
-    });
-  }
-
-  function handleBulkSend() {
-    if (!activeSecureKey) return;
-    const targets = selectedOwners
-      .filter((o) => o.profileId && o.secureDocs[activeSecureKey].status === "not_sent")
-      .map((o) => ({ profileId: o.profileId!, email: o.email, fullName: o.fullName }));
-    runBulk(async () => {
-      if (targets.length === 0) {
-        return {
-          tone: "error",
-          text: `Every selected owner already received ${SECURE_DOC_TYPES[activeSecureKey].label}.`,
-        };
-      }
-      const res = await bulkSendDocuments(targets, activeSecureKey);
-      if (!res.ok) return { tone: "error", text: res.error ?? "Send failed." };
-      return {
-        tone: "success",
-        text: `Sent ${SECURE_DOC_TYPES[activeSecureKey].label} to ${res.affected} ${res.affected === 1 ? "owner" : "owners"}.`,
-      };
-    });
-  }
-
-  /* Waive: every pending/sent signature document of the selected owners,
-     narrowed to the active doc type card when one is selected. */
-  const waiveTargetIds = useMemo(() => {
-    const ids: string[] = [];
-    for (const owner of selectedOwners) {
-      const keys = activeSecureKey ? [activeSecureKey] : secureKeys;
-      for (const key of keys) {
-        const entry = owner.secureDocs[key];
-        if (entry.status === "pending" && entry.latest) ids.push(entry.latest.id);
-      }
-    }
-    return ids;
-  }, [selectedOwners, activeSecureKey]);
-
-  function handleBulkWaive() {
-    setWaiveConfirmOpen(false);
-    runBulk(async () => {
-      const res = await bulkWaiveDocuments(waiveTargetIds);
-      if (!res.ok) return { tone: "error", text: res.error ?? "Waive failed." };
-      return {
-        tone: "success",
-        text: `Waived ${res.affected} ${res.affected === 1 ? "document" : "documents"}.`,
-      };
-    });
-  }
+  const kindCounts = useMemo(() => {
+    const counts: Record<FilterKind, number> = {
+      all: instances.length,
+      signatures: 0,
+      forms: 0,
+      files: 0,
+    };
+    for (const instance of instances) counts[instance.kind]++;
+    return counts;
+  }, [instances]);
 
   /* ─── Action queue handlers ─── */
 
@@ -543,7 +242,7 @@ export function DocumentsHub({
     }
 
     if (!owner) {
-      setNotice({ tone: "error", text: "Owner not found in the matrix. Refresh and retry." });
+      setNotice({ tone: "error", text: "Owner not found. Refresh and retry." });
       return;
     }
 
@@ -595,87 +294,9 @@ export function DocumentsHub({
     });
   }
 
-  function handleSearchSelect(result: DocumentSearchResult) {
-    openDrawerFor(result.owner_id, result.document_key);
-  }
-
   return (
     <div className={styles.page}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.statsStrip}>
-            <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "var(--text-secondary)" }} />
-              {owners.length} owners
-            </span>
-            <span className={styles.statSep}>·</span>
-            <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "var(--color-success)" }} />
-              {totalCompleted} completed
-            </span>
-            <span className={styles.statSep}>·</span>
-            <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "var(--status-warning)" }} />
-              {totalPending} pending
-            </span>
-            <span className={styles.statSep}>·</span>
-            <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "var(--text-tertiary)" }} />
-              {totalNotSent} not sent
-            </span>
-          </div>
-        </div>
-
-        <div className={styles.headerRight}>
-          <DocumentSearch onSelect={handleSearchSelect} />
-
-          <div className={styles.filterChips}>
-            {(
-              ["needs_action", "all", "signatures", "forms", "files"] as FilterKind[]
-            ).map((f) => (
-              <button
-                key={f}
-                className={`${styles.chip} ${filter === f ? styles.chipActive : ""} ${
-                  f === "needs_action" && actionQueue.length > 0 && filter !== f
-                    ? styles.chipAttention
-                    : ""
-                }`}
-                onClick={() => handleFilterChange(f)}
-                type="button"
-              >
-                {f === "needs_action" && <Lightning size={13} weight="duotone" />}
-                {f === "all" && <Files size={13} weight="duotone" />}
-                {f === "signatures" && <PenNib size={13} weight="duotone" />}
-                {f === "forms" && <HouseSimple size={13} weight="duotone" />}
-                {f === "files" && <FileArrowUp size={13} weight="duotone" />}
-                {f === "needs_action"
-                  ? "Needs Action"
-                  : f === "all"
-                  ? "All"
-                  : f === "signatures"
-                  ? "Signatures"
-                  : f === "forms"
-                  ? "Forms"
-                  : "Files"}
-                <span className={styles.chipCount}>
-                  {f === "needs_action"
-                    ? actionQueue.length
-                    : f === "all"
-                    ? secureKeys.length + formKeys.length
-                    : f === "signatures"
-                    ? signatureKeys.length
-                    : f === "forms"
-                    ? dataFormKeys.length
-                    : fileSecureKeys.length + fileFormKeys.length}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Result / error banner for bulk + queue actions */}
+      {/* Result / error banner for queue + coverage actions */}
       {notice && (
         <div
           className={notice.tone === "success" ? styles.successBanner : styles.errorBanner}
@@ -685,7 +306,8 @@ export function DocumentsHub({
         </div>
       )}
 
-      {filter === "needs_action" ? (
+      {/* Needs Action queue — the hero, always first */}
+      {actionQueue.length > 0 && (
         <ActionQueue
           items={actionQueue}
           onAction={handleQueueAction}
@@ -693,144 +315,120 @@ export function DocumentsHub({
           busyId={queueBusyId}
           rowsByDocumentId={rowsByDocumentId}
         />
-      ) : (
-        <>
-          {/* Cards row */}
-          <div className={styles.cardsRow}>
-            {visibleCards.map((key) => {
-              const isSecure = isSecureKey(key);
-              const s = isSecure
-                ? stats.secureDocs[key as SecureDocKey]
-                : stats.forms[key as FormKey];
-              return (
-                <DocCard
-                  key={key}
-                  docKey={key}
-                  cardStats={s}
-                  active={selectedDocKey === key}
-                  onClick={() => handleCardClick(key)}
-                />
-              );
-            })}
-          </div>
-
-          {/* Matrix table */}
-          <div className={styles.tableSection}>
-            {owners.length === 0 ? (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>
-                  <Files size={48} weight="duotone" />
-                </div>
-                <p className={styles.emptyTitle}>No owners found</p>
-                <p className={styles.emptyBody}>
-                  There are no active owners to display. Owners appear here as
-                  soon as they join a property.
-                </p>
-              </div>
-            ) : (
-              <div className={styles.tableScroll}>
-                <div className={styles.table}>
-                {/* Group header row */}
-                <div className={styles.matrixGroupHeader}>
-                  <div className={`${styles.checkCell} ${styles.stickyCheck}`} />
-                  <div className={`${styles.ownerHeadSpacer} ${styles.stickyOwner}`} />
-                  <div className={styles.thSecure}>
-                    <ShieldCheck size={12} weight="fill" />
-                    SecureDocs
-                  </div>
-                  <div className={styles.dividerCol} />
-                  <div className={styles.thForms}>
-                    <HouseSimple size={12} weight="fill" />
-                    Setup
-                  </div>
-                  <div className={styles.countCol} />
-                </div>
-
-                {/* Sub-header: individual column names */}
-                <div className={styles.matrixSubHeader}>
-                  <div className={`${styles.checkCell} ${styles.stickyCheck}`}>
-                    <input
-                      type="checkbox"
-                      className={styles.rowCheckbox}
-                      checked={allSelected}
-                      onChange={toggleAll}
-                      aria-label={allSelected ? "Deselect all owners" : "Select all owners"}
-                    />
-                  </div>
-                  <div className={`${styles.tableHeaderCell} ${styles.stickyOwner}`}>
-                    Owner
-                  </div>
-                  {secureKeys.map((k) => (
-                    <div
-                      key={k}
-                      className={`${styles.tableHeaderCellCenter} ${styles.secureColHeader} ${selectedDocKey === k ? styles.headerCellActive : ""}`}
-                    >
-                      {SECURE_DOC_TYPES[k].rowLabel}
-                    </div>
-                  ))}
-                  <div className={styles.dividerCol} />
-                  {matrixFormKeys.map((k) => (
-                    <div
-                      key={k}
-                      className={`${styles.tableHeaderCellCenter} ${styles.formColHeader} ${selectedDocKey === k ? styles.headerCellActive : ""}`}
-                    >
-                      {FORM_TYPES[k].rowLabel}
-                    </div>
-                  ))}
-                  <div className={styles.tableHeaderCellRight}>Done</div>
-                </div>
-
-                {/* Data rows */}
-                {owners.map((owner) => (
-                  <OwnerMatrixRow
-                    key={owner.contactId}
-                    owner={owner}
-                    activeDocKey={selectedDocKey}
-                    selected={selectedIds.has(owner.contactId)}
-                    onToggleSelect={() => toggleOwner(owner.contactId)}
-                    onOpen={(dk) => setDrawerEntry({ owner, docKey: dk })}
-                  />
-                ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </>
       )}
 
-      {/* Bulk action bar */}
-      <AnimatePresence>
-        {selectedIds.size > 0 && filter !== "needs_action" && (
-          <BulkActionBar
-            selectedCount={selectedIds.size}
-            onRemind={handleBulkRemind}
-            onRequest={handleBulkRequest}
-            onWaive={() => setWaiveConfirmOpen(true)}
-            onSend={handleBulkSend}
-            onClear={clearSelection}
-            busy={bulkBusy}
-            docTypeHint={
-              activeSecureKey ? null : "Select a signature card first to choose the document type"
-            }
-          />
-        )}
-      </AnimatePresence>
+      {/* View switch + kind chips */}
+      <div className={styles.listControls}>
+        <div className={styles.viewSwitch} role="group" aria-label="Documents view">
+          <button
+            type="button"
+            className={`${styles.viewBtn} ${view === "list" ? styles.viewBtnActive : ""}`}
+            onClick={() => setView("list")}
+          >
+            <ListBullets size={13} weight="bold" />
+            List
+          </button>
+          <button
+            type="button"
+            className={`${styles.viewBtn} ${view === "coverage" ? styles.viewBtnActive : ""}`}
+            onClick={() => setView("coverage")}
+          >
+            <GridNine size={13} weight="bold" />
+            Coverage
+          </button>
+        </div>
 
-      <ConfirmModal
-        open={waiveConfirmOpen}
-        title="Waive selected documents?"
-        description={
-          waiveTargetIds.length === 0
-            ? "No awaiting-signature documents exist for this selection, so there is nothing to waive."
-            : `This waives ${waiveTargetIds.length} awaiting-signature ${
-                waiveTargetIds.length === 1 ? "document" : "documents"
-              }${activeSecureKey ? ` (${SECURE_DOC_TYPES[activeSecureKey].label})` : ""}. Waived documents stop counting against owners.`
-        }
-        confirmLabel="Waive"
-        variant="danger"
-        onConfirm={handleBulkWaive}
-        onCancel={() => setWaiveConfirmOpen(false)}
-      />
+        {view === "list" && (
+          <div className={styles.filterChips}>
+            {(["all", "signatures", "forms", "files"] as FilterKind[]).map((f) => (
+              <button
+                key={f}
+                className={`${styles.chip} ${filter === f ? styles.chipActive : ""}`}
+                onClick={() => setFilter(f)}
+                type="button"
+              >
+                {f === "all" && <Files size={13} weight="duotone" />}
+                {f === "signatures" && <PenNib size={13} weight="duotone" />}
+                {f === "forms" && <HouseSimple size={13} weight="duotone" />}
+                {f === "files" && <FileArrowUp size={13} weight="duotone" />}
+                {f === "all"
+                  ? "All"
+                  : f === "signatures"
+                  ? "Signatures"
+                  : f === "forms"
+                  ? "Forms"
+                  : "Files"}
+                <span className={styles.chipCount}>{kindCounts[f]}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {view === "coverage" ? (
+        <CoverageView
+          owners={owners}
+          groups={coverageGroups}
+          onOpen={(owner, docKey) => setDrawerEntry({ owner, docKey })}
+          onNotice={setNotice}
+        />
+      ) : visibleInstances.length === 0 ? (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>
+            <Files size={48} weight="duotone" />
+          </div>
+          <p className={styles.emptyTitle}>
+            {instances.length === 0 ? "No documents yet" : "Nothing in this kind yet"}
+          </p>
+          <p className={styles.emptyBody}>
+            {instances.length === 0
+              ? "Documents appear here when you send a template or a form to an owner."
+              : "Try another kind chip, or send something new from the Templates or Forms tab."}
+          </p>
+        </div>
+      ) : (
+        <div className={styles.instanceList} role="list">
+          {visibleInstances.map((instance) => (
+            <div
+              key={`${instance.owner.contactId}-${instance.docKey}`}
+              className={styles.instanceRow}
+              role="button"
+              tabIndex={0}
+              onClick={() => setDrawerEntry({ owner: instance.owner, docKey: instance.docKey })}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                setDrawerEntry({ owner: instance.owner, docKey: instance.docKey })
+              }
+            >
+              <OwnerAvatar name={instance.owner.fullName} url={instance.owner.avatarUrl} />
+              <span className={styles.instanceMeta}>
+                <span className={styles.instanceTitle}>{instance.title}</span>
+                <span className={styles.instanceOwner}>{instance.owner.fullName}</span>
+              </span>
+              {instance.stage ? (
+                <span className={styles.instanceStage}>
+                  <StageMeter stage={instance.stage} compact />
+                </span>
+              ) : (
+                <span
+                  className={`${styles.statusPill} ${
+                    instance.statusTone === "done"
+                      ? styles.pillDone
+                      : instance.statusTone === "pending"
+                      ? styles.pillPending
+                      : styles.pillIdle
+                  }`}
+                >
+                  {instance.statusLabel}
+                </span>
+              )}
+              <span className={styles.instanceTime}>
+                {instance.updatedAt ? fmtRelativeTime(instance.updatedAt) : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <AnimatePresence>
         {drawerEntry && (

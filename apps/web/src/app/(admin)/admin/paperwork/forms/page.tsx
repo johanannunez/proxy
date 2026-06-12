@@ -1,9 +1,58 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { listForms } from "@/lib/admin/forms";
+import { listDocumentTemplates } from "@/lib/admin/document-templates";
+import { fetchDocumentsHubData } from "@/lib/admin/documents-hub";
+import { SECURE_DOC_TYPES, type SecureDocKey } from "@/lib/admin/documents-hub-shared";
+import { PROXY_ORG_ID } from "@/types/organizations";
+import { PaperworkShell } from "../PaperworkShell";
+import { FormsTab } from "./FormsTab";
+import type { SendRecipient } from "../templates/unified-types";
+
+export const metadata: Metadata = { title: "Paperwork · Forms" };
+export const dynamic = "force-dynamic";
+
+const secureKeys = Object.keys(SECURE_DOC_TYPES) as SecureDocKey[];
 
 /**
- * Forms stopped being a nav concept in the 2026-06-12 paperwork unification:
- * form templates live in the unified Templates tab. Old links keep working.
+ * Forms tab — the form-master library (2026-06-12 IA amendment). Managing a
+ * form library is a distinct activity from chasing signatures, so form
+ * masters get their own tab between Documents and Templates.
  */
-export default function FormsRedirect() {
-  redirect("/admin/paperwork/templates?type=form");
+export default async function FormsPage() {
+  const headerList = await headers();
+  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+
+  const [forms, systemTemplates, owners] = await Promise.all([
+    listForms(orgId),
+    listDocumentTemplates(),
+    fetchDocumentsHubData(),
+  ]);
+
+  const recipients: SendRecipient[] = owners
+    .filter((o) => o.profileId !== null)
+    .map((o) => ({
+      profileId: o.profileId as string,
+      name: o.fullName,
+      email: o.email,
+      avatarUrl: o.avatarUrl,
+      propertyCount: o.propertyCount,
+      activeDocumentKeys: secureKeys.filter(
+        (k) => o.secureDocs[k].status !== "not_sent",
+      ),
+    }));
+
+  const library = systemTemplates
+    .filter((t) => t.is_system)
+    .map((t) => ({
+      id: t.id,
+      name: t.display_name,
+      description: t.description,
+    }));
+
+  return (
+    <PaperworkShell active="forms" orgId={orgId}>
+      <FormsTab forms={forms} recipients={recipients} library={library} />
+    </PaperworkShell>
+  );
 }

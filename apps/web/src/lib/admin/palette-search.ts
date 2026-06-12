@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 export type PaletteScope =
   | "all"
@@ -10,7 +11,7 @@ export type PaletteScope =
 
 export type PaletteHit = {
   id: string;
-  kind: "contact" | "owner" | "property" | "task" | "project";
+  kind: "contact" | "owner" | "property" | "task" | "project" | "document" | "template";
   label: string;
   subtitle?: string;
   href: string;
@@ -22,6 +23,8 @@ export type PaletteSearchResponse = {
   properties: PaletteHit[];
   tasks: PaletteHit[];
   projects: PaletteHit[];
+  documents: PaletteHit[];
+  templates: PaletteHit[];
 };
 
 function ilikePattern(q: string): string {
@@ -161,22 +164,118 @@ async function queryProjects(q: string, limit: number): Promise<PaletteHit[]> {
   }));
 }
 
+/* ─── Paperwork (2026-06-12 IA amendment): document instances + masters ─── */
+
+type DocumentRow = {
+  id: string;
+  title: string | null;
+  document_key: string | null;
+  status: string | null;
+  owner_id: string;
+};
+
+/** Document instances on the spine. Deep links open the Documents drawer. */
+async function queryDocuments(q: string, limit: number): Promise<PaletteHit[]> {
+  const supabase = await createClient();
+  const db = untypedDatabase(supabase);
+  const pattern = `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+
+  const { data, error } = await db
+    .from<DocumentRow[]>("documents")
+    .select("id, title, document_key, status, owner_id")
+    .is("form_key", null)
+    .not("owner_id", "is", null)
+    .or(`title.ilike.${pattern},document_key.ilike.${pattern}`)
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error || !data) return [];
+
+  const ownerIds = [...new Set(data.map((r) => r.owner_id))];
+  const names = new Map<string, string>();
+  if (ownerIds.length > 0) {
+    const { data: profiles } = await db
+      .from<Array<{ id: string; full_name: string | null }>>("profiles")
+      .select("id, full_name")
+      .in("id", ownerIds);
+    for (const p of profiles ?? []) names.set(p.id, p.full_name ?? "Owner");
+  }
+
+  return data.map((r) => {
+    const status = r.status ? r.status.replace(/_/g, " ") : null;
+    const ownerName = names.get(r.owner_id) ?? "Owner";
+    return {
+      id: r.id,
+      kind: "document" as const,
+      label: r.title?.trim() || r.document_key || "Document",
+      subtitle: status ? `${ownerName} · ${status}` : ownerName,
+      href: r.document_key
+        ? `/admin/paperwork?owner=${r.owner_id}&doc=${r.document_key}`
+        : "/admin/paperwork",
+    };
+  });
+}
+
+/** Masters: signature templates + form templates, merged. */
+async function queryTemplates(q: string, limit: number): Promise<PaletteHit[]> {
+  const supabase = await createClient();
+  const db = untypedDatabase(supabase);
+  const pattern = `%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+
+  const [templateRes, formRes] = await Promise.all([
+    db
+      .from<Array<{ id: string; display_name: string }>>("document_templates")
+      .select("id, display_name")
+      .eq("is_active", true)
+      .ilike("display_name", pattern)
+      .limit(limit),
+    db
+      .from<Array<{ id: string; name: string }>>("forms")
+      .select("id, name")
+      .ilike("name", pattern)
+      .limit(limit),
+  ]);
+
+  const hits: PaletteHit[] = [
+    ...(templateRes.data ?? []).map((r) => ({
+      id: r.id,
+      kind: "template" as const,
+      label: r.display_name,
+      subtitle: "Signature template",
+      href: `/admin/paperwork/templates/${r.id}`,
+    })),
+    ...(formRes.data ?? []).map((r) => ({
+      id: r.id,
+      kind: "template" as const,
+      label: r.name,
+      subtitle: "Form",
+      href: `/admin/paperwork/templates/${r.id}`,
+    })),
+  ];
+  return hits.slice(0, limit);
+}
+
 export async function searchAll(
   q: string,
   perGroup = 5,
 ): Promise<PaletteSearchResponse> {
   const query = q.trim();
   if (!query) {
-    return { contacts: [], owners: [], properties: [], tasks: [], projects: [] };
+    return {
+      contacts: [], owners: [], properties: [], tasks: [], projects: [],
+      documents: [], templates: [],
+    };
   }
-  const [contacts, owners, properties, tasks, projects] = await Promise.all([
-    queryContacts(query, perGroup),
-    queryOwners(query, perGroup),
-    queryProperties(query, perGroup),
-    queryTasks(query, perGroup),
-    queryProjects(query, perGroup),
-  ]);
-  return { contacts, owners, properties, tasks, projects };
+  const [contacts, owners, properties, tasks, projects, documents, templates] =
+    await Promise.all([
+      queryContacts(query, perGroup),
+      queryOwners(query, perGroup),
+      queryProperties(query, perGroup),
+      queryTasks(query, perGroup),
+      queryProjects(query, perGroup),
+      queryDocuments(query, perGroup),
+      queryTemplates(query, perGroup),
+    ]);
+  return { contacts, owners, properties, tasks, projects, documents, templates };
 }
 
 export async function listScope(

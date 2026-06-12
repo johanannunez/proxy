@@ -1,4 +1,4 @@
-/* ─── PaperworkShell — shared chrome for the Documents | Templates tabs ─── */
+/* ─── PaperworkShell — shared chrome for Documents | Forms | Templates ─── */
 
 .shell {
   display: flex;
@@ -20,16 +20,6 @@
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-}
-
-.title {
-  font-family: var(--font-sora), var(--font-sans);
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary, var(--color-text-primary));
-  margin: 0;
-  line-height: 1.15;
 }
 
 .tabs {

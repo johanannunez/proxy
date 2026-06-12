@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createTemplate, cloneTemplate } from "@/lib/signing/docuseal";
 import {
@@ -100,6 +101,26 @@ export async function activateTemplate(
 
   const ok = await updateDocumentTemplateRecord(id, { is_active: true });
   return ok ? { ok: true } : { ok: false, error: "Could not activate the template." };
+}
+
+/**
+ * Coverage tracking (2026-06-12 IA amendment): tracked templates become
+ * Coverage matrix columns, grouped by category.
+ */
+export async function updateTemplateTracking(
+  id: string,
+  updates: { tracked?: boolean; category?: string | null },
+): Promise<{ ok: boolean; error?: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
+  const ok = await updateDocumentTemplateRecord(id, updates);
+  if (!ok) {
+    return { ok: false, error: "Could not update coverage tracking. Try again." };
+  }
+  revalidatePath("/admin/paperwork");
+  revalidatePath("/admin/paperwork/templates");
+  return { ok: true };
 }
 
 /**

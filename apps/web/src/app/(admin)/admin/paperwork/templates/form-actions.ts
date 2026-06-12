@@ -8,6 +8,9 @@ import {
   updateForm,
   publishForm,
   deleteForm,
+  duplicateForm,
+  archiveForm,
+  unarchiveForm,
   createFormResponse,
   getForm,
   getRespondentCrossFormData,
@@ -79,6 +82,8 @@ export async function updateFormMetaAction(
     is_public?: boolean;
     slug?: string | null;
     is_active?: boolean;
+    tracked?: boolean;
+    category?: string | null;
   },
 ): Promise<FormActionResult> {
   const { error } = await requireAdmin();
@@ -107,6 +112,38 @@ export async function unpublishFormAction(id: string): Promise<FormActionResult>
   const result = await updateForm(id, { is_active: false });
   if (!result) return { ok: false, error: "Failed to unpublish form." };
   revalidatePath("/admin/paperwork/templates");
+  return { ok: true, data: undefined };
+}
+
+export async function duplicateFormAction(
+  id: string,
+): Promise<FormActionResult<{ id: string }>> {
+  const { userId, error } = await requireAdmin();
+  if (error || !userId) return { ok: false, error: error ?? "Unauthorized." };
+
+  const copy = await duplicateForm(id, userId);
+  if (!copy) return { ok: false, error: "Failed to duplicate form." };
+  revalidatePath("/admin/paperwork/forms");
+  return { ok: true, data: { id: copy.id } };
+}
+
+export async function archiveFormAction(id: string): Promise<FormActionResult> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false, error };
+
+  const result = await archiveForm(id);
+  if (!result) return { ok: false, error: "Failed to archive form." };
+  revalidatePath("/admin/paperwork/forms");
+  return { ok: true, data: undefined };
+}
+
+export async function unarchiveFormAction(id: string): Promise<FormActionResult> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false, error };
+
+  const result = await unarchiveForm(id);
+  if (!result) return { ok: false, error: "Failed to restore form." };
+  revalidatePath("/admin/paperwork/forms");
   return { ok: true, data: undefined };
 }
 
