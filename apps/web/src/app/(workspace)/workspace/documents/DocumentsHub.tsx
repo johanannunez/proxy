@@ -9,15 +9,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "motion/react";
+import { DocusealForm } from "@docuseal/react";
 import {
   CaretDown,
   CreditCard,
   FileDashed,
   FolderSimpleUser,
   HouseLine,
+  SealCheck,
   ShieldCheck,
   Signature,
 } from "@phosphor-icons/react";
+import { getDocusealCustomCss, DOCUSEAL_I18N } from "@/lib/signing/docuseal-theme";
 import type { DocumentHub, HubItem } from "@/lib/documents/workspace";
 import { DocumentPacket } from "@/components/workspace/documents/DocumentPacket";
 import { PacketStepper } from "@/components/workspace/documents/PacketStepper";
@@ -180,6 +183,7 @@ function RequestBanner({ requestContext }: { requestContext: RequestContext }) {
 // ─── Sign drawer ──────────────────────────────────────────────────────────────
 
 function SignDrawer({ item, onClose }: { item: PacketItem; onClose: () => void }) {
+  const router = useRouter();
   const [state, setState] = useState<{
     loading: boolean;
     embedUrl: string | null;
@@ -189,18 +193,33 @@ function SignDrawer({ item, onClose }: { item: PacketItem; onClose: () => void }
       ? { loading: true, embedUrl: null, error: null }
       : { loading: false, embedUrl: null, error: "Document not found." },
   );
+  const [formLoaded, setFormLoaded] = useState(false);
+  const [signed, setSigned] = useState(false);
+  const [isDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  );
+  const customCss = useMemo(() => getDocusealCustomCss(isDark), [isDark]);
 
   useEffect(() => {
     if (!item.id) return;
     let active = true;
-    startSignature(item.id).then((res) => {
-      if (!active) return;
-      setState({
-        loading: false,
-        embedUrl: res.embedUrl,
-        error: res.ok ? null : (res.error ?? null),
+    startSignature(item.id)
+      .then((res) => {
+        if (!active) return;
+        setState({
+          loading: false,
+          embedUrl: res.embedUrl,
+          error: res.ok ? null : (res.error ?? null),
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setState({
+          loading: false,
+          embedUrl: null,
+          error: "Could not load the document. Close this panel and try again.",
+        });
       });
-    });
     return () => {
       active = false;
     };
@@ -244,13 +263,58 @@ function SignDrawer({ item, onClose }: { item: PacketItem; onClose: () => void }
           </button>
         </div>
 
-        {state.embedUrl ? (
-          <div className="min-h-0 flex-1" style={{ overflow: "hidden" }}>
-            <iframe
+        {signed ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+            <span
+              className="flex h-16 w-16 items-center justify-center rounded-2xl text-white"
+              style={{ background: "var(--color-brand-gradient)", boxShadow: "var(--shadow-lg)" }}
+            >
+              <SealCheck size={32} weight="fill" />
+            </span>
+            <div className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              All signed. You&apos;re set.
+            </div>
+            <p className="max-w-sm text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              We&apos;ll countersign on our end and file the executed copy here in your documents.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                router.refresh();
+                onClose();
+              }}
+              className="cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)] active:opacity-80"
+              style={{ background: "var(--color-brand-gradient)", boxShadow: "var(--shadow-md)" }}
+            >
+              Back to documents
+            </button>
+          </div>
+        ) : state.embedUrl ? (
+          <div className="relative min-h-0 flex-1 overflow-y-auto">
+            {!formLoaded ? (
+              <div
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
+                style={{ backgroundColor: "var(--color-white)" }}
+              >
+                <Signature
+                  size={40}
+                  weight="duotone"
+                  className="animate-pulse"
+                  style={{ color: "var(--color-brand)" }}
+                />
+                <div className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  Preparing your document…
+                </div>
+              </div>
+            ) : null}
+            <DocusealForm
               src={state.embedUrl}
-              title={`Sign ${item.title}`}
-              className="h-full w-full border-0"
-              allow="camera; microphone; clipboard-write"
+              customCss={customCss}
+              i18n={DOCUSEAL_I18N}
+              withTitle={false}
+              backgroundColor={isDark ? "#1a1a1a" : "#f8f7f6"}
+              onLoad={() => setFormLoaded(true)}
+              onComplete={() => setSigned(true)}
             />
           </div>
         ) : (
