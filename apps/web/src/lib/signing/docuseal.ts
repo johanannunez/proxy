@@ -171,6 +171,22 @@ export async function getSubmission(submissionId: number): Promise<SubmissionSta
   };
 }
 
+/**
+ * Audit log URL for a completed submission. DocuSeal generates a completion
+ * certificate (signer emails, IP addresses, full event trail) per submission.
+ */
+export async function getSubmissionAuditUrl(submissionId: number): Promise<string | null> {
+  if (!isDocuSealConfigured()) return null;
+  try {
+    const res = await fetch(`${baseUrl()}/submissions/${submissionId}`, { headers: headers() });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { audit_log_url?: string | null };
+    return data.audit_log_url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Fetch a fresh embedded signing URL for one submitter (e.g. resend/reopen). */
 export async function getSubmitterEmbedUrl(submitterSlug: string): Promise<string> {
   return `${appUrl()}/s/${submitterSlug}`;

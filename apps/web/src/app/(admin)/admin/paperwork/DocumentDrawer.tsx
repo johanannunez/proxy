@@ -21,6 +21,7 @@ import {
   Circle,
   Phone,
   EnvelopeSimple,
+  Certificate,
   ArrowSquareOut,
 } from "@phosphor-icons/react";
 import {
@@ -44,6 +45,8 @@ import {
   sendDocumentToOwner,
   sendDocumentReminder,
   setDocumentReminderMute,
+  getDocumentAuditLog,
+  type DocumentAuditLog,
 } from "./document-actions";
 import { StageMeter } from "./StageMeter";
 import styles from "./DocumentDrawer.module.css";
@@ -590,6 +593,118 @@ function VersionHistory({ versions }: { versions: SignedDocRow[] }) {
   );
 }
 
+/* ─── Certificate of completion / audit panel (premium upgrade 6) ─── */
+
+const AUDIT_EVENT_LABELS: Record<string, string> = {
+  "form.viewed": "Opened the document",
+  "form.started": "Started filling it out",
+  "form.completed": "Signed",
+  "submission.completed": "All parties signed",
+  "form.declined": "Declined to sign",
+  "submission.expired": "The signing request expired",
+};
+
+function AuditPanel({
+  documentId,
+  completed,
+}: {
+  documentId: string;
+  completed: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [log, setLog] = useState<DocumentAuditLog | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  function handleToggle() {
+    const next = !open;
+    setOpen(next);
+    if (next && !log && !loading) {
+      setLoading(true);
+      getDocumentAuditLog(documentId)
+        .then(setLog)
+        .finally(() => setLoading(false));
+    }
+  }
+
+  return (
+    <div className={styles.auditPanel}>
+      <button className={styles.versionsToggle} onClick={handleToggle} type="button">
+        {open ? <CaretDown size={12} /> : <CaretRight size={12} />}
+        <Certificate size={13} weight="duotone" />
+        Certificate and audit trail
+      </button>
+      {open && (
+        <div className={styles.auditBody}>
+          {loading && <div className={styles.auditLoading}>Loading the audit trail…</div>}
+          {log && !log.ok && (
+            <div className={styles.auditLoading}>{log.error ?? "Could not load the audit trail."}</div>
+          )}
+          {log?.ok && (
+            <>
+              {log.signers.length > 0 && (
+                <div className={styles.auditSection}>
+                  <div className={styles.auditSectionLabel}>Signers</div>
+                  {log.signers.map((s, i) => (
+                    <div key={`${s.signer_email}-${i}`} className={styles.auditRow}>
+                      <span className={styles.auditRowMain}>
+                        {s.signer_email ?? "Unknown signer"}
+                        <span className={styles.auditRowRole}>
+                          {s.role === "countersigner" ? "Countersigner" : "Signer"}
+                        </span>
+                      </span>
+                      <span className={styles.auditRowMeta}>
+                        {s.status === "signed"
+                          ? `Signed ${s.signed_at ? fmtDate(s.signed_at) : ""}`
+                          : "Has not signed yet"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className={styles.auditSection}>
+                <div className={styles.auditSectionLabel}>Event log</div>
+                {log.events.length === 0 ? (
+                  <div className={styles.auditLoading}>
+                    No tracked events yet. Events appear as the recipient opens
+                    and signs the document.
+                  </div>
+                ) : (
+                  log.events.map((e, i) => (
+                    <div key={`${e.event_type}-${i}`} className={styles.auditRow}>
+                      <span className={styles.auditRowMain}>
+                        {AUDIT_EVENT_LABELS[e.event_type] ?? e.event_type}
+                        {e.signer_email && (
+                          <span className={styles.auditRowRole}>{e.signer_email}</span>
+                        )}
+                      </span>
+                      <span className={styles.auditRowMeta}>{fmtDate(e.occurred_at)}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              {completed && (
+                <a
+                  href={`/api/admin/documents/${documentId}/certificate`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.certificateLink}
+                >
+                  <DownloadSimple size={13} weight="bold" />
+                  Download completion certificate
+                </a>
+              )}
+              <p className={styles.auditNote}>
+                The certificate includes signer email addresses, IP addresses,
+                and the complete signing trail.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Drawer ─── */
 export function DocumentDrawer({
   owner,
@@ -702,6 +817,11 @@ export function DocumentDrawer({
 
         {/* Versions */}
         {secure && versions.length > 0 && <VersionHistory versions={versions} />}
+
+        {/* Certificate of completion + audit trail */}
+        {secure && latest && (
+          <AuditPanel documentId={latest.id} completed={status === "completed"} />
+        )}
 
         {/* Footer */}
         <div className={styles.drawerFooter}>

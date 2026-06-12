@@ -735,3 +735,101 @@
   opacity: 0.55;
   cursor: wait;
 }
+
+/* ─── Certificate / audit panel ─── */
+
+.auditPanel {
+  border-top: 1px solid var(--border, #e5e7eb);
+  padding: 6px 20px;
+  flex-shrink: 0;
+}
+
+.auditBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 2px 12px;
+}
+
+.auditLoading {
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.auditSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auditSectionLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.auditRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.auditRowMain {
+  color: var(--text-primary, #111827);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.auditRowRole {
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auditRowMeta {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.certificateLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 7px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.15s var(--ease-spring);
+}
+
+.certificateLink:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.certificateLink:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.auditNote {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-tertiary, #9ca3af);
+  margin: 0;
+}

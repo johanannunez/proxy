@@ -146,6 +146,59 @@ export async function sendDocumentReminder(
   }
 }
 
+export type DocumentAuditEvent = {
+  event_type: string;
+  signer_email: string | null;
+  occurred_at: string;
+};
+
+export type DocumentAuditSigner = {
+  signer_email: string | null;
+  role: string;
+  status: string;
+  signed_at: string | null;
+};
+
+export type DocumentAuditLog = {
+  ok: boolean;
+  error?: string;
+  events: DocumentAuditEvent[];
+  signers: DocumentAuditSigner[];
+};
+
+/**
+ * Full audit trail for a signature document: every DocuSeal visibility and
+ * completion event plus the signer roster. Powers the drawer's certificate
+ * panel (premium upgrade 6). Signer IP addresses live in the downloadable
+ * DocuSeal certificate (see /api/admin/documents/[id]/certificate).
+ */
+export async function getDocumentAuditLog(documentId: string): Promise<DocumentAuditLog> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError, events: [], signers: [] };
+
+  const supabase = await createClient();
+  const db = untypedDatabase(supabase);
+
+  const [{ data: events }, { data: signers }] = await Promise.all([
+    db
+      .from<DocumentAuditEvent[]>("document_events")
+      .select("event_type, signer_email, occurred_at")
+      .eq("document_id", documentId)
+      .order("occurred_at", { ascending: true }),
+    db
+      .from<DocumentAuditSigner[]>("document_signers")
+      .select("signer_email, role, status, signed_at")
+      .eq("document_id", documentId)
+      .order("order_index", { ascending: true }),
+  ]);
+
+  return {
+    ok: true,
+    events: events ?? [],
+    signers: signers ?? [],
+  };
+}
+
 /**
  * Per-document auto-reminder mute. No schema change: muting inserts a marker
  * row in document_reminders (channel 'message', round 3, delivered false) so
