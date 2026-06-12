@@ -31,6 +31,8 @@ import {
   type FormKey,
   type SignedDocRow,
 } from "@/lib/admin/documents-hub-shared";
+import { DocumentTimeline } from "@/components/workspace/documents/DocumentTimeline";
+import type { TimelineEvent } from "@/components/workspace/documents/packet-types";
 import { sendDocumentToOwner, sendDocumentReminder } from "./document-actions";
 import styles from "./DocumentDrawer.module.css";
 
@@ -251,6 +253,28 @@ function StatCards({
       </div>
     </div>
   );
+}
+
+/* ─── Timeline events from the signature row's lifecycle timestamps ───
+   Same shared component as the workspace portal; events derive from the real
+   created/sent/signed timestamps on the documents spine. */
+function buildTimelineEvents(latest: SignedDocRow, ownerName: string): TimelineEvent[] {
+  const events: TimelineEvent[] = [{ event: "created", timestamp: latest.createdAt }];
+  if (latest.sentAt) {
+    events.push({
+      event: "sent",
+      timestamp: latest.sentAt,
+      actor: latest.sentByName ?? "Proxy",
+    });
+  }
+  if (latest.signedAt) {
+    events.push({ event: "signed", timestamp: latest.signedAt, actor: ownerName });
+    const s = latest.status?.toLowerCase();
+    if (s === "on_file" || s === "completed") {
+      events.push({ event: "on_file", timestamp: latest.signedAt });
+    }
+  }
+  return events;
 }
 
 /* ─── Secure doc body ─── */
@@ -586,6 +610,11 @@ export function DocumentDrawer({
 
         {/* Body */}
         <div className={styles.drawerBody}>
+          {/* Activity timeline — shared with the workspace portal */}
+          {secure && latest && (
+            <DocumentTimeline events={buildTimelineEvents(latest, owner.fullName)} />
+          )}
+
           {secure ? (
             <SecureDocBody docKey={activeDocKey as SecureDocKey} latest={latest} />
           ) : (

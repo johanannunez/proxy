@@ -13,6 +13,7 @@ import {
   Files,
   FileDashed,
   Clipboard,
+  ChatText,
   ShareNetwork,
   Funnel,
   UserList,
@@ -107,6 +108,7 @@ const navEntries: NavEntry[] = [
         items: [
           { href: "/admin/paperwork", label: "Documents", icon: <Files size={15} weight="duotone" /> },
           { href: "/admin/paperwork/forms", label: "Forms", icon: <Clipboard size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/forms" },
+          { href: "/admin/paperwork/responses", label: "Responses", icon: <ChatText size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/responses" },
           { href: "/admin/paperwork/templates", label: "Templates", icon: <FileDashed size={15} weight="duotone" />, matchPrefix: "/admin/paperwork/templates" },
         ],
       },
