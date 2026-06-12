@@ -296,3 +296,23 @@
   color: var(--text-secondary, #6b7280);
   margin: 0;
 }
+
+/* ─── Engagement chip + compact stage meter (premium upgrades 1 + 3) ─── */
+
+.viewedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(2, 170, 235, 0.1);
+  color: var(--color-brand, #1b77be);
+  flex-shrink: 0;
+}
+
+.stageMeterRow {
+  margin-top: 7px;
+  max-width: 260px;
+}

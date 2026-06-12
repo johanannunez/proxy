@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { untypedDatabase } from "@/lib/supabase/untyped";
+import { createServiceClient } from "@/lib/supabase/service";
 import { createDocumentFromTemplate, resendDocumentLink } from "@/lib/signing/boldsign";
 import { SECURE_DOC_TYPES } from "@/lib/admin/documents-hub";
 import type { SecureDocKey } from "@/lib/admin/documents-hub";
@@ -142,6 +143,58 @@ export async function sendDocumentReminder(
   } catch (err) {
     console.error("[document-actions] sendDocumentReminder error:", err);
     return { ok: false, error: "Unexpected error sending reminder." };
+  }
+}
+
+/**
+ * Per-document auto-reminder mute. No schema change: muting inserts a marker
+ * row in document_reminders (channel 'message', round 3, delivered false) so
+ * find_reminder_candidates() sees all rounds consumed and skips the document.
+ * Real reminders always use channel 'email', so unmuting deletes only markers.
+ * Writes go through the service client (document_reminders RLS is
+ * service-role-write by design); the admin gate above is the authorization.
+ */
+export async function setDocumentReminderMute(
+  documentId: string,
+  muted: boolean,
+): Promise<ActionResult> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const service = createServiceClient() as any;
+
+    if (muted) {
+      const { error } = await service.from("document_reminders").insert({
+        document_id: documentId,
+        channel: "message",
+        round: 3,
+        delivered: false,
+      });
+      if (error) {
+        console.error("[document-actions] mute insert error:", error.message);
+        return { ok: false, error: "Could not mute reminders for this document." };
+      }
+    } else {
+      const { error } = await service
+        .from("document_reminders")
+        .delete()
+        .eq("document_id", documentId)
+        .eq("channel", "message")
+        .eq("round", 3)
+        .eq("delivered", false);
+      if (error) {
+        console.error("[document-actions] unmute delete error:", error.message);
+        return { ok: false, error: "Could not turn reminders back on." };
+      }
+    }
+
+    revalidatePath("/admin/paperwork");
+    return { ok: true };
+  } catch (err) {
+    console.error("[document-actions] setDocumentReminderMute error:", err);
+    return { ok: false, error: "Unexpected error updating reminders." };
   }
 }
 

@@ -34,7 +34,8 @@ describe("ActionQueue", () => {
     expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
     expect(screen.getByText("Host Rental Agreement")).toBeInTheDocument();
     expect(screen.getByText("Overdue")).toBeInTheDocument();
-    expect(screen.getByText("9 days waiting")).toBeInTheDocument();
+    // Verb-first status language (paperwork unification, premium upgrade 2).
+    expect(screen.getByText("Waiting on Ada to sign · 9 days")).toBeInTheDocument();
   });
 
   it("fires the primary action and the view callback", () => {

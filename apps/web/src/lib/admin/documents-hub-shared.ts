@@ -493,7 +493,82 @@ export type SignedDocRow = {
   sentAt: string | null;
   sentByName: string | null;
   boldsignDocumentId: string;
+  /** Latest signer view event from document_events (engagement signal). */
+  viewedAt: string | null;
+  /** Highest auto-reminder round already sent (0 = none). */
+  reminderRoundsSent: number;
+  /** Per-document auto-reminder mute. */
+  remindersMuted: boolean;
 };
+
+/* ─── Document stage (package-tracking meter) ─── */
+
+export type DocumentStage = "created" | "sent" | "viewed" | "signed" | "on_file";
+
+export const DOCUMENT_STAGES: Array<{ key: DocumentStage; label: string }> = [
+  { key: "created", label: "Created" },
+  { key: "sent", label: "Sent" },
+  { key: "viewed", label: "Viewed" },
+  { key: "signed", label: "Signed" },
+  { key: "on_file", label: "On file" },
+];
+
+export function stageOfSignedDoc(row: SignedDocRow): DocumentStage {
+  const s = row.status?.toLowerCase() ?? "";
+  if (s === "on_file" || s === "completed") return "on_file";
+  if (s === "signed" || s === "awaiting_countersignature" || row.signedAt) return "signed";
+  if (row.viewedAt) return "viewed";
+  if (row.sentAt || s === "sent") return "sent";
+  return "created";
+}
+
+export function stageIndex(stage: DocumentStage): number {
+  return DOCUMENT_STAGES.findIndex((s) => s.key === stage);
+}
+
+/* ─── Auto-reminder schedule (mirrors DEFAULT_CADENCE in documents/reminders) ─── */
+
+const REMINDER_ROUND_DAYS = [3, 7, 14] as const;
+
+/**
+ * When the next auto-reminder goes out for a waiting document, or null when
+ * all rounds are spent or reminders are muted. Day thresholds count from
+ * document creation, matching find_reminder_candidates().
+ */
+export function nextReminderDate(row: SignedDocRow): Date | null {
+  if (row.remindersMuted) return null;
+  if (row.reminderRoundsSent >= 3) return null;
+  const days = REMINDER_ROUND_DAYS[row.reminderRoundsSent];
+  const due = new Date(new Date(row.createdAt).getTime() + days * 86_400_000);
+  return due;
+}
+
+export function fmtReminderDay(date: Date): string {
+  const now = new Date();
+  const diffDays = Math.ceil((date.getTime() - now.getTime()) / 86_400_000);
+  if (diffDays <= 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  if (diffDays < 7) return date.toLocaleDateString("en-US", { weekday: "long" });
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/* ─── Relative time (engagement chips) ─── */
+
+export function fmtRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+export function firstNameOf(name: string): string {
+  return name.split(" ")[0] ?? name;
+}
 
 export type DocHubSecureEntry = {
   status: "completed" | "pending" | "not_sent";

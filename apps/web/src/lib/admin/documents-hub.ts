@@ -176,6 +176,45 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
     console.error("[documents-hub] signature documents fetch error:", docsErr.message);
   }
 
+  // 2b. Engagement + reminder state for those documents: latest viewed event
+  //     per document (document_events) plus reminder rounds sent and the
+  //     per-document mute marker (round-3 'message' rows, see document-actions).
+  const signatureDocIds = (signedDocs ?? []).map((d) => d.id);
+  const viewedAtByDocId = new Map<string, string>();
+  const reminderRoundsByDocId = new Map<string, number>();
+  const mutedDocIds = new Set<string>();
+
+  if (signatureDocIds.length > 0) {
+    const [{ data: viewEvents }, { data: reminderRows }] = await Promise.all([
+      db
+        .from<Array<{ document_id: string; occurred_at: string }>>("document_events")
+        .select("document_id, occurred_at")
+        .in("document_id", signatureDocIds)
+        .in("event_type", ["form.viewed", "form.started"])
+        .order("occurred_at", { ascending: false }),
+      db
+        .from<Array<{ document_id: string; round: number; channel: string; delivered: boolean }>>(
+          "document_reminders",
+        )
+        .select("document_id, round, channel, delivered")
+        .in("document_id", signatureDocIds),
+    ]);
+
+    for (const ev of viewEvents ?? []) {
+      if (!viewedAtByDocId.has(ev.document_id)) {
+        viewedAtByDocId.set(ev.document_id, ev.occurred_at);
+      }
+    }
+    for (const r of reminderRows ?? []) {
+      if (r.channel === "message" && r.round === 3 && !r.delivered) {
+        mutedDocIds.add(r.document_id);
+        continue;
+      }
+      const prev = reminderRoundsByDocId.get(r.document_id) ?? 0;
+      if (r.round > prev) reminderRoundsByDocId.set(r.document_id, r.round);
+    }
+  }
+
   // 3. Properties for legacy form data (wifi, bed_arrangements, guidebook_spots) + IDs for form rows
   const { data: properties, error: propsErr } = await db
     .from<PropertyRow[]>("properties")
@@ -297,6 +336,9 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
         sentAt: doc.sent_at,
         sentByName: doc.sender?.full_name ?? null,
         boldsignDocumentId: doc.source_ref ?? "",
+        viewedAt: viewedAtByDocId.get(doc.id) ?? null,
+        reminderRoundsSent: reminderRoundsByDocId.get(doc.id) ?? 0,
+        remindersMuted: mutedDocIds.has(doc.id),
       };
 
       secureDocs[key].versions.push(row);

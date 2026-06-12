@@ -645,3 +645,93 @@
   margin: 0;
   line-height: 1.5;
 }
+
+/* ─── Status panel (stage meter + verb-first status + reminders) ─── */
+
+.statusPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 20px;
+  background: var(--surface-elevated, #f9fafb);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.statusSentenceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.statusSentence {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.viewedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(2, 170, 235, 0.1);
+  color: var(--color-brand, #1b77be);
+}
+
+.reminderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.reminderText {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.reminderTextMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.muteBtn {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.1));
+  background: transparent;
+  color: var(--text-secondary, var(--color-text-secondary));
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.muteBtn:hover {
+  border-color: var(--border-strong, rgba(0, 0, 0, 0.2));
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.muteBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.muteBtn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}

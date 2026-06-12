@@ -14,7 +14,14 @@ import {
   PenNib,
   Signature,
 } from "@phosphor-icons/react";
-import { avatarColor } from "@/lib/admin/documents-hub-shared";
+import {
+  avatarColor,
+  stageOfSignedDoc,
+  fmtRelativeTime,
+  firstNameOf,
+  type SignedDocRow,
+} from "@/lib/admin/documents-hub-shared";
+import { StageMeter } from "./StageMeter";
 import type {
   ActionQueueItem,
   ActionQueueItemKind,
@@ -28,6 +35,8 @@ interface ActionQueueProps {
   onView: (item: ActionQueueItem) => void;
   /** Item id whose primary action is currently running (disables its button). */
   busyId?: string | null;
+  /** Signature rows by document id, for the stage meter + engagement chips. */
+  rowsByDocumentId?: Map<string, SignedDocRow>;
 }
 
 const KIND_META: Record<ActionQueueItemKind, { label: string; className: string }> = {
@@ -68,7 +77,18 @@ function waitingMeta(item: ActionQueueItem): { text: string; className: string }
     };
   }
   const d = item.days_waiting;
-  const text = `${d} ${d === 1 ? "day" : "days"} waiting`;
+  const dayLabel = `${d} ${d === 1 ? "day" : "days"}`;
+  const first = firstNameOf(item.owner_name);
+  const text =
+    item.kind === "overdue_unsigned"
+      ? `Waiting on ${first} to sign · ${dayLabel}`
+      : item.kind === "pending_countersignature"
+      ? `Waiting on you to countersign · ${dayLabel}`
+      : item.kind === "stuck_review"
+      ? `Waiting on your review · ${dayLabel}`
+      : item.kind === "declined_signature"
+      ? `${first} declined this · ${dayLabel} ago`
+      : `${dayLabel} waiting`;
   if (d > 14) return { text, className: styles.waitRed };
   if (d > 7) return { text, className: styles.waitAmber };
   return { text, className: styles.waitNeutral };
@@ -79,11 +99,13 @@ function QueueCard({
   onAction,
   onView,
   busy,
+  row,
 }: {
   item: ActionQueueItem;
   onAction: (item: ActionQueueItem) => void;
   onView: (item: ActionQueueItem) => void;
   busy: boolean;
+  row: SignedDocRow | null;
 }) {
   const kind = KIND_META[item.kind];
   const action = ACTION_META[item.primary_action];
@@ -132,7 +154,18 @@ function QueueCard({
               </span>
             </>
           )}
+          {row?.viewedAt && (
+            <span className={styles.viewedChip}>
+              <Eye size={11} weight="duotone" />
+              Viewed {fmtRelativeTime(row.viewedAt)}
+            </span>
+          )}
         </div>
+        {row && (
+          <div className={styles.stageMeterRow}>
+            <StageMeter stage={stageOfSignedDoc(row)} compact />
+          </div>
+        )}
       </div>
 
       <div className={styles.cardActions}>
@@ -158,7 +191,13 @@ function QueueCard({
   );
 }
 
-export function ActionQueue({ items, onAction, onView, busyId = null }: ActionQueueProps) {
+export function ActionQueue({
+  items,
+  onAction,
+  onView,
+  busyId = null,
+  rowsByDocumentId,
+}: ActionQueueProps) {
   if (items.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -183,6 +222,7 @@ export function ActionQueue({ items, onAction, onView, busyId = null }: ActionQu
             onAction={onAction}
             onView={onView}
             busy={busyId === item.id}
+            row={rowsByDocumentId?.get(item.document_id) ?? null}
           />
         </div>
       ))}

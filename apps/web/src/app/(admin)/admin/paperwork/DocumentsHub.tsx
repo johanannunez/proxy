@@ -22,6 +22,7 @@ import {
   type SecureDocKey,
   type FormKey,
   type SetupSectionKey,
+  type SignedDocRow,
 } from "@/lib/admin/documents-hub-shared";
 import type { ActionQueueItem } from "@/lib/admin/action-queue-types";
 import { BulkActionBar } from "@/components/admin/documents/BulkActionBar";
@@ -327,6 +328,19 @@ export function DocumentsHub({
   /* Action queue primary-action progress */
   const [queueBusyId, setQueueBusyId] = useState<string | null>(null);
   const [, startQueueTransition] = useTransition();
+
+  /* Signature rows by document id — powers the queue's stage meters + chips */
+  const rowsByDocumentId = useMemo(() => {
+    const map = new Map<string, SignedDocRow>();
+    for (const owner of owners) {
+      for (const key of secureKeys) {
+        for (const version of owner.secureDocs[key].versions) {
+          map.set(version.id, version);
+        }
+      }
+    }
+    return map;
+  }, [owners]);
 
   const ownersByProfileId = useMemo(() => {
     const map = new Map<string, DocHubOwner>();
@@ -677,6 +691,7 @@ export function DocumentsHub({
           onAction={handleQueueAction}
           onView={(item) => openDrawerFor(item.owner_id, item.document_key)}
           busyId={queueBusyId}
+          rowsByDocumentId={rowsByDocumentId}
         />
       ) : (
         <>

@@ -13,6 +13,8 @@ import {
   CaretRight,
   PaperPlaneTilt,
   Bell,
+  BellSlash,
+  Eye,
   Info,
   CheckCircle,
   Clock,
@@ -26,6 +28,11 @@ import {
   FORM_TYPES,
   fmtDate,
   avatarColor,
+  stageOfSignedDoc,
+  nextReminderDate,
+  fmtReminderDay,
+  fmtRelativeTime,
+  firstNameOf,
   type DocHubOwner,
   type SecureDocKey,
   type FormKey,
@@ -33,7 +40,12 @@ import {
 } from "@/lib/admin/documents-hub-shared";
 import { DocumentTimeline } from "@/components/workspace/documents/DocumentTimeline";
 import type { TimelineEvent } from "@/components/workspace/documents/packet-types";
-import { sendDocumentToOwner, sendDocumentReminder } from "./document-actions";
+import {
+  sendDocumentToOwner,
+  sendDocumentReminder,
+  setDocumentReminderMute,
+} from "./document-actions";
+import { StageMeter } from "./StageMeter";
 import styles from "./DocumentDrawer.module.css";
 
 type DocKey = SecureDocKey | FormKey;
@@ -198,59 +210,106 @@ function DocContextBar({
   );
 }
 
-/* ─── Stat cards (replaces timeline) ─── */
-function StatCards({
+/* ─── Status panel: stage meter + verb-first status + reminders ───
+   Human language naming who owes what, the package-tracking stage meter, the
+   "Viewed Xh ago" engagement chip, and the visible auto-reminder schedule with
+   a per-document mute (premium upgrades 1, 2, 3, 7). */
+function statusSentence(
+  latest: SignedDocRow | null,
+  status: "completed" | "pending" | "not_sent",
+  ownerName: string,
+): string {
+  if (!latest || status === "not_sent") {
+    return `Not sent to ${firstNameOf(ownerName)} yet`;
+  }
+  if (status === "completed") {
+    return latest.signedAt
+      ? `${firstNameOf(ownerName)} signed this on ${fmtDate(latest.signedAt)}`
+      : `Signed and on file`;
+  }
+  const s = latest.status?.toLowerCase();
+  if (s === "awaiting_countersignature") {
+    return `${firstNameOf(ownerName)} signed. Waiting on you to countersign`;
+  }
+  const since = latest.sentAt ?? latest.createdAt;
+  const days = Math.max(0, Math.floor((Date.now() - new Date(since).getTime()) / 86_400_000));
+  const dayLabel = days === 0 ? "sent today" : `${days} ${days === 1 ? "day" : "days"}`;
+  return `Waiting on ${firstNameOf(ownerName)} to sign · ${dayLabel}`;
+}
+
+function StatusPanel({
   latest,
   status,
+  ownerName,
 }: {
   latest: SignedDocRow | null;
   status: "completed" | "pending" | "not_sent";
+  ownerName: string;
 }) {
-  if (!latest) {
-    return (
-      <div className={styles.statCardsRow}>
-        <div className={styles.statCard}>
-          <div className={styles.statCardLabel}>Sent</div>
-          <div className={`${styles.statCardValue} ${styles.statCardEmpty}`}>Not sent yet</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statCardLabel}>Signed</div>
-          <div className={`${styles.statCardValue} ${styles.statCardEmpty}`}>—</div>
-        </div>
-      </div>
-    );
+  const [muted, setMuted] = useState(latest?.remindersMuted ?? false);
+  const [mutePending, startMuteTransition] = useTransition();
+
+  const stage = latest ? stageOfSignedDoc(latest) : "created";
+  const reminderDue =
+    latest && status === "pending" && !muted
+      ? nextReminderDate({ ...latest, remindersMuted: muted })
+      : null;
+  const roundsSpent = latest ? latest.reminderRoundsSent >= 3 : false;
+
+  function handleToggleMute() {
+    if (!latest) return;
+    const next = !muted;
+    setMuted(next);
+    startMuteTransition(async () => {
+      const res = await setDocumentReminderMute(latest.id, next);
+      if (!res.ok) setMuted(!next);
+    });
   }
 
-  const sentLabel = latest.sentAt ? fmtDate(latest.sentAt) : fmtDate(latest.createdAt);
-  const byLabel = latest.sentByName ? `by ${latest.sentByName}` : "";
-
   return (
-    <div className={styles.statCardsRow}>
-      <div className={styles.statCard}>
-        <div className={styles.statCardLabel}>Sent</div>
-        <div className={styles.statCardValue}>{sentLabel}</div>
-        {byLabel && <div className={styles.statCardSub}>{byLabel}</div>}
-      </div>
-      <div
-        className={`${styles.statCard} ${
-          status === "completed"
-            ? styles.statCardSigned
-            : status === "pending"
-            ? styles.statCardPending
-            : ""
-        }`}
-      >
-        <div className={styles.statCardLabel}>Signed</div>
-        {status === "completed" ? (
-          <div className={styles.statCardValue} style={{ color: "var(--status-success-fg)" }}>
-            {fmtDate(latest.signedAt)}
-          </div>
-        ) : (
-          <div className={`${styles.statCardValue} ${styles.statCardAwaitingText}`}>
-            Awaiting
-          </div>
+    <div className={styles.statusPanel}>
+      <StageMeter stage={status === "not_sent" ? "created" : stage} />
+      <div className={styles.statusSentenceRow}>
+        <span className={styles.statusSentence}>
+          {statusSentence(latest, status, ownerName)}
+        </span>
+        {latest?.viewedAt && status === "pending" && (
+          <span className={styles.viewedChip}>
+            <Eye size={11} weight="duotone" />
+            Viewed {fmtRelativeTime(latest.viewedAt)}
+          </span>
         )}
       </div>
+      {latest && status === "pending" && (
+        <div className={styles.reminderRow}>
+          {muted ? (
+            <span className={styles.reminderTextMuted}>
+              <BellSlash size={12} weight="duotone" />
+              Auto-reminders are muted for this document
+            </span>
+          ) : roundsSpent ? (
+            <span className={styles.reminderTextMuted}>
+              <Bell size={12} weight="duotone" />
+              All three auto-reminder rounds have gone out
+            </span>
+          ) : reminderDue ? (
+            <span className={styles.reminderText}>
+              <Bell size={12} weight="duotone" />
+              Auto-reminder goes out {fmtReminderDay(reminderDue)}
+            </span>
+          ) : null}
+          {!roundsSpent && (
+            <button
+              type="button"
+              className={styles.muteBtn}
+              onClick={handleToggleMute}
+              disabled={mutePending}
+            >
+              {muted ? "Turn reminders on" : "Mute reminders"}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -266,6 +325,9 @@ function buildTimelineEvents(latest: SignedDocRow, ownerName: string): TimelineE
       timestamp: latest.sentAt,
       actor: latest.sentByName ?? "Proxy",
     });
+  }
+  if (latest.viewedAt) {
+    events.push({ event: "viewed", timestamp: latest.viewedAt, actor: ownerName });
   }
   if (latest.signedAt) {
     events.push({ event: "signed", timestamp: latest.signedAt, actor: ownerName });
@@ -606,8 +668,10 @@ export function DocumentDrawer({
         {/* Doc context bar */}
         <DocContextBar docKey={activeDocKey} status={status} onClose={onClose} />
 
-        {/* Stat cards — SecureDocs only */}
-        {secure && <StatCards latest={latest} status={status} />}
+        {/* Stage meter + verb-first status — SecureDocs only */}
+        {secure && (
+          <StatusPanel latest={latest} status={status} ownerName={owner.fullName} />
+        )}
 
         {/* Body — two columns on desktop (metadata left, activity right),
             single column on mobile */}
