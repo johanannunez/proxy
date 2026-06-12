@@ -181,7 +181,6 @@ export function PaperworkShell({
     <div className={styles.shell}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Paperwork</h1>
           <nav className={styles.tabs} aria-label="Paperwork sections">
             {TABS.map((tab) => {
               const isActive = tab.key === active;

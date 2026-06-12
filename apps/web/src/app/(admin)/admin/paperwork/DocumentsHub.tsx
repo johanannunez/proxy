@@ -31,7 +31,7 @@ import {
   type DocumentStage,
 } from "@/lib/admin/documents-hub-shared";
 import type { ActionQueueItem } from "@/lib/admin/action-queue-types";
-import type { CoverageColumnGroup } from "@/lib/admin/coverage";
+import type { CoverageColumnGroup } from "@/lib/admin/coverage-shared";
 import { StageMeter } from "./StageMeter";
 import { DocumentDrawer } from "./DocumentDrawer";
 import { ActionQueue } from "./ActionQueue";
