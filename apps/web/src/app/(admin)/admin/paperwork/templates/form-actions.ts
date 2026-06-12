@@ -82,6 +82,8 @@ export async function updateFormMetaAction(
     is_public?: boolean;
     slug?: string | null;
     is_active?: boolean;
+    tracked?: boolean;
+    category?: string | null;
   },
 ): Promise<FormActionResult> {
   const { error } = await requireAdmin();

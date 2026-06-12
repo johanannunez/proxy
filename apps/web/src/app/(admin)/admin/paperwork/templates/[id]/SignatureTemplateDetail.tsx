@@ -14,7 +14,12 @@ import { ArrowLeft, FilePdf } from "@phosphor-icons/react";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import { DocuSealBuilderView } from "../DocuSealBuilderView";
-import { activateTemplate, deactivateTemplate } from "../template-actions";
+import {
+  activateTemplate,
+  deactivateTemplate,
+  updateTemplateTracking,
+} from "../template-actions";
+import { CoverageSettingsCard } from "./CoverageSettingsCard";
 import styles from "./TemplateDetail.module.css";
 
 type TabKey = "fields" | "settings";
@@ -94,6 +99,12 @@ function SignatureSettings({ template }: { template: DocumentTemplate }) {
           </span>
         </div>
       </div>
+
+      <CoverageSettingsCard
+        tracked={template.tracked}
+        category={template.category}
+        onSave={(updates) => updateTemplateTracking(template.id, updates)}
+      />
 
       {!template.is_system && (
         <div className={styles.settingsCard}>
