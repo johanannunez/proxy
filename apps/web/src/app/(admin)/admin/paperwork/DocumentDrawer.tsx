@@ -133,13 +133,13 @@ function OwnerHeaderCard({ owner }: { owner: DocHubOwner }) {
         <div className={styles.ownerCardName}>{owner.fullName}</div>
         <div className={styles.ownerCardContacts}>
           <span className={styles.ownerContactItem}>
-            <EnvelopeSimple size={11} style={{ flexShrink: 0, color: "#9ca3af" }} />
+            <EnvelopeSimple size={11} style={{ flexShrink: 0, color: "var(--text-tertiary)" }} />
             <span className={styles.ownerContactValue}>{owner.email}</span>
             <CopyBtn value={owner.email} />
           </span>
           {owner.phone && (
             <span className={styles.ownerContactItem}>
-              <Phone size={11} style={{ flexShrink: 0, color: "#9ca3af" }} />
+              <Phone size={11} style={{ flexShrink: 0, color: "var(--text-tertiary)" }} />
               <span className={styles.ownerContactValue}>{owner.phone}</span>
               <CopyBtn value={owner.phone} />
             </span>
@@ -242,7 +242,7 @@ function StatCards({
       >
         <div className={styles.statCardLabel}>Signed</div>
         {status === "completed" ? (
-          <div className={styles.statCardValue} style={{ color: "#15803d" }}>
+          <div className={styles.statCardValue} style={{ color: "var(--status-success-fg)" }}>
             {fmtDate(latest.signedAt)}
           </div>
         ) : (
@@ -300,7 +300,8 @@ function SecureDocBody({
             label="Status"
             value={
               latest.status
-                ? latest.status.charAt(0).toUpperCase() + latest.status.slice(1)
+                ? latest.status.charAt(0).toUpperCase() +
+                  latest.status.slice(1).replace(/_/g, " ")
                 : "—"
             }
           />
@@ -328,7 +329,7 @@ function FormBody({ docKey, owner }: { docKey: FormKey; owner: DocHubOwner }) {
       <div>
         <div className={styles.sectionLabel}>Form Responses</div>
         <div className={styles.drawerEmptyState}>
-          <FileText size={28} style={{ color: "#d1d5db" }} />
+          <FileText size={28} style={{ color: "var(--border-strong)" }} />
           <p className={styles.drawerEmptyTitle}>Not submitted</p>
           <p className={styles.drawerEmptyBody}>
             {owner.fullName} has not submitted the {def.label} form yet.
@@ -399,7 +400,7 @@ function DocSwitcher({
           const Icon =
             s === "completed" ? CheckCircle : s === "pending" ? Clock : Circle;
           const iconColor =
-            s === "completed" ? "#16a34a" : s === "pending" ? "#d97706" : "#d1d5db";
+            s === "completed" ? "var(--color-success)" : s === "pending" ? "var(--status-warning)" : "var(--border-strong)";
           const sentDate = entry.latest?.sentAt ?? entry.latest?.createdAt;
           return (
             <button
@@ -418,7 +419,7 @@ function DocSwitcher({
                 className={styles.overviewStatus}
                 style={{
                   color:
-                    s === "completed" ? "#15803d" : s === "pending" ? "#b45309" : "#9ca3af",
+                    s === "completed" ? "var(--status-success-fg)" : s === "pending" ? "var(--status-warning-fg)" : "var(--text-tertiary)",
                 }}
               >
                 {s === "completed" ? "Signed" : s === "pending" ? "Pending" : "Not sent"}
@@ -450,12 +451,12 @@ function DocSwitcher({
               <CheckCircle
                 size={13}
                 weight={submitted ? "fill" : "duotone"}
-                style={{ color: submitted ? "#16a34a" : "#d1d5db", flexShrink: 0 }}
+                style={{ color: submitted ? "var(--color-success)" : "var(--border-strong)", flexShrink: 0 }}
               />
               <span className={styles.overviewLabel}>{def.shortLabel}</span>
               <span
                 className={styles.overviewStatus}
-                style={{ color: submitted ? "#15803d" : "#9ca3af" }}
+                style={{ color: submitted ? "var(--status-success-fg)" : "var(--text-tertiary)" }}
               >
                 {submitted ? "Submitted" : "Not submitted"}
               </span>
@@ -495,10 +496,10 @@ function VersionHistory({ versions }: { versions: SignedDocRow[] }) {
                   fontSize: 11,
                   color:
                     v.status === "completed"
-                      ? "#15803d"
+                      ? "var(--status-success-fg)"
                       : v.status === "pending"
-                      ? "#b45309"
-                      : "#9ca3af",
+                      ? "var(--status-warning-fg)"
+                      : "var(--text-tertiary)",
                   fontWeight: 500,
                 }}
               >
@@ -608,34 +609,30 @@ export function DocumentDrawer({
         {/* Stat cards — SecureDocs only */}
         {secure && <StatCards latest={latest} status={status} />}
 
-        {/* Body */}
-        <div className={styles.drawerBody}>
+        {/* Body — two columns on desktop (metadata left, activity right),
+            single column on mobile */}
+        <div
+          className={`${styles.drawerBody} ${
+            secure && latest ? styles.drawerBodySplit : ""
+          }`}
+        >
+          <div className={styles.bodyMain}>
+            {secure ? (
+              <SecureDocBody docKey={activeDocKey as SecureDocKey} latest={latest} />
+            ) : (
+              <FormBody docKey={activeDocKey as FormKey} owner={owner} />
+            )}
+
+            <DocSwitcher owner={owner} activeDocKey={activeDocKey} onSwitch={handleSwitch} />
+
+            {error && <div className={styles.errorNote}>{error}</div>}
+          </div>
+
           {/* Activity timeline — shared with the workspace portal */}
           {secure && latest && (
-            <DocumentTimeline events={buildTimelineEvents(latest, owner.fullName)} />
-          )}
-
-          {secure ? (
-            <SecureDocBody docKey={activeDocKey as SecureDocKey} latest={latest} />
-          ) : (
-            <FormBody docKey={activeDocKey as FormKey} owner={owner} />
-          )}
-
-          <DocSwitcher owner={owner} activeDocKey={activeDocKey} onSwitch={handleSwitch} />
-
-          {error && (
-            <div
-              style={{
-                padding: "10px 14px",
-                borderRadius: 8,
-                background: "#fef2f2",
-                border: "1px solid #fca5a5",
-                color: "#b91c1c",
-                fontSize: 12,
-              }}
-            >
-              {error}
-            </div>
+            <aside className={styles.bodySide} aria-label="Document activity">
+              <DocumentTimeline events={buildTimelineEvents(latest, owner.fullName)} />
+            </aside>
           )}
         </div>
 

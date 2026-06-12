@@ -93,7 +93,11 @@ function QueueCard({
   return (
     <div
       className={`${styles.card} ${
-        item.urgency === "high" ? styles.cardHigh : styles.cardMedium
+        item.urgency === "high"
+          ? styles.cardHigh
+          : item.urgency === "medium"
+          ? styles.cardMedium
+          : styles.cardLow
       }`}
     >
       {item.owner_avatar_url ? (
@@ -159,10 +163,13 @@ export function ActionQueue({ items, onAction, onView, busyId = null }: ActionQu
     return (
       <div className={styles.emptyState}>
         <div className={styles.emptyIcon}>
-          <CheckCircle size={30} weight="duotone" />
+          <CheckCircle size={48} weight="duotone" />
         </div>
         <p className={styles.emptyTitle}>No actions needed</p>
-        <p className={styles.emptyBody}>You&apos;re all caught up.</p>
+        <p className={styles.emptyBody}>
+          You&apos;re all caught up. Declined, stuck, expiring, and overdue
+          documents will surface here the moment they need you.
+        </p>
       </div>
     );
   }

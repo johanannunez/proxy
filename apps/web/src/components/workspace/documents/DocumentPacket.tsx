@@ -135,7 +135,7 @@ export function DocumentPacket({
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.99 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative w-full cursor-pointer overflow-hidden rounded-2xl border p-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)] sm:p-6"
+      className="group relative w-full cursor-pointer rounded-2xl border p-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)] sm:p-6"
       style={{
         borderColor: allDone
           ? "rgba(22, 163, 74, 0.22)"
@@ -146,10 +146,20 @@ export function DocumentPacket({
       }}
       aria-label={`${title}: ${statusLabel}. ${complete} of ${total} complete.`}
     >
+      {/* Shadow-deepen layer — opacity-only so the hover lift stays on the compositor */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        style={{
+          boxShadow:
+            "0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 36px rgba(27, 119, 190, 0.13)",
+        }}
+      />
+
       {/* Brand gradient wash — deepens slightly on hover */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl opacity-60 transition-opacity duration-300 group-hover:opacity-100"
         style={{
           background: allDone
             ? "radial-gradient(120% 90% at 100% 0%, rgba(22, 163, 74, 0.06), transparent 55%)"
@@ -196,7 +206,7 @@ export function DocumentPacket({
                 color: allDone
                   ? "var(--color-success)"
                   : attention > 0
-                    ? "#b45309"
+                    ? "var(--status-warning-fg)"
                     : "var(--color-text-tertiary)",
               }}
             >
@@ -227,7 +237,10 @@ export function DocumentPacket({
         {!allDone && total > 0 && (
           <div
             className="h-1.5 w-20 overflow-hidden rounded-full"
-            style={{ backgroundColor: "var(--color-warm-gray-100)" }}
+            style={{
+              backgroundColor: "var(--color-warm-gray-100)",
+              boxShadow: "inset 0 0 0 1px var(--color-warm-gray-200)",
+            }}
             aria-hidden="true"
           >
             <div

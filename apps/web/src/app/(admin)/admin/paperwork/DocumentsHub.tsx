@@ -50,44 +50,21 @@ const formKeys = Object.keys(FORM_TYPES) as FormKey[];
 /* Only these 3 form types appear as matrix columns. The rest show in cards only. */
 const matrixFormKeys: FormKey[] = ["property_setup", "wifi_info", "guidebook"];
 
-/* ─── Variant 4 status dot ─── */
-function StatusDot({
+/* ─── Status pill — tinted background + border + colored text ─── */
+function StatusPill({
   status,
   label,
 }: {
   status: "completed" | "pending" | "not_sent" | "submitted" | "not_submitted";
   label: string;
 }) {
-  const dotStyle: React.CSSProperties =
+  const tone =
     status === "completed" || status === "submitted"
-      ? { width: 9, height: 9, borderRadius: "50%", background: "#16a34a", flexShrink: 0 }
+      ? styles.pillDone
       : status === "pending"
-      ? {
-          width: 9,
-          height: 9,
-          borderRadius: "50%",
-          background: "transparent",
-          border: "2px solid #d97706",
-          boxSizing: "border-box",
-          flexShrink: 0,
-        }
-      : { width: 9, height: 9, borderRadius: "50%", background: "#e5e7eb", flexShrink: 0 };
-
-  const labelColor =
-    status === "completed" || status === "submitted"
-      ? "#15803d"
-      : status === "pending"
-      ? "#b45309"
-      : "#d1d5db";
-
-  return (
-    <div className={styles.statusDotCell}>
-      <div style={dotStyle} />
-      <span className={styles.statusDotLabel} style={{ color: labelColor }}>
-        {label}
-      </span>
-    </div>
-  );
+      ? styles.pillPending
+      : styles.pillIdle;
+  return <span className={`${styles.statusPill} ${tone}`}>{label}</span>;
 }
 
 /* ─── Setup section mini dots ─── */
@@ -218,7 +195,7 @@ function OwnerMatrixRow({
     >
       {/* Select checkbox */}
       <div
-        className={styles.checkCell}
+        className={`${styles.checkCell} ${styles.stickyCheck}`}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
@@ -232,7 +209,7 @@ function OwnerMatrixRow({
       </div>
 
       {/* Owner */}
-      <div className={styles.ownerCell}>
+      <div className={`${styles.ownerCell} ${styles.stickyOwner}`}>
         <OwnerAvatar name={owner.fullName} url={owner.avatarUrl} />
         <div style={{ minWidth: 0 }}>
           <div className={styles.ownerName}>{owner.fullName}</div>
@@ -246,7 +223,7 @@ function OwnerMatrixRow({
       {secureKeys.map((k) => {
         const s = owner.secureDocs[k].status;
         const isActive = activeDocKey === k;
-        const dotLabel = s === "completed" ? "Done" : s === "pending" ? "Sent" : "—";
+        const pillLabel = s === "completed" ? "Done" : s === "pending" ? "Sent" : "—";
         return (
           <div
             key={k}
@@ -256,7 +233,7 @@ function OwnerMatrixRow({
               onOpen(k);
             }}
           >
-            <StatusDot status={s} label={dotLabel} />
+            <StatusPill status={s} label={pillLabel} />
           </div>
         );
       })}
@@ -283,7 +260,7 @@ function OwnerMatrixRow({
                 completionPct={owner.forms.property_setup.completionPct}
               />
             ) : (
-              <StatusDot
+              <StatusPill
                 status={owner.forms[k].submitted ? "submitted" : "not_submitted"}
                 label={owner.forms[k].submitted ? "Done" : "—"}
               />
@@ -590,22 +567,22 @@ export function DocumentsHub({
           <h1 className={styles.pageTitle}>Documents</h1>
           <div className={styles.statsStrip}>
             <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "#64748b" }} />
+              <span className={styles.statDot} style={{ background: "var(--text-secondary)" }} />
               {owners.length} owners
             </span>
             <span className={styles.statSep}>·</span>
             <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "#16a34a" }} />
+              <span className={styles.statDot} style={{ background: "var(--color-success)" }} />
               {totalCompleted} completed
             </span>
             <span className={styles.statSep}>·</span>
             <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "#d97706" }} />
+              <span className={styles.statDot} style={{ background: "var(--status-warning)" }} />
               {totalPending} pending
             </span>
             <span className={styles.statSep}>·</span>
             <span className={styles.statChip}>
-              <span className={styles.statDot} style={{ background: "#9ca3af" }} />
+              <span className={styles.statDot} style={{ background: "var(--text-tertiary)" }} />
               {totalNotSent} not sent
             </span>
           </div>
@@ -695,34 +672,36 @@ export function DocumentsHub({
             {owners.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>
-                  <Files size={22} />
+                  <Files size={48} weight="duotone" />
                 </div>
                 <p className={styles.emptyTitle}>No owners found</p>
                 <p className={styles.emptyBody}>
-                  There are no active owners to display.
+                  There are no active owners to display. Owners appear here as
+                  soon as they join a property.
                 </p>
               </div>
             ) : (
-              <div className={styles.table}>
+              <div className={styles.tableScroll}>
+                <div className={styles.table}>
                 {/* Group header row */}
                 <div className={styles.matrixGroupHeader}>
-                  <div />
-                  <div />
+                  <div className={`${styles.checkCell} ${styles.stickyCheck}`} />
+                  <div className={`${styles.ownerHeadSpacer} ${styles.stickyOwner}`} />
                   <div className={styles.thSecure}>
                     <ShieldCheck size={12} weight="fill" />
                     SecureDocs
                   </div>
-                  <div />
+                  <div className={styles.dividerCol} />
                   <div className={styles.thForms}>
                     <HouseSimple size={12} weight="fill" />
                     Setup
                   </div>
-                  <div />
+                  <div className={styles.countCol} />
                 </div>
 
                 {/* Sub-header: individual column names */}
                 <div className={styles.matrixSubHeader}>
-                  <div className={styles.checkCell}>
+                  <div className={`${styles.checkCell} ${styles.stickyCheck}`}>
                     <input
                       type="checkbox"
                       className={styles.rowCheckbox}
@@ -731,7 +710,9 @@ export function DocumentsHub({
                       aria-label={allSelected ? "Deselect all owners" : "Select all owners"}
                     />
                   </div>
-                  <div className={styles.tableHeaderCell}>Owner</div>
+                  <div className={`${styles.tableHeaderCell} ${styles.stickyOwner}`}>
+                    Owner
+                  </div>
                   {secureKeys.map((k) => (
                     <div
                       key={k}
@@ -740,7 +721,7 @@ export function DocumentsHub({
                       {SECURE_DOC_TYPES[k].rowLabel}
                     </div>
                   ))}
-                  <div />
+                  <div className={styles.dividerCol} />
                   {matrixFormKeys.map((k) => (
                     <div
                       key={k}
@@ -763,6 +744,7 @@ export function DocumentsHub({
                     onOpen={(dk) => setDrawerEntry({ owner, docKey: dk })}
                   />
                 ))}
+                </div>
               </div>
             )}
           </div>

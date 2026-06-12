@@ -13,13 +13,20 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 480px;
+  width: 100vw;
   background: var(--surface-base, #fff);
   box-shadow: -8px 0 48px rgba(0, 0, 0, 0.14), -1px 0 0 rgba(0, 0, 0, 0.06);
   z-index: 50;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@media (min-width: 700px) {
+  .drawer {
+    width: 720px;
+    max-width: calc(100vw - 48px);
+  }
 }
 
 /* ─── Owner card header ─── */
@@ -129,19 +136,19 @@
 }
 
 .badgeCompleted {
-  background: rgba(22, 163, 74, 0.1);
-  color: #15803d;
-  border: 1px solid rgba(22, 163, 74, 0.2);
+  background: color-mix(in srgb, var(--color-success, #16a34a) 10%, transparent);
+  color: var(--status-success-fg, #15803d);
+  border: 1px solid color-mix(in srgb, var(--color-success, #16a34a) 24%, transparent);
 }
 
 .badgePending {
-  background: rgba(245, 158, 11, 0.1);
-  color: #b45309;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: color-mix(in srgb, var(--status-warning, #d97706) 10%, transparent);
+  color: var(--status-warning-fg, #b45309);
+  border: 1px solid color-mix(in srgb, var(--status-warning, #d97706) 24%, transparent);
 }
 
 .badgeNotSent {
-  background: rgba(0, 0, 0, 0.04);
+  background: color-mix(in srgb, var(--text-primary, #111827) 4%, transparent);
   color: var(--text-tertiary, #9ca3af);
   border: 1px solid var(--border, #e5e7eb);
 }
@@ -219,7 +226,7 @@
 }
 
 .statCardAwaitingText {
-  color: #b45309;
+  color: var(--status-warning-fg, #b45309);
   font-style: italic;
 }
 
@@ -233,9 +240,50 @@
   flex: 1;
   overflow-y: auto;
   padding: 18px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  align-content: start;
+}
+
+.bodyMain {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+}
+
+.bodySide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Two columns once the drawer is wide enough: metadata left, activity right */
+@media (min-width: 700px) {
+  .drawerBodySplit {
+    grid-template-columns: minmax(0, 1fr) 230px;
+    column-gap: 24px;
+  }
+
+  .drawerBodySplit .bodySide {
+    border-left: 1px solid var(--border, #e5e7eb);
+    padding-left: 20px;
+    position: sticky;
+    top: 0;
+  }
+}
+
+.errorNote {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-error, #dc2626) 7%, var(--surface-base, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-error, #dc2626) 35%, transparent);
+  color: var(--status-danger-fg, #b91c1c);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .sectionLabel {
@@ -287,7 +335,7 @@
 }
 
 .fieldValueMono {
-  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-family: var(--font-ibm-plex-mono), "SF Mono", monospace;
   font-size: 11.5px;
   letter-spacing: 0.02em;
   word-break: break-all;
@@ -332,7 +380,7 @@
   background: rgba(2, 170, 235, 0.05);
   border: 1px solid rgba(2, 170, 235, 0.15);
   font-size: 12px;
-  color: #0369a1;
+  color: var(--status-info-fg, #0369a1);
   line-height: 1.5;
 }
 
@@ -460,9 +508,9 @@
   border-radius: 4px;
   font-size: 10px;
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.07);
+  background: color-mix(in srgb, var(--text-primary, #111827) 7%, transparent);
   color: var(--text-secondary, #6b7280);
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-ibm-plex-mono), "SF Mono", monospace;
 }
 
 .versionDate {

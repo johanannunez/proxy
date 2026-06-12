@@ -12,6 +12,7 @@ import { AnimatePresence } from "motion/react";
 import {
   CaretDown,
   CreditCard,
+  FileDashed,
   FolderSimpleUser,
   HouseLine,
   ShieldCheck,
@@ -270,6 +271,44 @@ function SignDrawer({ item, onClose }: { item: PacketItem; onClose: () => void }
   );
 }
 
+// ─── Filtered empty state ─────────────────────────────────────────────────────
+
+function FilteredEmptyState() {
+  return (
+    <div
+      className="flex flex-col items-center justify-center rounded-2xl border px-6 py-16 text-center"
+      style={{
+        borderColor: "var(--color-warm-gray-200)",
+        backgroundColor: "var(--color-white)",
+        boxShadow: "var(--shadow-card)",
+      }}
+    >
+      <span
+        className="flex h-20 w-20 items-center justify-center rounded-2xl"
+        style={{
+          backgroundColor: "rgba(2, 170, 235, 0.07)",
+          color: "var(--color-brand)",
+        }}
+      >
+        <FileDashed size={48} weight="duotone" />
+      </span>
+      <p
+        className="mt-5 text-base font-semibold tracking-tight"
+        style={{ color: "var(--color-text-primary)", fontFamily: "var(--font-sora)" }}
+      >
+        Nothing here for this property
+      </p>
+      <p
+        className="mt-1.5 max-w-sm text-sm leading-relaxed"
+        style={{ color: "var(--color-text-secondary)" }}
+      >
+        There are no documents scoped to this property yet. Switch back to all
+        properties to see everything on file.
+      </p>
+    </div>
+  );
+}
+
 // ─── Section heading ──────────────────────────────────────────────────────────
 
 function SectionHeading({ label, count }: { label: string; count: number }) {
@@ -476,8 +515,12 @@ export function DocumentsHub({
         </div>
       )}
 
-      {/* Celebration or packet sections */}
-      {allDone ? (
+      {/* Celebration, empty filter scope, or packet sections */}
+      {filteredTotal === 0 ? (
+        <div className="mt-8">
+          <FilteredEmptyState />
+        </div>
+      ) : allDone ? (
         <div className="mt-8">
           <CompletionCelebration
             summaryLines={celebrationSummary}

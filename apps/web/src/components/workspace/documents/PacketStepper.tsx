@@ -37,17 +37,60 @@ export interface PacketStepperProps {
   onJumpTo?: (index: number) => void;
 }
 
-const BADGE_TONE: Record<DocumentDisplayStatus, { bg: string; fg: string }> = {
-  needed: { bg: "rgba(245, 158, 11, 0.14)", fg: "#b45309" },
-  action_required: { bg: "rgba(220, 38, 38, 0.12)", fg: "#b91c1c" },
-  expired: { bg: "rgba(220, 38, 38, 0.12)", fg: "#b91c1c" },
-  locked: { bg: "var(--color-warm-gray-100)", fg: "var(--color-text-tertiary)" },
-  sent: { bg: "rgba(2, 170, 235, 0.12)", fg: "#0c6fae" },
-  signed: { bg: "rgba(2, 170, 235, 0.12)", fg: "#0c6fae" },
-  awaiting_countersignature: { bg: "rgba(2, 170, 235, 0.12)", fg: "#0c6fae" },
-  submitted: { bg: "rgba(2, 170, 235, 0.10)", fg: "#0c6fae" },
-  under_review: { bg: "rgba(2, 170, 235, 0.10)", fg: "#0c6fae" },
-  on_file: { bg: "rgba(22, 163, 74, 0.12)", fg: "#15803d" },
+const BADGE_TONE: Record<
+  DocumentDisplayStatus,
+  { bg: string; fg: string; border: string }
+> = {
+  needed: {
+    bg: "rgba(245, 158, 11, 0.12)",
+    fg: "var(--status-warning-fg)",
+    border: "rgba(245, 158, 11, 0.28)",
+  },
+  action_required: {
+    bg: "rgba(220, 38, 38, 0.1)",
+    fg: "var(--status-danger-fg)",
+    border: "rgba(220, 38, 38, 0.26)",
+  },
+  expired: {
+    bg: "rgba(220, 38, 38, 0.1)",
+    fg: "var(--status-danger-fg)",
+    border: "rgba(220, 38, 38, 0.26)",
+  },
+  locked: {
+    bg: "var(--color-warm-gray-100)",
+    fg: "var(--color-text-tertiary)",
+    border: "var(--color-warm-gray-200)",
+  },
+  sent: {
+    bg: "rgba(2, 170, 235, 0.1)",
+    fg: "var(--status-info-fg)",
+    border: "rgba(2, 170, 235, 0.28)",
+  },
+  signed: {
+    bg: "rgba(2, 170, 235, 0.1)",
+    fg: "var(--status-info-fg)",
+    border: "rgba(2, 170, 235, 0.28)",
+  },
+  awaiting_countersignature: {
+    bg: "rgba(2, 170, 235, 0.1)",
+    fg: "var(--status-info-fg)",
+    border: "rgba(2, 170, 235, 0.28)",
+  },
+  submitted: {
+    bg: "rgba(2, 170, 235, 0.08)",
+    fg: "var(--status-info-fg)",
+    border: "rgba(2, 170, 235, 0.24)",
+  },
+  under_review: {
+    bg: "rgba(2, 170, 235, 0.08)",
+    fg: "var(--status-info-fg)",
+    border: "rgba(2, 170, 235, 0.24)",
+  },
+  on_file: {
+    bg: "rgba(22, 163, 74, 0.1)",
+    fg: "var(--status-success-fg)",
+    border: "rgba(22, 163, 74, 0.26)",
+  },
 };
 
 const ACTION_META: Record<PacketItemAction, { label: string; icon: typeof UploadSimple }> = {
@@ -62,8 +105,8 @@ function StatusBadge({ status, label }: { status: DocumentDisplayStatus; label?:
   const tone = BADGE_TONE[status];
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-      style={{ backgroundColor: tone.bg, color: tone.fg }}
+      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+      style={{ backgroundColor: tone.bg, color: tone.fg, borderColor: tone.border }}
     >
       {status === "on_file" && <CheckCircle size={12} weight="fill" />}
       {status === "locked" && <Lock size={11} weight="bold" />}

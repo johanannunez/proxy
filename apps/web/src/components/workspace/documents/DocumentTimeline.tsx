@@ -29,7 +29,7 @@ const EVENT_META: Record<TimelineEventKind, { label: string; tone: Tone }> = {
 
 const TONE_COLOR: Record<Tone, string> = {
   positive: "var(--color-success)",
-  pending: "#d97706",
+  pending: "var(--status-warning)",
   negative: "var(--color-error)",
 };
 
