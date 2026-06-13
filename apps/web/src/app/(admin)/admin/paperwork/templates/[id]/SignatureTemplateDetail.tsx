@@ -27,8 +27,8 @@ import {
   deactivateTemplate,
   updateTemplateTracking,
   updateTemplateMeta,
-  type UpdateTemplateMetaInput,
 } from "../template-actions";
+import type { MetaEditInput } from "../template-meta";
 import { CoverageSettingsCard } from "./CoverageSettingsCard";
 import { signerRolesLabel } from "../signer-roles";
 import styles from "./TemplateDetail.module.css";
@@ -386,7 +386,7 @@ function SignatureSettings({
   // be sent regardless of is_active. Surface that first and route to Fields.
   const needsFields = missingRoles !== null && missingRoles.length > 0;
 
-  function saveMeta(input: UpdateTemplateMetaInput) {
+  function saveMeta(input: MetaEditInput) {
     return updateTemplateMeta(template.id, input);
   }
 

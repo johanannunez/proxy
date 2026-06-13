@@ -22,7 +22,7 @@ import type {
 } from "@/lib/admin/document-templates-types";
 import { computeCoverage } from "@/lib/signing/field-coverage";
 import { signerRolesLabel } from "./signer-roles";
-import { metaEditLocked, isValidDocumentKey } from "./template-meta";
+import { metaEditLocked, isValidDocumentKey, type MetaEditInput } from "./template-meta";
 
 export type TemplateActionResult =
   | { ok: true; template: DocumentTemplate }
@@ -220,14 +220,6 @@ export async function activateTemplate(
   return ok ? { ok: true } : { ok: false, error: "Could not activate the template." };
 }
 
-export type UpdateTemplateMetaInput = {
-  title?: string | null;
-  display_name?: string;
-  description?: string | null;
-  document_key?: string;
-  signer_roles?: string[];
-};
-
 /**
  * Edit the "About this template" meta. Cosmetic fields (title, display name,
  * description) are always editable. The document key and signer roles lock once
@@ -238,7 +230,7 @@ export type UpdateTemplateMetaInput = {
  */
 export async function updateTemplateMeta(
   id: string,
-  input: UpdateTemplateMetaInput,
+  input: MetaEditInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { error: authError } = await requireAdmin();
   if (authError) return { ok: false, error: authError };
