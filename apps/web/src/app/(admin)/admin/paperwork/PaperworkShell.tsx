@@ -9,9 +9,9 @@
  * Proxy library. Everything created here is saved as a master automatically.
  */
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Plus,
@@ -23,6 +23,8 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { createFormAction } from "./templates/form-actions";
+import { CreateTemplateModal } from "./templates/CreateTemplateModal";
+import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./PaperworkShell.module.css";
 
 type PaperworkTab = "documents" | "forms" | "templates";
@@ -44,9 +46,11 @@ const PRIMARY_BY_TAB: Record<PaperworkTab, string> = {
 function NewDocumentChooser({
   orgId,
   onClose,
+  onUploadPdf,
 }: {
   orgId: string;
   onClose: () => void;
+  onUploadPdf: () => void;
 }) {
   const router = useRouter();
   const [creatingForm, setCreatingForm] = useState(false);
@@ -127,7 +131,7 @@ function NewDocumentChooser({
             type="button"
             className={styles.pathCard}
             onClick={() => {
-              router.push("/admin/paperwork/templates?create=pdf");
+              onUploadPdf();
               onClose();
             }}
           >
@@ -186,8 +190,25 @@ export function PaperworkShell({
   children: ReactNode;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [chooserOpen, setChooserOpen] = useState(false);
   const [creatingForm, setCreatingForm] = useState(false);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+
+  // Deep link: /admin/paperwork/templates?create=pdf opens the modal and then
+  // cleans the query so a refresh does not reopen it.
+  useEffect(() => {
+    if (searchParams.get("create") === "pdf") {
+      setTemplateModalOpen(true);
+      router.replace("/admin/paperwork/templates");
+    }
+  }, [searchParams, router]);
+
+  function handleTemplateCreated(template: DocumentTemplate) {
+    setTemplateModalOpen(false);
+    // Hand off to full-screen field placement (Step 3) on the detail page.
+    router.push(`/admin/paperwork/templates/${template.id}`);
+  }
 
   async function handlePrimary() {
     if (active === "documents") {
@@ -195,9 +216,8 @@ export function PaperworkShell({
       return;
     }
     if (active === "templates") {
-      // Templates land on the upload-a-PDF path; the full three-way chooser
-      // stays on Documents where every kind is in play.
-      router.push("/admin/paperwork/templates?create=pdf");
+      // Opens instantly from client state, no route navigation.
+      setTemplateModalOpen(true);
       return;
     }
     // Forms: create the master immediately and drop into its builder, the same
@@ -275,9 +295,19 @@ export function PaperworkShell({
 
       <AnimatePresence>
         {chooserOpen && (
-          <NewDocumentChooser orgId={orgId} onClose={() => setChooserOpen(false)} />
+          <NewDocumentChooser
+            orgId={orgId}
+            onClose={() => setChooserOpen(false)}
+            onUploadPdf={() => setTemplateModalOpen(true)}
+          />
         )}
       </AnimatePresence>
+
+      <CreateTemplateModal
+        open={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        onCreated={handleTemplateCreated}
+      />
     </div>
   );
 }
