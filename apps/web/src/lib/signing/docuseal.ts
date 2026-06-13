@@ -213,6 +213,48 @@ export async function getTemplatePreviewUrl(templateId: number): Promise<string 
   }
 }
 
+/**
+ * The signer roles actually assigned to fields in a template's layout. Each
+ * DocuSeal field carries a `submitter_uuid`; the role name lives on the matching
+ * submitter. Powers readiness: a signer with zero fields has nothing to sign.
+ * Resilient by design (runs inside a server-component render): returns [] on any
+ * failure so the caller can degrade gracefully rather than crash the page.
+ */
+export async function getTemplateFields(
+  templateId: number,
+): Promise<{ role: string }[]> {
+  if (!isDocuSealConfigured()) return [];
+
+  try {
+    const res = await fetch(`${baseUrl()}/templates/${templateId}`, {
+      headers: headers(),
+    });
+    if (!res.ok) {
+      console.error("[docuseal] getTemplateFields failed:", res.status, await res.text());
+      return [];
+    }
+    const data = (await res.json()) as {
+      fields?: Array<{ submitter_uuid?: string | null }>;
+      submitters?: Array<{ uuid?: string | null; name?: string | null }>;
+    };
+    const roleByUuid = new Map<string, string>();
+    for (const submitter of data.submitters ?? []) {
+      if (submitter.uuid && submitter.name) roleByUuid.set(submitter.uuid, submitter.name);
+    }
+    const roles: { role: string }[] = [];
+    for (const field of data.fields ?? []) {
+      const role = field.submitter_uuid ? roleByUuid.get(field.submitter_uuid) : undefined;
+      // Skip fields whose submitter doesn't resolve: a bad role would corrupt
+      // coverage. Only count fields we can confidently attribute to a signer.
+      if (role) roles.push({ role });
+    }
+    return roles;
+  } catch (err) {
+    console.error("[docuseal] getTemplateFields error:", err);
+    return [];
+  }
+}
+
 export type CreateTemplateResult = {
   templateId: number;
   name: string;
