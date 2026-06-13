@@ -407,6 +407,7 @@ function SignatureSettings({
 
   return (
     <div className={styles.settingsWrap}>
+      <div className={styles.settingsCol}>
       <div className={styles.settingsCard}>
         <h3 className={styles.settingsTitle}>About this template</h3>
         <EditableTextRow
@@ -497,8 +498,6 @@ function SignatureSettings({
         </div>
       </div>
 
-      <SendingSettings templateId={template.id} settings={template.settings} />
-
       <CoverageSettingsCard
         tracked={template.tracked}
         category={template.category}
@@ -529,6 +528,11 @@ function SignatureSettings({
       )}
 
       {error && <p className={styles.errorNote}>{error}</p>}
+      </div>
+
+      <div className={styles.settingsCol}>
+        <SendingSettings templateId={template.id} settings={template.settings} />
+      </div>
 
       <ConfirmModal
         open={confirmRemove}
