@@ -6,7 +6,7 @@ import {
   listFormResponsesDetailed,
   getFormViewCount,
 } from "@/lib/admin/forms";
-import { getDocumentTemplate } from "@/lib/admin/document-templates";
+import { getDocumentTemplate, templateHasBeenSent } from "@/lib/admin/document-templates";
 import { getTemplateFields } from "@/lib/signing/docuseal";
 import { computeCoverage } from "@/lib/signing/field-coverage";
 import { PROXY_ORG_ID } from "@/types/organizations";
@@ -66,6 +66,10 @@ export default async function TemplateDetailPage({ params, searchParams }: Props
     missingRoles = computeCoverage(fields, template.signer_roles).missingRoles;
   }
 
+  // Whether any document has been sent under this key. Drives the lock on the
+  // document key and signer-role editors in Settings.
+  const hasBeenSent = await templateHasBeenSent(template.document_key);
+
   const initialTab = tab === "settings" ? "settings" : "fields";
   return (
     <PaperworkShell active="templates" orgId={orgId}>
@@ -73,6 +77,7 @@ export default async function TemplateDetailPage({ params, searchParams }: Props
         template={template}
         initialTab={initialTab}
         missingRoles={missingRoles}
+        hasBeenSent={hasBeenSent}
       />
     </PaperworkShell>
   );
