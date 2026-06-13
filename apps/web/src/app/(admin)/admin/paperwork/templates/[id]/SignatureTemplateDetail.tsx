@@ -20,6 +20,7 @@ import {
   updateTemplateTracking,
 } from "../template-actions";
 import { CoverageSettingsCard } from "./CoverageSettingsCard";
+import { signerRolesLabel } from "../signer-roles";
 import styles from "./TemplateDetail.module.css";
 
 type TabKey = "fields" | "settings";
@@ -66,13 +67,13 @@ function SignatureSettings({ template }: { template: DocumentTemplate }) {
         </div>
         <div className={styles.fieldRow}>
           <span className={styles.fieldLabel}>Signer roles</span>
-          <span className={styles.fieldValue}>{template.signer_roles.join(", ")}</span>
+          <span className={styles.fieldValue}>{signerRolesLabel(template.signer_roles)}</span>
         </div>
         <div className={styles.fieldRow}>
           <span className={styles.fieldLabel}>Countersignature</span>
           <span className={styles.fieldValue}>
             {template.requires_countersignature
-              ? "Proxy countersigns after the client"
+              ? "You countersign after the client"
               : "Not required"}
           </span>
         </div>

@@ -36,7 +36,7 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
   const builderRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    fetch("/api/admin/docuseal/builder-session")
+    fetch(`/api/admin/docuseal/builder-session?templateId=${templateId}`)
       .then((r) => {
         if (!r.ok) throw new Error("Session fetch failed");
         return r.json() as Promise<{ token: string; host: string }>;
@@ -45,7 +45,7 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
       .catch(() =>
         setFetchError("Could not load the template builder. Check DOCUSEAL_API_TOKEN in Doppler."),
       );
-  }, []);
+  }, [templateId]);
 
   useEffect(() => {
     if (!session) return;

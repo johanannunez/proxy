@@ -17,6 +17,7 @@ import {
   FileDashed,
 } from "@phosphor-icons/react";
 import type { UnifiedTemplate } from "./unified-types";
+import { signerRolesLabel } from "./signer-roles";
 import styles from "./UnifiedTemplatesList.module.css";
 
 function TemplateCard({
@@ -28,7 +29,7 @@ function TemplateCard({
 }) {
   const router = useRouter();
   const detailHref = `/admin/paperwork/templates/${template.id}`;
-  const typeLabel = template.signerRoles.join(", ") || "Signature";
+  const typeLabel = signerRolesLabel(template.signerRoles) || "Signature";
 
   return (
     <div

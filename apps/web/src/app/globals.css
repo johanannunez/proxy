@@ -203,6 +203,73 @@
   --dash-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+/* ─── Landing Page Tokens (marketing hero/pricing surfaces) ───
+   The marketing landing and pricing pages are art-directed bespoke surfaces
+   built with inline styles, so they cannot use Tailwind `dark:` variants.
+   These tokens give them a full light + dark twin. Light values mirror the
+   original art direction; dark values mirror the app's product dark palette
+   so the marketing site and the workspace read as one system. */
+:root {
+  --lp-page: #ffffff;
+  --lp-surface: #f7f9fc;
+  --lp-card: #ffffff;
+  --lp-card-hover: #f7faff;
+  --lp-card-warm: #fbfaf8;
+  --lp-card-cool-border: #d7e6f4;
+  --lp-card-warm-border: #ece6dd;
+  --lp-band: #0b2540;
+  --lp-grid-gap: #eef0f4;
+  --lp-ink: #0b1929;
+  --lp-ink-body: #546880;
+  --lp-ink-soft: #3d5470;
+  --lp-ink-mute: #64748b;
+  --lp-border: #eef0f4;
+  --lp-border-strong: #d0d8e4;
+  --lp-nav-bg: rgba(255, 255, 255, 0.96);
+  --lp-badge-bg: #f0f4f8;
+  --lp-badge-border: #dce4ed;
+  --lp-btn-primary: #0b2540;
+  --lp-check-bg: #0b2540;
+  --lp-accent-ink: #1a5fa6;
+  --lp-danger-ink: #c0392b;
+  --lp-warm-ink: #5c4a42;
+  --lp-warm-ink-body: #6b554c;
+  --lp-cool-ink-body: #274157;
+  --lp-mock-chrome: #f5f7fa;
+  --lp-mock-border: #e2e8f0;
+  --lp-mock-url: #edf0f5;
+}
+:root.dark {
+  --lp-page: #0a0c11;
+  --lp-surface: #0e1117;
+  --lp-card: #14181f;
+  --lp-card-hover: #181d25;
+  --lp-card-warm: #15130f;
+  --lp-card-cool-border: rgba(2, 170, 235, 0.2);
+  --lp-card-warm-border: rgba(214, 160, 110, 0.14);
+  --lp-band: #0b1a2b;
+  --lp-grid-gap: #1b212c;
+  --lp-ink: #eef2f7;
+  --lp-ink-body: #93a1b3;
+  --lp-ink-soft: #9caabb;
+  --lp-ink-mute: #7e8b9c;
+  --lp-border: rgba(255, 255, 255, 0.07);
+  --lp-border-strong: rgba(255, 255, 255, 0.16);
+  --lp-nav-bg: rgba(10, 12, 17, 0.86);
+  --lp-badge-bg: rgba(255, 255, 255, 0.05);
+  --lp-badge-border: rgba(255, 255, 255, 0.1);
+  --lp-btn-primary: #1b4068;
+  --lp-check-bg: #02aaeb;
+  --lp-accent-ink: #57acec;
+  --lp-danger-ink: #ef8178;
+  --lp-warm-ink: #d8c3b3;
+  --lp-warm-ink-body: #b9a596;
+  --lp-cool-ink-body: #b4c0cd;
+  --lp-mock-chrome: #161a21;
+  --lp-mock-border: #272d39;
+  --lp-mock-url: #20262f;
+}
+
 /* ─── Tailwind Theme ─── */
 @theme inline {
   --font-sans: var(--font-sans);
