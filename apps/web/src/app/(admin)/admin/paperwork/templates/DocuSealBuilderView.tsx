@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check } from "@phosphor-icons/react";
+import { ArrowLeft, Check, PencilSimple, X } from "@phosphor-icons/react";
 import {
   pushTemplateNameToDocuSeal,
   pullTemplateNameFromDocuSeal,
+  updateTemplateMeta,
 } from "./template-actions";
 import styles from "./DocuSealBuilderView.module.css";
 
@@ -50,7 +51,27 @@ export function DocuSealBuilderView({
   // inline editor). Local state lets the header live-update when a rename inside
   // the builder is pulled back.
   const [name, setName] = useState(templateName);
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(templateName);
+  const [savingName, setSavingName] = useState(false);
   const builderRef = useRef<HTMLElement>(null);
+
+  async function saveName() {
+    const next = draftName.trim();
+    if (!next || next === name) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    // Our display_name is the single source of truth; this updates it and
+    // pushes the new name into DocuSeal so the document name matches everywhere.
+    const res = await updateTemplateMeta(dbTemplateId, { display_name: next });
+    setSavingName(false);
+    if (res.ok) {
+      setName(next);
+      setEditingName(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -156,7 +177,57 @@ export function DocuSealBuilderView({
           <span>Back</span>
         </button>
         <div className={styles.headerCenter}>
-          <span className={styles.title}>{name}</span>
+          {editingName ? (
+            <span className={styles.nameEdit}>
+              <input
+                className={styles.nameInput}
+                value={draftName}
+                autoFocus
+                disabled={savingName}
+                onChange={(e) => setDraftName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveName();
+                  if (e.key === "Escape") {
+                    setDraftName(name);
+                    setEditingName(false);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className={styles.nameAction}
+                onClick={saveName}
+                disabled={savingName}
+                aria-label="Save name"
+              >
+                <Check size={14} weight="bold" />
+              </button>
+              <button
+                type="button"
+                className={styles.nameAction}
+                onClick={() => {
+                  setDraftName(name);
+                  setEditingName(false);
+                }}
+                aria-label="Cancel"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className={styles.nameButton}
+              onClick={() => {
+                setDraftName(name);
+                setEditingName(true);
+              }}
+              title="Rename document"
+            >
+              <span className={styles.title}>{name}</span>
+              <PencilSimple size={14} weight="bold" className={styles.namePencil} />
+            </button>
+          )}
           <span className={styles.hint}>Drag fields onto the document. Changes save automatically.</span>
         </div>
         <div className={styles.headerRight}>
