@@ -265,7 +265,13 @@ export function DocuSealBuilderView({
         {session && (
           // Web component attributes are data-token / data-host (NOT token /
           // host). The template to open is carried inside the JWT payload.
-          <docuseal-builder ref={builderRef} data-token={session.token} />
+          // data-with-title hides DocuSeal's own document-title editor so the
+          // name can only be changed in our editor (single source of truth).
+          <docuseal-builder
+            ref={builderRef}
+            data-token={session.token}
+            data-with-title="false"
+          />
         )}
       </div>
     </div>
