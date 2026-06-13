@@ -326,6 +326,132 @@
   cursor: not-allowed;
 }
 
+/* ─── Signing order ─── */
+
+.signerList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.12));
+  border-radius: 11px;
+  overflow: hidden;
+}
+
+.signerRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
+}
+
+.signerRow:last-child {
+  border-bottom: none;
+}
+
+.signerNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.12);
+  border-radius: 999px;
+}
+
+.signerName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.signerMeta {
+  font-size: 11.5px;
+  color: var(--text-tertiary, #9aa1ab);
+}
+
+.signerRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  color: var(--text-tertiary, #9aa1ab);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.signerRemove:hover:not(:disabled) {
+  color: var(--color-error, #dc2626);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.signerRemove:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* The You row: distinct, pinned last as the countersigner. */
+.signerYou {
+  background: rgba(27, 119, 190, 0.05);
+}
+
+.signerYou .signerNum {
+  color: #fff;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+}
+
+.signerYou .toggle {
+  margin-left: auto;
+}
+
+.signerYouOff {
+  background: var(--color-warm-gray-50, #f8f7f6);
+}
+
+.signerYouOff .signerNum {
+  color: var(--text-tertiary, #9aa1ab);
+  background: var(--border-default, rgba(0, 0, 0, 0.08));
+}
+
+.signerYouOff .signerName {
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.addSignerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.addSignerChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.08);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.addSignerChip:hover {
+  background: rgba(27, 119, 190, 0.15);
+}
+
 /* toggle */
 .toggleRow {
   display: flex;

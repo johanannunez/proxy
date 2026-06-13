@@ -48,9 +48,9 @@ const GATE_OPTIONS: SelectOption[] = [
   { value: "4", label: "Identity / other (step 4)" },
 ];
 
-const BUILTIN_ROLES = ["Owner", "Proxy", "Tenant", "Co-owner"];
-const ROLE_LABELS: Record<string, string> = { Proxy: "You (countersigner)" };
-const roleLabel = (role: string) => ROLE_LABELS[role] ?? role;
+// Client-side signer parties. "You" (stored as "Proxy") is handled separately
+// as the final countersigner, so it is not in this list.
+const CLIENT_ROLES = ["Owner", "Tenant", "Co-owner"];
 
 function toSlug(value: string): string {
   return value
@@ -72,10 +72,10 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
   const [keyEdited, setKeyEdited] = useState(false);
   const [keyStatus, setKeyStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [description, setDescription] = useState("");
-  const [roleOptions, setRoleOptions] = useState<string[]>(BUILTIN_ROLES);
-  const [roles, setRoles] = useState<string[]>(["Owner", "Proxy"]);
+  const [clientSigners, setClientSigners] = useState<string[]>(["Owner"]);
+  const [customRoles, setCustomRoles] = useState<string[]>([]);
+  const [youSigns, setYouSigns] = useState(true);
   const [newRole, setNewRole] = useState("");
-  const [requiresCounter, setRequiresCounter] = useState(true);
   const [gateStep, setGateStep] = useState("");
   const [docMode, setDocMode] = useState<"upload" | "write">("upload");
   const [bodyText, setBodyText] = useState("");
@@ -142,10 +142,10 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     setKeyEdited(false);
     setKeyStatus("idle");
     setDescription("");
-    setRoleOptions(BUILTIN_ROLES);
-    setRoles(["Owner", "Proxy"]);
+    setClientSigners(["Owner"]);
+    setCustomRoles([]);
+    setYouSigns(true);
     setNewRole("");
-    setRequiresCounter(true);
     setGateStep("");
     setDocMode("upload");
     setBodyText("");
@@ -184,13 +184,25 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     }
   }
 
+  const availableToAdd = [...CLIENT_ROLES, ...customRoles].filter(
+    (r) => !clientSigners.includes(r),
+  );
+
+  function addSigner(role: string) {
+    if (!clientSigners.includes(role)) setClientSigners((prev) => [...prev, role]);
+  }
+
+  function removeSigner(role: string) {
+    setClientSigners((prev) => prev.filter((r) => r !== role));
+  }
+
   function addCustomRole() {
     const role = newRole.trim();
     if (!role) return;
-    if (!roleOptions.some((r) => r.toLowerCase() === role.toLowerCase())) {
-      setRoleOptions((prev) => [...prev, role]);
+    if (![...CLIENT_ROLES, ...customRoles].some((r) => r.toLowerCase() === role.toLowerCase())) {
+      setCustomRoles((prev) => [...prev, role]);
     }
-    if (!roles.includes(role)) setRoles((prev) => [...prev, role]);
+    addSigner(role);
     setNewRole("");
   }
 
@@ -198,7 +210,7 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     displayName.trim() !== "" &&
     /^[a-z0-9_]+$/.test(documentKey.trim()) &&
     keyStatus !== "taken" &&
-    roles.length > 0;
+    clientSigners.length > 0;
 
   const canBuild = docMode === "upload" ? pdfFile !== null : bodyText.trim() !== "";
 
@@ -218,8 +230,10 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
       formData.set("display_name", displayName.trim());
       formData.set("document_key", documentKey.trim());
       if (description.trim()) formData.set("description", description.trim());
-      formData.set("signer_roles", JSON.stringify(roles));
-      formData.set("requires_countersignature", String(requiresCounter));
+      // You ("Proxy") signs last, so it goes at the end of the order array.
+      const signerRoles = [...clientSigners, ...(youSigns ? ["Proxy"] : [])];
+      formData.set("signer_roles", JSON.stringify(signerRoles));
+      formData.set("requires_countersignature", String(youSigns));
       formData.set("gate_step", gateStep);
 
       let result;
@@ -360,29 +374,66 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                 </div>
 
                 <div className={styles.field}>
-                  <span className={styles.label}>Signer roles</span>
-                  <div className={styles.roleGrid}>
-                    {roleOptions.map((role) => (
-                      <label key={role} className={styles.roleChip}>
-                        <input
-                          type="checkbox"
-                          checked={roles.includes(role)}
-                          onChange={() =>
-                            setRoles((prev) =>
-                              prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role],
-                            )
-                          }
-                          className={styles.roleCheckbox}
-                        />
-                        <span className={styles.roleLabel}>{roleLabel(role)}</span>
-                      </label>
+                  <span className={styles.label}>Signing order</span>
+                  <div className={styles.signerList}>
+                    {clientSigners.map((role, i) => (
+                      <div key={role} className={styles.signerRow}>
+                        <span className={styles.signerNum}>{i + 1}</span>
+                        <span className={styles.signerName}>{role}</span>
+                        <span className={styles.signerMeta}>signs first</span>
+                        <button
+                          type="button"
+                          className={styles.signerRemove}
+                          onClick={() => removeSigner(role)}
+                          aria-label={`Remove ${role}`}
+                          disabled={clientSigners.length === 1}
+                        >
+                          <X size={13} weight="bold" />
+                        </button>
+                      </div>
                     ))}
+                    <div
+                      className={`${styles.signerRow} ${styles.signerYou} ${youSigns ? "" : styles.signerYouOff}`}
+                    >
+                      <span className={styles.signerNum}>
+                        {youSigns ? clientSigners.length + 1 : "—"}
+                      </span>
+                      <span className={styles.signerName}>You</span>
+                      <span className={styles.signerMeta}>
+                        {youSigns ? "sign last" : "not signing"}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={youSigns}
+                        aria-label="You countersign"
+                        className={`${styles.toggle} ${youSigns ? styles.toggleOn : ""}`}
+                        onClick={() => setYouSigns((v) => !v)}
+                      >
+                        <span className={styles.toggleThumb} />
+                      </button>
+                    </div>
                   </div>
-                  <div className={styles.addRoleRow}>
+                  <p className={styles.hint}>
+                    {youSigns
+                      ? "The client signs first, then you countersign last."
+                      : "Only the client signs. Turn the You row back on to countersign."}
+                  </p>
+                  <div className={styles.addSignerRow}>
+                    {availableToAdd.map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        className={styles.addSignerChip}
+                        onClick={() => addSigner(role)}
+                      >
+                        <Plus size={12} weight="bold" /> {role}
+                      </button>
+                    ))}
                     <input
                       type="text"
                       className={styles.addRoleInput}
-                      placeholder="Add a role (e.g. Guarantor)"
+                      placeholder="Add a signer (e.g. Guarantor)"
                       value={newRole}
                       onChange={(e) => setNewRole(e.target.value)}
                       onKeyDown={(e) => {
@@ -392,32 +443,7 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                         }
                       }}
                     />
-                    <button
-                      type="button"
-                      className={styles.addRoleBtn}
-                      onClick={addCustomRole}
-                      disabled={!newRole.trim()}
-                    >
-                      <Plus size={13} weight="bold" /> Add
-                    </button>
                   </div>
-                </div>
-
-                <div className={styles.field}>
-                  <label className={styles.toggleRow}>
-                    <span className={styles.label} style={{ marginBottom: 0 }}>
-                      Requires your countersignature
-                    </span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={requiresCounter}
-                      className={`${styles.toggle} ${requiresCounter ? styles.toggleOn : ""}`}
-                      onClick={() => setRequiresCounter((v) => !v)}
-                    >
-                      <span className={styles.toggleThumb} />
-                    </button>
-                  </label>
                 </div>
 
               </motion.div>
