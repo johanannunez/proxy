@@ -157,8 +157,11 @@ export function SignatureTemplateDetail({
 
   async function handleBuilderSave() {
     await activateTemplate(template.id);
+    // Navigate to the library. Do NOT call router.refresh() here: refreshing
+    // the current route races the push and cancels the navigation, leaving the
+    // builder stuck on "Finishing…". The library is force-dynamic and refetches
+    // on its own.
     router.push("/admin/paperwork/templates");
-    router.refresh();
   }
 
   const tabs: Array<{ key: TabKey; label: string }> = [

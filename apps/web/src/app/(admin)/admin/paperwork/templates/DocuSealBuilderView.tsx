@@ -70,7 +70,12 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
 
   async function handleFinish() {
     setFinishing(true);
-    await onSave();
+    try {
+      await onSave();
+    } catch {
+      // Never leave the button stuck on "Finishing…" if activation fails.
+      setFinishing(false);
+    }
   }
 
   return (
