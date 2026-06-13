@@ -15,6 +15,138 @@
   border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
 }
 
+/* Builder controls live in the same single row as the tabs (right-aligned), so
+   the document name + Done sit alongside the section tabs instead of a second
+   stacked toolbar. */
+.builderTools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding-bottom: 8px;
+}
+
+.nameButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  padding: 5px 9px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.nameButton:hover {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+}
+
+.nameText {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.namePencil {
+  color: var(--text-tertiary, #9aa1ab);
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.nameButton:hover .namePencil {
+  opacity: 1;
+  color: var(--color-brand, #1b77be);
+}
+
+.nameButton:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.nameEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nameInput {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--color-brand, #1b77be);
+  border-radius: 7px;
+  padding: 5px 9px;
+  min-width: 220px;
+  outline: none;
+}
+
+.nameAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-secondary, var(--color-text-secondary));
+  background: transparent;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.12));
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.nameAction:hover {
+  color: var(--text-primary, var(--color-text-primary));
+  border-color: var(--border-strong, rgba(0, 0, 0, 0.2));
+}
+
+.nameAction:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.doneBtn {
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 170, 235, 0.25);
+  transition: opacity 0.12s ease;
+}
+
+.doneBtn:hover:not(:disabled) {
+  opacity: 0.94;
+}
+
+.doneBtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.doneBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.builderError {
+  margin: 0;
+  padding: 9px 24px;
+  font-size: 12.5px;
+  color: var(--color-error, #dc2626);
+  background: rgba(220, 38, 38, 0.07);
+  border-bottom: 1px solid rgba(220, 38, 38, 0.18);
+}
+
 .crumb {
   display: inline-flex;
   align-items: center;
