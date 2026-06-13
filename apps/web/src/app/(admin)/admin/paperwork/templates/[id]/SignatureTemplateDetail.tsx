@@ -30,6 +30,7 @@ import {
 } from "../template-actions";
 import type { MetaEditInput } from "../template-meta";
 import { CoverageSettingsCard } from "./CoverageSettingsCard";
+import { SendingSettings } from "./SendingSettings";
 import { signerRolesLabel } from "../signer-roles";
 import styles from "./TemplateDetail.module.css";
 
@@ -501,6 +502,8 @@ function SignatureSettings({
           </span>
         </div>
       </div>
+
+      <SendingSettings templateId={template.id} settings={template.settings} />
 
       <CoverageSettingsCard
         tracked={template.tracked}

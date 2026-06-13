@@ -1,0 +1,346 @@
+/* ─── Sending settings card ─── */
+
+.card {
+  background: var(--surface-elevated, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-md, 12px);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cardTitle {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text-primary));
+  margin: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sectionLabel {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.sectionDesc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-default, rgba(0, 0, 0, 0.07));
+}
+
+/* ─── Token chips ─── */
+
+.tokenRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tokenChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.08);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.12s ease;
+}
+
+.tokenChip:hover {
+  background: rgba(27, 119, 190, 0.16);
+}
+
+.tokenChip:active {
+  transform: scale(0.96);
+}
+
+.tokenChip:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+/* ─── Inputs ─── */
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.14));
+  border-radius: 9px;
+  box-sizing: border-box;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.input::placeholder {
+  color: var(--text-tertiary, #9aa1ab);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.12);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.5;
+}
+
+/* ─── Live preview ─── */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 14px;
+  background: var(--surface-base, var(--color-warm-gray-50, #f8f7f6));
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.06));
+  border-radius: 10px;
+}
+
+.previewLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9aa1ab);
+}
+
+.previewBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previewSubject {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.previewMessage {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary, var(--color-text-secondary));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ─── Toggle ─── */
+
+.toggleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 23px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border: none;
+  border-radius: 999px;
+  background: var(--border-strong, rgba(0, 0, 0, 0.18));
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.toggleOn {
+  background: var(--color-brand, #1b77be);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 19px;
+  height: 19px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.16s var(--ease-spring, ease);
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(17px);
+}
+
+/* ─── Number fields ─── */
+
+.inlineFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.numberField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.numberWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.numberInput {
+  width: 68px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.14));
+  border-radius: 9px;
+  box-sizing: border-box;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.numberInput:focus {
+  outline: none;
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.12);
+}
+
+.numberSuffix {
+  font-size: 12.5px;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+/* ─── CC chips ─── */
+
+.ccBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.14));
+  border-radius: 9px;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.ccBox:focus-within {
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.12);
+}
+
+.ccChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--color-warm-gray-50, #f8f7f6);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  border-radius: 999px;
+}
+
+.ccRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  color: var(--text-tertiary, #9aa1ab);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.ccRemove:hover {
+  color: var(--color-error, #dc2626);
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.ccRemove:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.ccInput {
+  flex: 1;
+  min-width: 140px;
+  padding: 4px 2px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary, var(--color-text-primary));
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.ccInput::placeholder {
+  color: var(--text-tertiary, #9aa1ab);
+}
+
+.errorNote {
+  font-size: 12px;
+  color: var(--color-error, #dc2626);
+}
+
+@media (max-width: 640px) {
+  .inlineFields {
+    gap: 12px;
+  }
+}
