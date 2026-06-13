@@ -256,10 +256,10 @@ function ComparisonValue({ value, highlighted }: { value: string; highlighted?: 
       className={cn(
         "inline-flex min-h-8 items-center rounded-full px-3 py-1 text-sm font-medium",
         highlighted
-          ? "bg-[#fff8e4] text-[#7a5710]"
+          ? "bg-[var(--lp-pill-gold-bg)] text-[var(--lp-pill-gold-ink)]"
           : isIncluded
-            ? "bg-[#e9f7ef] text-[#17613a]"
-            : "bg-[#f4f1ec] text-[#425466]"
+            ? "bg-[var(--lp-pill-green-bg)] text-[var(--lp-pill-green-ink)]"
+            : "bg-[var(--lp-pill-neutral-bg)] text-[var(--lp-pill-neutral-ink)]"
       )}
     >
       {value}
@@ -398,10 +398,10 @@ export function ProxyPricing() {
               <article
                 key={tier.id}
                 className={cn(
-                  "relative flex min-h-[680px] flex-col rounded-[24px] border bg-white p-7 shadow-[0_20px_60px_rgba(8,27,51,0.08)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 sm:p-8",
+                  "relative flex min-h-[680px] flex-col rounded-[24px] border bg-[var(--lp-card)] p-7 shadow-[0_20px_60px_rgba(8,27,51,0.08)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 sm:p-8",
                   tier.highlighted
                     ? "border-[#d8aa31] shadow-[0_0_0_1px_rgba(216,170,49,0.7),0_34px_90px_rgba(8,27,51,0.15)]"
-                    : "border-[#e1dbd0]"
+                    : "border-[var(--lp-border)]"
                 )}
               >
               {tier.badge ? (
@@ -411,12 +411,12 @@ export function ProxyPricing() {
               ) : null}
 
               <div>
-                <p className="text-xs font-bold uppercase text-[#6f7480]">
+                <p className="text-xs font-bold uppercase text-[var(--lp-ink-mute)]">
                   {tier.name}
                 </p>
-                <p className="mt-3 text-sm font-semibold text-[#1b77be]">{tier.label}</p>
+                <p className="mt-3 text-sm font-semibold text-[var(--lp-accent-ink)]">{tier.label}</p>
                 <div className="mt-6 flex items-end gap-2">
-                  <span className="text-5xl font-semibold text-[#081b33] sm:text-6xl">
+                  <span className="text-5xl font-semibold text-[var(--lp-ink)] sm:text-6xl">
                     <NumberFlow
                       value={getDisplayPrice(tier, billing)}
                       format={{
@@ -428,7 +428,7 @@ export function ProxyPricing() {
                       }}
                     />
                   </span>
-                  <span className="mb-2 text-lg text-[#6b7c8d]">/mo</span>
+                  <span className="mb-2 text-lg text-[var(--lp-ink-mute)]">/mo</span>
                 </div>
                 <AnimatePresence mode="wait">
                   <motion.p
@@ -437,12 +437,12 @@ export function ProxyPricing() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -6, opacity: 0 }}
                     transition={{ duration: 0.18 }}
-                    className="mt-2 min-h-5 text-sm text-[#798795]"
+                    className="mt-2 min-h-5 text-sm text-[var(--lp-ink-mute)]"
                   >
                     {getBillingCaption(tier, billing)}
                   </motion.p>
                 </AnimatePresence>
-                <p className="mt-5 min-h-12 text-sm leading-6 text-[#4b6074]">{tier.tagline}</p>
+                <p className="mt-5 min-h-12 text-sm leading-6 text-[var(--lp-ink-body)]">{tier.tagline}</p>
               </div>
 
               <div className="mt-8 flex-1 space-y-4">
@@ -451,15 +451,15 @@ export function ProxyPricing() {
                     <Check
                       size={18}
                       weight="bold"
-                      className={cn("mt-0.5 shrink-0", tier.highlighted ? "text-[#d8aa31]" : "text-[#9aa3ad]")}
+                      className={cn("mt-0.5 shrink-0", tier.highlighted ? "text-[#d8aa31]" : "text-[var(--lp-ink-mute)]")}
                     />
-                    <span className="text-base leading-6 text-[#334255]">{feature}</span>
+                    <span className="text-base leading-6 text-[var(--lp-cool-ink-body)]">{feature}</span>
                   </div>
                 ))}
 
                 {tier.additionalFeatures ? (
-                  <div className="mt-7 border-t border-[#ece8df] pt-6">
-                    <p className="text-xs font-bold uppercase text-[#6f7480]">
+                  <div className="mt-7 border-t border-[var(--lp-border)] pt-6">
+                    <p className="text-xs font-bold uppercase text-[var(--lp-ink-mute)]">
                       Additional features
                     </p>
                     <div className="mt-4 space-y-3">
@@ -468,9 +468,9 @@ export function ProxyPricing() {
                           <Check
                             size={15}
                             weight="bold"
-                            className={cn("mt-0.5 shrink-0", tier.highlighted ? "text-[#d8aa31]" : "text-[#9aa3ad]")}
+                            className={cn("mt-0.5 shrink-0", tier.highlighted ? "text-[#d8aa31]" : "text-[var(--lp-ink-mute)]")}
                           />
-                          <span className="text-sm leading-6 text-[#4b6074]">{feature}</span>
+                          <span className="text-sm leading-6 text-[var(--lp-ink-body)]">{feature}</span>
                         </div>
                       ))}
                     </div>
@@ -483,8 +483,8 @@ export function ProxyPricing() {
                 className={cn(
                   "mt-9 flex min-h-[56px] items-center justify-center rounded-xl px-6 text-base font-semibold transition-[background-color,color,border-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1b77be] focus-visible:ring-offset-2",
                   tier.highlighted
-                    ? "bg-[#081b33] text-white shadow-[0_16px_34px_rgba(8,27,51,0.22)] hover:bg-[#142a46]"
-                    : "border border-[#d9d2c5] bg-white text-[#081b33] hover:border-[#bfc8d1] hover:bg-[#f8f7f3]"
+                    ? "bg-[var(--lp-btn-primary)] text-white shadow-[0_16px_34px_rgba(8,27,51,0.22)] hover:bg-[var(--lp-btn-primary-hover)]"
+                    : "border border-[var(--lp-border-strong)] bg-[var(--lp-card)] text-[var(--lp-ink)] hover:border-[var(--lp-border-strong)] hover:bg-[var(--lp-canvas)]"
                 )}
               >
                 {tier.cta}
@@ -494,26 +494,26 @@ export function ProxyPricing() {
         </div>
       </section>
 
-      <section className="mt-12 rounded-[28px] border border-[#e1dbd0] bg-white p-5 shadow-[0_18px_60px_rgba(8,27,51,0.06)] sm:p-8 lg:p-10">
+      <section className="mt-12 rounded-[28px] border border-[var(--lp-border)] bg-[var(--lp-card)] p-5 shadow-[0_18px_60px_rgba(8,27,51,0.06)] sm:p-8 lg:p-10">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase text-[#1b77be]">
+            <p className="text-xs font-bold uppercase text-[var(--lp-accent-ink)]">
               Detailed Feature Comparison
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-[#081b33] sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-semibold text-[var(--lp-ink)] sm:text-4xl">
               Compare what each plan unlocks.
             </h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-[#5f7183]">
+          <p className="max-w-md text-sm leading-6 text-[var(--lp-ink-body)]">
             Built around the work operators repeat every month: owner updates, document review, financial controls, and team accountability.
           </p>
         </div>
 
-        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-[#ece8df] sm:block">
+        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--lp-border)] sm:block">
           <div>
             <table className="min-w-[820px] w-full border-collapse text-left">
               <thead>
-                <tr className="bg-[#f6f3ee] text-sm text-[#5f7183]">
+                <tr className="bg-[var(--lp-surface)] text-sm text-[var(--lp-ink-body)]">
                   <th scope="col" className="w-[170px] px-5 py-4 font-semibold">
                     Category
                   </th>
@@ -527,13 +527,13 @@ export function ProxyPricing() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#ece8df]">
+              <tbody className="divide-y divide-[var(--lp-border)]">
                 {COMPARISON_ROWS.map((row) => (
-                  <tr key={`${row.category}-${row.feature}`} className="bg-white">
-                    <td className="px-5 py-4 text-sm font-bold uppercase text-[#9a7c31]">
+                  <tr key={`${row.category}-${row.feature}`} className="bg-[var(--lp-card)]">
+                    <td className="px-5 py-4 text-sm font-bold uppercase text-[var(--lp-gold-ink)]">
                       {row.category}
                     </td>
-                    <td className="px-5 py-4 text-sm font-semibold text-[#24354a]">{row.feature}</td>
+                    <td className="px-5 py-4 text-sm font-semibold text-[var(--lp-ink)]">{row.feature}</td>
                     <td className="px-5 py-4">
                       <ComparisonValue value={row.starter} />
                     </td>
@@ -554,21 +554,21 @@ export function ProxyPricing() {
           {COMPARISON_ROWS.map((row) => (
             <article
               key={`${row.category}-${row.feature}-mobile`}
-              className="rounded-2xl border border-[#ece8df] bg-[#fbfaf7] p-4"
+              className="rounded-2xl border border-[var(--lp-border)] bg-[var(--lp-card)] p-4"
             >
-              <p className="text-xs font-bold uppercase text-[#9a7c31]">{row.category}</p>
-              <h3 className="mt-2 text-base font-semibold text-[#081b33]">{row.feature}</h3>
+              <p className="text-xs font-bold uppercase text-[var(--lp-gold-ink)]">{row.category}</p>
+              <h3 className="mt-2 text-base font-semibold text-[var(--lp-ink)]">{row.feature}</h3>
               <div className="mt-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold text-[#5f7183]">Starter</span>
+                  <span className="text-sm font-semibold text-[var(--lp-ink-body)]">Starter</span>
                   <ComparisonValue value={row.starter} />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold text-[#5f7183]">Operator</span>
+                  <span className="text-sm font-semibold text-[var(--lp-ink-body)]">Operator</span>
                   <ComparisonValue value={row.operator} highlighted />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold text-[#5f7183]">Scale</span>
+                  <span className="text-sm font-semibold text-[var(--lp-ink-body)]">Scale</span>
                   <ComparisonValue value={row.scale} />
                 </div>
               </div>
@@ -620,17 +620,17 @@ export function ProxyPricing() {
         </div>
       </section>
 
-      <div className="mt-8 flex flex-col items-start justify-between gap-6 rounded-2xl border border-[#d9d2c5] bg-white px-6 py-6 shadow-[0_18px_50px_rgba(8,27,51,0.05)] sm:flex-row sm:items-center sm:px-8">
+      <div className="mt-8 flex flex-col items-start justify-between gap-6 rounded-2xl border border-[var(--lp-border-strong)] bg-[var(--lp-card)] px-6 py-6 shadow-[0_18px_50px_rgba(8,27,51,0.05)] sm:flex-row sm:items-center sm:px-8">
         <div>
-          <p className="text-xs font-semibold uppercase text-[#1b77be]">Need a custom rollout?</p>
-          <h3 className="mt-1 text-xl font-semibold text-[#081b33]">Built for your portfolio, not a generic template.</h3>
-          <p className="mt-2 text-sm leading-6 text-[#5f7183]">
+          <p className="text-xs font-semibold uppercase text-[var(--lp-accent-ink)]">Need a custom rollout?</p>
+          <h3 className="mt-1 text-xl font-semibold text-[var(--lp-ink)]">Built for your portfolio, not a generic template.</h3>
+          <p className="mt-2 text-sm leading-6 text-[var(--lp-ink-body)]">
             Talk through onboarding, migration, custom billing, and advanced integration needs.
           </p>
         </div>
         <Link
           href="mailto:hello@myproxyhost.com?subject=Pricing inquiry"
-          className="flex min-h-12 shrink-0 items-center gap-2 rounded-xl bg-[#081b33] px-6 text-sm font-semibold text-white transition-[background-color] duration-200 hover:bg-[#142a46] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1b77be] focus-visible:ring-offset-2"
+          className="flex min-h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--lp-btn-primary)] px-6 text-sm font-semibold text-white transition-[background-color] duration-200 hover:bg-[var(--lp-btn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1b77be] focus-visible:ring-offset-2"
         >
           <Phone size={16} weight="duotone" />
           Contact sales
@@ -640,7 +640,7 @@ export function ProxyPricing() {
           href="https://21st.dev/community/components/xubohuah/wave-background/default"
           target="_blank"
           rel="noreferrer"
-          className="mx-auto mt-8 inline-flex items-center gap-1.5 text-xs font-semibold text-[#8fd8f6] underline-offset-4 transition-[color] duration-200 hover:text-white hover:underline"
+          className="mx-auto mt-8 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--lp-accent-ink)] underline-offset-4 transition-[color] duration-200 hover:text-white hover:underline"
         >
           Wave background reference
           <ArrowSquareOut size={13} weight="bold" />

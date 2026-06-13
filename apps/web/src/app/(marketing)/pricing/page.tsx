@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-[#f8f7f3]">
+    <main className="min-h-screen bg-[var(--lp-canvas)]">
       {/* Nav */}
-      <header className="sticky top-0 z-30 border-b border-[#d9d2c5]/70 bg-[#f8f7f3]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-[var(--lp-border)]/70 bg-[var(--lp-canvas)]/90 backdrop-blur-xl">
         <nav
           aria-label="Main navigation"
           className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
@@ -28,27 +28,35 @@ export default function PricingPage() {
               width={160}
               height={160}
               priority
-              className="h-11 w-11 object-contain"
+              className="h-11 w-11 object-contain dark:hidden"
+            />
+            <Image
+              src="/brand/logo-mark-white-v2.png"
+              alt="Proxy"
+              width={160}
+              height={160}
+              priority
+              className="hidden h-11 w-11 object-contain dark:block"
             />
           </Link>
           <div className="hidden items-center gap-8 md:flex">
-            <Link href="/#workspace" className="text-sm font-medium text-[#294157] transition-colors duration-200 hover:text-[#1b77be]">
+            <Link href="/#workspace" className="text-sm font-medium text-[var(--lp-ink-soft)] transition-colors duration-200 hover:text-[var(--lp-accent-ink)]">
               Workspace
             </Link>
-            <Link href="/#operators" className="text-sm font-medium text-[#294157] transition-colors duration-200 hover:text-[#1b77be]">
+            <Link href="/#operators" className="text-sm font-medium text-[var(--lp-ink-soft)] transition-colors duration-200 hover:text-[var(--lp-accent-ink)]">
               Operators
             </Link>
-            <Link href="/pricing" className="text-sm font-medium text-[#1b77be]">
+            <Link href="/pricing" className="text-sm font-medium text-[var(--lp-accent-ink)]">
               Pricing
             </Link>
-            <Link href="/#proof" className="text-sm font-medium text-[#294157] transition-colors duration-200 hover:text-[#1b77be]">
+            <Link href="/#proof" className="text-sm font-medium text-[var(--lp-ink-soft)] transition-colors duration-200 hover:text-[var(--lp-accent-ink)]">
               Proof
             </Link>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="hidden text-sm font-semibold text-[#294157] transition-colors duration-200 hover:text-[#1b77be] sm:inline-flex"
+              className="hidden text-sm font-semibold text-[var(--lp-ink-soft)] transition-colors duration-200 hover:text-[var(--lp-accent-ink)] sm:inline-flex"
             >
               Log in
             </Link>

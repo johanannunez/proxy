@@ -238,6 +238,18 @@
   --lp-mock-chrome: #f5f7fa;
   --lp-mock-border: #e2e8f0;
   --lp-mock-url: #edf0f5;
+  /* Pricing surfaces */
+  --lp-canvas: #f8f7f3;
+  --lp-btn-primary-hover: #142a46;
+  --lp-gold-ink: #9a7c31;
+  --lp-pill-gold-bg: #fff8e4;
+  --lp-pill-gold-ink: #7a5710;
+  --lp-pill-green-bg: #e9f7ef;
+  --lp-pill-green-ink: #17613a;
+  --lp-pill-neutral-bg: #f4f1ec;
+  --lp-pill-neutral-ink: #425466;
+  --lp-badge-green-bg: #dff6e8;
+  --lp-badge-green-ink: #177a43;
 }
 :root.dark {
   --lp-page: #0a0c11;
@@ -268,6 +280,18 @@
   --lp-mock-chrome: #161a21;
   --lp-mock-border: #272d39;
   --lp-mock-url: #20262f;
+  /* Pricing surfaces */
+  --lp-canvas: #0a0c11;
+  --lp-btn-primary-hover: #24557f;
+  --lp-gold-ink: #d8aa31;
+  --lp-pill-gold-bg: rgba(216, 170, 49, 0.16);
+  --lp-pill-gold-ink: #e9c46a;
+  --lp-pill-green-bg: rgba(34, 197, 94, 0.14);
+  --lp-pill-green-ink: #6ee7a0;
+  --lp-pill-neutral-bg: rgba(255, 255, 255, 0.06);
+  --lp-pill-neutral-ink: #aeb9c6;
+  --lp-badge-green-bg: rgba(34, 197, 94, 0.16);
+  --lp-badge-green-ink: #6ee7a0;
 }
 
 /* ─── Tailwind Theme ─── */

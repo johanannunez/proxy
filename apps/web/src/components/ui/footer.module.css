@@ -21,7 +21,10 @@
     color 220ms ease;
 }
 
-.footer[data-default-mode="dark"] {
+/* Footer follows the global theme (.dark on <html>) so the marketing site
+   reads as one system in both light and dark. The legacy per-footer mode
+   toggle is retired in favor of the global theme. */
+:global(.dark) .footer {
   --footer-bg: #07182a;
   --footer-text: #ffffff;
   --footer-muted: rgba(255, 255, 255, 0.62);
@@ -36,30 +39,9 @@
   --footer-logo-filter: brightness(0) invert(1);
 }
 
-.footer[data-default-mode="light"]:has(.modeInput:checked) {
-  --footer-bg: #07182a;
-  --footer-text: #ffffff;
-  --footer-muted: rgba(255, 255, 255, 0.62);
-  --footer-border: rgba(255, 255, 255, 0.12);
-  --footer-soft-border: rgba(255, 255, 255, 0.1);
-  --footer-input-bg: rgba(255, 255, 255, 0.08);
-  --footer-social-bg: rgba(255, 255, 255, 0.06);
-  --footer-social-hover: rgba(255, 255, 255, 0.12);
-  --footer-focus: rgba(255, 255, 255, 0.78);
-  --footer-logo-filter: brightness(0) invert(1);
-}
-
-.footer[data-default-mode="dark"]:has(.modeInput:checked) {
-  --footer-bg: #f8f7f3;
-  --footer-text: #081b33;
-  --footer-muted: #5f7182;
-  --footer-border: #ded7cb;
-  --footer-soft-border: #e7dfd2;
-  --footer-input-bg: #fffdfa;
-  --footer-social-bg: #ffffff;
-  --footer-social-hover: #f1ece3;
-  --footer-focus: #0b2540;
-  --footer-logo-filter: none;
+/* Legacy manual mode toggle hidden; global theme drives the footer. */
+.modeToggle {
+  display: none;
 }
 
 .modeInput {

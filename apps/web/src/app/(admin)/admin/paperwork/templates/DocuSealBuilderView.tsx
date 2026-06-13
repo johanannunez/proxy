@@ -12,9 +12,8 @@ declare module "react" {
     interface IntrinsicElements {
       "docuseal-builder": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement> & {
-          token?: string;
-          "template-id"?: string;
-          host?: string;
+          "data-token"?: string;
+          "data-host"?: string;
         },
         HTMLElement
       >;
@@ -91,12 +90,9 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
           </div>
         )}
         {session && (
-          <docuseal-builder
-            ref={builderRef}
-            token={session.token}
-            template-id={String(templateId)}
-            host={session.host}
-          />
+          // Web component attributes are data-token / data-host (NOT token /
+          // host). The template to open is carried inside the JWT payload.
+          <docuseal-builder ref={builderRef} data-token={session.token} />
         )}
       </div>
 
