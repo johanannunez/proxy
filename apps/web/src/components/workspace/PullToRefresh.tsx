@@ -106,7 +106,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
           style={{
             top: 0,
             transform: `translateY(${pullDistance - 44}px)`,
-            // eslint-disable-next-line react-hooks/refs
+             
             transition: pulling.current ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
@@ -125,7 +125,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
                   ? "var(--color-brand)"
                   : "var(--color-text-tertiary)",
                 transform: `rotate(${progress * 360}deg)`,
-                // eslint-disable-next-line react-hooks/refs
+                 
                 transition: pulling.current ? "none" : "transform 0.3s ease",
                 animation: refreshing ? "spin 0.8s linear infinite" : "none",
               }}
@@ -142,7 +142,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
           display: 'flex',
           flexDirection: 'column',
           transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : "none",
-          // eslint-disable-next-line react-hooks/refs
+           
           transition: pulling.current ? "none" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >

@@ -104,7 +104,7 @@ export function CustomizeExportModal({ open, onClose, onDownloaded }: Props) {
   // Reset on open.
   useEffect(() => {
     if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSelectedDatasets(new Set(["properties", "blocks"]));
     setPreset("all");
     setSelectedYear(YEAR_OPTIONS[0]);

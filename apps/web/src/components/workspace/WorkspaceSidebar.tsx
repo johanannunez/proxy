@@ -96,7 +96,6 @@ export function WorkspaceSidebar({
   initials,
   avatarUrl = null,
   isAdmin = false,
-  setupIncomplete = false,
   signOutSlot,
   unreadMessageCount = 0,
 }: {

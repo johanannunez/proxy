@@ -686,8 +686,6 @@ export function ReceiptsFileTree({
   pendingUploads,
   bulkSelectedIds,
   onBulkSelect,
-  onBulkClear,
-  onBulkMarkReviewed,
   searchQuery,
   onSearchChange,
   searchInputRef,

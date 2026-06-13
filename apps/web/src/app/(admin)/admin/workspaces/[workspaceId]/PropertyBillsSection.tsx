@@ -715,6 +715,7 @@ export function PropertyBillsSection({
           className={styles.receiptPreviewPopover}
           style={{ bottom: receiptPreview.bottom, right: receiptPreview.right }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- Supabase storage URL for receipt image; dimensions unknown at render time */}
           <img src={receiptPreview.url} className={styles.receiptPreviewImage} alt="Receipt preview" />
         </div>
       ) : null}
@@ -1184,6 +1185,7 @@ function ReceiptFilePreview({ file }: { file: ProcessingFile }) {
       </div>
       <div className={styles.receiptPreviewFrame}>
         {file.file.type.startsWith("image/") ? (
+          // eslint-disable-next-line @next/next/no-img-element -- blob URL from URL.createObjectURL, next/image cannot handle blob URLs
           <img src={file.previewUrl} className={styles.receiptPreviewFrameImage} alt={file.file.name} />
         ) : file.file.type === "application/pdf" ? (
           <iframe src={file.previewUrl} className={styles.receiptPreviewFramePdf} title={`Preview ${file.file.name}`} />

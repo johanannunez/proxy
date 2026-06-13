@@ -170,7 +170,7 @@ export function WorkspaceMessagesShell({
   // Auto-select first conversation if only one exists
   useEffect(() => {
     if (conversations.length === 1 && !selectedConvId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       loadConversation(conversations[0].id);
     }
   }, [conversations, selectedConvId, loadConversation]);

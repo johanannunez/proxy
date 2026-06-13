@@ -175,6 +175,7 @@ function ImageViewer({ url }: { url: string }) {
           setScale((s) => Math.min(4, Math.max(0.5, s - e.deltaY * 0.001)));
         }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element -- Supabase signed URL for receipt photo; dimensions are unknown and vary per image */}
         <img
           src={url}
           alt="Receipt"
@@ -253,6 +254,7 @@ function ImageViewer({ url }: { url: string }) {
           }}
           onClick={() => setExpanded(false)}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- Supabase signed URL for receipt photo; dimensions are unknown and vary per image */}
           <img
             src={url}
             alt="Receipt full view"

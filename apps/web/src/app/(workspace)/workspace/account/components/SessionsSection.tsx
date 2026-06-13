@@ -68,7 +68,7 @@ export function SessionsSection() {
 
   useEffect(() => {
     const ua = navigator.userAgent;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     if (ua.includes("Edg/")) setCurrentBrowser("Edge");
     else if (ua.includes("Chrome/") && !ua.includes("Edg/")) setCurrentBrowser("Chrome");
     else if (ua.includes("Firefox/")) setCurrentBrowser("Firefox");

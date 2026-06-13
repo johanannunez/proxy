@@ -363,7 +363,6 @@ export interface MeetingRescheduledData {
 }
 
 export function buildMeetingRescheduledEmail(d: MeetingRescheduledData): { subject: string; html: string } {
-  const typeLabel = MEETING_TYPE_LABEL[d.meetingType] ?? "Meeting";
   const subject = `Meeting rescheduled: ${d.title}`;
 
   const body = [

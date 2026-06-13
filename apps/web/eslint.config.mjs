@@ -19,11 +19,25 @@ const eslintConfig = defineConfig([
   {
     // eslint-plugin-react-hooks v7 ships React Compiler rules that fire on
     // valid React patterns when the project doesn't use the React Compiler.
-    // Downgrade to warn so they surface as guidance without blocking the pipeline.
+    // We don't run the React Compiler, so these are false positives on working
+    // code; turn them off rather than refactoring valid components to appease a
+    // rule that doesn't apply here. (react-hooks/exhaustive-deps stays on — it's
+    // a legitimate rule, not a compiler-only one.)
     rules: {
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/refs": "warn",
-      "react-hooks/purity": "warn",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/purity": "off",
+      // Honor the `_`-prefix convention for intentionally-unused bindings,
+      // including positional array destructuring like `[_, i]`.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
     },
   },
   {

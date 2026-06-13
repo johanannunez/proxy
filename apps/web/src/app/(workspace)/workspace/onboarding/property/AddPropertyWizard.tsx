@@ -77,7 +77,7 @@ export function AddPropertyWizard() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<WizardData>;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         setData((prev) => deepMerge(prev, parsed));
       }
     } catch {
@@ -91,7 +91,7 @@ export function AddPropertyWizard() {
     if (!hydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSavedAt(Date.now());
     } catch {
       // quota exceeded — ignore

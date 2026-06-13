@@ -194,6 +194,9 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
       descRef.current.value = task.description ?? '';
       autoResizeTextarea(descRef.current);
     }
+    // Re-init only when the task identity changes; depending on the full `task`
+    // would re-run on every optimistic update and overwrite in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id]);
 
   // Escape key
@@ -209,6 +212,8 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
+    // `task` is only read for the open/closed check; keying on its identity is intended.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, onClose, showPriorityMenu, showDatePicker, showDeadlinePicker]);
 
   // Close priority menu on outside click

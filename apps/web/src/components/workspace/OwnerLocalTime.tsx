@@ -21,7 +21,7 @@ export function OwnerLocalTime({ timezone }: { timezone: string | null }) {
 
   useEffect(() => {
     if (!timezone) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setTime(formatTime(timezone));
     const id = setInterval(() => setTime(formatTime(timezone)), 60_000);
     return () => clearInterval(id);

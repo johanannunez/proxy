@@ -121,7 +121,6 @@ const T = {
 
 /* ─── Spring configs ─── */
 
-const springSnap = { type: "spring" as const, stiffness: 420, damping: 32, mass: 0.8 };
 const springIcon = { type: "spring" as const, stiffness: 520, damping: 28 };
 const easeFade = { duration: 0.12 };
 const springCollapse = { type: "spring" as const, stiffness: 380, damping: 36, mass: 0.7 };

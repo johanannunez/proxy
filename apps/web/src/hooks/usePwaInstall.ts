@@ -71,7 +71,7 @@ export function usePwaInstall(): PwaInstallState {
     if (typeof window === "undefined") return;
 
     if (detectIOS()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setState({ status: "ios" });
       return;
     }

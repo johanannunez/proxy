@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   House,
   Buildings,
-  CalendarCheck,
   ChatCircle,
   List,
   FileText,
@@ -122,7 +121,7 @@ export function WorkspaceBottomNav({
   // When sheet opens, snap to the section matching the active route.
   useEffect(() => {
     if (moreOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setOpenSection(getActiveSection(pathname));
     }
   }, [moreOpen, pathname]);

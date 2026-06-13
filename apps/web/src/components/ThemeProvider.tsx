@@ -68,7 +68,7 @@ export default function ThemeProvider({
 
     const stored = localStorage.getItem("proxy-theme") as Theme | null;
     const initial: Theme = stored ?? "system";
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setThemeState(initial);
     const resolved = initial === "system" ? getSystemTheme() : initial;
     setResolvedTheme(resolved);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowDown,
@@ -735,10 +735,16 @@ export function DocumentsTab({ documents, spineDocuments, groupSettings, workspa
   }, [groupSettings, optimisticGroupOrderOverride]);
 
   // Per-document group resolver: spine displayGroup override > DISPLAY_GROUPS default.
-  function resolveGroupKey(docKey: WorkspaceDocumentKey, spine: SpineDocument | undefined): string {
-    if (spine?.displayGroup) return spine.displayGroup;
-    return DISPLAY_GROUPS.find((g) => (g.keys as readonly string[]).includes(docKey))?.key ?? "house_information";
-  }
+  // Memoized so it stays referentially stable across renders (it depends only on
+  // the module-level DISPLAY_GROUPS constant), keeping the cards useMemo below
+  // from recomputing every render.
+  const resolveGroupKey = useCallback(
+    (docKey: WorkspaceDocumentKey, spine: SpineDocument | undefined): string => {
+      if (spine?.displayGroup) return spine.displayGroup;
+      return DISPLAY_GROUPS.find((g) => (g.keys as readonly string[]).includes(docKey))?.key ?? "house_information";
+    },
+    [],
+  );
 
   // Build merged card list
   const cards = useMemo<WorkspaceDocumentCard[]>(() => {

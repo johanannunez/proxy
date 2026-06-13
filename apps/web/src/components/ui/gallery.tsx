@@ -7,7 +7,6 @@ import { motion, useMotionValue } from "motion/react";
 import type { Variants } from "motion/react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export const PhotoGallery = ({
   animationDelay = 0.5,
@@ -188,10 +187,10 @@ function getRandomNumberInRange(min: number, max: number): number {
 
 const MotionImage = motion(
   forwardRef(function MotionImage(
-    props: ImageProps,
+    { alt = "", ...props }: ImageProps,
     ref: Ref<HTMLImageElement>
   ) {
-    return <Image ref={ref} {...props} />;
+    return <Image ref={ref} alt={alt} {...props} />;
   })
 );
 
@@ -213,15 +212,13 @@ export const Photo = ({
   width: number;
   height: number;
 }) => {
-  const [rotation, setRotation] = useState<number>(0);
+  // Random initial tilt, computed once on mount (no effect needed for
+  // initial-only derived state).
+  const [rotation] = useState<number>(
+    () => getRandomNumberInRange(1, 4) * (direction === "left" ? -1 : 1),
+  );
   const x = useMotionValue(200);
   const y = useMotionValue(200);
-
-  useEffect(() => {
-    const randomRotation =
-      getRandomNumberInRange(1, 4) * (direction === "left" ? -1 : 1);
-    setRotation(randomRotation);
-  }, []);
 
   function handleMouse(event: MouseEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect();

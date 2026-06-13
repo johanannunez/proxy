@@ -14,7 +14,6 @@ export function FinanceTab({
   ownerName,
   ownerPhone,
   ownerAddress,
-  properties,
   workspaceId,
   receiptsForExplorer,
 }: {

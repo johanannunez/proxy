@@ -455,7 +455,6 @@ function SortableFieldItem({
   isSelected,
   isLayout,
   onSelect,
-  onUpdate,
   onRemove,
   onDuplicate,
   onAddBelow,

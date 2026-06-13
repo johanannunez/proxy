@@ -2,16 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CaretDown } from '@phosphor-icons/react';
-import type { ColumnState, StatusColumnData } from './pipeline-types';
+import type { ColumnState } from './pipeline-types';
 import { useColumnStates } from './useColumnStates';
 import styles from './ColumnsMenu.module.css';
-
-type Props = {
-  boardKey: string;
-  columns: Pick<StatusColumnData, 'stage' | 'collapsed'> & { count?: number }[] extends never
-    ? never
-    : Array<{ key: string; label: string; count: number; defaultState: ColumnState }>;
-};
 
 export function ColumnsMenu({
   boardKey,

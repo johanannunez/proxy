@@ -71,6 +71,7 @@ function missingCount(owner: DocHubOwner, columns: CoverageColumn[]): number {
 function OwnerAvatar({ name, url }: { name: string; url: string | null }) {
   if (url) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- dynamic owner avatar URL from Supabase, dimensions unknown at render time
       <img src={url} alt={name} className={styles.avatar} style={{ objectFit: "cover" }} />
     );
   }

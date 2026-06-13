@@ -102,7 +102,7 @@ export function PipelineViewSwitcher({
     () => ({
       centerSlot: tabs.length > 1 ? <Switcher activeKey={mode} tabs={tabs} /> : null,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [mode, supported.join('|')],
   );
 

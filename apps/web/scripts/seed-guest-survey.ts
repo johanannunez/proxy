@@ -237,7 +237,7 @@ async function main() {
 
   // Realistic view funnel: more views than responses.
   const VIEW_COUNT = 27;
-  const views = Array.from({ length: VIEW_COUNT }, (_, i) => ({
+  const views = Array.from({ length: VIEW_COUNT }, (_, _i) => ({
     form_id: FORM_ID,
     viewed_at: iso(Math.floor(Math.random() * 16), Math.floor(Math.random() * 600)),
     user_agent: "seed-demo",

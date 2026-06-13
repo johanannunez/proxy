@@ -208,6 +208,7 @@ export function UploadForm() {
               }}
             >
               {state.preview ? (
+                // eslint-disable-next-line @next/next/no-img-element -- data URL from FileReader.readAsDataURL, next/image cannot handle data URLs
                 <img
                   src={state.preview}
                   alt="Receipt preview"

@@ -1109,9 +1109,9 @@ function AddEntryForm({
 
   // Respond to new prefill selections
   const lastPrefillRef = useRef(prefill);
-  // eslint-disable-next-line react-hooks/refs
+   
   if (prefill !== lastPrefillRef.current) {
-    // eslint-disable-next-line react-hooks/refs
+     
     lastPrefillRef.current = prefill;
     if (prefill) {
       setEventType(prefill.eventType);

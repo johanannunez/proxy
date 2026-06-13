@@ -124,7 +124,7 @@ export function AmenitiesForm({
       if (next.has(id)) {
         next.delete(id);
         setDetails((d) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+           
         const { [id]: _removed, ...rest } = d;
           return rest;
         });

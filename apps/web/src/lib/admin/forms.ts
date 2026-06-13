@@ -270,7 +270,7 @@ export async function getFormViewCount(formId: string): Promise<number> {
 export type RespondentProfile = { id: string; name: string };
 
 export async function listRespondentProfiles(orgId: string): Promise<RespondentProfile[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data, error } = await db()
     .from("form_responses")
     .select(
@@ -299,7 +299,7 @@ export type FormPropertyOption = { id: string; name: string };
 export async function listPropertyOptionsForForms(
   orgId: string,
 ): Promise<FormPropertyOption[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data, error } = await db()
     .from("form_responses")
     .select("property_id, properties:property_id(name), forms!inner(org_id)")
@@ -335,7 +335,7 @@ export async function getRespondentCrossFormData(
   profileId: string,
   propertyId?: string,
 ): Promise<RespondentFormEntry[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let q = db()
     .from("form_responses")
     .select(

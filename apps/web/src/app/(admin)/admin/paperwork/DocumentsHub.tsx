@@ -57,7 +57,7 @@ const signatureKeys: SecureDocKey[] = [
   "card_authorization",
   "ach_authorization",
 ];
-const fileSecureKeys: SecureDocKey[] = ["w9", "identity"];
+
 const fileFormKeys: FormKey[] = ["str_permit", "insurance_certificate"];
 
 function kindOfDocKey(key: DocKey): "signatures" | "files" | "forms" {
@@ -71,6 +71,7 @@ function kindOfDocKey(key: DocKey): "signatures" | "files" | "forms" {
 function OwnerAvatar({ name, url }: { name: string; url: string | null }) {
   if (url) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- dynamic owner avatar URL from Supabase, dimensions unknown at render time
       <img src={url} alt={name} className={styles.avatar} style={{ objectFit: "cover" }} />
     );
   }

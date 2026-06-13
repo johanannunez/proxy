@@ -123,6 +123,7 @@ function QueueCard({
       }`}
     >
       {item.owner_avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- dynamic owner avatar URL from Supabase, dimensions unknown at render time
         <img
           src={item.owner_avatar_url}
           alt={item.owner_name}

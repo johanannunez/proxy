@@ -36,7 +36,7 @@ function displayName(p: PropertyOption): string {
   return formatAddress(p) || "Property";
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 function displaySub(_prop: PropertyOption): string {
   return "";
 }

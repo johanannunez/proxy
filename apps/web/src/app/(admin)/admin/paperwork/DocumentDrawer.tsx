@@ -130,6 +130,7 @@ function OwnerHeaderCard({ owner }: { owner: DocHubOwner }) {
   return (
     <div className={styles.ownerCard}>
       {owner.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- dynamic owner avatar URL from Supabase, dimensions unknown at render time
         <img
           src={owner.avatarUrl}
           alt={owner.fullName}

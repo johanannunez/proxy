@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTransition, useState, useRef, useEffect, type CSSProperties } from "react";
 import {
-  GearSix, UserSwitch, Power, Sun, Moon, Monitor, Check, Question, CaretUp,
+  GearSix, UserSwitch, Power, Sun, Moon, Monitor, Question, CaretUp,
 } from "@phosphor-icons/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { signOut } from "@/app/(workspace)/workspace/actions";

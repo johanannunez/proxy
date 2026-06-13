@@ -122,7 +122,7 @@ export function SetWorkspaceHeader({
   // Listing subtitle as a dep would cause an infinite loop since each
   // render produces a new ReactNode reference.
   const subtitleRef = useRef(subtitle);
-  // eslint-disable-next-line react-hooks/refs
+   
   subtitleRef.current = subtitle;
 
   useEffect(() => {

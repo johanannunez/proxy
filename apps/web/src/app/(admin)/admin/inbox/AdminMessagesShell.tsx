@@ -201,7 +201,7 @@ export function AdminMessagesShell({
         ownerConversations.find((c) => c.type === "direct") ??
         ownerConversations.find((c) => c.type === "email_log") ??
         ownerConversations[0];
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       if (conv) loadConversation(conv.id);
     }
   }, [selectedConversationId, selectedOwnerId, initialConversations, loadConversation]);

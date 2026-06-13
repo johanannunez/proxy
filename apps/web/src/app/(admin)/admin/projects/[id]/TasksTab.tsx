@@ -7,7 +7,7 @@ import styles from './TasksTab.module.css';
 
 type Props = { projectId: string; taskCount?: number; taskDoneCount?: number };
 
-export async function TasksTab({ projectId, taskCount = 0, taskDoneCount = 0 }: Props) {
+export async function TasksTab({ projectId, taskDoneCount = 0 }: Props) {
   // Fetch tasks for this project
   const supabase = await createClient();
   const { data } = await supabase

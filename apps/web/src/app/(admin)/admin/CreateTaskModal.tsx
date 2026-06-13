@@ -91,7 +91,6 @@ function SortableRow({
 
 export function CreateTaskModal({
   open,
-  insightId,
   propertyId,
   initialTitle,
   initialDescription,

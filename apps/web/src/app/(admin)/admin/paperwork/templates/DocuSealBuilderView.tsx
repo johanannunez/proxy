@@ -18,6 +18,7 @@ declare module "react" {
         React.HTMLAttributes<HTMLElement> & {
           "data-token"?: string;
           "data-host"?: string;
+          "data-with-title"?: string;
         },
         HTMLElement
       >;
