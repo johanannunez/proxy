@@ -20,13 +20,13 @@
 
 .codeInput {
   width: 100%;
-  border: 1.5px solid #dce8f0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
   font-size: 18px;
   font-family: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--color-text-primary);
-  background: #f7fbfd;
+  background: var(--surface-elevated);
   outline: none;
   text-align: center;
   letter-spacing: 0.35em;
@@ -36,12 +36,12 @@
 
 .codeInput::placeholder {
   letter-spacing: 0.35em;
-  color: #9fb3c2;
+  color: var(--color-text-secondary);
 }
 
 .codeInput:focus-visible {
   border-color: var(--color-brand);
-  background: #ffffff;
+  background: var(--surface-floating);
 }
 
 .codeInput:disabled {

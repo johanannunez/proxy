@@ -42,7 +42,7 @@ export function AuthLeftPanel() {
             style={{
               fontSize: "15px",
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: "var(--color-text-primary)",
               letterSpacing: "-0.01em",
             }}
           >
@@ -55,7 +55,7 @@ export function AuthLeftPanel() {
             fontFamily: "var(--font-lora), Georgia, serif",
             fontSize: "42px",
             fontWeight: 700,
-            color: "#1a1a1a",
+            color: "var(--color-text-primary)",
             lineHeight: 1.06,
             letterSpacing: "-0.025em",
             marginBottom: "10px",
@@ -67,7 +67,7 @@ export function AuthLeftPanel() {
         <p
           style={{
             fontSize: "15px",
-            color: "#4b5563",
+            color: "var(--color-text-secondary)",
             lineHeight: 1.6,
             maxWidth: "460px",
             marginBottom: "20px",

@@ -1154,3 +1154,90 @@ body:has(.auth-page-root) {
     width: 100%;
   }
 }
+
+/* ─── Dark mode: Auth pages ─── */
+
+/* Override html/body background (set via :has selector in light) */
+html.dark:has(.auth-page-root),
+html.dark:has(.auth-page-root) body {
+  background: var(--surface-base);
+}
+
+/* Page grid canvas */
+.dark .auth-page-grid {
+  background: var(--surface-base);
+}
+
+/* Form card: white → floating surface */
+.dark .auth-form-card {
+  background: var(--surface-floating);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 14px 36px rgba(0, 0, 0, 0.32);
+  color: var(--text-primary);
+}
+
+/* Workspace preview card: translucent white → dark glass */
+.dark .auth-workspace-preview-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Workspace portal panel */
+.dark .auth-workspace-portal {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(27, 119, 190, 0.18);
+}
+
+.dark .auth-workspace-portal-header {
+  border-bottom-color: rgba(27, 119, 190, 0.14);
+}
+
+/* Name and primary value text */
+.dark .auth-workspace-name,
+.dark .auth-workspace-value,
+.dark .auth-workspace-documents-title {
+  color: var(--text-primary);
+}
+
+/* Secondary / muted text */
+.dark .auth-workspace-meta,
+.dark .auth-workspace-label,
+.dark .auth-workspace-detail {
+  color: var(--text-secondary);
+}
+
+/* Module tiles */
+.dark .auth-workspace-module-meeting {
+  background: rgba(2, 170, 235, 0.07);
+  border-color: rgba(2, 170, 235, 0.14);
+}
+
+.dark .auth-workspace-module-property {
+  background: rgba(15, 159, 143, 0.07);
+  border-color: rgba(15, 159, 143, 0.14);
+}
+
+/* Documents row */
+.dark .auth-workspace-documents {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(27, 119, 190, 0.14);
+}
+
+/* Document pills */
+.dark .auth-workspace-document-pill {
+  background: rgba(2, 170, 235, 0.08);
+  border-color: rgba(2, 170, 190, 0.14);
+  color: var(--text-secondary);
+}
+
+/* Mobile background (overrides the white set in @media max-width:767px) */
+@media (max-width: 767px) {
+  html.dark:has(.auth-page-root),
+  html.dark:has(.auth-page-root) body {
+    background: var(--surface-base);
+  }
+
+  .dark .auth-page-grid {
+    background: var(--surface-base);
+  }
+}

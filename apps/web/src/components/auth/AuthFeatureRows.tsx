@@ -89,7 +89,7 @@ export function AuthFeatureRows() {
                   display: "block",
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: "#1a1a1a",
+                  color: "var(--color-text-primary)",
                   marginBottom: "2px",
                   letterSpacing: "-0.01em",
                 }}
@@ -99,7 +99,7 @@ export function AuthFeatureRows() {
               <span
                 style={{
                   fontSize: "13px",
-                  color: "#6b7280",
+                  color: "var(--color-text-secondary)",
                   lineHeight: 1.5,
                 }}
               >

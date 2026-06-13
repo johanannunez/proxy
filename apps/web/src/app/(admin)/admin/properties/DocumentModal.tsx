@@ -765,7 +765,7 @@ function GenericSummary({ itemKey }: { itemKey: string }) {
               justifyContent: "space-between",
               padding: "10px 14px",
               borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--color-warm-gray-100)",
-              backgroundColor: i % 2 === 0 ? "var(--color-white)" : "#fafafa",
+              backgroundColor: i % 2 === 0 ? "var(--color-white)" : "var(--color-warm-gray-50)",
               fontSize: "13px",
             }}
           >
@@ -874,7 +874,7 @@ function BlockList({
             gap: "12px",
             padding: "10px 14px",
             borderBottom: i === items.length - 1 ? "none" : "1px solid var(--color-warm-gray-100)",
-            backgroundColor: i % 2 === 0 ? "var(--color-white)" : "#fafafa",
+            backgroundColor: i % 2 === 0 ? "var(--color-white)" : "var(--color-warm-gray-50)",
           }}
         >
           <div

@@ -123,7 +123,7 @@ export function RotatingTestimonials() {
         <p
           style={{
             fontSize: "12px",
-            color: "#4b5563",
+            color: "var(--color-text-secondary)",
             lineHeight: "1.55",
             marginBottom: "8px",
             fontWeight: 400,
@@ -138,11 +138,11 @@ export function RotatingTestimonials() {
           <span style={{ color: "#f59e0b", fontSize: "10px", letterSpacing: "1px" }}>
             ★★★★★
           </span>
-          <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#1a1a1a" }}>
+          <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--color-text-primary)" }}>
             {review.name}
           </span>
-          <span style={{ fontSize: "11px", color: "#6b7280" }}>·</span>
-          <span style={{ fontSize: "11px", color: "#6b7280" }}>{review.meta}</span>
+          <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>·</span>
+          <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>{review.meta}</span>
         </div>
       </div>
 

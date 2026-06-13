@@ -8,13 +8,13 @@ const initialState: LoginState = {};
 
 const fieldInputStyle: React.CSSProperties = {
   width: "100%",
-  border: "1.5px solid #dce8f0",
+  border: "1.5px solid var(--border)",
   borderRadius: "10px",
   padding: "10px 14px",
   fontSize: "14px",
   fontFamily: "inherit",
-  color: "#1a1a1a",
-  background: "#f7fbfd",
+  color: "var(--color-text-primary)",
+  background: "var(--surface-elevated)",
   outline: "none",
 };
 
@@ -23,7 +23,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.07em",
-  color: "#6b7280",
+  color: "var(--color-text-secondary)",
 };
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
@@ -53,11 +53,11 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           style={fieldInputStyle}
           onFocus={(e) => {
             e.target.style.borderColor = "var(--color-brand)";
-            e.target.style.background = "#ffffff";
+            e.target.style.background = "var(--surface-floating)";
           }}
           onBlur={(e) => {
-            e.target.style.borderColor = "#dce8f0";
-            e.target.style.background = "#f7fbfd";
+            e.target.style.borderColor = "var(--border)";
+            e.target.style.background = "var(--surface-elevated)";
           }}
         />
       </div>

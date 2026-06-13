@@ -55,7 +55,7 @@ export default async function LoginPage({
               fontFamily: "var(--font-lora), Georgia, serif",
               fontSize: "30px",
               fontWeight: 700,
-              color: "#1a1a1a",
+              color: "var(--color-text-primary)",
               textAlign: "center",
               letterSpacing: "-0.02em",
               marginBottom: "8px",
@@ -66,7 +66,7 @@ export default async function LoginPage({
           <p
             style={{
               fontSize: "13px",
-              color: "#6b7280",
+              color: "var(--color-text-secondary)",
               textAlign: "center",
               marginBottom: "24px",
               lineHeight: 1.5,
@@ -80,7 +80,7 @@ export default async function LoginPage({
           <hr
             style={{
               border: "none",
-              borderTop: "1px solid #f0f4f8",
+              borderTop: "1px solid var(--border)",
               margin: "22px 0 0",
             }}
           />
@@ -89,7 +89,7 @@ export default async function LoginPage({
               textAlign: "center",
               marginTop: "14px",
               fontSize: "13px",
-              color: "#6b7280",
+              color: "var(--color-text-secondary)",
             }}
           >
             New to Proxy?{" "}

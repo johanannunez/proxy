@@ -62,3 +62,17 @@
   pointer-events: none;
   z-index: 20;
 }
+
+/* ─── Dark mode ─── */
+
+/* Shell canvas and content area */
+:global(.dark) .shell { background: var(--surface-base); }
+:global(.dark) .content { background: var(--surface-base); }
+
+/* Board nav bar (tabs row) */
+:global(.dark) .boardNav { background: var(--surface-floating); }
+
+/* Fade gradient on tabs rail — update the stop color to match the dark canvas */
+:global(.dark) .content::after {
+  background: linear-gradient(to right, transparent, var(--surface-base));
+}
