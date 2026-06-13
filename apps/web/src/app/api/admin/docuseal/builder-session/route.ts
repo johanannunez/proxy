@@ -24,13 +24,29 @@ function signBuilderJwt(payload: Record<string, unknown>, secret: string): strin
   return `${header}.${body}.${signature}`;
 }
 
+/** Reject a hung dependency so the route always responds fast instead of
+ *  leaving the embedded builder spinning on its loading state. */
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
 /** The API-key owner's email is required as user_email in the builder JWT.
- *  Resolved from DocuSeal so it stays correct across environments. */
+ *  Resolved from DocuSeal so it stays correct across environments, with a
+ *  hard timeout and a configured fallback so a slow DocuSeal API never hangs
+ *  the builder. */
 let cachedOwnerEmail: string | null = null;
 async function resolveOwnerEmail(apiToken: string, baseUrl: string): Promise<string | null> {
   if (cachedOwnerEmail) return cachedOwnerEmail;
   try {
-    const res = await fetch(`${baseUrl}/user`, { headers: { "X-Auth-Token": apiToken } });
+    const res = await fetch(`${baseUrl}/user`, {
+      headers: { "X-Auth-Token": apiToken },
+      signal: AbortSignal.timeout(5000),
+    });
     if (!res.ok) return null;
     const data = (await res.json()) as { email?: string };
     cachedOwnerEmail = data.email ?? null;
@@ -42,16 +58,35 @@ async function resolveOwnerEmail(apiToken: string, baseUrl: string): Promise<str
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  let user;
+  try {
+    const result = await withTimeout(supabase.auth.getUser(), 8000, "auth check");
+    user = result.data.user;
+  } catch {
+    return NextResponse.json(
+      { error: "Auth check timed out. Please retry." },
+      { status: 504 },
+    );
+  }
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
+  let profile;
+  try {
+    const result = await withTimeout(
+      supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      8000,
+      "profile lookup",
+    );
+    profile = result.data;
+  } catch {
+    return NextResponse.json(
+      { error: "Profile lookup timed out. Please retry." },
+      { status: 504 },
+    );
+  }
   if ((profile as { role: string } | null)?.role !== "admin") {
     return NextResponse.json({ error: "Admin access required." }, { status: 403 });
   }
@@ -62,7 +97,12 @@ export async function GET(request: NextRequest) {
   }
 
   const apiBase = (process.env.DOCUSEAL_BASE_URL ?? "https://api.docuseal.com").replace(/\/$/, "");
-  const ownerEmail = await resolveOwnerEmail(apiToken, apiBase);
+  // Resolve from DocuSeal, but fall back to the configured countersigner email
+  // so a slow/unavailable DocuSeal /user lookup degrades gracefully.
+  const ownerEmail =
+    (await resolveOwnerEmail(apiToken, apiBase)) ??
+    process.env.DOCUSEAL_COUNTERSIGNER_EMAIL ??
+    null;
   if (!ownerEmail) {
     return NextResponse.json(
       { error: "Could not resolve the DocuSeal account owner." },

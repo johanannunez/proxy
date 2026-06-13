@@ -34,19 +34,42 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
   const [finishError, setFinishError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const builderRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    fetch(`/api/admin/docuseal/builder-session?templateId=${templateId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Session fetch failed");
+    let cancelled = false;
+    setFetchError(null);
+    fetch(`/api/admin/docuseal/builder-session?templateId=${templateId}`, {
+      // Bail out if the session never comes back so the builder shows a clear
+      // error and a retry instead of spinning on its loading state forever.
+      signal: AbortSignal.timeout(15000),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = (await r.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(body?.error ?? "Session fetch failed");
+        }
         return r.json() as Promise<{ token: string; host: string }>;
       })
-      .then(setSession)
-      .catch(() =>
-        setFetchError("Could not load the template builder. Check DOCUSEAL_API_TOKEN in Doppler."),
-      );
-  }, [templateId]);
+      .then((s) => {
+        if (!cancelled) setSession(s);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const timedOut = err instanceof DOMException && err.name === "TimeoutError";
+        setFetchError(
+          timedOut
+            ? "The template builder is taking too long to load. This is usually a slow dev server or DocuSeal API. Retry, or restart the dev server."
+            : err instanceof Error && err.message !== "Session fetch failed"
+              ? err.message
+              : "Could not load the template builder. Check DOCUSEAL_API_TOKEN in Doppler.",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [templateId, reloadKey]);
 
   useEffect(() => {
     if (!session) return;
@@ -120,7 +143,18 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
       </div>
 
       <div className={styles.builderArea}>
-        {fetchError && <p className={styles.error}>{fetchError}</p>}
+        {fetchError && (
+          <div className={styles.error} style={{ flexDirection: "column", gap: 14, textAlign: "center", padding: "0 24px" }}>
+            <p style={{ maxWidth: 460 }}>{fetchError}</p>
+            <button
+              type="button"
+              className={styles.doneBtn}
+              onClick={() => setReloadKey((k) => k + 1)}
+            >
+              Retry
+            </button>
+          </div>
+        )}
         {finishError && <p className={styles.error}>{finishError}</p>}
         {!session && !fetchError && (
           <div className={styles.loading}>
