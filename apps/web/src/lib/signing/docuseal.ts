@@ -324,6 +324,34 @@ export async function createTemplateFromHtml(
 }
 
 /**
+ * Rename the DocuSeal document behind a template so its name matches the title
+ * shown in our UI and inside the builder header. Best-effort: returns false on
+ * any failure (caller treats the DB title as the source of truth and does not
+ * fail the save). DocuSeal updates templates via PUT /templates/:id.
+ */
+export async function renameDocuSealTemplate(
+  templateId: number,
+  name: string,
+): Promise<boolean> {
+  if (!isDocuSealConfigured()) return false;
+  try {
+    const res = await fetch(`${baseUrl()}/templates/${templateId}`, {
+      method: "PUT",
+      headers: headers(),
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      console.error("[docuseal] renameDocuSealTemplate failed:", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[docuseal] renameDocuSealTemplate error:", err);
+    return false;
+  }
+}
+
+/**
  * Clone an existing DocuSeal template (used for the system-template fork flow).
  */
 export async function cloneTemplate(

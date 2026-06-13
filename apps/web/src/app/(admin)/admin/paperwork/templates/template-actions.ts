@@ -2,16 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createTemplate, createTemplateFromHtml, cloneTemplate, getTemplateFields } from "@/lib/signing/docuseal";
+import {
+  createTemplate,
+  createTemplateFromHtml,
+  cloneTemplate,
+  getTemplateFields,
+  renameDocuSealTemplate,
+} from "@/lib/signing/docuseal";
 import {
   createDocumentTemplateRecord,
   updateDocumentTemplateRecord,
   getDocumentTemplate,
   documentKeyExists,
+  templateHasBeenSent,
 } from "@/lib/admin/document-templates";
-import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
+import type {
+  DocumentTemplate,
+  UpdateDocumentTemplateInput,
+} from "@/lib/admin/document-templates-types";
 import { computeCoverage } from "@/lib/signing/field-coverage";
 import { signerRolesLabel } from "./signer-roles";
+import { metaEditLocked, isValidDocumentKey } from "./template-meta";
 
 export type TemplateActionResult =
   | { ok: true; template: DocumentTemplate }
@@ -207,6 +218,98 @@ export async function activateTemplate(
 
   const ok = await updateDocumentTemplateRecord(id, { is_active: true });
   return ok ? { ok: true } : { ok: false, error: "Could not activate the template." };
+}
+
+export type UpdateTemplateMetaInput = {
+  title?: string | null;
+  display_name?: string;
+  description?: string | null;
+  document_key?: string;
+  signer_roles?: string[];
+};
+
+/**
+ * Edit the "About this template" meta. Cosmetic fields (title, display name,
+ * description) are always editable. The document key and signer roles lock once
+ * any document has been sent under the key: changing them would orphan
+ * documents already out for signature. When the title changes we also rename
+ * the DocuSeal document so the builder header matches; that sync is best-effort
+ * and never fails the save (the DB title is the source of truth).
+ */
+export async function updateTemplateMeta(
+  id: string,
+  input: UpdateTemplateMetaInput,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
+  const template = await getDocumentTemplate(id);
+  if (!template) return { ok: false, error: "Template not found." };
+
+  const hasBeenSent = await templateHasBeenSent(template.document_key);
+  if (metaEditLocked(hasBeenSent, input)) {
+    return {
+      ok: false,
+      error: "This template has already been sent, so its key and signers are locked.",
+    };
+  }
+
+  // Build only the fields actually being changed.
+  const update: UpdateDocumentTemplateInput = {};
+
+  if (input.title !== undefined) {
+    const title = input.title?.trim() ?? "";
+    update.title = title === "" ? null : title;
+  }
+  if (input.display_name !== undefined) {
+    const name = input.display_name.trim();
+    if (!name) return { ok: false, error: "Name cannot be empty." };
+    update.display_name = name;
+  }
+  if (input.description !== undefined) {
+    const desc = input.description?.trim() ?? "";
+    update.description = desc === "" ? null : desc;
+  }
+  if (input.document_key !== undefined) {
+    const key = input.document_key.trim();
+    if (!isValidDocumentKey(key)) {
+      return {
+        ok: false,
+        error: "Document key must be lowercase letters, numbers, and underscores only.",
+      };
+    }
+    // Only enforce uniqueness when the key actually changed: a match then always
+    // means a different template owns it (this row is excluded by the change).
+    if (key !== template.document_key && (await documentKeyExists(key))) {
+      return { ok: false, error: "That document key is already in use." };
+    }
+    update.document_key = key;
+  }
+  if (input.signer_roles !== undefined) {
+    if (input.signer_roles.length === 0) {
+      return { ok: false, error: "At least one signer role is required." };
+    }
+    update.signer_roles = input.signer_roles;
+  }
+
+  if (Object.keys(update).length === 0) return { ok: true };
+
+  const ok = await updateDocumentTemplateRecord(id, update);
+  if (!ok) return { ok: false, error: "Could not save your changes. Try again." };
+
+  // Keep the DocuSeal document name in sync with our title. Best-effort: a
+  // DocuSeal outage must not block the DB save.
+  if (
+    update.title !== undefined &&
+    update.title !== null &&
+    template.docuseal_template_id
+  ) {
+    await renameDocuSealTemplate(template.docuseal_template_id, update.title);
+  }
+
+  revalidatePath("/admin/paperwork/templates");
+  revalidatePath(`/admin/paperwork/templates/${id}`);
+  return { ok: true };
 }
 
 /**

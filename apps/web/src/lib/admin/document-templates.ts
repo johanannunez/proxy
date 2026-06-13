@@ -127,6 +127,23 @@ export async function listTemplateSendCounts(): Promise<Record<string, number>> 
   return counts;
 }
 
+/**
+ * True if at least one signature document has already been sent under this
+ * document key. Once that happens the key and signer roles are locked: changing
+ * them would orphan documents already out for signature.
+ */
+export async function templateHasBeenSent(documentKey: string): Promise<boolean> {
+  if (!documentKey) return false;
+  const { data } = await db()
+    .from("documents")
+    .select("id")
+    .eq("source", "signed_document")
+    .eq("document_key", documentKey)
+    .limit(1)
+    .maybeSingle();
+  return data !== null;
+}
+
 export async function getDocumentTemplate(id: string): Promise<DocumentTemplate | null> {
   const { data } = await db()
     .from("document_templates")

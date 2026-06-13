@@ -53,8 +53,10 @@ export type CreateDocumentTemplateInput = {
 
 export type UpdateDocumentTemplateInput = Partial<Pick<
   DocumentTemplate,
+  | "title"
   | "display_name"
   | "description"
+  | "document_key"
   | "docuseal_template_id"
   | "signer_roles"
   | "requires_countersignature"
