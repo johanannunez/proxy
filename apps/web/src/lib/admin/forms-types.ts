@@ -93,6 +93,11 @@ export type Form = {
   tracked: boolean;
   category: string | null;
   archived_at: string | null;
+  /** Custom appearance (migration 20260612120000_form_appearance). icon is a
+      key into FORM_ICONS; icon_color is a key into FORM_TINTS. Null = fall
+      back to a deterministic tint + default glyph. */
+  icon: string | null;
+  icon_color: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -116,6 +121,8 @@ export type UpdateFormInput = {
   tracked?: boolean;
   category?: string | null;
   archived_at?: string | null;
+  icon?: string | null;
+  icon_color?: string | null;
 };
 
 export type FormResponse = {

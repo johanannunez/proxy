@@ -31,6 +31,7 @@ import {
   updateFormMetaAction,
 } from "../form-actions";
 import { CoverageSettingsCard } from "./CoverageSettingsCard";
+import { FormAppearancePicker } from "../../forms/FormAppearancePicker";
 import styles from "./TemplateDetail.module.css";
 
 type TabKey = "build" | "responses" | "settings";
@@ -126,6 +127,12 @@ function FormSettings({ form }: { form: Form }) {
           </button>
         </div>
       </div>
+
+      <FormAppearancePicker
+        formId={form.id}
+        icon={form.icon}
+        iconColor={form.icon_color}
+      />
 
       <CoverageSettingsCard
         tracked={form.tracked}

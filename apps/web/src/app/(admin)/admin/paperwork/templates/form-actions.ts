@@ -95,6 +95,20 @@ export async function updateFormMetaAction(
   return { ok: true, data: undefined };
 }
 
+export async function updateFormAppearanceAction(
+  id: string,
+  appearance: { icon: string | null; icon_color: string | null },
+): Promise<FormActionResult> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false, error };
+
+  const result = await updateForm(id, appearance);
+  if (!result) return { ok: false, error: "Failed to update appearance." };
+  revalidatePath("/admin/paperwork/templates");
+  revalidatePath("/admin/paperwork/forms");
+  return { ok: true, data: undefined };
+}
+
 export async function publishFormAction(id: string): Promise<FormActionResult> {
   const { error } = await requireAdmin();
   if (error) return { ok: false, error };

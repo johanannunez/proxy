@@ -132,15 +132,6 @@
   color: var(--color-brand, #1b77be);
 }
 
-/* Curated accent tints, assigned deterministically per form. Muted so the list
-   stays calm; the icon carries the personality, not the whole row. */
-.tint0 { background: rgba(27, 119, 190, 0.12); color: #1b77be; }
-.tint1 { background: rgba(13, 148, 136, 0.12); color: #0d9488; }
-.tint2 { background: rgba(124, 92, 217, 0.12); color: #6d4ad1; }
-.tint3 { background: rgba(202, 138, 4, 0.14); color: #b27908; }
-.tint4 { background: rgba(219, 75, 109, 0.12); color: #d04268; }
-.tint5 { background: rgba(15, 118, 110, 0.12); color: #0f766e; }
-
 .nameCell {
   display: flex;
   flex-direction: column;

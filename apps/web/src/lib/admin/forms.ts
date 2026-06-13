@@ -41,6 +41,8 @@ function normalizeForm<T extends Form>(row: T): T {
     tracked: row.tracked ?? false,
     category: row.category ?? null,
     archived_at: row.archived_at ?? null,
+    icon: row.icon ?? null,
+    icon_color: row.icon_color ?? null,
   };
 }
 

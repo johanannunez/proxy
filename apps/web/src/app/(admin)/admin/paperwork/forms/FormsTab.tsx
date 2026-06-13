@@ -12,7 +12,6 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "motion/react";
 import {
-  Rows,
   PaperPlaneTilt,
   LinkSimple,
   Check,
@@ -26,6 +25,7 @@ import {
   CaretRight,
   PencilSimple,
 } from "@phosphor-icons/react";
+import { resolveFormAppearance } from "./form-icon";
 import type { Form } from "@/lib/admin/forms-types";
 import { fmtShortDate } from "@/lib/admin/documents-hub-shared";
 import ConfirmModal from "@/components/admin/ConfirmModal";
@@ -55,13 +55,6 @@ function publicFormUrl(slug: string): string {
   return `${base}/f/${slug}`;
 }
 
-/** Deterministic accent tint (0-5) from a form id, so every form keeps a
- * stable, distinct icon color without rainbow chaos. */
-function tintIndex(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return h % 6;
-}
 
 /** Map a form master into the SendSheet's unified shape (link-based send). */
 function toUnifiedTemplate(form: FormListItem): UnifiedTemplate {
@@ -109,6 +102,7 @@ function FormRow({
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const detailHref = `/admin/paperwork/templates/${form.id}`;
+  const appearance = resolveFormAppearance(form);
 
   function handleCopyLink(e: React.MouseEvent) {
     e.stopPropagation();
@@ -127,8 +121,11 @@ function FormRow({
       onClick={() => router.push(detailHref)}
       onKeyDown={(e) => e.key === "Enter" && router.push(detailHref)}
     >
-      <span className={`${styles.rowIcon} ${styles[`tint${tintIndex(form.id)}`]}`}>
-        <Rows size={17} weight="duotone" />
+      <span
+        className={styles.rowIcon}
+        style={{ background: appearance.bg, color: appearance.fg }}
+      >
+        <appearance.Icon size={17} weight="duotone" />
       </span>
 
       <span className={styles.nameCell}>

@@ -80,17 +80,6 @@ const navEntries: NavEntry[] = [
   { kind: "item", href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={18} weight="duotone" />, matchPrefix: "/admin/workspaces" },
   {
     kind: "group",
-    label: "Relationships",
-    icon: <ShareNetwork size={18} weight="duotone" />,
-    storageKey: "nav-people-expanded",
-    items: [
-      { href: "/admin/people?mode=compact", label: "People", icon: <UserList size={16} weight="duotone" />, matchPrefix: "/admin/people" },
-      { href: "/admin/vendors", label: "Vendors", icon: <Handshake size={16} weight="duotone" />, matchPrefix: "/admin/vendors" },
-      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={16} weight="duotone" />, matchPrefix: "/admin/prospects" },
-    ],
-  },
-  {
-    kind: "group",
     label: "Operations",
     icon: <Buildings size={18} weight="duotone" />,
     storageKey: "nav-operations-expanded",
@@ -101,6 +90,17 @@ const navEntries: NavEntry[] = [
       { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={16} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
     ],
   },
+  {
+    kind: "group",
+    label: "Relationships",
+    icon: <ShareNetwork size={18} weight="duotone" />,
+    storageKey: "nav-people-expanded",
+    items: [
+      { href: "/admin/people?mode=compact", label: "People", icon: <UserList size={16} weight="duotone" />, matchPrefix: "/admin/people" },
+      { href: "/admin/vendors", label: "Vendors", icon: <Handshake size={16} weight="duotone" />, matchPrefix: "/admin/vendors" },
+      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={16} weight="duotone" />, matchPrefix: "/admin/prospects" },
+    ],
+  },
   { kind: "item", href: "/admin/finances", label: "Finances", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/finances" },
 ];
 
@@ -108,16 +108,15 @@ const navEntries: NavEntry[] = [
 
 const T = {
   brand: "#02AAEB",
-  brandLight: "var(--color-brand-light, #4cc9f0)",
-  activeTextColor: "#ffffff",
-  inactiveTextColor: "rgba(255,255,255,0.66)",
-  activeIconColor: "var(--color-brand-light, #4cc9f0)",
-  inactiveIconColor: "rgba(255,255,255,0.44)",
-  activeBg: "rgba(2, 170, 235, 0.09)",
-  hoverBg: "rgba(255, 255, 255, 0.045)",
+  activeTextColor: "rgba(255,255,255,0.97)",
+  inactiveTextColor: "rgba(255,255,255,0.55)",
+  activeIconColor: "#02AAEB",
+  inactiveIconColor: "rgba(255,255,255,0.35)",
+  activeBg: "rgba(255,255,255,0.1)",
+  hoverBg: "rgba(255,255,255,0.05)",
+  groupActiveLabelColor: "rgba(2,170,235,0.85)",
   badgeBg: "#f59e0b",
   badgeText: "#1a1a1a",
-  indicatorGlow: "0 0 10px 1px rgba(2, 170, 235, 0.55), 0 0 3px rgba(255,255,255,0.18)",
 } as const;
 
 /* ─── Spring configs ─── */
@@ -192,26 +191,6 @@ function NavItemRow({
               backgroundColor: T.hoverBg,
               pointerEvents: "none",
             }}
-          />
-        )}
-
-        {/* Active indicator pill */}
-        {active && (
-          <motion.span
-            layoutId="admin-nav-pill"
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: 0,
-              top: "50%",
-              width: "3px",
-              height: sub ? "12px" : "16px",
-              borderRadius: "999px",
-              backgroundColor: T.brandLight,
-              boxShadow: T.indicatorGlow,
-              translateY: "-50%",
-            }}
-            transition={springSnap}
           />
         )}
 
@@ -327,7 +306,7 @@ function NavGroupRow({
           fontWeight: 500,
           letterSpacing: "0.01em",
           lineHeight: 1.2,
-          color: isAnySubActive ? T.activeTextColor : T.inactiveTextColor,
+          color: isAnySubActive ? T.groupActiveLabelColor : T.inactiveTextColor,
           cursor: "pointer",
           fontFamily: "inherit",
         }}
@@ -375,7 +354,7 @@ function NavGroupRow({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "rgba(255,255,255,0.28)",
+            color: isAnySubActive ? "rgba(2,170,235,0.45)" : "rgba(255,255,255,0.22)",
           }}
         >
           <CaretDown size={12} weight="bold" />
@@ -501,7 +480,7 @@ function NavSubGroupRow({
           fontWeight: 500,
           letterSpacing: "0.01em",
           lineHeight: 1.2,
-          color: isAnySubActive ? T.activeTextColor : T.inactiveTextColor,
+          color: isAnySubActive ? T.groupActiveLabelColor : T.inactiveTextColor,
           cursor: "pointer",
           fontFamily: "inherit",
         }}
@@ -549,7 +528,7 @@ function NavSubGroupRow({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "rgba(255,255,255,0.28)",
+            color: isAnySubActive ? "rgba(2,170,235,0.45)" : "rgba(255,255,255,0.22)",
           }}
         >
           <CaretDown size={10} weight="bold" />
@@ -1002,7 +981,7 @@ export function AdminIconRail() {
                   borderRadius: "8px",
                   textDecoration: "none",
                   color: active ? T.activeIconColor : T.inactiveIconColor,
-                  backgroundColor: active ? "rgba(255,255,255,0.08)" : "transparent",
+                  backgroundColor: active ? T.activeBg : "transparent",
                 }}
               >
                 {/* Hover overlay */}
@@ -1017,23 +996,6 @@ export function AdminIconRail() {
                       borderRadius: "8px",
                       backgroundColor: T.hoverBg,
                       pointerEvents: "none",
-                    }}
-                  />
-                )}
-                {/* Active left indicator */}
-                {active && (
-                  <span
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      top: "50%",
-                      width: "3px",
-                      height: "14px",
-                      borderRadius: "999px",
-                      backgroundColor: T.brandLight,
-                      boxShadow: T.indicatorGlow,
-                      transform: "translateY(-50%)",
                     }}
                   />
                 )}

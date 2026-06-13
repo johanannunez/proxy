@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Templates tab list — signature/PDF masters plus the Proxy library in the
- * same premium row system as the Forms tab (2026-06-12 IA amendment + UI
- * polish): aligned column headers, status pills, a stable hover-reveal action
- * slot, and a small leading thumbnail when DocuSeal produced a first-page
- * preview. Search lives in the global command palette, not on the page.
+ * Templates tab — a visual library of signature/PDF masters plus the Proxy
+ * library. Each template is a card with a document preview hero (DocuSeal
+ * first page, or a tasteful placeholder), its name, type, status, and
+ * Send/Edit actions on hover. Responsive auto-fill grid. Search lives in the
+ * global command palette, not on the page.
  */
 
 import Link from "next/link";
@@ -19,7 +19,7 @@ import {
 import type { UnifiedTemplate } from "./unified-types";
 import styles from "./UnifiedTemplatesList.module.css";
 
-function TemplateRow({
+function TemplateCard({
   template,
   onSend,
 }: {
@@ -32,94 +32,80 @@ function TemplateRow({
 
   return (
     <div
-      className={styles.row}
+      className={styles.card}
       role="button"
       tabIndex={0}
       onClick={() => router.push(detailHref)}
       onKeyDown={(e) => e.key === "Enter" && router.push(detailHref)}
     >
-      <span className={styles.rowThumb} aria-hidden>
+      <div className={styles.preview}>
         {template.previewImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={template.previewImageUrl}
-            alt=""
-            className={styles.thumbImage}
+            alt={`${template.name} preview`}
+            className={styles.previewImage}
             loading="lazy"
           />
         ) : (
-          <PenNib size={16} weight="duotone" />
+          <div className={styles.previewPlaceholder} aria-hidden>
+            <span className={styles.placeholderSheet}>
+              <span className={styles.sheetHeader}>
+                <PenNib size={13} weight="duotone" />
+                <span className={styles.sheetHeaderLine} />
+              </span>
+              <span className={styles.sheetLine} />
+              <span className={styles.sheetLine} />
+              <span className={`${styles.sheetLine} ${styles.sheetLineShort}`} />
+              <span className={styles.sheetSign} />
+            </span>
+          </div>
         )}
-      </span>
 
-      <span className={styles.nameCell}>
-        <span className={styles.nameLine}>
-          <span className={styles.name} title={template.name}>
-            {template.name}
-          </span>
-          {template.isSystem && <span className={styles.systemBadge}>Proxy library</span>}
-        </span>
-        {template.description && (
-          <span className={styles.nameSub} title={template.description}>
-            {template.description}
-          </span>
-        )}
-      </span>
-
-      <span className={styles.statusCell}>
-        {template.isReady ? (
-          <span className={`${styles.statusPill} ${styles.statusReady}`}>
+        <div className={styles.badges}>
+          {template.isSystem && <span className={styles.libraryBadge}>Proxy library</span>}
+          <span
+            className={`${styles.statusPill} ${
+              template.isReady ? styles.statusReady : styles.statusDraft
+            }`}
+          >
             <span className={styles.statusDot} />
-            Ready
+            {template.isReady ? "Ready" : "Draft"}
           </span>
-        ) : (
-          <span className={`${styles.statusPill} ${styles.statusDraft}`}>
-            <span className={styles.statusDot} />
-            Draft
-          </span>
-        )}
-      </span>
+        </div>
 
-      <span className={`${styles.metaCell} ${styles.typeCell}`} title={typeLabel}>
-        {typeLabel}
-      </span>
-      <span className={`${styles.metaCell} ${styles.usageCell}`}>
-        {template.sentCount === 0
-          ? "Never sent"
-          : `Sent ${template.sentCount} ${template.sentCount === 1 ? "time" : "times"}`}
-      </span>
-
-      <span
-        className={styles.actions}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <span className={styles.actionReveal}>
-          <Link href={detailHref} className={styles.actionIconBtn} title="Edit">
+        <div className={styles.hoverActions} onClick={(e) => e.stopPropagation()}>
+          {template.isReady ? (
+            <button
+              type="button"
+              className={styles.sendBtn}
+              onClick={() => onSend(template)}
+            >
+              <PaperPlaneTilt size={13} weight="bold" />
+              Send
+            </button>
+          ) : (
+            <Link href={detailHref} className={styles.sendBtn}>
+              <PencilSimple size={13} weight="bold" />
+              Edit
+            </Link>
+          )}
+          <Link href={detailHref} className={styles.editIconBtn} title="Edit" onClick={(e) => e.stopPropagation()}>
             <PencilSimple size={14} weight="bold" />
           </Link>
+        </div>
+      </div>
+
+      <div className={styles.cardBody}>
+        <span className={styles.name} title={template.name}>
+          {template.name}
         </span>
-        {/* Primary slot always filled: Ready templates send, Drafts edit. */}
-        {template.isReady ? (
-          <button
-            type="button"
-            className={styles.actionBtn}
-            onClick={() => onSend(template)}
-          >
-            <PaperPlaneTilt size={13} weight="bold" />
-            Send
-          </button>
-        ) : (
-          <button
-            type="button"
-            className={styles.actionBtn}
-            onClick={() => router.push(detailHref)}
-          >
-            <PencilSimple size={13} weight="bold" />
-            Edit
-          </button>
-        )}
-      </span>
+        <span className={styles.meta}>
+          {typeLabel}
+          {template.sentCount > 0 &&
+            ` · Sent ${template.sentCount} ${template.sentCount === 1 ? "time" : "times"}`}
+        </span>
+      </div>
     </div>
   );
 }
@@ -149,20 +135,10 @@ export function UnifiedTemplatesList({
           </p>
         </div>
       ) : (
-        <div className={styles.tableWrap}>
-          <div className={styles.headerRow} aria-hidden>
-            <span />
-            <span className={styles.headerCell}>Name</span>
-            <span className={`${styles.headerCell} ${styles.statusCell}`}>Status</span>
-            <span className={`${styles.headerCell} ${styles.typeCell}`}>Type</span>
-            <span className={`${styles.headerCell} ${styles.usageCell}`}>Usage</span>
-            <span />
-          </div>
-          <div className={styles.list} role="list">
-            {templates.map((t) => (
-              <TemplateRow key={t.id} template={t} onSend={onSend} />
-            ))}
-          </div>
+        <div className={styles.grid} role="list">
+          {templates.map((t) => (
+            <TemplateCard key={t.id} template={t} onSend={onSend} />
+          ))}
         </div>
       )}
     </div>

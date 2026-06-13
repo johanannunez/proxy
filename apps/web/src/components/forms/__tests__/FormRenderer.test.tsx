@@ -31,6 +31,8 @@ function buildForm(fields: FormField[]): Form {
     tracked: false,
     category: null,
     archived_at: null,
+    icon: null,
+    icon_color: null,
     created_at: "2026-06-01T00:00:00Z",
     updated_at: "2026-06-01T00:00:00Z",
   };
