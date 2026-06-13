@@ -18,6 +18,7 @@ import {
 } from "@/lib/admin/document-templates";
 import type {
   DocumentTemplate,
+  TemplateSettings,
   UpdateDocumentTemplateInput,
 } from "@/lib/admin/document-templates-types";
 import { computeCoverage } from "@/lib/signing/field-coverage";
@@ -321,6 +322,40 @@ export async function updateTemplateTracking(
   }
   revalidatePath("/admin/paperwork");
   revalidatePath("/admin/paperwork/templates");
+  return { ok: true };
+}
+
+/**
+ * Persist per-template send settings (subject/message copy, auto-reminders,
+ * expiration, after-sign behavior). Stored in a single jsonb bag so new options
+ * ship without a migration. Shallow merge over the existing settings, with a
+ * one-level merge for the nested email/afterSign objects so a partial patch to
+ * one nested field does not wipe the others.
+ */
+export async function updateTemplateSettings(
+  id: string,
+  patch: Partial<TemplateSettings>,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
+  const template = await getDocumentTemplate(id);
+  if (!template) return { ok: false, error: "Template not found." };
+
+  const current = template.settings;
+  const next: TemplateSettings = { ...current, ...patch };
+  if (patch.email !== undefined) {
+    next.email = { ...current.email, ...patch.email };
+  }
+  if (patch.afterSign !== undefined) {
+    next.afterSign = { ...current.afterSign, ...patch.afterSign };
+  }
+
+  const ok = await updateDocumentTemplateRecord(id, { settings: next });
+  if (!ok) return { ok: false, error: "Could not save these settings. Try again." };
+
+  revalidatePath("/admin/paperwork/templates");
+  revalidatePath(`/admin/paperwork/templates/${id}`);
   return { ok: true };
 }
 

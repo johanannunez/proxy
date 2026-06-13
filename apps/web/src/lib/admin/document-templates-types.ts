@@ -64,4 +64,5 @@ export type UpdateDocumentTemplateInput = Partial<Pick<
   | "is_active"
   | "tracked"
   | "category"
+  | "settings"
 >>;
