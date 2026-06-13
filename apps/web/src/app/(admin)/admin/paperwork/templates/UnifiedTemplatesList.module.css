@@ -232,27 +232,29 @@
 }
 
 .sendBtn:focus-visible,
-.editIconBtn:focus-visible {
+.editBtn:focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
 
-.editIconBtn {
+.editBtn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
   color: var(--text-primary, var(--color-text-primary));
   background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.1));
   border-radius: 8px;
-  text-decoration: none;
+  cursor: pointer;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
   transition: color 0.12s ease, border-color 0.12s ease;
 }
 
-.editIconBtn:hover {
+.editBtn:hover {
   color: var(--color-brand, #1b77be);
   border-color: var(--color-brand, #1b77be);
 }

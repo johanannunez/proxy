@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { X, FilePdf, UploadSimple } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { X, FilePdf, UploadSimple, Check, Plus } from "@phosphor-icons/react";
 import { CustomSelect } from "@/components/admin/CustomSelect";
 import type { SelectOption } from "@/components/admin/CustomSelect";
-import { uploadAndCreateTemplate } from "./template-actions";
+import { uploadAndCreateTemplate, checkDocumentKeyAvailable } from "./template-actions";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./CreateTemplateSlideOver.module.css";
 
@@ -22,7 +22,18 @@ const GATE_OPTIONS: SelectOption[] = [
   { value: "4", label: "Identity / other (step 4)" },
 ];
 
-const AVAILABLE_ROLES = ["Owner", "Proxy", "Tenant", "Co-owner"];
+/** Built-in signer parties. "Proxy" is the operating team's role; it reads as
+ * "You" in the UI but stays "Proxy" in storage so the countersignature config
+ * keeps resolving. Admins can add their own roles beyond these. */
+const BUILTIN_ROLES = ["Owner", "Proxy", "Tenant", "Co-owner"];
+
+const ROLE_LABELS: Record<string, string> = {
+  Proxy: "You (countersigner)",
+};
+
+function roleLabel(role: string): string {
+  return ROLE_LABELS[role] ?? role;
+}
 
 function toSlug(value: string): string {
   return value
@@ -41,10 +52,31 @@ export function CreateTemplateSlideOver({
   const [displayName, setDisplayName] = useState("");
   const [documentKey, setDocumentKey] = useState("");
   const [keyEdited, setKeyEdited] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle");
+  const [roleOptions, setRoleOptions] = useState<string[]>(BUILTIN_ROLES);
   const [roles, setRoles] = useState<string[]>(["Owner", "Proxy"]);
+  const [newRole, setNewRole] = useState("");
   const [requiresCounter, setRequiresCounter] = useState(true);
   const [gateStep, setGateStep] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
+
+  // Live document-key availability, debounced so we are not querying per
+  // keystroke. Keys must be unique across the org's templates.
+  useEffect(() => {
+    const key = documentKey.trim();
+    if (!key) {
+      setKeyStatus("idle");
+      return;
+    }
+    setKeyStatus("checking");
+    const handle = setTimeout(async () => {
+      const { available } = await checkDocumentKeyAvailable(key);
+      setKeyStatus(available ? "available" : "taken");
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [documentKey]);
 
   if (!open) return null;
 
@@ -62,6 +94,16 @@ export function CreateTemplateSlideOver({
     setRoles((prev) =>
       prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role],
     );
+  }
+
+  function addCustomRole() {
+    const role = newRole.trim();
+    if (!role) return;
+    if (!roleOptions.some((r) => r.toLowerCase() === role.toLowerCase())) {
+      setRoleOptions((prev) => [...prev, role]);
+    }
+    if (!roles.includes(role)) setRoles((prev) => [...prev, role]);
+    setNewRole("");
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -121,18 +163,35 @@ export function CreateTemplateSlideOver({
             <label className={styles.label} htmlFor="document_key">
               Document key
             </label>
-            <input
-              id="document_key"
-              name="document_key"
-              type="text"
-              className={styles.input}
-              placeholder="host_rental_agreement"
-              value={documentKey}
-              onChange={(e) => handleKeyChange(e.target.value)}
-              required
-            />
+            <div className={styles.keyInputWrap}>
+              <input
+                id="document_key"
+                name="document_key"
+                type="text"
+                className={`${styles.input} ${
+                  keyStatus === "taken" ? styles.inputError : ""
+                }`}
+                placeholder="host_rental_agreement"
+                value={documentKey}
+                onChange={(e) => handleKeyChange(e.target.value)}
+                aria-invalid={keyStatus === "taken"}
+                required
+              />
+              {keyStatus === "available" && (
+                <span className={`${styles.keyStatus} ${styles.keyAvailable}`}>
+                  <Check size={13} weight="bold" />
+                  Available
+                </span>
+              )}
+              {keyStatus === "taken" && (
+                <span className={`${styles.keyStatus} ${styles.keyTaken}`}>
+                  Already in use
+                </span>
+              )}
+            </div>
             <p className={styles.hint}>
-              Lowercase letters, numbers, and underscores only.
+              A unique id for this document, used across the system. Lowercase
+              letters, numbers, and underscores only.
             </p>
           </div>
 
@@ -153,7 +212,7 @@ export function CreateTemplateSlideOver({
           <div className={styles.field}>
             <span className={styles.label}>Signer roles</span>
             <div className={styles.roleGrid}>
-              {AVAILABLE_ROLES.map((role) => (
+              {roleOptions.map((role) => (
                 <label key={role} className={styles.roleChip}>
                   <input
                     type="checkbox"
@@ -161,16 +220,40 @@ export function CreateTemplateSlideOver({
                     onChange={() => toggleRole(role)}
                     className={styles.roleCheckbox}
                   />
-                  <span className={styles.roleLabel}>{role}</span>
+                  <span className={styles.roleLabel}>{roleLabel(role)}</span>
                 </label>
               ))}
+            </div>
+            <div className={styles.addRoleRow}>
+              <input
+                type="text"
+                className={styles.addRoleInput}
+                placeholder="Add a role (e.g. Guarantor)"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCustomRole();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className={styles.addRoleBtn}
+                onClick={addCustomRole}
+                disabled={!newRole.trim()}
+              >
+                <Plus size={13} weight="bold" />
+                Add
+              </button>
             </div>
           </div>
 
           <div className={styles.field}>
             <label className={styles.toggleRow}>
               <span className={styles.label} style={{ marginBottom: 0 }}>
-                Requires Proxy countersignature
+                Requires your countersignature
               </span>
               <button
                 type="button"

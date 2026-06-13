@@ -7,12 +7,23 @@ import {
   createDocumentTemplateRecord,
   updateDocumentTemplateRecord,
   getDocumentTemplate,
+  documentKeyExists,
 } from "@/lib/admin/document-templates";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 
 export type TemplateActionResult =
   | { ok: true; template: DocumentTemplate }
   | { ok: false; error: string };
+
+/** Live availability check for the document key field as the admin types. */
+export async function checkDocumentKeyAvailable(
+  documentKey: string,
+): Promise<{ available: boolean }> {
+  const key = documentKey.trim();
+  if (!key || !/^[a-z0-9_]+$/.test(key)) return { available: false };
+  const exists = await documentKeyExists(key);
+  return { available: !exists };
+}
 
 async function requireAdmin(): Promise<{ error: string | null }> {
   const supabase = await createClient();

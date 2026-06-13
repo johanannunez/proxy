@@ -136,10 +136,94 @@
   margin: 0;
 }
 
+/* ─── Document key availability ─── */
+
+.keyInputWrap {
+  position: relative;
+}
+
+.inputError {
+  border-color: var(--color-error, #dc2626);
+}
+
+.keyStatus {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.keyAvailable {
+  color: #15803d;
+}
+
+.keyTaken {
+  color: var(--color-error, #dc2626);
+}
+
 .roleGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+}
+
+/* ─── Add custom role ─── */
+
+.addRoleRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.addRoleInput {
+  flex: 1;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.addRoleInput:focus {
+  outline: none;
+  border-color: var(--color-brand);
+}
+
+.addRoleInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.addRoleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.08);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.12s ease, opacity 0.12s ease;
+}
+
+.addRoleBtn:hover:not(:disabled) {
+  background: rgba(27, 119, 190, 0.15);
+}
+
+.addRoleBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .roleChip {

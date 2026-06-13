@@ -130,6 +130,16 @@ export async function getDocumentTemplate(id: string): Promise<DocumentTemplate 
   return row ? normalizeTemplate(row) : null;
 }
 
+/** True when a document_key is already in use (keys must be unique). */
+export async function documentKeyExists(documentKey: string): Promise<boolean> {
+  const { data } = await db()
+    .from("document_templates")
+    .select("id")
+    .eq("document_key", documentKey)
+    .maybeSingle();
+  return data !== null;
+}
+
 export async function createDocumentTemplateRecord(
   input: CreateDocumentTemplateInput,
 ): Promise<DocumentTemplate | null> {

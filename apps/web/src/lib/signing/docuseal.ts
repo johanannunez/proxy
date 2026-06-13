@@ -229,18 +229,19 @@ export async function createTemplate(
 ): Promise<CreateTemplateResult> {
   if (!isDocuSealConfigured()) return null;
 
-  const formData = new FormData();
-  formData.append("name", name);
-  formData.append(
-    "documents",
-    new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }),
-    fileName,
-  );
-
-  const res = await fetch(`${baseUrl()}/templates`, {
+  // DocuSeal creates templates from a PDF via POST /templates/pdf with a JSON
+  // body carrying the file as base64. The plain /templates endpoint does not
+  // accept a multipart upload and returns a 400 parameter-parse error.
+  const res = await fetch(`${baseUrl()}/templates/pdf`, {
     method: "POST",
-    headers: { "X-Auth-Token": token() as string },
-    body: formData,
+    headers: {
+      "X-Auth-Token": token() as string,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      documents: [{ name: fileName, file: pdfBuffer.toString("base64") }],
+    }),
   });
 
   if (!res.ok) {

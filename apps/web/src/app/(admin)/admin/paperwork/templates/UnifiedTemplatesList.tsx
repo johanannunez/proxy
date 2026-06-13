@@ -76,23 +76,26 @@ function TemplateCard({
 
         <div className={styles.hoverActions} onClick={(e) => e.stopPropagation()}>
           {template.isReady ? (
-            <button
-              type="button"
-              className={styles.sendBtn}
-              onClick={() => onSend(template)}
-            >
-              <PaperPlaneTilt size={13} weight="bold" />
-              Send
-            </button>
+            <>
+              <Link href={detailHref} className={styles.editBtn}>
+                <PencilSimple size={13} weight="bold" />
+                Edit
+              </Link>
+              <button
+                type="button"
+                className={styles.sendBtn}
+                onClick={() => onSend(template)}
+              >
+                <PaperPlaneTilt size={13} weight="bold" />
+                Send
+              </button>
+            </>
           ) : (
             <Link href={detailHref} className={styles.sendBtn}>
               <PencilSimple size={13} weight="bold" />
               Edit
             </Link>
           )}
-          <Link href={detailHref} className={styles.editIconBtn} title="Edit" onClick={(e) => e.stopPropagation()}>
-            <PencilSimple size={14} weight="bold" />
-          </Link>
         </div>
       </div>
 
