@@ -7,6 +7,8 @@ import {
   getFormViewCount,
 } from "@/lib/admin/forms";
 import { getDocumentTemplate } from "@/lib/admin/document-templates";
+import { getTemplateFields } from "@/lib/signing/docuseal";
+import { computeCoverage } from "@/lib/signing/field-coverage";
 import { PROXY_ORG_ID } from "@/types/organizations";
 import { PaperworkShell } from "../../PaperworkShell";
 import { FormTemplateDetail } from "./FormTemplateDetail";
@@ -54,10 +56,24 @@ export default async function TemplateDetailPage({ params, searchParams }: Props
   const template = await getDocumentTemplate(id);
   if (!template) notFound();
 
+  // Coverage drives the Settings status pill. Only meaningful when a DocuSeal
+  // layout exists; null means "unknown" so the UI falls back to is_active.
+  // getTemplateFields is crash-safe, so a DocuSeal outage degrades to [] (which
+  // self-heals on the next render since this page is force-dynamic).
+  let missingRoles: string[] | null = null;
+  if (template.docuseal_template_id) {
+    const fields = await getTemplateFields(template.docuseal_template_id);
+    missingRoles = computeCoverage(fields, template.signer_roles).missingRoles;
+  }
+
   const initialTab = tab === "settings" ? "settings" : "fields";
   return (
     <PaperworkShell active="templates" orgId={orgId}>
-      <SignatureTemplateDetail template={template} initialTab={initialTab} />
+      <SignatureTemplateDetail
+        template={template}
+        initialTab={initialTab}
+        missingRoles={missingRoles}
+      />
     </PaperworkShell>
   );
 }

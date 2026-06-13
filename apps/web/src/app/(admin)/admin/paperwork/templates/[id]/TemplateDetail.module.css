@@ -245,6 +245,13 @@
   color: var(--text-secondary, var(--color-text-secondary));
 }
 
+.statusFieldsNeeded {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .linkRow {
   display: flex;
   align-items: center;

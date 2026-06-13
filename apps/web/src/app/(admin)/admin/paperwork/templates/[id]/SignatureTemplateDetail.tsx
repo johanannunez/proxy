@@ -25,11 +25,23 @@ import styles from "./TemplateDetail.module.css";
 
 type TabKey = "fields" | "settings";
 
-function SignatureSettings({ template }: { template: DocumentTemplate }) {
+function SignatureSettings({
+  template,
+  missingRoles,
+  onGoToFields,
+}: {
+  template: DocumentTemplate;
+  missingRoles: string[] | null;
+  onGoToFields: () => void;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+
+  // When coverage is known and a signer still lacks a field, the template can't
+  // be sent regardless of is_active. Surface that first and route to Fields.
+  const needsFields = missingRoles !== null && missingRoles.length > 0;
 
   function handleDeactivate() {
     setConfirmRemove(false);
@@ -80,17 +92,32 @@ function SignatureSettings({ template }: { template: DocumentTemplate }) {
         <div className={styles.fieldRow}>
           <span className={styles.fieldLabel}>Status</span>
           <span className={styles.fieldValue}>
-            <span
-              className={`${styles.statusPill} ${
-                template.is_active && template.docuseal_template_id
-                  ? styles.statusLive
-                  : styles.statusDraft
-              }`}
-            >
-              {template.is_active && template.docuseal_template_id
-                ? "Ready to send"
-                : "Draft: finish the field layout"}
-            </span>
+            {needsFields ? (
+              <span className={styles.statusFieldsNeeded}>
+                <span className={`${styles.statusPill} ${styles.statusDraft}`}>
+                  Needs fields for: {signerRolesLabel(missingRoles)}
+                </span>
+                <button
+                  type="button"
+                  className={styles.toggleBtn}
+                  onClick={onGoToFields}
+                >
+                  Add fields
+                </button>
+              </span>
+            ) : (
+              <span
+                className={`${styles.statusPill} ${
+                  template.is_active && template.docuseal_template_id
+                    ? styles.statusLive
+                    : styles.statusDraft
+                }`}
+              >
+                {template.is_active && template.docuseal_template_id
+                  ? "Ready to send"
+                  : "Draft: finish the field layout"}
+              </span>
+            )}
           </span>
         </div>
         <div className={styles.fieldRow}>
@@ -148,9 +175,11 @@ function SignatureSettings({ template }: { template: DocumentTemplate }) {
 export function SignatureTemplateDetail({
   template,
   initialTab,
+  missingRoles,
 }: {
   template: DocumentTemplate;
   initialTab: TabKey;
+  missingRoles: string[] | null;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(initialTab);
@@ -225,7 +254,13 @@ export function SignatureTemplateDetail({
               </p>
             </div>
           ))}
-        {tab === "settings" && <SignatureSettings template={template} />}
+        {tab === "settings" && (
+          <SignatureSettings
+            template={template}
+            missingRoles={missingRoles}
+            onGoToFields={() => setTab("fields")}
+          />
+        )}
       </div>
     </div>
   );
