@@ -26,7 +26,11 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { CustomSelect } from "@/components/admin/CustomSelect";
 import type { SelectOption } from "@/components/admin/CustomSelect";
-import { uploadAndCreateTemplate, checkDocumentKeyAvailable } from "./template-actions";
+import {
+  uploadAndCreateTemplate,
+  createWrittenTemplate,
+  checkDocumentKeyAvailable,
+} from "./template-actions";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./CreateTemplateModal.module.css";
 
@@ -73,6 +77,8 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
   const [newRole, setNewRole] = useState("");
   const [requiresCounter, setRequiresCounter] = useState(true);
   const [gateStep, setGateStep] = useState("");
+  const [docMode, setDocMode] = useState<"upload" | "write">("upload");
+  const [bodyText, setBodyText] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -82,6 +88,7 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     displayName.trim() !== "" ||
     description.trim() !== "" ||
     pdfFile !== null ||
+    bodyText.trim() !== "" ||
     keyEdited;
 
   // Live document-key availability, debounced.
@@ -140,6 +147,8 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     setNewRole("");
     setRequiresCounter(true);
     setGateStep("");
+    setDocMode("upload");
+    setBodyText("");
     setPdfFile(null);
     setPdfUrl(null);
     onClose();
@@ -191,9 +200,15 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     keyStatus !== "taken" &&
     roles.length > 0;
 
+  const canBuild = docMode === "upload" ? pdfFile !== null : bodyText.trim() !== "";
+
   async function handleBuild() {
-    if (!pdfFile) {
+    if (docMode === "upload" && !pdfFile) {
       setError("A PDF document is required.");
+      return;
+    }
+    if (docMode === "write" && !bodyText.trim()) {
+      setError("Write or paste the document text first.");
       return;
     }
     setError(null);
@@ -206,9 +221,16 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
       formData.set("signer_roles", JSON.stringify(roles));
       formData.set("requires_countersignature", String(requiresCounter));
       formData.set("gate_step", gateStep);
-      formData.set("pdf", pdfFile);
 
-      const result = await uploadAndCreateTemplate(formData);
+      let result;
+      if (docMode === "upload" && pdfFile) {
+        formData.set("pdf", pdfFile);
+        result = await uploadAndCreateTemplate(formData);
+      } else {
+        formData.set("body_text", bodyText.trim());
+        result = await createWrittenTemplate(formData);
+      }
+
       if (!result.ok) {
         setError(result.error);
         return;
@@ -407,7 +429,42 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
               >
-                {pdfUrl ? (
+                <div className={styles.modeToggle} role="tablist" aria-label="Document source">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={docMode === "upload"}
+                    className={`${styles.modeBtn} ${docMode === "upload" ? styles.modeActive : ""}`}
+                    onClick={() => setDocMode("upload")}
+                  >
+                    Upload a PDF
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={docMode === "write"}
+                    className={`${styles.modeBtn} ${docMode === "write" ? styles.modeActive : ""}`}
+                    onClick={() => setDocMode("write")}
+                  >
+                    Write it here
+                  </button>
+                </div>
+
+                {docMode === "write" ? (
+                  <div className={styles.writeWrap}>
+                    <textarea
+                      className={styles.writeArea}
+                      placeholder={"Paste or type your document here.\n\nLeave a blank line between paragraphs. You will place the signature fields on the next step."}
+                      value={bodyText}
+                      onChange={(e) => setBodyText(e.target.value)}
+                      autoFocus
+                    />
+                    <p className={styles.hint}>
+                      We turn this into a clean document. You can place signature,
+                      date, and text fields on it after building.
+                    </p>
+                  </div>
+                ) : pdfUrl ? (
                   <div className={styles.previewWrap}>
                     <object data={pdfUrl} type="application/pdf" className={styles.previewObject}>
                       <div className={styles.previewFallback}>
@@ -492,7 +549,7 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                 type="button"
                 className={styles.primaryBtn}
                 onClick={handleBuild}
-                disabled={submitting || !pdfFile}
+                disabled={submitting || !canBuild}
               >
                 {submitting ? (
                   <>

@@ -254,6 +254,34 @@ export async function createTemplate(
 }
 
 /**
+ * Create a template from HTML instead of an uploaded PDF. Lets an admin write
+ * or paste the document text; DocuSeal renders it into a signable document.
+ */
+export async function createTemplateFromHtml(
+  name: string,
+  html: string,
+): Promise<CreateTemplateResult> {
+  if (!isDocuSealConfigured()) return null;
+
+  const res = await fetch(`${baseUrl()}/templates/html`, {
+    method: "POST",
+    headers: {
+      "X-Auth-Token": token() as string,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name, html }),
+  });
+
+  if (!res.ok) {
+    console.error("[docuseal] createTemplateFromHtml failed:", res.status, await res.text());
+    return null;
+  }
+
+  const data = (await res.json()) as { id: number; name: string };
+  return { templateId: data.id, name: data.name };
+}
+
+/**
  * Clone an existing DocuSeal template (used for the system-template fork flow).
  */
 export async function cloneTemplate(

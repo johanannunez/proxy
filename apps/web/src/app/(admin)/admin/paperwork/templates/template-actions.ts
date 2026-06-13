@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createTemplate, cloneTemplate } from "@/lib/signing/docuseal";
+import { createTemplate, createTemplateFromHtml, cloneTemplate } from "@/lib/signing/docuseal";
 import {
   createDocumentTemplateRecord,
   updateDocumentTemplateRecord,
@@ -81,6 +81,83 @@ export async function uploadAndCreateTemplate(
   const docuSealResult = await createTemplate(displayName, buffer, pdfFile.name);
   if (!docuSealResult) {
     return { ok: false, error: "Could not create the DocuSeal template. Verify DOCUSEAL_API_TOKEN is set in Doppler." };
+  }
+
+  const record = await createDocumentTemplateRecord({
+    document_key: documentKey,
+    display_name: displayName,
+    description,
+    signer_roles: signerRoles,
+    requires_countersignature: requiresCounter,
+    gate_step: gateStep,
+    docuseal_template_id: docuSealResult.templateId,
+  });
+
+  if (!record) {
+    return { ok: false, error: "Could not save the template record. The document key may already exist." };
+  }
+
+  return { ok: true, template: record };
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** Turn pasted plain text into simple, safe document HTML: blank lines become
+ *  paragraph breaks, single newlines become line breaks. */
+function textToHtml(title: string, body: string): string {
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return `<h1>${escapeHtml(title)}</h1>${paragraphs}`;
+}
+
+/**
+ * Create a signature template from written/pasted text instead of a PDF.
+ * DocuSeal renders the HTML into a signable document; fields are placed
+ * afterward in the builder, same as the upload path.
+ */
+export async function createWrittenTemplate(
+  formData: FormData,
+): Promise<TemplateActionResult> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
+  const displayName = (formData.get("display_name") as string | null)?.trim() ?? "";
+  const documentKey = (formData.get("document_key") as string | null)?.trim() ?? "";
+  const description = (formData.get("description") as string | null)?.trim() || undefined;
+  const signerRolesRaw = formData.get("signer_roles") as string | null;
+  const requiresCounter = formData.get("requires_countersignature") === "true";
+  const gateStepRaw = formData.get("gate_step") as string | null;
+  const bodyText = (formData.get("body_text") as string | null)?.trim() ?? "";
+
+  if (!displayName || !documentKey) {
+    return { ok: false, error: "Display name and document key are required." };
+  }
+  if (!bodyText) {
+    return { ok: false, error: "Write or paste the document text first." };
+  }
+  if (!/^[a-z0-9_]+$/.test(documentKey)) {
+    return { ok: false, error: "Document key must be lowercase letters, numbers, and underscores only." };
+  }
+
+  const signerRoles: string[] = signerRolesRaw
+    ? (JSON.parse(signerRolesRaw) as string[])
+    : ["Owner"];
+  if (signerRoles.length === 0) {
+    return { ok: false, error: "At least one signer role is required." };
+  }
+  const gateStep = gateStepRaw && gateStepRaw !== "" ? parseInt(gateStepRaw, 10) : undefined;
+
+  const html = textToHtml(displayName, bodyText);
+  const docuSealResult = await createTemplateFromHtml(displayName, html);
+  if (!docuSealResult) {
+    return { ok: false, error: "Could not create the document. Verify DOCUSEAL_API_TOKEN is set in Doppler." };
   }
 
   const record = await createDocumentTemplateRecord({
