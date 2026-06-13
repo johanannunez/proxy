@@ -410,12 +410,6 @@ function SignatureSettings({
       <div className={styles.settingsCard}>
         <h3 className={styles.settingsTitle}>About this template</h3>
         <EditableTextRow
-          label="Title"
-          value={template.title ?? ""}
-          placeholder="Add a display title"
-          onSave={(next) => saveMeta({ title: next })}
-        />
-        <EditableTextRow
           label="Name"
           value={template.display_name}
           placeholder="Template name"

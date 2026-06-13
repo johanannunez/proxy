@@ -139,19 +139,30 @@
 }
 
 .loadingLogo {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
-  animation: logoPulse 1.5s ease-in-out infinite;
+  transform-origin: center;
+  /* A one-time premium reveal (the logo eases in, settles), then a barely
+     perceptible float so a long load still reads as alive, not blinking. */
+  animation:
+    logoReveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) both,
+    logoFloat 3s ease-in-out 0.85s infinite;
 }
 
-@keyframes logoPulse {
-  0%, 100% { opacity: 0.45; transform: scale(0.92); }
-  50% { opacity: 1; transform: scale(1); }
+@keyframes logoReveal {
+  0% { opacity: 0; transform: scale(0.7) translateY(6px); filter: blur(4px); }
+  60% { opacity: 1; transform: scale(1.04) translateY(0); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: scale(1) translateY(0); opacity: 1; }
+  50% { transform: scale(1.02) translateY(-2px); opacity: 0.92; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loadingLogo { animation: none; opacity: 0.8; }
+  .loadingLogo { animation: logoReveal 0.6s ease both; }
 }
 
 .error {

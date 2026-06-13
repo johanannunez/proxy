@@ -290,14 +290,11 @@ export async function updateTemplateMeta(
   const ok = await updateDocumentTemplateRecord(id, update);
   if (!ok) return { ok: false, error: "Could not save your changes. Try again." };
 
-  // Keep the DocuSeal document name in sync with our title. Best-effort: a
-  // DocuSeal outage must not block the DB save.
-  if (
-    update.title !== undefined &&
-    update.title !== null &&
-    template.docuseal_template_id
-  ) {
-    await renameDocuSealTemplate(template.docuseal_template_id, update.title);
+  // The Name is the single source of the document's title, so keep the DocuSeal
+  // document name in sync with it. Best-effort: a DocuSeal outage must not block
+  // the DB save.
+  if (update.display_name && template.docuseal_template_id) {
+    await renameDocuSealTemplate(template.docuseal_template_id, update.display_name);
   }
 
   revalidatePath("/admin/paperwork/templates");
