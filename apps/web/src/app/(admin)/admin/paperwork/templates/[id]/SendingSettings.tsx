@@ -59,17 +59,29 @@ export function SendingSettings({
   const [ccDraft, setCcDraft] = useState("");
   const [ccError, setCcError] = useState<string | null>(null);
 
-  const remindersOn = settings.reminders != null;
-  const everyDays = settings.reminders?.everyDays ?? DEFAULT_REMINDERS.everyDays;
-  const maxCount = settings.reminders?.maxCount ?? DEFAULT_REMINDERS.maxCount;
+  // Reminders + expiration are also local-authoritative so the inputs do not
+  // snap back to the prop value during the save round-trip. router.refresh()
+  // re-renders with identical props, so this state survives.
+  const [remindersOn, setRemindersOn] = useState(settings.reminders != null);
+  const [everyDays, setEveryDays] = useState(
+    settings.reminders?.everyDays ?? DEFAULT_REMINDERS.everyDays,
+  );
+  const [maxCount, setMaxCount] = useState(
+    settings.reminders?.maxCount ?? DEFAULT_REMINDERS.maxCount,
+  );
 
-  const expiresOn = settings.expiresInDays != null;
-  const expiresInDays = settings.expiresInDays ?? DEFAULT_EXPIRES_DAYS;
+  const [expiresOn, setExpiresOn] = useState(settings.expiresInDays != null);
+  const [expiresInDays, setExpiresInDays] = useState(
+    settings.expiresInDays ?? DEFAULT_EXPIRES_DAYS,
+  );
 
   const subjectRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   // Which field a token chip insert targets, last focused.
   const lastFocused = useRef<"subject" | "message">("message");
+  // Set briefly after a chip insert so the field's onBlur (which fires as focus
+  // leaves for the chip) does not also save a stale, pre-insert value.
+  const skipNextBlurSave = useRef(false);
 
   function save(patch: SavePatch) {
     setError(null);
@@ -84,6 +96,9 @@ export function SendingSettings({
   }
 
   function insertToken(token: string) {
+    // The field loses focus to the chip button, firing its onBlur. Suppress
+    // that one save so it cannot clobber the insert with a stale value.
+    skipNextBlurSave.current = true;
     if (lastFocused.current === "subject") {
       const el = subjectRef.current;
       const start = el?.selectionStart ?? subject.length;
@@ -179,7 +194,13 @@ export function SendingSettings({
             placeholder="Your document from Proxy is ready to sign"
             onFocus={() => (lastFocused.current = "subject")}
             onChange={(e) => setSubject(e.target.value)}
-            onBlur={() => save({ email: { subject } })}
+            onBlur={() => {
+              if (skipNextBlurSave.current) {
+                skipNextBlurSave.current = false;
+                return;
+              }
+              save({ email: { subject } });
+            }}
           />
         </label>
 
@@ -192,7 +213,13 @@ export function SendingSettings({
             placeholder="Hi {{first_name}}, please review and sign the attached document for {{property}}."
             onFocus={() => (lastFocused.current = "message")}
             onChange={(e) => setMessage(e.target.value)}
-            onBlur={() => save({ email: { message } })}
+            onBlur={() => {
+              if (skipNextBlurSave.current) {
+                skipNextBlurSave.current = false;
+                return;
+              }
+              save({ email: { message } });
+            }}
           />
         </label>
 
@@ -225,9 +252,14 @@ export function SendingSettings({
           <Toggle
             on={remindersOn}
             ariaLabel="Send automatic reminders"
-            onChange={(next) =>
-              save({ reminders: next ? DEFAULT_REMINDERS : null })
-            }
+            onChange={(next) => {
+              setRemindersOn(next);
+              if (next) {
+                setEveryDays(DEFAULT_REMINDERS.everyDays);
+                setMaxCount(DEFAULT_REMINDERS.maxCount);
+              }
+              save({ reminders: next ? DEFAULT_REMINDERS : null });
+            }}
           />
         </div>
 
@@ -241,8 +273,10 @@ export function SendingSettings({
                   min={1}
                   className={styles.numberInput}
                   value={everyDays}
-                  onChange={(e) => {
-                    const v = Math.max(1, Number(e.target.value) || 1);
+                  onChange={(e) => setEveryDays(Number(e.target.value))}
+                  onBlur={() => {
+                    const v = Math.max(1, Math.round(everyDays) || 1);
+                    setEveryDays(v);
                     save({ reminders: { everyDays: v, maxCount } });
                   }}
                 />
@@ -257,8 +291,10 @@ export function SendingSettings({
                   min={1}
                   className={styles.numberInput}
                   value={maxCount}
-                  onChange={(e) => {
-                    const v = Math.max(1, Number(e.target.value) || 1);
+                  onChange={(e) => setMaxCount(Number(e.target.value))}
+                  onBlur={() => {
+                    const v = Math.max(1, Math.round(maxCount) || 1);
+                    setMaxCount(v);
                     save({ reminders: { everyDays, maxCount: v } });
                   }}
                 />
@@ -285,9 +321,11 @@ export function SendingSettings({
           <Toggle
             on={expiresOn}
             ariaLabel="Link expires"
-            onChange={(next) =>
-              save({ expiresInDays: next ? DEFAULT_EXPIRES_DAYS : null })
-            }
+            onChange={(next) => {
+              setExpiresOn(next);
+              if (next) setExpiresInDays(DEFAULT_EXPIRES_DAYS);
+              save({ expiresInDays: next ? DEFAULT_EXPIRES_DAYS : null });
+            }}
           />
         </div>
 
@@ -301,8 +339,10 @@ export function SendingSettings({
                   min={1}
                   className={styles.numberInput}
                   value={expiresInDays}
-                  onChange={(e) => {
-                    const v = Math.max(1, Number(e.target.value) || 1);
+                  onChange={(e) => setExpiresInDays(Number(e.target.value))}
+                  onBlur={() => {
+                    const v = Math.max(1, Math.round(expiresInDays) || 1);
+                    setExpiresInDays(v);
                     save({ expiresInDays: v });
                   }}
                 />
