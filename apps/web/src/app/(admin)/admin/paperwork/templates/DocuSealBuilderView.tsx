@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, PencilSimple, X } from "@phosphor-icons/react";
 import {
   pushTemplateNameToDocuSeal,
-  pullTemplateNameFromDocuSeal,
   updateTemplateMeta,
 } from "./template-actions";
 import styles from "./DocuSealBuilderView.module.css";
@@ -125,28 +124,15 @@ export function DocuSealBuilderView({
 
   // DocuSeal autosaves on every change and fires "save" each time. We do NOT
   // navigate on autosave (that was the endless-saving bug); we just show a
-  // transient "Saved" indicator and, debounced, pull the document name back so
-  // renaming inside the builder updates our name too. Finishing is explicit.
+  // transient "Saved" indicator. The document name is owned by our display_name
+  // (single source of truth), so we do not read DocuSeal's inline name back.
   useEffect(() => {
     const el = builderRef.current;
     if (!el || !session) return;
-    let pullTimer: ReturnType<typeof setTimeout> | undefined;
-    const handler = () => {
-      setSavedAt(Date.now());
-      // Pull the (possibly renamed) document name back near-instantly so the
-      // header reflects a rename made inside the builder right away.
-      clearTimeout(pullTimer);
-      pullTimer = setTimeout(async () => {
-        const { name: synced } = await pullTemplateNameFromDocuSeal(dbTemplateId);
-        if (synced) setName(synced);
-      }, 300);
-    };
+    const handler = () => setSavedAt(Date.now());
     el.addEventListener("save", handler);
-    return () => {
-      el.removeEventListener("save", handler);
-      clearTimeout(pullTimer);
-    };
-  }, [session, dbTemplateId]);
+    return () => el.removeEventListener("save", handler);
+  }, [session]);
 
   async function handleFinish() {
     setFinishing(true);
