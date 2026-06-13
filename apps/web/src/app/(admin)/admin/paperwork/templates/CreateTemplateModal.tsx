@@ -355,6 +355,11 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                 </div>
 
                 <div className={styles.field}>
+                  <span className={styles.label}>Onboarding gate step</span>
+                  <CustomSelect value={gateStep} onChange={setGateStep} options={GATE_OPTIONS} />
+                </div>
+
+                <div className={styles.field}>
                   <span className={styles.label}>Signer roles</span>
                   <div className={styles.roleGrid}>
                     {roleOptions.map((role) => (
@@ -415,10 +420,6 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                   </label>
                 </div>
 
-                <div className={styles.field}>
-                  <span className={styles.label}>Onboarding gate step</span>
-                  <CustomSelect value={gateStep} onChange={setGateStep} options={GATE_OPTIONS} />
-                </div>
               </motion.div>
             ) : (
               <motion.div

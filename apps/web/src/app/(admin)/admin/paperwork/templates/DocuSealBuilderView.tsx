@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft } from "@phosphor-icons/react";
+import { ArrowLeft, Check } from "@phosphor-icons/react";
 import styles from "./DocuSealBuilderView.module.css";
 
 declare module "react" {
@@ -24,14 +24,15 @@ declare module "react" {
 type Props = {
   templateId: number;
   templateName: string;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   onBack: () => void;
 };
 
 export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }: Props) {
   const [session, setSession] = useState<{ token: string; host: string } | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [finishing, setFinishing] = useState(false);
   const builderRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -56,16 +57,21 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
     document.head.appendChild(script);
   }, [session]);
 
+  // DocuSeal autosaves on every change and fires "save" each time. We do NOT
+  // navigate on autosave (that was the endless-saving bug); we just show a
+  // transient "Saved" indicator. Finishing is an explicit action below.
   useEffect(() => {
     const el = builderRef.current;
     if (!el || !session) return;
-    const handler = () => {
-      setSaving(true);
-      onSave();
-    };
+    const handler = () => setSavedAt(Date.now());
     el.addEventListener("save", handler);
     return () => el.removeEventListener("save", handler);
-  }, [session, onSave]);
+  }, [session]);
+
+  async function handleFinish() {
+    setFinishing(true);
+    await onSave();
+  }
 
   return (
     <div className={styles.root}>
@@ -76,7 +82,23 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
         </button>
         <div className={styles.headerCenter}>
           <span className={styles.title}>{templateName}</span>
-          <span className={styles.hint}>Adjust signature field placements, then save.</span>
+          <span className={styles.hint}>Drag fields onto the document. Changes save automatically.</span>
+        </div>
+        <div className={styles.headerRight}>
+          {savedAt !== null && !finishing && (
+            <span className={styles.savedPill}>
+              <Check size={12} weight="bold" />
+              Saved
+            </span>
+          )}
+          <button
+            type="button"
+            className={styles.doneBtn}
+            onClick={handleFinish}
+            disabled={finishing}
+          >
+            {finishing ? "Finishing…" : "Done"}
+          </button>
         </div>
       </div>
 
@@ -95,12 +117,6 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
           <docuseal-builder ref={builderRef} data-token={session.token} />
         )}
       </div>
-
-      {saving && (
-        <div className={styles.savingOverlay}>
-          <span>Saving template…</span>
-        </div>
-      )}
     </div>
   );
 }
