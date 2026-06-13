@@ -33,6 +33,14 @@ const TABS: Array<{ key: PaperworkTab; label: string; href: string }> = [
   { key: "templates", label: "Templates", href: "/admin/paperwork/templates" },
 ];
 
+/** Primary action copy switches with the active tab so the button always
+ * names the thing you would actually create from where you are. */
+const PRIMARY_BY_TAB: Record<PaperworkTab, string> = {
+  documents: "New document",
+  forms: "New form",
+  templates: "New template",
+};
+
 function NewDocumentChooser({
   orgId,
   onClose,
@@ -169,13 +177,41 @@ function NewDocumentChooser({
 export function PaperworkShell({
   active,
   orgId,
+  counts,
   children,
 }: {
   active: PaperworkTab;
   orgId: string;
+  counts?: Partial<Record<PaperworkTab, number>>;
   children: ReactNode;
 }) {
+  const router = useRouter();
   const [chooserOpen, setChooserOpen] = useState(false);
+  const [creatingForm, setCreatingForm] = useState(false);
+
+  async function handlePrimary() {
+    if (active === "documents") {
+      setChooserOpen(true);
+      return;
+    }
+    if (active === "templates") {
+      // Templates land on the upload-a-PDF path; the full three-way chooser
+      // stays on Documents where every kind is in play.
+      router.push("/admin/paperwork/templates?create=pdf");
+      return;
+    }
+    // Forms: create the master immediately and drop into its builder, the same
+    // path the chooser's "Build a form" uses.
+    setCreatingForm(true);
+    try {
+      const result = await createFormAction(orgId, "Untitled Form");
+      if (result.ok && result.data?.id) {
+        router.push(`/admin/paperwork/templates/${result.data.id}`);
+      }
+    } finally {
+      setCreatingForm(false);
+    }
+  }
 
   return (
     <div className={styles.shell}>
@@ -184,6 +220,7 @@ export function PaperworkShell({
           <nav className={styles.tabs} aria-label="Paperwork sections">
             {TABS.map((tab) => {
               const isActive = tab.key === active;
+              const count = counts?.[tab.key];
               return (
                 <Link
                   key={tab.key}
@@ -191,11 +228,15 @@ export function PaperworkShell({
                   className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  {tab.label}
+                  <span className={styles.tabLabel}>{tab.label}</span>
+                  {typeof count === "number" && (
+                    <span className={styles.tabCount}>{count}</span>
+                  )}
                   {isActive && (
                     <motion.span
                       layoutId="paperwork-tab-indicator"
                       className={styles.tabIndicator}
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
                       aria-hidden
                     />
                   )}
@@ -208,16 +249,29 @@ export function PaperworkShell({
           <button
             type="button"
             className={styles.newDocBtn}
-            onClick={() => setChooserOpen(true)}
+            onClick={handlePrimary}
+            disabled={creatingForm}
           >
-            <Plus size={14} weight="bold" />
-            New document
+            {creatingForm ? (
+              <SpinnerGap size={14} weight="bold" className={styles.btnSpinner} />
+            ) : (
+              <Plus size={14} weight="bold" />
+            )}
+            {creatingForm ? "Creating…" : PRIMARY_BY_TAB[active]}
           </button>
         </div>
       </div>
       <div className={styles.tabRule} aria-hidden />
 
-      <div className={styles.content}>{children}</div>
+      <motion.div
+        key={active}
+        className={styles.content}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {children}
+      </motion.div>
 
       <AnimatePresence>
         {chooserOpen && (

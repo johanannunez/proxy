@@ -24,6 +24,7 @@ import {
   Warning,
   FileDashed,
   CaretRight,
+  PencilSimple,
 } from "@phosphor-icons/react";
 import type { Form } from "@/lib/admin/forms-types";
 import { fmtShortDate } from "@/lib/admin/documents-hub-shared";
@@ -52,6 +53,14 @@ function publicFormUrl(slug: string): string {
       ? window.location.origin
       : "https://www.myproxyhost.com";
   return `${base}/f/${slug}`;
+}
+
+/** Deterministic accent tint (0-5) from a form id, so every form keeps a
+ * stable, distinct icon color without rainbow chaos. */
+function tintIndex(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return h % 6;
 }
 
 /** Map a form master into the SendSheet's unified shape (link-based send). */
@@ -118,7 +127,7 @@ function FormRow({
       onClick={() => router.push(detailHref)}
       onKeyDown={(e) => e.key === "Enter" && router.push(detailHref)}
     >
-      <span className={styles.rowIcon}>
+      <span className={`${styles.rowIcon} ${styles[`tint${tintIndex(form.id)}`]}`}>
         <Rows size={17} weight="duotone" />
       </span>
 
@@ -126,19 +135,43 @@ function FormRow({
         <span className={styles.name} title={form.name}>
           {form.name}
         </span>
-        <span className={styles.nameSub}>
-          {form.is_active ? "Live" : "Draft"}
-          {form.description ? ` · ${form.description}` : ""}
-        </span>
+        {form.description && (
+          <span className={styles.nameSub} title={form.description}>
+            {form.description}
+          </span>
+        )}
       </span>
 
-      <span className={styles.metaCell}>
+      <span className={styles.statusCell}>
+        {archived ? (
+          <span className={`${styles.statusPill} ${styles.statusArchived}`}>
+            <span className={styles.statusDot} />
+            Archived
+          </span>
+        ) : form.is_active ? (
+          <span className={`${styles.statusPill} ${styles.statusLive}`}>
+            <span className={styles.statusDot} />
+            Live
+          </span>
+        ) : (
+          <span className={`${styles.statusPill} ${styles.statusDraft}`}>
+            <span className={styles.statusDot} />
+            Draft
+          </span>
+        )}
+      </span>
+
+      <span className={`${styles.metaCell} ${styles.responseCell}`}>
         {form.response_count === 0
           ? "No responses"
           : `${form.response_count} ${form.response_count === 1 ? "response" : "responses"}`}
       </span>
-      <span className={styles.metaCell}>Created {fmtShortDate(form.created_at)}</span>
-      <span className={styles.metaCell}>Updated {fmtShortDate(form.updated_at)}</span>
+      <span className={`${styles.metaCell} ${styles.dateCell}`}>
+        {fmtShortDate(form.created_at)}
+      </span>
+      <span className={`${styles.metaCell} ${styles.dateCell}`}>
+        {fmtShortDate(form.updated_at)}
+      </span>
 
       <span
         className={styles.actions}
@@ -166,38 +199,53 @@ function FormRow({
           </>
         ) : (
           <>
-            {form.is_active && (
+            {/* Secondary actions reveal to the LEFT of the pinned primary on
+                hover, filling reserved space so the row never reflows. */}
+            <span className={styles.actionReveal}>
+              {form.is_active && form.slug && (
+                <button
+                  type="button"
+                  className={`${styles.actionIconBtn} ${copied ? styles.actionCopied : ""}`}
+                  onClick={handleCopyLink}
+                  title="Copy share link"
+                >
+                  {copied ? <Check size={14} weight="bold" /> : <LinkSimple size={14} weight="bold" />}
+                </button>
+              )}
+              <button
+                type="button"
+                className={styles.actionIconBtn}
+                onClick={onDuplicate}
+                title="Duplicate"
+              >
+                <Copy size={14} weight="bold" />
+              </button>
+              <button
+                type="button"
+                className={styles.actionIconBtn}
+                onClick={onArchive}
+                title="Archive"
+              >
+                <Archive size={14} weight="bold" />
+              </button>
+            </span>
+            {/* Primary slot is always filled so rows never shift: Live forms
+                send, Drafts edit. */}
+            {form.is_active ? (
               <button type="button" className={styles.actionBtn} onClick={onSend}>
                 <PaperPlaneTilt size={13} weight="bold" />
                 Send
               </button>
-            )}
-            {form.is_active && form.slug && (
+            ) : (
               <button
                 type="button"
-                className={`${styles.actionIconBtn} ${copied ? styles.actionCopied : ""}`}
-                onClick={handleCopyLink}
-                title="Copy share link"
+                className={styles.actionBtn}
+                onClick={() => router.push(detailHref)}
               >
-                {copied ? <Check size={14} weight="bold" /> : <LinkSimple size={14} weight="bold" />}
+                <PencilSimple size={13} weight="bold" />
+                Edit
               </button>
             )}
-            <button
-              type="button"
-              className={styles.actionIconBtn}
-              onClick={onDuplicate}
-              title="Duplicate"
-            >
-              <Copy size={14} weight="bold" />
-            </button>
-            <button
-              type="button"
-              className={styles.actionIconBtn}
-              onClick={onArchive}
-              title="Archive"
-            >
-              <Archive size={14} weight="bold" />
-            </button>
           </>
         )}
       </span>
@@ -336,22 +384,33 @@ export function FormsTab({
           )}
         </div>
       ) : (
-        <div className={styles.list} role="list">
-          {active.map((form) => (
-            <FormRow
-              key={form.id}
-              form={form}
-              archived={false}
-              busy={busyId === form.id}
-              onSend={() => setSendTarget(toUnifiedTemplate(form))}
-              onDuplicate={() => handleDuplicate(form)}
-              onArchive={() =>
-                runRowAction(form.id, () => archiveFormAction(form.id), "Archive failed.")
-              }
-              onRestore={() => undefined}
-              onDeleteRequest={() => setDeleteTarget(form)}
-            />
-          ))}
+        <div className={styles.tableWrap}>
+          <div className={styles.headerRow} aria-hidden>
+            <span />
+            <span className={styles.headerCell}>Name</span>
+            <span className={`${styles.headerCell} ${styles.statusCell}`}>Status</span>
+            <span className={`${styles.headerCell} ${styles.responseCell}`}>Responses</span>
+            <span className={`${styles.headerCell} ${styles.dateCell}`}>Created</span>
+            <span className={`${styles.headerCell} ${styles.dateCell}`}>Updated</span>
+            <span />
+          </div>
+          <div className={styles.list} role="list">
+            {active.map((form) => (
+              <FormRow
+                key={form.id}
+                form={form}
+                archived={false}
+                busy={busyId === form.id}
+                onSend={() => setSendTarget(toUnifiedTemplate(form))}
+                onDuplicate={() => handleDuplicate(form)}
+                onArchive={() =>
+                  runRowAction(form.id, () => archiveFormAction(form.id), "Archive failed.")
+                }
+                onRestore={() => undefined}
+                onDeleteRequest={() => setDeleteTarget(form)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
