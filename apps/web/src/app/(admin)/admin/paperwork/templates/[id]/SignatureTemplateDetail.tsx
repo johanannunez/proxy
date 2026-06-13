@@ -155,13 +155,17 @@ export function SignatureTemplateDetail({
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(initialTab);
 
-  async function handleBuilderSave() {
-    await activateTemplate(template.id);
-    // Navigate to the library. Do NOT call router.refresh() here: refreshing
-    // the current route races the push and cancels the navigation, leaving the
-    // builder stuck on "Finishing…". The library is force-dynamic and refetches
-    // on its own.
-    router.push("/admin/paperwork/templates");
+  async function handleBuilderSave(): Promise<{ ok: boolean; error?: string }> {
+    const result = await activateTemplate(template.id);
+    // Activation can be refused by the readiness gate (a signer has no field).
+    // Return the result so the builder shows the message inline; only navigate
+    // on success. Do NOT call router.refresh() here: refreshing the current
+    // route races the push and cancels the navigation, leaving the builder
+    // stuck on "Finishing…". The library is force-dynamic and refetches itself.
+    if (result.ok) {
+      router.push("/admin/paperwork/templates");
+    }
+    return result;
   }
 
   const tabs: Array<{ key: TabKey; label: string }> = [

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createTemplate, createTemplateFromHtml, cloneTemplate } from "@/lib/signing/docuseal";
+import { createTemplate, createTemplateFromHtml, cloneTemplate, getTemplateFields } from "@/lib/signing/docuseal";
 import {
   createDocumentTemplateRecord,
   updateDocumentTemplateRecord,
@@ -10,6 +10,8 @@ import {
   documentKeyExists,
 } from "@/lib/admin/document-templates";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
+import { computeCoverage } from "@/lib/signing/field-coverage";
+import { signerRolesLabel } from "./signer-roles";
 
 export type TemplateActionResult =
   | { ok: true; template: DocumentTemplate }
@@ -179,13 +181,29 @@ export async function createWrittenTemplate(
 
 /**
  * Phase 2: called after admin saves the builder layout.
- * Marks the template active so the signing flow can resolve it.
+ * Activation is gated on readiness: every signer role must have at least one
+ * field in the DocuSeal layout, otherwise that signer has nothing to sign and
+ * the document is unsendable. If a role is uncovered we block and name it.
  */
 export async function activateTemplate(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const { error: authError } = await requireAdmin();
   if (authError) return { ok: false, error: authError };
+
+  const template = await getDocumentTemplate(id);
+  if (!template) return { ok: false, error: "Template not found." };
+
+  // A template with a DocuSeal layout must cover every signer before it can be
+  // sent. (Templates with no docuseal_template_id can't reach here from the
+  // builder; activating them is a no-op gate-wise.)
+  if (template.docuseal_template_id) {
+    const fields = await getTemplateFields(template.docuseal_template_id);
+    const { ready, missingRoles } = computeCoverage(fields, template.signer_roles);
+    if (!ready) {
+      return { ok: false, error: `Add a field for: ${signerRolesLabel(missingRoles)}` };
+    }
+  }
 
   const ok = await updateDocumentTemplateRecord(id, { is_active: true });
   return ok ? { ok: true } : { ok: false, error: "Could not activate the template." };

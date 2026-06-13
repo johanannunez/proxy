@@ -24,13 +24,14 @@ declare module "react" {
 type Props = {
   templateId: number;
   templateName: string;
-  onSave: () => void | Promise<void>;
+  onSave: () => Promise<{ ok: boolean; error?: string } | void>;
   onBack: () => void;
 };
 
 export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }: Props) {
   const [session, setSession] = useState<{ token: string; host: string } | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [finishError, setFinishError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [finishing, setFinishing] = useState(false);
   const builderRef = useRef<HTMLElement>(null);
@@ -70,10 +71,21 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
 
   async function handleFinish() {
     setFinishing(true);
+    setFinishError(null);
     try {
-      await onSave();
+      const result = await onSave();
+      // Readiness gate can refuse activation (a signer has no field). Surface
+      // its message inline and re-enable the button so the admin can fix it.
+      if (result && result.ok === false) {
+        setFinishError(result.error ?? "Could not finish. Try again.");
+        setFinishing(false);
+        return;
+      }
+      // On success, onSave navigates away; leave the button in its finishing
+      // state so it doesn't flash back before the route changes.
     } catch {
-      // Never leave the button stuck on "Finishing…" if activation fails.
+      // Never leave the button stuck on "Finishing…" if activation throws.
+      setFinishError("Could not finish. Try again.");
       setFinishing(false);
     }
   }
@@ -109,6 +121,7 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
 
       <div className={styles.builderArea}>
         {fetchError && <p className={styles.error}>{fetchError}</p>}
+        {finishError && <p className={styles.error}>{finishError}</p>}
         {!session && !fetchError && (
           <div className={styles.loading}>
             <span className={styles.loadingDot} />
