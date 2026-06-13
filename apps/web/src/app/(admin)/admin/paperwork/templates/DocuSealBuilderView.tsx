@@ -39,7 +39,6 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
 
   useEffect(() => {
     let cancelled = false;
-    setFetchError(null);
     fetch(`/api/admin/docuseal/builder-session?templateId=${templateId}`, {
       // Bail out if the session never comes back so the builder shows a clear
       // error and a retry instead of spinning on its loading state forever.
@@ -149,7 +148,10 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
             <button
               type="button"
               className={styles.doneBtn}
-              onClick={() => setReloadKey((k) => k + 1)}
+              onClick={() => {
+                setFetchError(null);
+                setReloadKey((k) => k + 1);
+              }}
             >
               Retry
             </button>
