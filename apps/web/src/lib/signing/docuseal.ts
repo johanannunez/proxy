@@ -213,6 +213,21 @@ export async function getTemplatePreviewUrl(templateId: number): Promise<string 
   }
 }
 
+/** The document name DocuSeal currently has for a template. Used to keep the
+ *  DocuSeal name and our display_name in sync (they are one document name).
+ *  Resilient: returns null on any failure. */
+export async function getDocuSealTemplateName(templateId: number): Promise<string | null> {
+  if (!isDocuSealConfigured()) return null;
+  try {
+    const res = await fetch(`${baseUrl()}/templates/${templateId}`, { headers: headers() });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { name?: string | null };
+    return data.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The signer roles actually assigned to fields in a template's layout. Each
  * DocuSeal field carries a `submitter_uuid`; the role name lives on the matching

@@ -8,6 +8,7 @@ import {
   cloneTemplate,
   getTemplateFields,
   renameDocuSealTemplate,
+  getDocuSealTemplateName,
 } from "@/lib/signing/docuseal";
 import {
   createDocumentTemplateRecord,
@@ -229,6 +230,45 @@ export async function activateTemplate(
  * the DocuSeal document so the builder header matches; that sync is best-effort
  * and never fails the save (the DB title is the source of truth).
  */
+/**
+ * The document name lives in two places that must stay identical: our
+ * display_name and the DocuSeal document name (shown/edited inside the
+ * builder). These keep them one.
+ */
+
+/** Push our display_name into DocuSeal so the builder shows our name. Called
+ *  when the builder opens, reconciling any prior drift in our favor. */
+export async function pushTemplateNameToDocuSeal(
+  id: string,
+): Promise<{ ok: boolean }> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false };
+  const template = await getDocumentTemplate(id);
+  if (!template?.docuseal_template_id) return { ok: false };
+  await renameDocuSealTemplate(template.docuseal_template_id, template.display_name);
+  return { ok: true };
+}
+
+/** Pull the DocuSeal document name back into our display_name, so renaming the
+ *  document inside the builder updates our name too. Returns the synced name. */
+export async function pullTemplateNameFromDocuSeal(
+  id: string,
+): Promise<{ name: string | null }> {
+  const { error } = await requireAdmin();
+  if (error) return { name: null };
+  const template = await getDocumentTemplate(id);
+  if (!template?.docuseal_template_id) return { name: null };
+  const docuSealName = await getDocuSealTemplateName(template.docuseal_template_id);
+  const trimmed = docuSealName?.trim();
+  if (!trimmed || trimmed === template.display_name) {
+    return { name: template.display_name };
+  }
+  await updateDocumentTemplateRecord(id, { display_name: trimmed });
+  revalidatePath("/admin/paperwork/templates");
+  revalidatePath(`/admin/paperwork/templates/${id}`);
+  return { name: trimmed };
+}
+
 export async function updateTemplateMeta(
   id: string,
   input: MetaEditInput,

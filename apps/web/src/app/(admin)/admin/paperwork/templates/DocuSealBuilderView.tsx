@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check } from "@phosphor-icons/react";
+import {
+  pushTemplateNameToDocuSeal,
+  pullTemplateNameFromDocuSeal,
+} from "./template-actions";
 import styles from "./DocuSealBuilderView.module.css";
 
 declare module "react" {
@@ -23,18 +27,29 @@ declare module "react" {
 
 type Props = {
   templateId: number;
+  dbTemplateId: string;
   templateName: string;
   onSave: () => Promise<{ ok: boolean; error?: string } | void>;
   onBack: () => void;
 };
 
-export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }: Props) {
+export function DocuSealBuilderView({
+  templateId,
+  dbTemplateId,
+  templateName,
+  onSave,
+  onBack,
+}: Props) {
   const [session, setSession] = useState<{ token: string; host: string } | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [finishError, setFinishError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  // The document name is one thing shown in two places (our header + DocuSeal's
+  // inline editor). Local state lets the header live-update when a rename inside
+  // the builder is pulled back.
+  const [name, setName] = useState(templateName);
   const builderRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -80,16 +95,35 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
     document.head.appendChild(script);
   }, [session]);
 
+  // Reconcile the document name in our favor when the builder opens: push our
+  // display_name into DocuSeal so its inline name matches our chrome.
+  useEffect(() => {
+    if (!session) return;
+    void pushTemplateNameToDocuSeal(dbTemplateId);
+  }, [session, dbTemplateId]);
+
   // DocuSeal autosaves on every change and fires "save" each time. We do NOT
   // navigate on autosave (that was the endless-saving bug); we just show a
-  // transient "Saved" indicator. Finishing is an explicit action below.
+  // transient "Saved" indicator and, debounced, pull the document name back so
+  // renaming inside the builder updates our name too. Finishing is explicit.
   useEffect(() => {
     const el = builderRef.current;
     if (!el || !session) return;
-    const handler = () => setSavedAt(Date.now());
+    let pullTimer: ReturnType<typeof setTimeout> | undefined;
+    const handler = () => {
+      setSavedAt(Date.now());
+      clearTimeout(pullTimer);
+      pullTimer = setTimeout(async () => {
+        const { name: synced } = await pullTemplateNameFromDocuSeal(dbTemplateId);
+        if (synced) setName(synced);
+      }, 1500);
+    };
     el.addEventListener("save", handler);
-    return () => el.removeEventListener("save", handler);
-  }, [session]);
+    return () => {
+      el.removeEventListener("save", handler);
+      clearTimeout(pullTimer);
+    };
+  }, [session, dbTemplateId]);
 
   async function handleFinish() {
     setFinishing(true);
@@ -120,7 +154,7 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
           <span>Back</span>
         </button>
         <div className={styles.headerCenter}>
-          <span className={styles.title}>{templateName}</span>
+          <span className={styles.title}>{name}</span>
           <span className={styles.hint}>Drag fields onto the document. Changes save automatically.</span>
         </div>
         <div className={styles.headerRight}>

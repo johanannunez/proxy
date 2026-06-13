@@ -616,6 +616,7 @@ export function SignatureTemplateDetail({
           (template.docuseal_template_id ? (
             <DocuSealBuilderView
               templateId={template.docuseal_template_id}
+              dbTemplateId={template.id}
               templateName={template.display_name}
               onSave={handleBuilderSave}
               onBack={() => router.push("/admin/paperwork/templates")}
