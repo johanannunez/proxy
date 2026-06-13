@@ -40,10 +40,17 @@ export async function listDocumentTemplates(orgId?: string): Promise<DocumentTem
   return ((data ?? []) as DocumentTemplate[]).map(normalizeTemplate);
 }
 
-/** Tracking columns ship in migration 20260612090000; rows read before it is
-    applied lack them, so default to untracked rather than undefined. */
+/** Tracking columns ship in migration 20260612090000 and title/settings in
+    20260613090000; rows read before either is applied lack them, so default
+    rather than leave them undefined. */
 function normalizeTemplate(row: DocumentTemplate): DocumentTemplate {
-  return { ...row, tracked: row.tracked ?? false, category: row.category ?? null };
+  return {
+    ...row,
+    tracked: row.tracked ?? false,
+    category: row.category ?? null,
+    title: row.title ?? null,
+    settings: row.settings ?? {},
+  };
 }
 
 /**
