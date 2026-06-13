@@ -112,11 +112,13 @@ export function DocuSealBuilderView({
     let pullTimer: ReturnType<typeof setTimeout> | undefined;
     const handler = () => {
       setSavedAt(Date.now());
+      // Pull the (possibly renamed) document name back near-instantly so the
+      // header reflects a rename made inside the builder right away.
       clearTimeout(pullTimer);
       pullTimer = setTimeout(async () => {
         const { name: synced } = await pullTemplateNameFromDocuSeal(dbTemplateId);
         if (synced) setName(synced);
-      }, 1500);
+      }, 300);
     };
     el.addEventListener("save", handler);
     return () => {
