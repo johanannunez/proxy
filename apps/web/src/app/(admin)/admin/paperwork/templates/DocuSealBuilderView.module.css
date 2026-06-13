@@ -118,6 +118,17 @@
   height: 100%;
 }
 
+/* DocuSeal's builder is a third-party, light-themed embedded tool. Its field
+   palette tiles are drawn for a light surface, so on our dark page they lose
+   all contrast. Render the builder canvas on white in dark mode (matching its
+   light-mode appearance and the white document it edits); the surrounding
+   Proxy chrome (header, sidebar) stays themed. */
+:global(.dark) .builderArea,
+:global(.dark) .builderArea docuseal-builder {
+  background: #ffffff;
+  color-scheme: light;
+}
+
 .loading {
   position: absolute;
   inset: 0;
@@ -127,20 +138,20 @@
   gap: 0.5rem;
 }
 
-.loadingDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-text-tertiary);
-  animation: pulse 1.2s ease-in-out infinite;
+.loadingLogo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  animation: logoPulse 1.5s ease-in-out infinite;
 }
 
-.loadingDot:nth-child(2) { animation-delay: 0.2s; }
-.loadingDot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+@keyframes logoPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
   50% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingLogo { animation: none; opacity: 0.8; }
 }
 
 .error {

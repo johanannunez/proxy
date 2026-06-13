@@ -124,9 +124,12 @@ export function DocuSealBuilderView({ templateId, templateName, onSave, onBack }
         {finishError && <p className={styles.error}>{finishError}</p>}
         {!session && !fetchError && (
           <div className={styles.loading}>
-            <span className={styles.loadingDot} />
-            <span className={styles.loadingDot} />
-            <span className={styles.loadingDot} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-mark-v2.png"
+              alt="Loading"
+              className={styles.loadingLogo}
+            />
           </div>
         )}
         {session && (
