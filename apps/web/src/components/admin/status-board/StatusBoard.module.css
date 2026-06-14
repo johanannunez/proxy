@@ -1,0 +1,1896 @@
+/* ─── Status Board — CSS module ─── */
+/* Styles for StatusBoardView, FileCardTile, and status-board-icons. */
+
+/* ─── FileCardTile ─── */
+
+.fileCardShell {
+  /* Surface: flips white in light, elevated-dark in dark mode */
+  background: linear-gradient(
+    175deg,
+    var(--surface-floating, #ffffff) 0%,
+    color-mix(in srgb, var(--surface-floating, #ffffff) 90%, var(--border, #e5e7eb)) 100%
+  );
+  /* 1px ring — dark-aware via token */
+  border: 1px solid var(--border, #e5e7eb);
+  /* Layered shadow: ambient + crisp edge */
+  box-shadow:
+    var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.06)),
+    /* Top sheen — 1px inset highlight at top edge */
+    var(--dash-shadow-inset, inset 0 1px 0 rgba(255, 255, 255, 0.8));
+  /* Prevent banner overflow from causing scroll */
+  overflow: visible;
+}
+
+/* When inside a clickable parent that has .fileCardParent, lift gently */
+.fileCardParent:hover .fileCardShell {
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.09),
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    var(--dash-shadow-inset, inset 0 1px 0 rgba(255, 255, 255, 0.8));
+  transform: translateY(-1px);
+  transition: transform 0.2s var(--ease-spring, ease), box-shadow 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fileCardParent:hover .fileCardShell {
+    transform: none;
+    transition: none;
+  }
+}
+
+.fileCardBanner {
+  /* White text always — gradient bg provides contrast on both light/dark */
+  color: #ffffff;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  /* Subtle drop shadow so it reads on both light and dark card faces */
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  /* Top 1px lighter edge via box-shadow above */
+  pointer-events: none;
+}
+
+/* ─── Avatar ─── */
+
+.avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-sora, var(--font-sans));
+  color: #fff;
+}
+
+/* ─── Completion rings ─── */
+
+.matrixRingWrap {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ─── Premium status badges ─── */
+
+.cellDisc {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cellDiscSuccess {
+  background: radial-gradient(120% 120% at 50% 16%, #41d585 0%, var(--color-success, #16a34a) 72%);
+  box-shadow:
+    0 1px 2.5px rgba(22, 163, 74, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.cellDiscError {
+  background: radial-gradient(120% 120% at 50% 16%, #f26d6d 0%, var(--color-error, #dc2626) 72%);
+  box-shadow:
+    0 1px 2.5px rgba(220, 38, 38, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+/* Awaiting: soft amber ring + faint fill + center dot */
+.cellSent {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.6px solid #d6920f;
+  background: radial-gradient(circle at 50% 42%, rgba(214, 146, 15, 0.16), rgba(214, 146, 15, 0.04));
+}
+
+.cellSentDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d6920f;
+  opacity: 0.85;
+}
+
+/* Not started: a clean, faint solid ring (lowest emphasis) */
+.cellNeeded {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid var(--text-tertiary, #9ca3af);
+  opacity: 0.3;
+}
+
+:global(.dark) .cellNeeded {
+  opacity: 0.34;
+}
+
+/* ─── Status Board completion ring: not_needed (waived) variant ─── */
+
+.matrixRingNotNeeded {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-tertiary, #9ca3af) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-tertiary, #9ca3af) 20%, transparent);
+  flex-shrink: 0;
+}
+
+.matrixRingNotNeededDash {
+  display: block;
+  width: 8px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: var(--text-tertiary, #9ca3af);
+  opacity: 0.7;
+}
+
+/* ─── Status Board completion ring: not_applicable (no row exists) variant ─── */
+
+.matrixRingNotApplicable {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text-tertiary, #9ca3af) 25%, transparent);
+  flex-shrink: 0;
+}
+
+/* ─── Matrix two-region shell ─── */
+
+.matrixShell {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+/* ─── LEFT region: fixed workspace column ─── */
+
+.matrixLeft {
+  flex-shrink: 0;
+  width: 280px;
+  min-width: 280px;
+  border-right: 1px solid var(--dash-border, #e5e7eb);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  background: var(--surface-base, #ffffff);
+}
+
+.matrixLeftHeader {
+  flex-shrink: 0;
+  height: 114px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.matrixCornerCell {
+  width: 100%;
+  height: 114px;
+  display: flex;
+  align-items: flex-end;
+  padding: 7px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+  background: var(--dash-card-alt, #f3f2f0);
+  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+}
+
+.matrixLeftRow {
+  display: flex;
+  align-items: stretch;
+  height: 57px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
+  background: var(--surface-base, #ffffff);
+  transition: background-color 0.1s ease;
+}
+
+.matrixLeftRow:last-child {
+  border-bottom: none;
+}
+
+.matrixLeftRowHovered {
+  background: var(--dash-card-alt, #f3f2f0);
+}
+
+.matrixLeftEmptyRow {
+  height: 57px;
+  flex-shrink: 0;
+}
+
+/* ─── RIGHT region: horizontally scrollable ─── */
+
+.matrixRight {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  -webkit-mask-image: none;
+  mask-image: none;
+  transition: -webkit-mask-image 0.2s ease, mask-image 0.2s ease;
+}
+
+/* Left edge fade: show when scrolled right */
+.matrixRightScrolled {
+  -webkit-mask-image: linear-gradient(to right, transparent 0px, black 28px);
+  mask-image: linear-gradient(to right, transparent 0px, black 28px);
+}
+
+/* Right edge fade: show when more content off-screen (overrides left-only mask) */
+.matrixRightScrolled.matrixRightCanScroll {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 28px,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0px,
+    black 28px,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+}
+
+/* Right-edge-only fade when not scrolled but content overflows */
+.matrixRightCanScroll:not(.matrixRightScrolled) {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+}
+
+/* Premium scrollbar for right region */
+.matrixRight::-webkit-scrollbar {
+  height: 12px;
+}
+
+.matrixRight::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.matrixRight::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-secondary, #6b7280) 26%, transparent);
+  border-radius: 999px;
+  border: 4px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.15s ease;
+}
+
+.matrixRight::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-secondary, #6b7280) 48%, transparent);
+  background-clip: content-box;
+}
+
+/* Firefox scrollbar */
+.matrixRight {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-secondary, #6b7280) 32%, transparent) transparent;
+}
+
+/* Right region header */
+.matrixRightHeader {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--dash-card-alt, #f3f2f0);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Group band header row ─── */
+
+.matrixGroupBandRow {
+  display: flex;
+  align-items: stretch;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.matrixGroupBand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+  text-align: center;
+  background: var(--dash-card-alt, #f3f2f0);
+  border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
+  border-right: 1px solid var(--dash-border, #e5e7eb);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.matrixGroupBand:last-child {
+  border-right: none;
+}
+
+/* Semantic kind tints */
+.matrixGroupBand_signature {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 6%, var(--dash-card-alt, #f3f2f0));
+}
+
+.matrixGroupBand_form {
+  background: color-mix(in srgb, #7c5cd9 6%, var(--dash-card-alt, #f3f2f0));
+}
+
+.matrixGroupBand_file {
+  background: color-mix(in srgb, var(--color-success, #16a34a) 6%, var(--dash-card-alt, #f3f2f0));
+}
+
+/* ─── Item header row ─── */
+
+.matrixItemHeaderRow {
+  display: flex;
+  align-items: stretch;
+  height: 84px;
+  flex-shrink: 0;
+}
+
+.matrixItemHeader {
+  width: 64px;
+  min-width: 64px;
+  flex-shrink: 0;
+  padding: 0;
+  text-align: center;
+  background: var(--dash-card-alt, #f3f2f0);
+  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+  border-right: 1px solid var(--dash-border-subtle, #eeede9);
+  display: flex;
+  align-items: stretch;
+}
+
+.matrixItemHeader:last-child {
+  border-right: none;
+}
+
+.matrixItemHeaderPinned {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 5%, var(--dash-card-alt, #f3f2f0));
+  border-bottom-color: var(--color-brand, #1b77be);
+  border-bottom-width: 2px;
+}
+
+/* Toggle button wrapping each column header */
+.matrixItemHeaderBtn {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease;
+}
+
+.matrixItemHeaderBtn:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.matrixItemHeaderBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: -2px;
+}
+
+.matrixItemHeaderBtn:active {
+  opacity: 0.8;
+}
+
+.matrixItemHeaderInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+}
+
+/* Pin icon — corner indicator */
+.matrixPinIcon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  color: var(--text-tertiary, #9ca3af);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.matrixItemHeaderBtn:hover .matrixPinIcon {
+  opacity: 0.6;
+}
+
+.matrixPinIconActive {
+  color: var(--color-brand, #1b77be);
+  opacity: 1 !important;
+}
+
+.matrixItemLabel {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+  text-align: center;
+}
+
+/* Column percent badges */
+.matrixColPctHigh {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: var(--color-success, #16a34a);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.matrixColPctMid {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.1);
+}
+
+.matrixColPctLow {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: var(--text-tertiary, #9ca3af);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Matrix right region data rows ─── */
+
+.matrixRightRow {
+  display: flex;
+  align-items: center;
+  height: 57px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
+  background: var(--surface-base, #ffffff);
+  transition: background-color 0.1s ease;
+}
+
+.matrixRightRow:last-child {
+  border-bottom: none;
+}
+
+.matrixRightRowHovered {
+  background: var(--dash-row-alt, rgba(0, 0, 0, 0.025));
+}
+
+.matrixRightEmptyRow {
+  height: 57px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.matrixEmptyCell {
+  padding: 20px 24px;
+  color: var(--text-tertiary, #9ca3af);
+  font-size: 13px;
+}
+
+/* Owner cell inner */
+.matrixOwnerCellInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.matrixOwnerInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.matrixOwnerType {
+  font-size: 10px;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.matrixOwnerPct {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Owner completion bar */
+.matrixOwnerBar {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  width: 100%;
+}
+
+.matrixOwnerBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  transition: width 0.4s var(--ease-spring, ease);
+}
+
+/* Group end separator */
+.matrixCellGroupEnd {
+  border-right: 1px solid var(--dash-border, #e5e7eb) !important;
+}
+
+.matrixCell {
+  width: 64px;
+  min-width: 64px;
+  flex-shrink: 0;
+  height: 57px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-right: 1px solid transparent;
+}
+
+.matrixCellInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* ─── Matrix: owner name button ─── */
+
+.matrixOwnerNameBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  text-decoration: none;
+  transition: color 0.12s ease;
+}
+
+.matrixOwnerNameBtn:hover {
+  color: var(--color-brand, #1b77be);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.matrixOwnerNameBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ─── Matrix: cell button ─── */
+
+.matrixCellBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: 0 auto;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.12s ease, transform 0.12s var(--ease-spring, ease);
+}
+
+.matrixCellBtn:hover {
+  background: rgba(27, 119, 190, 0.07);
+  transform: scale(1.12);
+}
+
+.matrixCellBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 2px;
+}
+
+.matrixCellBtn:active {
+  transform: scale(0.96);
+}
+
+/* ─── Status Board filter bar ─── */
+
+.sbFilterBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
+  flex-wrap: wrap;
+}
+
+.sbSearchWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sbSearchIcon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary, #9ca3af);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.sbSearchInput {
+  height: 32px;
+  padding: 0 10px 0 30px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--text-primary, #111827);
+  background: var(--surface-elevated, #f9fafb);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius-sm, 6px);
+  width: 200px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sbSearchInput::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.sbSearchInput:focus {
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 2px rgba(27, 119, 190, 0.12);
+}
+
+/* Kind tabs */
+.sbKindTabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 9px;
+  flex: 1;
+  justify-content: center;
+}
+
+.sbKindTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary, #6b7280);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 28px;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.sbKindTab:hover {
+  color: var(--text-primary, #111827);
+}
+
+.sbKindTab:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+.sbKindTab:active {
+  opacity: 0.8;
+}
+
+.sbKindTabActive {
+  color: var(--text-primary, #111827);
+  background: var(--surface-base, #fff);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+}
+
+.sbKindTabCount {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary, #6b7280);
+}
+
+.sbKindTabActive .sbKindTabCount {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary, #111827);
+}
+
+/* Kind tabs disabled state */
+.sbKindTabsDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Right-side filter controls */
+.sbFilterRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Status filter pill group */
+.sbStatusGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sbStatusBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary, #6b7280);
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 28px;
+  transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.sbStatusBtn:hover:not(.sbStatusBtnActive) {
+  color: var(--text-primary, #111827);
+  border-color: var(--border-strong, #d1d5db);
+}
+
+.sbStatusBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+.sbStatusBtn:active {
+  transform: translateY(1px);
+}
+
+.sbStatusBtnActive {
+  color: #fff;
+  background: var(--color-navy, #0f172a);
+  border-color: var(--color-navy, #0f172a);
+  font-weight: 600;
+}
+
+/* Columns button */
+.sbColsWrap {
+  position: relative;
+}
+
+.sbColsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary, #6b7280);
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 28px;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.sbColsBtn:hover {
+  color: var(--text-primary, #111827);
+  border-color: var(--border-strong, #d1d5db);
+}
+
+.sbColsBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+.sbColsBtn:active {
+  opacity: 0.85;
+}
+
+.sbColsBtnActive {
+  color: var(--color-brand, #1b77be);
+  border-color: var(--color-brand, #1b77be);
+  font-weight: 600;
+}
+
+/* Columns panel */
+.sbColsPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1000;
+  background: var(--surface-floating, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius-md, 12px);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  min-width: 216px;
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-secondary, #6b7280) 32%, transparent) transparent;
+}
+
+.sbColsPanel::-webkit-scrollbar {
+  width: 11px;
+}
+
+.sbColsPanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sbColsPanel::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-secondary, #6b7280) 26%, transparent);
+  border-radius: 999px;
+  border: 4px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.15s ease;
+}
+
+.sbColsPanel::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-secondary, #6b7280) 48%, transparent);
+  background-clip: content-box;
+}
+
+.sbColsPanelGroup {
+  padding: 0 0 4px;
+}
+
+.sbColsPanelGroup + .sbColsPanelGroup {
+  border-top: 1px solid var(--dash-border-subtle, #eeede9);
+  padding-top: 4px;
+}
+
+.sbColsPanelGroupLabel {
+  padding: 4px 12px 2px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.sbColsPanelItem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-primary, #111827);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.1s ease;
+}
+
+.sbColsPanelItem:hover {
+  background: var(--dash-card-alt, #f3f2f0);
+}
+
+.sbColsPanelItem:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: -2px;
+}
+
+.sbColsPanelItem:active {
+  opacity: 0.8;
+}
+
+.sbColsPanelItemChecked {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 8%, transparent);
+}
+
+.sbColsPanelItemChecked .sbColsPanelItemLabel {
+  font-weight: 600;
+}
+
+.sbColsPanelItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.sbColsPanelItemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.sbColsPanelItemCheck {
+  margin-left: auto;
+  color: var(--color-brand, #1b77be);
+  flex-shrink: 0;
+}
+
+/* Focus chips row */
+.sbFocusChipsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 16px 2px;
+  overflow: hidden;
+}
+
+.sbFocusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px 3px 7px;
+  background: rgba(27, 119, 190, 0.08);
+  border: 1px solid rgba(27, 119, 190, 0.22);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-brand, #1b77be);
+  white-space: nowrap;
+}
+
+.sbFocusChipIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.sbFocusChipLabel {
+  /* inherits from .sbFocusChip */
+}
+
+.sbFocusChipX {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-brand, #1b77be);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.1s ease, background-color 0.1s ease;
+}
+
+.sbFocusChipX:hover {
+  opacity: 1;
+  background: rgba(27, 119, 190, 0.15);
+}
+
+.sbFocusChipX:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+.sbFocusChipsClear {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-tertiary, #9ca3af);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: color 0.1s ease;
+}
+
+.sbFocusChipsClear:hover {
+  color: var(--text-secondary, #6b7280);
+}
+
+.sbFocusChipsClear:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+/* Result summary line */
+.sbResultSummary {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 7px 16px 0;
+}
+
+.sbResultSummaryStrong {
+  font-weight: 700;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* ─── Status Board cursor card ─── */
+
+.sbCursorCard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: var(--color-navy, #0f172a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md, 12px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  will-change: transform;
+  user-select: none;
+  width: 232px;
+}
+
+.sbCursorCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sbCursorCardLabel {
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-sora, var(--font-sans));
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status chips on cursor card — dark surface variants */
+.sbCursorChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.sbCursorChipComplete {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.sbCursorChipProgress {
+  color: #60b0f4;
+  background: rgba(96, 176, 244, 0.15);
+  border-color: rgba(96, 176, 244, 0.3);
+}
+
+.sbCursorChipSent {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.sbCursorChipNeeded {
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sbCursorChipDeclined {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.sbCursorChipNotNeeded {
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Breakdown line */
+.sbCursorBreakdown {
+  padding: 7px 12px;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Timeline section */
+.sbCursorTimeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: 2px 12px 8px;
+}
+
+.sbCursorMilestone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sbCursorMilestoneLabel {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.sbCursorMilestoneValue {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+}
+
+.sbCursorConnector {
+  flex-shrink: 0;
+  width: 12px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 6px 2px 0;
+}
+
+.sbCursorConnectorDone {
+  background: rgba(96, 176, 244, 0.5);
+}
+
+/* Signers section */
+.sbCursorDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 12px;
+}
+
+.sbCursorSigners {
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sbCursorSignerRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sbCursorSignerAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sbCursorSignerName {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sbCursorSignerStatus {
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sbCursorSignerSigned { color: #4ade80; }
+.sbCursorSignerViewed { color: #fbbf24; }
+.sbCursorSignerDeclined { color: #f87171; }
+.sbCursorSignerPending { color: rgba(255, 255, 255, 0.35); }
+
+.sbCursorOverflow {
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 0;
+}
+
+/* Muted placeholder when no co-signers exist yet */
+.sbCursorNoSigners {
+  font-size: 10px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+/* ─── Status Board workspace drawer ─── */
+
+.wdBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 40;
+}
+
+.wdDrawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 94vw;
+  background: var(--surface-base, #ffffff);
+  box-shadow: var(--shadow-xl, 0 16px 48px rgba(0, 0, 0, 0.1));
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wdHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
+  flex-shrink: 0;
+}
+
+.wdHeaderText {
+  flex: 1;
+  min-width: 0;
+}
+
+.wdTitle {
+  font-family: var(--font-sora, var(--font-sans));
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wdSub {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  margin-top: 2px;
+}
+
+.wdPctRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.wdPctBar {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  max-width: 120px;
+}
+
+.wdPctFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  transition: width 0.4s var(--ease-spring, ease);
+}
+
+.wdPctLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #6b7280);
+}
+
+.wdCountChips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.wdCountChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.wdCountChipComplete {
+  color: var(--color-success, #16a34a);
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.2);
+}
+
+.wdCountChipNeeded {
+  color: var(--text-tertiary, #9ca3af);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.wdCountChipDeclined {
+  color: var(--status-danger-fg, #b91c1c);
+  background: rgba(220, 38, 38, 0.07);
+  border-color: rgba(220, 38, 38, 0.18);
+}
+
+.wdCountChipWaived {
+  color: var(--text-tertiary, #9ca3af);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.wdCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.wdCloseBtn:hover {
+  background: var(--dash-card-alt, #f3f2f0);
+  color: var(--text-primary, #111827);
+}
+
+.wdCloseBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 2px;
+}
+
+.wdBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.wdSection {
+  margin-bottom: 24px;
+}
+
+.wdSectionTitle {
+  font-family: var(--font-sora, var(--font-sans));
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+  margin: 0 0 10px;
+}
+
+.wdChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.wdPersonChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 999px;
+  background: var(--surface-elevated, #f9fafb);
+  border: 1px solid var(--border, #e5e7eb);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+}
+
+.wdPersonAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wdPropertyChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface-elevated, #f9fafb);
+  border: 1px solid var(--border, #e5e7eb);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+}
+
+.wdReqList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wdReqItem {
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--surface-elevated, #f9fafb);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.wdReqItemFocused {
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 2px rgba(27, 119, 190, 0.12);
+  animation: wdReqFlash 1.2s ease forwards;
+}
+
+@keyframes wdReqFlash {
+  0% { box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.3); }
+  60% { box-shadow: 0 0 0 2px rgba(27, 119, 190, 0.12); }
+  100% { box-shadow: none; border-color: var(--border, #e5e7eb); }
+}
+
+.wdReqTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.wdReqIconChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+.wdReqMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wdReqLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status chips */
+.wdChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+.wdChipComplete {
+  color: var(--color-success, #16a34a);
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.2);
+}
+
+.wdChipProgress {
+  color: var(--status-info-fg, #0c6fae);
+  background: rgba(2, 170, 235, 0.1);
+  border-color: rgba(2, 170, 235, 0.2);
+}
+
+.wdChipSent {
+  color: var(--status-warning-fg, #b45309);
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.wdChipNeeded {
+  color: var(--text-tertiary, #9ca3af);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.wdChipDeclined {
+  color: var(--status-danger-fg, #b91c1c);
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.wdChipNotNeeded {
+  color: var(--text-tertiary, #9ca3af);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* Toggle button for "mark not needed" */
+.wdToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-tertiary, #9ca3af);
+  background: transparent;
+  border: 1px dashed var(--border-strong, #d1d5db);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  white-space: nowrap;
+}
+
+.wdToggleBtn:hover {
+  color: var(--text-secondary, #6b7280);
+  border-color: var(--text-secondary, #6b7280);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.wdToggleBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+.wdToggleBtnActive {
+  color: var(--color-brand, #1b77be);
+  border-color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.05);
+}
+
+/* Per-entity breakdown in req item */
+.wdEntityList {
+  border-top: 1px solid var(--dash-border-subtle, #eeede9);
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wdEntityRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wdEntityName {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 1px;
+}
+
+.wdEntityTimeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.wdEntityMilestone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+}
+
+.wdEntityMilestoneDotDone {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-brand, #1b77be);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(27, 119, 190, 0.15);
+}
+
+.wdEntityMilestoneDotPending {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px dashed var(--text-tertiary, #9ca3af);
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+.wdEntityMilestoneDotDeclined {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-error, #dc2626);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+}
+
+.wdEntityMilestoneLabel {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.wdEntityMilestoneLabelDone {
+  color: var(--color-brand, #1b77be);
+}
+
+.wdEntityMilestoneLabelDeclined {
+  color: var(--status-danger-fg, #b91c1c);
+}
+
+.wdEntityMilestoneDate {
+  font-size: 8px;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.wdEntityConnector {
+  flex-shrink: 0;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.1);
+  margin-top: 3px;
+}
+
+.wdEntityConnectorDone {
+  background: var(--color-brand, #1b77be);
+}
+
+/* Signer list within entity in drawer */
+.wdSignerList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.wdSignerRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.wdSignerAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--text-tertiary, #9ca3af);
+}
+
+.wdSignerName {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wdSignerStatus {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wdSignerSigned {
+  color: var(--color-success, #16a34a);
+}
+
+.wdSignerViewed {
+  color: var(--status-info-fg, #0c6fae);
+}
+
+.wdSignerDeclined {
+  color: var(--status-danger-fg, #b91c1c);
+}
+
+.wdSignerPending {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+/* Muted placeholder when no co-signers exist yet */
+.wdSignerPlaceholder {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-tertiary, #9ca3af);
+  margin: 0;
+  padding: 4px 0;
+}
+
+/* ─── Reduced-motion overrides ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .sbSearchInput,
+  .sbKindTab,
+  .sbStatusBtn,
+  .sbColsBtn,
+  .sbColsPanelItem,
+  .sbFocusChipX,
+  .sbFocusChipsClear,
+  .matrixItemHeaderBtn,
+  .matrixPinIcon,
+  .matrixLeftRow,
+  .matrixRightRow,
+  .matrixCellBtn,
+  .matrixOwnerNameBtn,
+  .matrixOwnerBarFill,
+  .wdPctFill,
+  .wdToggleBtn,
+  .wdReqItem,
+  .wdCloseBtn {
+    transition: none;
+  }
+
+  .wdReqItemFocused {
+    animation: none;
+  }
+}
