@@ -139,7 +139,10 @@
 }
 
 :global(.dark) .cellNeeded {
-  opacity: 0.34;
+  /* The real board is mostly "needed" today; lift the empty-ring track a touch
+     so a fully-empty board reads as present (not washed out) on the dark
+     surface, while staying quiet enough that filled badges still lead the eye. */
+  opacity: 0.46;
 }
 
 /* ─── Status Board completion ring: not_needed (waived) variant ─── */
