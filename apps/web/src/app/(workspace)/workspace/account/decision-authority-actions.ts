@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 import {
   saveWorkspaceAuthority,
@@ -127,6 +128,102 @@ export async function sendAddendumForSignatureAction(
   const ok = await markAuthorityPendingSignatures(authorityId, String(result.submissionId));
   if (!ok) return { error: "Submission created but failed to update authority status." };
 
+  await persistAddendumInPaperwork(
+    ctx.profile.id,
+    ctx.workspace.id,
+    result.submissionId,
+    members,
+    result.submitters,
+  );
+
   revalidatePath("/workspace/account");
   return { ok: true };
+}
+
+/**
+ * Creates (or updates) a spine document row + document_signers so the signed
+ * addendum appears in both owners' Paperwork sections once signing is complete.
+ * Non-blocking: a failure here logs but does not abort the addendum send.
+ */
+async function persistAddendumInPaperwork(
+  initiatorProfileId: string,
+  workspaceId: string,
+  submissionId: number,
+  members: Awaited<ReturnType<typeof getWorkspaceMembers>>,
+  submitters: { email: string; embedUrl: string }[],
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = createServiceClient() as any;
+  const now = new Date().toISOString();
+  const subId = String(submissionId);
+
+  // Upsert spine row for the initiating owner (select-then-insert-or-update pattern).
+  const { data: existing } = await db
+    .from("documents")
+    .select("id")
+    .eq("owner_id", initiatorProfileId)
+    .eq("document_key", "decision_authority_addendum")
+    .is("form_key", null)
+    .is("property_id", null)
+    .maybeSingle();
+
+  let spineId: string | null = null;
+
+  if (existing?.id) {
+    // Clear stale signer rows before re-persisting.
+    await db.from("document_signers").delete().eq("document_id", existing.id);
+    const { error: upErr } = await db
+      .from("documents")
+      .update({ status: "sent", source: "signed_document", source_ref: subId, sent_at: now })
+      .eq("id", existing.id);
+    if (!upErr) spineId = existing.id as string;
+  } else {
+    const { data: inserted, error: insErr } = await db
+      .from("documents")
+      .insert({
+        owner_id: initiatorProfileId,
+        workspace_id: workspaceId,
+        document_key: "decision_authority_addendum",
+        title: "Decision Authority Addendum",
+        scope_kind: "owner",
+        visibility: "client",
+        source: "signed_document",
+        source_ref: subId,
+        status: "sent",
+        sent_at: now,
+      })
+      .select("id")
+      .single();
+    if (insErr) {
+      console.error("[authority] addendum spine insert failed:", insErr.message);
+      return;
+    }
+    spineId = (inserted as { id: string }).id;
+  }
+
+  if (!spineId) return;
+
+  const signerRows = members.map((m, index) => {
+    const sub = submitters.find((s) => s.email === m.email);
+    return {
+      document_id: spineId,
+      signer_profile_id: m.id,
+      signer_email: m.email,
+      signer_name: m.full_name ?? null,
+      role: "signer",
+      role_index: index + 1,
+      order_index: index,
+      required: true,
+      status: "pending",
+      boldsign_document_id: subId,
+      embedded_link: sub?.embedUrl ?? null,
+      created_at: now,
+      updated_at: now,
+    };
+  });
+
+  const { error: sigErr } = await db.from("document_signers").insert(signerRows);
+  if (sigErr) {
+    console.error("[authority] addendum document_signers insert failed:", sigErr.message);
+  }
 }
