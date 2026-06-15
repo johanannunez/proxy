@@ -10,18 +10,15 @@
 
 ---
 
-## Phase 0 — Reconcile in-flight paperwork work (do this first)
+## Phase 0 — Reconcile in-flight paperwork work (COMPLETE — no reconcile needed)
 
-The docs-platform initiative has unmerged branches restructuring the same surface. Build on a settled base, not shifting ground.
+**Outcome (verified 2026-06-14):** The docs-platform branches are NOT unmerged. `r45-paperwork-unification`, `r46-ia-amendment`, `p3-convergence` (org-from-headers), and `p3-settings` (white-label brand colors) are all already merged into main (each 0 commits ahead; verified via `git merge-base --is-ancestor`). The cert-of-completion + audit panel are already in `DocumentDrawer.tsx`. A full scan of all 13 unmerged branches found NONE touching the paperwork/documents/status-board/spine/signing/reminders/expiry surface. The earlier "collision risk" was a false alarm from reading the worktree list without checking merge status.
 
-### Task 0.1 — Audit and decide r45 / r46
-- Review `docs-platform/r45-paperwork-unification` (certificate-of-completion + document-drawer audit panel) and `docs-platform/r46-ia-amendment` (onboarding link rewire, matrix bulk-bar removal). For each: merge into main, fold its good parts into this design, or close it. Record the decision per branch.
+- **Task 0.1 (audit r45/r46):** done — merged.
+- **Task 0.2 (absorb keepers):** nothing to fold; keep the existing `DocumentDrawer` (already carries cert-of-completion + audit panel) in the Signatures tab. The org-scoping + white-label foundations are already in main.
+- **Task 0.3 (settle the base):** confirmed — `main` is the single source of truth.
 
-### Task 0.2 — Absorb the keepers
-- The cert-of-completion + audit panel belong in the **Signatures** tab's `DocumentDrawer`. Fold them into the Phase 1 Signatures design so they are not lost. Re-point r46's onboarding link change to the new routes (supersedes Task 1.7's onboarding edit; reconcile, don't double-edit).
-
-### Task 0.3 — Settle the base
-- After reconciliation, re-confirm `main` is the single source for the paperwork surface, then start Phase 1.
+Residual (not blocking): stale worktree pointers want pruning (housekeeping; do NOT blind-prune, `preview/cinematic-home` has 21 unmerged commits). The three white-label decisions (sender identity, Stripe model, per-org defaults) are Phase 3 product calls, not Phase 0 reconcile.
 
 ---
 
@@ -102,6 +99,7 @@ Data-model changes. No cron. Operates on the unified taxonomy from Phase 1.5.
 
 ### Task 2.7 — DocuSeal templates for W-9 + Platform Authorization
 - Create both as real DocuSeal documents through the Proxy portal (Platform Auth content: "do you authorize us to list your property across all platforms?"). Insert `document_templates` rows; wire send + signer/countersigner tracking through `signing.ts`; suppress countersigner where not needed.
+- Coordinate with the unmerged `agent-a/w9-encryption-audit` + `agent-a/tax-data-foundation` branches (W-9 / tax-data encryption-at-rest) before finalizing W-9 handling, so the DocuSeal flow and the encryption approach align rather than conflict.
 
 ### Task 2.8 — Verify Phase 2
 - `tsc`/lint/build; send-and-sign a test W-9 + Platform Auth in DocuSeal; confirm board cells show signer timelines; screenshots.
