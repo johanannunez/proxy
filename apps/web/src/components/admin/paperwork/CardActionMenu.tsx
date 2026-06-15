@@ -21,7 +21,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { DotsThree } from "@phosphor-icons/react";
+import { DotsThree, Check } from "@phosphor-icons/react";
 import styles from "./CardActionMenu.module.css";
 
 export type CardMenuItem = {
@@ -29,6 +29,9 @@ export type CardMenuItem = {
   icon: ReactNode;
   onSelect: () => void;
   danger?: boolean;
+  /** When set, selecting the item shows this confirmation in place for a beat
+   * before the menu closes (e.g. "Link copied") instead of closing silently. */
+  confirmLabel?: string;
 };
 
 const MENU_WIDTH = 190;
@@ -43,13 +46,21 @@ export function CardActionMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [confirmedIdx, setConfirmedIdx] = useState<number | null>(null);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => setMounted(true), []);
+  useEffect(
+    () => () => {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
@@ -95,14 +106,30 @@ export function CardActionMenu({
     return () => window.removeEventListener("mousedown", handler);
   }, [open]);
 
+  // Clear any lingering confirmation once the menu is closed.
+  useEffect(() => {
+    if (!open) setConfirmedIdx(null);
+  }, [open]);
+
   const close = useCallback(() => {
     setOpen(false);
     btnRef.current?.focus();
   }, []);
 
-  function runItem(item: CardMenuItem) {
-    setOpen(false);
+  function runItem(item: CardMenuItem, index: number) {
     item.onSelect();
+    if (item.confirmLabel) {
+      // Hold the menu open with an inline confirmation, then dismiss.
+      setConfirmedIdx(index);
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+      confirmTimer.current = setTimeout(() => {
+        setConfirmedIdx(null);
+        setOpen(false);
+        btnRef.current?.focus();
+      }, 1100);
+      return;
+    }
+    setOpen(false);
   }
 
   function onMenuKeyDown(e: React.KeyboardEvent) {
@@ -141,24 +168,29 @@ export function CardActionMenu({
         style={{ top: coords.top, left: coords.left }}
         onKeyDown={onMenuKeyDown}
       >
-        {items.map((item, i) => (
-          <button
-            key={item.label}
-            ref={(el) => {
-              itemRefs.current[i] = el;
-            }}
-            type="button"
-            role="menuitem"
-            className={`${styles.item} ${item.danger ? styles.itemDanger : ""}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              runItem(item);
-            }}
-          >
-            <span className={styles.itemIcon}>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
+        {items.map((item, i) => {
+          const confirmed = confirmedIdx === i;
+          return (
+            <button
+              key={item.label}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
+              type="button"
+              role="menuitem"
+              className={`${styles.item} ${item.danger ? styles.itemDanger : ""} ${confirmed ? styles.itemConfirmed : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                runItem(item, i);
+              }}
+            >
+              <span className={styles.itemIcon}>
+                {confirmed ? <Check size={15} weight="bold" /> : item.icon}
+              </span>
+              <span>{confirmed && item.confirmLabel ? item.confirmLabel : item.label}</span>
+            </button>
+          );
+        })}
       </div>
     ) : null;
 

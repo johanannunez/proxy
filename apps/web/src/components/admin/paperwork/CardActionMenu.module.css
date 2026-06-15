@@ -98,6 +98,16 @@
   color: inherit;
 }
 
+.itemConfirmed,
+.itemConfirmed .itemIcon {
+  color: var(--color-success, #16a34a);
+}
+.itemConfirmed:hover,
+.itemConfirmed:focus-visible {
+  background: rgba(22, 163, 74, 0.08);
+  color: var(--color-success, #16a34a);
+}
+
 .itemDanger {
   color: var(--color-error, #dc2626);
 }

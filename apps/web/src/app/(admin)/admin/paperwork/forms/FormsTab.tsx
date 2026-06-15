@@ -333,6 +333,7 @@ function FormCardItem({
   if (form.is_active && form.slug) {
     menuItems.push({
       label: "Copy share link",
+      confirmLabel: "Link copied",
       icon: <LinkSimple size={15} weight="bold" />,
       onSelect: copyLink,
     });
