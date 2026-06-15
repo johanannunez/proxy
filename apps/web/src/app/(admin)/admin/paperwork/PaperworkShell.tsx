@@ -104,11 +104,15 @@ export function PaperworkShell({
       return;
     }
 
-    // Blank or AI form → create the master, then drop into its builder.
+    // Blank or AI form → create the master, then drop into its builder. Throw on
+    // failure so the gallery's catch surfaces the error instead of silently
+    // re-enabling Create with no feedback.
     setRoutingForm(true);
     try {
       const result = await createFormAction(orgId, "Untitled Form");
-      if (!result.ok || !result.data?.id) return;
+      if (!result.ok || !result.data?.id) {
+        throw new Error(result.ok ? "Could not create the form." : result.error);
+      }
       const suffix = choice.selection === "ai" ? "?ai=1" : "";
       router.push(`/admin/paperwork/templates/${result.data.id}${suffix}`);
       setGalleryOpen(false);
@@ -199,7 +203,6 @@ export function PaperworkShell({
 
       <TemplateGallery
         open={galleryOpen}
-        orgId={orgId}
         initialKind={galleryKind}
         onClose={() => setGalleryOpen(false)}
         onCreate={handleGalleryCreate}

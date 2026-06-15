@@ -83,7 +83,7 @@ export function ActivityTable({
               key={r.id}
               className={styles.row}
               onClick={r.onOpen}
-              aria-label={`${r.doc} for ${r.who} — ${r.status.label}. Open details.`}
+              aria-label={`${r.doc} for ${r.who}: ${r.status.label}. Open details.`}
             >
               <span className={styles.colDoc}>
                 <span className={styles.docIcon} aria-hidden>

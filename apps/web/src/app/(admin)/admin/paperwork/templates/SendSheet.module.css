@@ -273,15 +273,17 @@
   gap: 2px;
 }
 
+/* The mock surfaces are a fixed-white preview of what the client receives, so
+   their text uses fixed inks (not theme tokens) to stay legible in dark mode. */
 .emailMockMetaRow {
   display: flex;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--text-secondary, var(--color-text-secondary));
+  color: #64748b;
 }
 
 .emailMockMetaLabel {
-  color: var(--text-tertiary);
+  color: #94a3b8;
   width: 38px;
   flex-shrink: 0;
 }
@@ -289,7 +291,7 @@
 .emailMockSubject {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, var(--color-text-primary));
+  color: #0f172a;
   margin-top: 4px;
 }
 
@@ -355,12 +357,12 @@
 .portalCardTitle {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, var(--color-text-primary));
+  color: #0f172a;
 }
 
 .portalCardSub {
   font-size: 11.5px;
-  color: var(--text-secondary, var(--color-text-secondary));
+  color: #64748b;
 }
 
 .portalCardCta {

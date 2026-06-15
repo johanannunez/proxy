@@ -22,6 +22,7 @@ import { PenNib, PaperPlaneTilt } from "@phosphor-icons/react";
 import {
   SECURE_DOC_TYPES,
   avatarColor,
+  fmtShortDate,
   type DocHubOwner,
   type SecureDocKey,
 } from "@/lib/admin/documents-hub-shared";
@@ -61,13 +62,6 @@ const STATUS_OPTIONS = [
   { value: "viewed", label: "Viewed" },
   { value: "signed", label: "Signed" },
 ];
-
-/** Format an ISO string as "Jun 14" (short month + day), or "—" when null. */
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
 
 export function SignaturesHub({
   owners,
@@ -140,9 +134,9 @@ export function SignaturesHub({
         who: owner.fullName,
         whoColor: avatarColor(owner.fullName),
         status,
-        sent: fmtDate(latest?.sentAt ?? null),
-        seen: latest?.viewedAt ? fmtDate(latest.viewedAt) : null,
-        last: latest?.signedAt ? fmtDate(latest.signedAt) : "—",
+        sent: fmtShortDate(latest?.sentAt ?? null),
+        seen: latest?.viewedAt ? fmtShortDate(latest.viewedAt) : null,
+        last: latest?.signedAt ? fmtShortDate(latest.signedAt) : "—",
         onOpen: () => setDrawerEntry({ owner, docKey: key }),
       });
     }

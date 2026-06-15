@@ -17,6 +17,11 @@
   border-color: color-mix(in srgb, var(--color-brand, #1b77be) 28%, var(--border-card, #e5e7eb));
 }
 
+.pickCard:active,
+.cardBody:active {
+  transform: translateY(0);
+}
+
 /* Selection card (gallery): the whole card is one button. */
 .pickCard {
   gap: 9px;

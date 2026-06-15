@@ -32,6 +32,17 @@
 .subTab:hover {
   color: var(--text-primary, #1a1a1a);
 }
+.subTab:active,
+.viewToggle button:active {
+  transform: scale(0.97);
+}
+.subTab:focus-visible,
+.viewToggle button:focus-visible,
+.crossLink:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 2px;
+  border-radius: 7px;
+}
 .subTabActive {
   background: var(--surface-base, #fff);
   color: var(--text-primary, #1a1a1a);

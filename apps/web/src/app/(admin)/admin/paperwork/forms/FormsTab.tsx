@@ -32,7 +32,6 @@ import { resolveFormAppearance, FormGlyph } from "./form-icon";
 import type { Form } from "@/lib/admin/forms-types";
 import {
   fmtShortDate,
-  fmtDate,
   avatarColor,
 } from "@/lib/admin/documents-hub-shared";
 import type { UnifiedFormResponse } from "@/lib/admin/responses-csv";
@@ -66,13 +65,13 @@ import styles from "./FormsTab.module.css";
 
 type FormListItem = Form & { response_count: number };
 
-export type LibraryTemplate = {
+type LibraryTemplate = {
   id: string;
   name: string;
   description: string | null;
 };
 
-export type FormActivityRow = UnifiedFormResponse;
+type FormActivityRow = UnifiedFormResponse;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -98,8 +97,8 @@ function toUnifiedTemplate(form: FormListItem): UnifiedTemplate {
     previewImageUrl: null,
     sentCount: 0,
     responseCount: form.response_count,
-    fieldCount: form.schema.fields.length,
-    previewFields: form.schema.fields
+    fieldCount: form.schema?.fields?.length ?? 0,
+    previewFields: (form.schema?.fields ?? [])
       .slice(0, 6)
       .map((field) => ({ label: field.label, type: field.type })),
     slug: form.slug,
@@ -316,7 +315,8 @@ function FormCardItem({
     fg: a.fg,
   };
 
-  const metaText = `${form.schema.fields.length} question${form.schema.fields.length === 1 ? "" : "s"} · ${form.response_count} ${form.response_count === 1 ? "response" : "responses"}`;
+  const qCount = form.schema?.fields?.length ?? 0;
+  const metaText = `${qCount} question${qCount === 1 ? "" : "s"} · ${form.response_count} ${form.response_count === 1 ? "response" : "responses"}`;
 
   const badge = !form.is_active ? "Draft" : undefined;
 
@@ -438,19 +438,21 @@ export function FormsTab({
     return rows.map((r) => {
       const formAppearance = resolveFormAppearance({ id: r.form_id, icon: null, icon_color: null });
       const who = r.respondent_name ?? "Anonymous";
-      const isSubmitted = !!r.submitted_at;
+      // completed_at is the true submission signal; submitted_at is the row's
+      // creation time (NOT NULL DEFAULT now()) and only marks when we received it.
+      const isComplete = r.completed_at !== null;
       return {
         id: r.id,
         doc: r.form_name,
         glyph: <FormGlyph appearance={formAppearance} size={14} />,
         who,
         whoColor: avatarColor(who),
-        status: isSubmitted
+        status: isComplete
           ? { label: "Submitted", tone: "complete" as const }
           : { label: "Started", tone: "draft" as const },
-        sent: fmtDate(r.submitted_at ?? r.completed_at),
+        sent: fmtShortDate(r.submitted_at),
         seen: null,
-        last: fmtDate(r.submitted_at),
+        last: r.completed_at ? fmtShortDate(r.completed_at) : "—",
         onOpen: () => router.push(`/admin/paperwork/templates/${r.form_id}?tab=responses`),
       };
     });
@@ -578,7 +580,7 @@ export function FormsTab({
               <FileDashed size={40} weight="duotone" />
               <p className={styles.emptyTitle}>No forms yet</p>
               <p className={styles.emptyBody}>
-                Use the New document button to build your first form. Drag and drop
+                Use the New form button to build your first form. Drag and drop
                 questions, then share a link or send it out.
               </p>
               {library.length > 0 ? (
@@ -686,7 +688,7 @@ export function FormsTab({
         <ActivityTable
           rows={activityRows}
           hideSeen
-          sentLabel="Started"
+          sentLabel="Received"
           lastLabel="Submitted"
           filters={activityFilters}
           emptyText={

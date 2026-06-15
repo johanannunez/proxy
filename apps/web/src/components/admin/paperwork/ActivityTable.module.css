@@ -63,6 +63,9 @@
 .row:hover {
   background: var(--dash-row-alt, rgba(0, 0, 0, 0.025));
 }
+.row:active {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 7%, transparent);
+}
 .row:focus-visible {
   outline: 2px solid var(--color-brand, #1b77be);
   outline-offset: -2px;
@@ -139,8 +142,8 @@
   background: currentColor;
 }
 .st_awaiting {
-  color: #b27908;
-  background: color-mix(in srgb, #b27908 12%, transparent);
+  color: var(--status-warning-fg, #b45309);
+  background: color-mix(in srgb, var(--status-warning, #d97706) 12%, transparent);
 }
 .st_complete {
   color: var(--color-success, #16a34a);

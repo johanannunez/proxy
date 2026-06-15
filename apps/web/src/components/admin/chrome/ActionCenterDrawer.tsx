@@ -659,6 +659,9 @@ export function ActionCenterDrawer() {
                     collapsed={!!collapsed.expiring}
                     onToggle={toggleSection}
                   >
+                    {/* Honest empty state: the expiry engine (deferred wave) will
+                        populate `expiring`, at which point this renders its own
+                        card type. Count stays 0 until then, so it cannot disagree. */}
                     <p className={styles.sectionEmpty}>
                       Nothing inside its renewal window. Cards, insurance, permits,
                       and IDs will appear here before they lapse.

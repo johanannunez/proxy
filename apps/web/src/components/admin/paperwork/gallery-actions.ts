@@ -6,9 +6,11 @@
  * DocuSeal/schema payloads. Admin-gated; reads the caller's org only.
  */
 
+import { headers } from "next/headers";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { listDocumentTemplates } from "@/lib/admin/document-templates";
 import { listForms } from "@/lib/admin/forms";
+import { PROXY_ORG_ID } from "@/types/organizations";
 
 export type GallerySignature = {
   id: string;
@@ -36,8 +38,11 @@ export type GalleryData = {
   forms: GalleryForm[];
 };
 
-export async function loadGalleryData(orgId: string): Promise<GalleryData> {
+export async function loadGalleryData(): Promise<GalleryData> {
   await requireAdminUser();
+  // Resolve the org from the trusted request header, never from the client,
+  // so the modal can only ever read the caller's own org.
+  const orgId = (await headers()).get("x-org-id") ?? PROXY_ORG_ID;
 
   const [templates, forms] = await Promise.all([
     listDocumentTemplates(orgId),

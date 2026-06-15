@@ -5,6 +5,7 @@ import {
   listTemplateSendCounts,
 } from "@/lib/admin/document-templates";
 import { fetchDocumentsHubData } from "@/lib/admin/documents-hub";
+import { fetchActionQueue } from "@/lib/admin/action-queue";
 import { getTemplatePreviewUrl } from "@/lib/signing/docuseal";
 import { SECURE_DOC_TYPES, type SecureDocKey } from "@/lib/admin/documents-hub-shared";
 import { PROXY_ORG_ID } from "@/types/organizations";
@@ -28,10 +29,11 @@ export default async function SignaturesPage() {
   const headerList = await headers();
   const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
 
-  const [signatureTemplates, sendCounts, owners] = await Promise.all([
+  const [signatureTemplates, sendCounts, owners, actionQueue] = await Promise.all([
     listDocumentTemplates(),
     listTemplateSendCounts(),
     fetchDocumentsHubData(),
+    fetchActionQueue(),
   ]);
 
   // First-page preview images from DocuSeal (small leading thumbnails).
@@ -76,7 +78,7 @@ export default async function SignaturesPage() {
     }));
 
   return (
-    <PaperworkShell active="signatures" orgId={orgId}>
+    <PaperworkShell active="signatures" orgId={orgId} actionCount={actionQueue.length}>
       <SignaturesHub owners={owners} templates={unified} recipients={recipients} />
     </PaperworkShell>
   );

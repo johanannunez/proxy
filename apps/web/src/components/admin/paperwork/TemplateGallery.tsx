@@ -65,14 +65,12 @@ function titleize(value: string): string {
 
 export function TemplateGallery({
   open,
-  orgId,
   initialKind,
   onClose,
   onCreate,
   initialData,
 }: {
   open: boolean;
-  orgId: string;
   initialKind?: GalleryKind | null;
   onClose: () => void;
   onCreate: (choice: CreateChoice) => void | Promise<void>;
@@ -102,19 +100,20 @@ export function TemplateGallery({
     setError(null);
   }, [open, initialKind]);
 
-  // Lazy-load templates + forms on open (unless data was supplied).
+  // Lazy-load templates + forms on open (unless data was supplied). The action
+  // resolves the org from the trusted server header, so no orgId is passed.
   useEffect(() => {
     if (!open || initialData) return;
     let alive = true;
     setLoading(true);
-    loadGalleryData(orgId)
+    loadGalleryData()
       .then((d) => alive && setData(d))
       .catch(() => alive && setError("Could not load your templates. Try again."))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [open, orgId, initialData]);
+  }, [open, initialData]);
 
   // Escape closes (unless a create is in flight).
   useEffect(() => {
@@ -305,38 +304,35 @@ export function TemplateGallery({
                   </div>
                 </div>
 
-                {/* Start fresh */}
-                {cat === "all" && (
-                  <>
-                    <p className={styles.groupLabel}>Start fresh</p>
-                    <div className={styles.grid}>
-                      <button
-                        type="button"
-                        className={`${styles.startCard} ${selected === "blank" ? styles.cardSelected : ""}`}
-                        onClick={() => setSelected("blank")}
-                        aria-pressed={selected === "blank"}
-                      >
-                        <span className={styles.startPreview}>
-                          <Plus size={22} weight="bold" />
-                        </span>
-                        <span className={styles.startName}>Blank</span>
-                      </button>
-                      {showAi && (
-                        <button
-                          type="button"
-                          className={`${styles.startCard} ${selected === "ai" ? styles.cardSelected : ""}`}
-                          onClick={() => setSelected("ai")}
-                          aria-pressed={selected === "ai"}
-                        >
-                          <span className={`${styles.startPreview} ${styles.aiPreview}`}>
-                            <Sparkle size={22} weight="fill" />
-                          </span>
-                          <span className={styles.startName}>Generate with AI</span>
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
+                {/* Start fresh — always available so a hidden Blank/AI selection
+                    can never get stranded behind a category filter. */}
+                <p className={styles.groupLabel}>Start fresh</p>
+                <div className={styles.grid}>
+                  <button
+                    type="button"
+                    className={`${styles.startCard} ${selected === "blank" ? styles.cardSelected : ""}`}
+                    onClick={() => setSelected("blank")}
+                    aria-pressed={selected === "blank"}
+                  >
+                    <span className={styles.startPreview}>
+                      <Plus size={22} weight="bold" />
+                    </span>
+                    <span className={styles.startName}>Blank</span>
+                  </button>
+                  {showAi && (
+                    <button
+                      type="button"
+                      className={`${styles.startCard} ${selected === "ai" ? styles.cardSelected : ""}`}
+                      onClick={() => setSelected("ai")}
+                      aria-pressed={selected === "ai"}
+                    >
+                      <span className={`${styles.startPreview} ${styles.aiPreview}`}>
+                        <Sparkle size={22} weight="fill" />
+                      </span>
+                      <span className={styles.startName}>Generate with AI</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* Body states */}
                 {loading ? (

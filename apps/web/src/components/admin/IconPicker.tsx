@@ -14,13 +14,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
+import { ICON_BY_NAME, type IconValue } from "./icon-picker-data";
 import {
   PHOSPHOR_ICONS,
   EMOJI_GROUPS,
   ALL_EMOJIS,
-  ICON_BY_NAME,
-  type IconValue,
-} from "./icon-picker-data";
+} from "./icon-picker-catalog";
 import styles from "./IconPicker.module.css";
 
 export type { IconValue } from "./icon-picker-data";
@@ -74,8 +73,10 @@ export function IconPicker({
     if (!el) return;
     const r = el.getBoundingClientRect();
     const PANEL_W = 332;
-    const left = Math.min(r.left, window.innerWidth - PANEL_W - 16);
-    setCoords({ top: r.bottom + 8, left: Math.max(16, left) });
+    const left = Math.max(16, Math.min(r.left, window.innerWidth - PANEL_W - 16));
+    const top = r.bottom + 8;
+    // Skip the state update (and portal re-render) when nothing moved.
+    setCoords((prev) => (prev && prev.top === top && prev.left === left ? prev : { top, left }));
   }
 
   function openPicker() {
