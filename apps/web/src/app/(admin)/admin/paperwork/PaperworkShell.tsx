@@ -158,6 +158,12 @@ export function PaperworkShell({
             <button
               type="button"
               className={`${styles.actionCenterBtn} ${actionCount > 0 ? styles.actionCenterBtnActive : ""}`}
+              onPointerEnter={() =>
+                window.dispatchEvent(new CustomEvent("admin:action-center-prefetch"))
+              }
+              onFocus={() =>
+                window.dispatchEvent(new CustomEvent("admin:action-center-prefetch"))
+              }
               onClick={() =>
                 window.dispatchEvent(new CustomEvent("admin:action-center-toggle"))
               }

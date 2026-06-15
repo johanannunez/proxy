@@ -128,12 +128,17 @@ function asText(v: unknown): string | null {
 
 /* ─── Main data fetcher ─── */
 
-export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
+export async function fetchDocumentsHubData(
+  opts?: { profileIds?: string[] },
+): Promise<DocHubOwner[]> {
   const supabase = await createClient();
   const db = untypedDatabase(supabase);
 
-  // 1. All active/onboarding contacts with profile info and property count
-  const { data: contacts, error: contactsErr } = await db
+  // 1. Active/onboarding contacts with profile info and property count. When
+  //    `profileIds` is provided (the Action Center only needs the handful of
+  //    owners in the queue), scope the whole fetch to them instead of loading
+  //    every owner and their documents and then discarding ~99% of it.
+  let contactsQuery = db
     .from<ContactRow[]>("contacts")
     .select(`
       id,
@@ -144,8 +149,14 @@ export async function fetchDocumentsHubData(): Promise<DocHubOwner[]> {
       avatar_url,
       property_count:properties!properties_contact_id_fkey(count)
     `)
-    .in("lifecycle_stage", ["active_owner", "onboarding", "qualified", "paused"])
-    .order("full_name");
+    .in("lifecycle_stage", ["active_owner", "onboarding", "qualified", "paused"]);
+
+  if (opts?.profileIds) {
+    if (opts.profileIds.length === 0) return [];
+    contactsQuery = contactsQuery.in("profile_id", opts.profileIds);
+  }
+
+  const { data: contacts, error: contactsErr } = await contactsQuery.order("full_name");
 
   if (contactsErr) {
     console.error("[documents-hub] contacts fetch error:", contactsErr.message);

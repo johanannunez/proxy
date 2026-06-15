@@ -58,10 +58,16 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [queue, owners] = await Promise.all([
-    fetchActionQueue(),
-    fetchDocumentsHubData(),
-  ]);
+  // The queue is small (single RPC). Scope the heavy owner fetch to just the
+  // owners it references rather than loading the entire owner base.
+  const queue = await fetchActionQueue();
+  const queueProfileIds = [
+    ...new Set(queue.map((i) => i.owner_id).filter((id): id is string => Boolean(id))),
+  ];
+  const owners =
+    queueProfileIds.length > 0
+      ? await fetchDocumentsHubData({ profileIds: queueProfileIds })
+      : [];
 
   const ownersByProfileId = new Map(
     owners

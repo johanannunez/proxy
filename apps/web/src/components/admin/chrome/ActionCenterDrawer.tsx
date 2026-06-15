@@ -11,7 +11,7 @@
  * Portal + event-toggle pattern mirrors NotificationPopover.
  */
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -394,7 +394,12 @@ export function ActionCenterDrawer() {
 
   useEffect(() => setMounted(true), []);
 
+  // Tracks whether we've already pulled the queue once, so an intent-prefetch
+  // (hover/focus on the trigger) only fires the request a single time.
+  const fetchedRef = useRef(false);
+
   const fetchData = useCallback(async () => {
+    fetchedRef.current = true;
     setLoading(true);
     try {
       const res = await fetch("/api/admin/action-center");
@@ -404,7 +409,8 @@ export function ActionCenterDrawer() {
     }
   }, []);
 
-  /* Toggle from the Status Board header pill. */
+  /* Toggle from the Status Board header pill. Prefetched data (if any) shows
+     immediately while this refresh runs silently in the background. */
   useEffect(() => {
     const toggle = () => {
       setOpen((prev) => {
@@ -417,6 +423,16 @@ export function ActionCenterDrawer() {
     };
     window.addEventListener("admin:action-center-toggle", toggle);
     return () => window.removeEventListener("admin:action-center-toggle", toggle);
+  }, [fetchData]);
+
+  /* Intent-based prefetch: the trigger dispatches this on hover/focus so the
+     queue is warm by the time it's clicked. Fires the fetch at most once. */
+  useEffect(() => {
+    const prefetch = () => {
+      if (!fetchedRef.current) fetchData();
+    };
+    window.addEventListener("admin:action-center-prefetch", prefetch);
+    return () => window.removeEventListener("admin:action-center-prefetch", prefetch);
   }, [fetchData]);
 
   /* Escape closes. */
@@ -605,7 +621,7 @@ export function ActionCenterDrawer() {
             )}
 
             <div className={styles.body}>
-              {loading ? (
+              {loading && !data ? (
                 <div className={styles.loadingStack}>
                   <div className={styles.shimmer} />
                   <div className={styles.shimmer} />
