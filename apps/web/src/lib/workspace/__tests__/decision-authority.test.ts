@@ -34,6 +34,10 @@ vi.mock("@/lib/supabase/server", () => ({
   ),
 }));
 
+vi.mock("@/lib/supabase/service", () => ({
+  createServiceClient: vi.fn(() => ({ from: mockFrom })),
+}));
+
 import {
   getActiveWorkspaceAuthority,
   getCurrentWorkspaceAuthority,

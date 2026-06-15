@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 import type {
   WorkspaceAuthority,
@@ -52,8 +53,9 @@ export async function getCurrentWorkspaceAuthority(
 
 /** Returns all profiles that belong to this workspace. */
 export async function getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]> {
-  const supabase = await createClient();
-  const db = untypedDatabase(supabase);
+  // Must use service client: profiles RLS restricts users to seeing only their own row.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = untypedDatabase(createServiceClient() as any);
   const { data, error } = await db
     .from("profiles")
     .select("id, full_name, email, avatar_url")
