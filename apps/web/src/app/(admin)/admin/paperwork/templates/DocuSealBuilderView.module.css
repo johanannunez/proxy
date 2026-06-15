@@ -182,6 +182,11 @@
 
 .builderArea {
   flex: 1;
+  /* The builder no longer lives inside a 100vh wrapper (its toolbar moved to
+     the page tab bar), so anchor an explicit height to the viewport minus the
+     admin chrome + tab row above it. */
+  height: calc(100vh - 200px);
+  min-height: 520px;
   overflow: hidden;
   position: relative;
 }

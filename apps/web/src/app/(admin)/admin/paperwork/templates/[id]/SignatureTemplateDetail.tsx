@@ -400,7 +400,7 @@ function SignatureSettings({
         setError(res.error ?? "Could not remove the template.");
         return;
       }
-      router.push("/admin/paperwork/templates");
+      router.push("/admin/paperwork/signatures");
       router.refresh();
     });
   }
@@ -560,18 +560,44 @@ export function SignatureTemplateDetail({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>(initialTab);
+  const [name, setName] = useState(template.display_name);
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(template.display_name);
+  const [savingName, setSavingName] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
-  async function handleBuilderSave(): Promise<{ ok: boolean; error?: string }> {
-    const result = await activateTemplate(template.id);
-    // Activation can be refused by the readiness gate (a signer has no field).
-    // Return the result so the builder shows the message inline; only navigate
-    // on success. Do NOT call router.refresh() here: refreshing the current
-    // route races the push and cancels the navigation, leaving the builder
-    // stuck on "Finishing…". The library is force-dynamic and refetches itself.
-    if (result.ok) {
-      router.push("/admin/paperwork/templates");
+  // The document name is the single source of truth (display_name). Editing it
+  // here pushes the new name into DocuSeal so the document name matches.
+  async function saveName() {
+    const next = draftName.trim();
+    if (!next || next === name) {
+      setEditingName(false);
+      return;
     }
-    return result;
+    setSavingName(true);
+    const res = await updateTemplateMeta(template.id, { display_name: next });
+    setSavingName(false);
+    if (res.ok) {
+      setName(next);
+      setEditingName(false);
+      router.refresh();
+    }
+  }
+
+  async function handleDone() {
+    setFinishing(true);
+    setFinishError(null);
+    // The readiness gate can refuse activation (a signer has no field). Do NOT
+    // call router.refresh() after push: it races the navigation. The library is
+    // force-dynamic and refetches itself.
+    const result = await activateTemplate(template.id);
+    if (!result.ok) {
+      setFinishError(result.error ?? "Could not finish. Try again.");
+      setFinishing(false);
+      return;
+    }
+    router.push("/admin/paperwork/signatures");
   }
 
   const tabs: Array<{ key: TabKey; label: string }> = [
@@ -586,9 +612,9 @@ export function SignatureTemplateDetail({
         role="tablist"
         aria-label={`${template.display_name} sections`}
       >
-        <Link href="/admin/paperwork/templates" className={styles.crumb}>
+        <Link href="/admin/paperwork/signatures" className={styles.crumb}>
           <ArrowLeft size={13} weight="bold" />
-          Templates
+          Signatures
         </Link>
         {tabs.map((t) => (
           <button
@@ -609,7 +635,75 @@ export function SignatureTemplateDetail({
             )}
           </button>
         ))}
+
+        {tab === "fields" && template.docuseal_template_id && (
+          <div className={styles.builderTools}>
+            {editingName ? (
+              <span className={styles.nameEdit}>
+                <input
+                  className={styles.nameInput}
+                  value={draftName}
+                  autoFocus
+                  disabled={savingName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveName();
+                    if (e.key === "Escape") {
+                      setDraftName(name);
+                      setEditingName(false);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className={styles.nameAction}
+                  onClick={saveName}
+                  disabled={savingName}
+                  aria-label="Save name"
+                >
+                  <Check size={14} weight="bold" />
+                </button>
+                <button
+                  type="button"
+                  className={styles.nameAction}
+                  onClick={() => {
+                    setDraftName(name);
+                    setEditingName(false);
+                  }}
+                  aria-label="Cancel"
+                >
+                  <X size={14} weight="bold" />
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                className={styles.nameButton}
+                onClick={() => {
+                  setDraftName(name);
+                  setEditingName(true);
+                }}
+                title="Rename document"
+              >
+                <span className={styles.nameText}>{name}</span>
+                <PencilSimple size={13} weight="bold" className={styles.namePencil} />
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.doneBtn}
+              onClick={handleDone}
+              disabled={finishing}
+            >
+              {finishing ? "Finishing…" : "Done"}
+            </button>
+          </div>
+        )}
       </div>
+
+      {finishError && tab === "fields" && (
+        <p className={styles.builderError}>{finishError}</p>
+      )}
 
       <div className={styles.content}>
         {tab === "fields" &&
@@ -617,9 +711,6 @@ export function SignatureTemplateDetail({
             <DocuSealBuilderView
               templateId={template.docuseal_template_id}
               dbTemplateId={template.id}
-              templateName={template.display_name}
-              onSave={handleBuilderSave}
-              onBack={() => router.push("/admin/paperwork/templates")}
             />
           ) : (
             <div className={styles.builderEmpty}>

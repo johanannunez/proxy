@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, PencilSimple, X } from "@phosphor-icons/react";
-import {
-  pushTemplateNameToDocuSeal,
-  updateTemplateMeta,
-} from "./template-actions";
+import { pushTemplateNameToDocuSeal } from "./template-actions";
 import styles from "./DocuSealBuilderView.module.css";
 
 declare module "react" {
@@ -29,52 +25,22 @@ declare module "react" {
 type Props = {
   templateId: number;
   dbTemplateId: string;
-  templateName: string;
-  onSave: () => Promise<{ ok: boolean; error?: string } | void>;
-  onBack: () => void;
 };
 
-export function DocuSealBuilderView({
-  templateId,
-  dbTemplateId,
-  templateName,
-  onSave,
-  onBack,
-}: Props) {
+/**
+ * Pure builder canvas. The toolbar (document name, Done) lives in the page's
+ * single tab-bar row; this component only loads and renders the embedded
+ * DocuSeal field builder.
+ */
+export function DocuSealBuilderView({ templateId, dbTemplateId }: Props) {
   const [session, setSession] = useState<{ token: string; host: string } | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [finishError, setFinishError] = useState<string | null>(null);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
-  const [finishing, setFinishing] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  // The document name is one thing shown in two places (our header + DocuSeal's
-  // inline editor). Local state lets the header live-update when a rename inside
-  // the builder is pulled back.
-  const [name, setName] = useState(templateName);
-  const [editingName, setEditingName] = useState(false);
-  const [draftName, setDraftName] = useState(templateName);
-  const [savingName, setSavingName] = useState(false);
   const builderRef = useRef<HTMLElement>(null);
-
-  async function saveName() {
-    const next = draftName.trim();
-    if (!next || next === name) {
-      setEditingName(false);
-      return;
-    }
-    setSavingName(true);
-    // Our display_name is the single source of truth; this updates it and
-    // pushes the new name into DocuSeal so the document name matches everywhere.
-    const res = await updateTemplateMeta(dbTemplateId, { display_name: next });
-    setSavingName(false);
-    if (res.ok) {
-      setName(next);
-      setEditingName(false);
-    }
-  }
 
   useEffect(() => {
     let cancelled = false;
+    setFetchError(null);
     fetch(`/api/admin/docuseal/builder-session?templateId=${templateId}`, {
       // Bail out if the session never comes back so the builder shows a clear
       // error and a retry instead of spinning on its loading state forever.
@@ -117,163 +83,43 @@ export function DocuSealBuilderView({
   }, [session]);
 
   // Reconcile the document name in our favor when the builder opens: push our
-  // display_name into DocuSeal so its inline name matches our chrome.
+  // display_name into DocuSeal so the document name matches our chrome.
   useEffect(() => {
     if (!session) return;
     void pushTemplateNameToDocuSeal(dbTemplateId);
   }, [session, dbTemplateId]);
 
-  // DocuSeal autosaves on every change and fires "save" each time. We do NOT
-  // navigate on autosave (that was the endless-saving bug); we just show a
-  // transient "Saved" indicator. The document name is owned by our display_name
-  // (single source of truth), so we do not read DocuSeal's inline name back.
-  useEffect(() => {
-    const el = builderRef.current;
-    if (!el || !session) return;
-    const handler = () => setSavedAt(Date.now());
-    el.addEventListener("save", handler);
-    return () => el.removeEventListener("save", handler);
-  }, [session]);
-
-  async function handleFinish() {
-    setFinishing(true);
-    setFinishError(null);
-    try {
-      const result = await onSave();
-      // Readiness gate can refuse activation (a signer has no field). Surface
-      // its message inline and re-enable the button so the admin can fix it.
-      if (result && result.ok === false) {
-        setFinishError(result.error ?? "Could not finish. Try again.");
-        setFinishing(false);
-        return;
-      }
-      // On success, onSave navigates away; leave the button in its finishing
-      // state so it doesn't flash back before the route changes.
-    } catch {
-      // Never leave the button stuck on "Finishing…" if activation throws.
-      setFinishError("Could not finish. Try again.");
-      setFinishing(false);
-    }
-  }
-
   return (
-    <div className={styles.root}>
-      <div className={styles.header}>
-        <button type="button" className={styles.backBtn} onClick={onBack}>
-          <ArrowLeft size={15} weight="bold" />
-          <span>Back</span>
-        </button>
-        <div className={styles.headerCenter}>
-          {editingName ? (
-            <span className={styles.nameEdit}>
-              <input
-                className={styles.nameInput}
-                value={draftName}
-                autoFocus
-                disabled={savingName}
-                onChange={(e) => setDraftName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") saveName();
-                  if (e.key === "Escape") {
-                    setDraftName(name);
-                    setEditingName(false);
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className={styles.nameAction}
-                onClick={saveName}
-                disabled={savingName}
-                aria-label="Save name"
-              >
-                <Check size={14} weight="bold" />
-              </button>
-              <button
-                type="button"
-                className={styles.nameAction}
-                onClick={() => {
-                  setDraftName(name);
-                  setEditingName(false);
-                }}
-                aria-label="Cancel"
-              >
-                <X size={14} weight="bold" />
-              </button>
-            </span>
-          ) : (
-            <button
-              type="button"
-              className={styles.nameButton}
-              onClick={() => {
-                setDraftName(name);
-                setEditingName(true);
-              }}
-              title="Rename document"
-            >
-              <span className={styles.title}>{name}</span>
-              <PencilSimple size={14} weight="bold" className={styles.namePencil} />
-            </button>
-          )}
-          <span className={styles.hint}>Drag fields onto the document. Changes save automatically.</span>
-        </div>
-        <div className={styles.headerRight}>
-          {savedAt !== null && !finishing && (
-            <span className={styles.savedPill}>
-              <Check size={12} weight="bold" />
-              Saved
-            </span>
-          )}
+    <div className={styles.builderArea}>
+      {fetchError && (
+        <div className={styles.error}>
+          <p className={styles.errorText}>{fetchError}</p>
           <button
             type="button"
-            className={styles.doneBtn}
-            onClick={handleFinish}
-            disabled={finishing}
+            className={styles.retryBtn}
+            onClick={() => setReloadKey((k) => k + 1)}
           >
-            {finishing ? "Finishing…" : "Done"}
+            Retry
           </button>
         </div>
-      </div>
-
-      <div className={styles.builderArea}>
-        {fetchError && (
-          <div className={styles.error} style={{ flexDirection: "column", gap: 14, textAlign: "center", padding: "0 24px" }}>
-            <p style={{ maxWidth: 460 }}>{fetchError}</p>
-            <button
-              type="button"
-              className={styles.doneBtn}
-              onClick={() => {
-                setFetchError(null);
-                setReloadKey((k) => k + 1);
-              }}
-            >
-              Retry
-            </button>
-          </div>
-        )}
-        {finishError && <p className={styles.error}>{finishError}</p>}
-        {!session && !fetchError && (
-          <div className={styles.loading}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/brand/logo-mark-v2.png"
-              alt="Loading"
-              className={styles.loadingLogo}
-            />
-          </div>
-        )}
-        {session && (
-          // Web component attributes are data-token / data-host (NOT token /
-          // host). The template to open is carried inside the JWT payload.
-          // data-with-title hides DocuSeal's own document-title editor so the
-          // name can only be changed in our editor (single source of truth).
-          <docuseal-builder
-            ref={builderRef}
-            data-token={session.token}
-            data-with-title="false"
-          />
-        )}
-      </div>
+      )}
+      {!session && !fetchError && (
+        <div className={styles.loading}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-mark-v2.png" alt="Loading" className={styles.loadingLogo} />
+        </div>
+      )}
+      {session && (
+        // Web component attributes are data-token / data-host (NOT token /
+        // host). The template to open is carried inside the JWT payload.
+        // data-with-title hides DocuSeal's own document-title editor so the
+        // name can only be changed in our editor (single source of truth).
+        <docuseal-builder
+          ref={builderRef}
+          data-token={session.token}
+          data-with-title="false"
+        />
+      )}
     </div>
   );
 }

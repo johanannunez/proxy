@@ -53,7 +53,7 @@ export async function sendTemplateToOwners(
   }
 
   revalidatePath("/admin/paperwork");
-  revalidatePath("/admin/paperwork/templates");
+  revalidatePath("/admin/paperwork/signatures");
 
   if (sent === 0) {
     return { ok: false, sent: 0, error: firstError ?? "Nothing was sent." };

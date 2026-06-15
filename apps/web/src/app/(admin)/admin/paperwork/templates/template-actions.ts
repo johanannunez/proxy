@@ -264,7 +264,7 @@ export async function pullTemplateNameFromDocuSeal(
     return { name: template.display_name };
   }
   await updateDocumentTemplateRecord(id, { display_name: trimmed });
-  revalidatePath("/admin/paperwork/templates");
+  revalidatePath("/admin/paperwork/signatures");
   revalidatePath(`/admin/paperwork/templates/${id}`);
   return { name: trimmed };
 }
@@ -337,14 +337,14 @@ export async function updateTemplateMeta(
     await renameDocuSealTemplate(template.docuseal_template_id, update.display_name);
   }
 
-  revalidatePath("/admin/paperwork/templates");
+  revalidatePath("/admin/paperwork/signatures");
   revalidatePath(`/admin/paperwork/templates/${id}`);
   return { ok: true };
 }
 
 /**
- * Coverage tracking (2026-06-12 IA amendment): tracked templates become
- * Coverage matrix columns, grouped by category.
+ * Status Board tracking (2026-06-14 redesign): tracked templates become
+ * Status Board columns, grouped by category.
  */
 export async function updateTemplateTracking(
   id: string,
@@ -358,7 +358,7 @@ export async function updateTemplateTracking(
     return { ok: false, error: "Could not update coverage tracking. Try again." };
   }
   revalidatePath("/admin/paperwork");
-  revalidatePath("/admin/paperwork/templates");
+  revalidatePath("/admin/paperwork/signatures");
   return { ok: true };
 }
 
@@ -391,7 +391,7 @@ export async function updateTemplateSettings(
   const ok = await updateDocumentTemplateRecord(id, { settings: next });
   if (!ok) return { ok: false, error: "Could not save these settings. Try again." };
 
-  revalidatePath("/admin/paperwork/templates");
+  revalidatePath("/admin/paperwork/signatures");
   revalidatePath(`/admin/paperwork/templates/${id}`);
   return { ok: true };
 }

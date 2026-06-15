@@ -1,11 +1,15 @@
 "use client";
 
 /**
- * CoverageSettingsCard — the "Track in coverage" toggle plus category select
- * shared by both template detail Settings tabs (2026-06-12 IA amendment).
- * Tracked masters become Coverage matrix columns under Documents; the
- * category groups columns (Proxy's SecureDocs/Setup layout is just this
+ * CoverageSettingsCard — the "Status Board tracking" toggle plus category
+ * select shared by both template detail Settings tabs (2026-06-14 redesign).
+ * Tracked masters become columns on the Paperwork Status Board; the category
+ * groups those columns (Proxy's SecureDocs/Setup layout is just this
  * configuration, not a hardcode).
+ *
+ * R2-A scope: the per-template scope radio (Owner/Property/Workspace — the unit
+ * of completion) is deferred to the data-model wave (E-G); only the working
+ * tracked/category controls render here.
  */
 
 import { useState, useTransition } from "react";
@@ -52,13 +56,13 @@ export function CoverageSettingsCard({
 
   return (
     <div className={styles.settingsCard}>
-      <h3 className={styles.settingsTitle}>Coverage</h3>
+      <h3 className={styles.settingsTitle}>Status Board tracking</h3>
       <div className={styles.settingRow}>
         <div className={styles.settingMeta}>
-          <span className={styles.settingLabel}>Track in coverage</span>
+          <span className={styles.settingLabel}>Track on the Status Board</span>
           <span className={styles.settingDesc}>
-            Tracked templates become columns in the Documents tab&apos;s
-            Coverage view, so you can sweep every owner at a glance.
+            Tracked templates appear as columns on the Paperwork Status Board, so
+            you can sweep every workspace at a glance.
           </span>
         </div>
         <button
@@ -76,8 +80,8 @@ export function CoverageSettingsCard({
           <div className={styles.settingMeta}>
             <span className={styles.settingLabel}>Category</span>
             <span className={styles.settingDesc}>
-              Coverage columns group by category. Uncategorized templates land
-              in a single Tracked group.
+              Status Board columns group by category. Uncategorized templates
+              land in a single Tracked group.
             </span>
           </div>
           <div style={{ minWidth: 170 }}>

@@ -1,0 +1,205 @@
+.hub {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ─── Library tab body ─── */
+
+.libBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cards grid */
+.libGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 15px;
+}
+
+/* List view */
+.libList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--dash-border, #e5e7eb);
+  overflow: hidden;
+}
+
+.libRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: var(--surface-base, #ffffff);
+  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+  transition: background-color 0.14s ease;
+}
+
+.libRow:last-child {
+  border-bottom: none;
+}
+
+.libRow:hover {
+  background: var(--dash-card-alt, #f8f7f6);
+}
+
+.libRowGlyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm, 6px);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 10%, transparent);
+  color: var(--color-brand, #1b77be);
+  flex-shrink: 0;
+}
+
+.libRowName {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.libRowMeta {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+}
+
+.libRowBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: #b27908;
+  white-space: nowrap;
+}
+
+.libRowActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.libRowOpen {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-brand, #1b77be);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 6px);
+  transition: background-color 0.14s ease;
+}
+
+.libRowOpen:hover {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 8%, transparent);
+}
+
+.libRowOpen:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand, #1b77be) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* Send button (shared: cards + list) */
+.sendBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: none;
+  background: var(--color-brand, #1b77be);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.14s ease, transform 0.14s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.sendBtn:hover {
+  opacity: 0.88;
+}
+
+.sendBtn:active {
+  transform: scale(0.97);
+}
+
+.sendBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand, #1b77be) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* ─── Activity tab filters ─── */
+
+.actFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actSearch {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--surface-base, #ffffff);
+  font-size: 12.5px;
+  color: var(--text-primary, #1a1a1a);
+  width: 180px;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.actSearch::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.actSearch:focus {
+  outline: none;
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand, #1b77be) 15%, transparent);
+}
+
+.actSelectWrap {
+  width: 148px;
+}
+
+/* ─── Empty state ─── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 22px 18px;
+  border-radius: var(--radius-md, 12px);
+  border: 1px dashed var(--dash-border, #e5e7eb);
+  background: var(--dash-card-alt, #f8f7f6);
+}
+
+.emptyTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.emptyBody {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary, #6b7280);
+  max-width: 56ch;
+}

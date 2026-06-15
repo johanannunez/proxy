@@ -1,22 +1,25 @@
 "use client";
 
 /**
- * FormAppearancePicker — lets an admin give a form a custom icon and accent
- * color. Lives on the form's Settings tab. Optimistic: the chip updates
- * instantly, the server action persists, and a refresh reconciles.
+ * FormAppearancePicker — lets an admin give a form a custom icon (emoji or a
+ * searchable Phosphor glyph) and accent color via the Notion-style IconPicker.
+ * Lives on the form's Settings tab. Optimistic: the trigger updates instantly,
+ * the server action persists, and a refresh reconciles. Legacy FormIconKeys
+ * still render in the trigger via the resolved glyph.
  */
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FORM_ICONS,
-  FORM_TINTS,
-  resolveFormAppearance,
-  type FormIconKey,
-  type FormTintKey,
-} from "./form-icon";
+import { FORM_TINTS, resolveFormAppearance, FormGlyph } from "./form-icon";
 import { updateFormAppearanceAction } from "../templates/form-actions";
+import { IconPicker, type IconValue } from "@/components/admin/IconPicker";
 import styles from "./FormAppearancePicker.module.css";
+
+function storedToValue(icon: string | null, emoji: string | null): IconValue | null {
+  if (emoji) return { kind: "emoji", value: emoji };
+  if (icon?.startsWith("ph:")) return { kind: "icon", value: icon.slice(3) };
+  return null; // legacy FormIconKey — trigger shows it via the resolved glyph
+}
 
 export function FormAppearancePicker({
   formId,
@@ -34,7 +37,7 @@ export function FormAppearancePicker({
     color: iconColor,
   });
 
-  const preview = resolveFormAppearance({
+  const resolved = resolveFormAppearance({
     id: formId,
     icon: current.icon,
     icon_color: current.color,
@@ -51,13 +54,18 @@ export function FormAppearancePicker({
     });
   }
 
-  function pickIcon(key: FormIconKey) {
-    persist({ icon: key, color: current.color ?? FORM_TINTS[0].key });
+  function handleIcon(value: IconValue) {
+    persist({
+      icon: value.kind === "emoji" ? value.value : `ph:${value.value}`,
+      color: current.color ?? FORM_TINTS[0].key,
+    });
   }
 
-  function pickColor(key: FormTintKey) {
-    persist({ icon: current.icon ?? FORM_ICONS[0].key, color: key });
+  function handleColor(key: string) {
+    persist({ icon: current.icon, color: key });
   }
+
+  const colorOptions = FORM_TINTS.map((t) => ({ key: t.key, label: t.key, swatch: t.fg }));
 
   return (
     <div className={styles.card}>
@@ -65,61 +73,21 @@ export function FormAppearancePicker({
         <div>
           <h3 className={styles.title}>Appearance</h3>
           <p className={styles.sub}>
-            Give this form a custom icon and color so it stands out in your
-            library.
+            Give this form an icon or emoji and an accent color so it stands out
+            in your library.
           </p>
         </div>
-        <span
-          className={styles.previewChip}
-          style={{ background: preview.bg, color: preview.fg }}
-        >
-          <preview.Icon size={24} weight="duotone" />
-        </span>
-      </div>
-
-      <div className={styles.section}>
-        <span className={styles.sectionLabel}>Color</span>
-        <div className={styles.colorRow}>
-          {FORM_TINTS.map((tint) => {
-            const selected = (current.color ?? "") === tint.key;
-            return (
-              <button
-                key={tint.key}
-                type="button"
-                className={`${styles.colorSwatch} ${selected ? styles.colorSelected : ""}`}
-                style={{ background: tint.fg }}
-                onClick={() => pickColor(tint.key)}
-                aria-label={`${tint.key} accent`}
-                aria-pressed={selected}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <span className={styles.sectionLabel}>Icon</span>
-        <div className={styles.iconGrid}>
-          {FORM_ICONS.map(({ key, label, Icon }) => {
-            const selected = (current.icon ?? "") === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                className={`${styles.iconCell} ${selected ? styles.iconSelected : ""}`}
-                style={
-                  selected ? { background: preview.bg, color: preview.fg } : undefined
-                }
-                onClick={() => pickIcon(key)}
-                title={label}
-                aria-label={label}
-                aria-pressed={selected}
-              >
-                <Icon size={19} weight={selected ? "duotone" : "regular"} />
-              </button>
-            );
-          })}
-        </div>
+        <IconPicker
+          value={storedToValue(current.icon, resolved.emoji)}
+          onChange={handleIcon}
+          color={current.color ?? undefined}
+          onColorChange={handleColor}
+          colorOptions={colorOptions}
+          ariaLabel="Choose a form icon"
+          triggerBg={resolved.bg}
+          triggerFg={resolved.fg}
+          triggerContent={<FormGlyph appearance={resolved} size={24} />}
+        />
       </div>
     </div>
   );

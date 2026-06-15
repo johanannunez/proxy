@@ -209,8 +209,8 @@ async function queryDocuments(q: string, limit: number): Promise<PaletteHit[]> {
       label: r.title?.trim() || r.document_key || "Document",
       subtitle: status ? `${ownerName} · ${status}` : ownerName,
       href: r.document_key
-        ? `/admin/paperwork?owner=${r.owner_id}&doc=${r.document_key}`
-        : "/admin/paperwork",
+        ? `/admin/paperwork/signatures?owner=${r.owner_id}&doc=${r.document_key}`
+        : "/admin/paperwork/signatures",
     };
   });
 }

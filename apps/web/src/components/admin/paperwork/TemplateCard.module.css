@@ -1,0 +1,249 @@
+/* ── Reusable paperwork template card ── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 13px;
+  border: 1px solid var(--border-card, var(--dash-border, #e5e7eb));
+  background: var(--surface-card, var(--surface-base, #fff));
+  overflow: hidden;
+  transition: transform 0.16s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -16px color-mix(in srgb, var(--color-navy, #0f172a) 28%, transparent);
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 28%, var(--border-card, #e5e7eb));
+}
+
+.pickCard:active,
+.cardBody:active {
+  transform: translateY(0);
+}
+
+/* Selection card (gallery): the whole card is one button. */
+.pickCard {
+  gap: 9px;
+  padding: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cardSelected {
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand, #1b77be) 22%, transparent);
+}
+.cardSelected:hover {
+  border-color: var(--color-brand, #1b77be);
+}
+
+/* Management card body (hub Library): preview + meta, opens on click. */
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 8px 8px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.cardBody:focus-visible,
+.pickCard:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 2px;
+  border-radius: 11px;
+}
+
+.cardPreview {
+  position: relative;
+  height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 14px;
+  border-radius: 9px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--preview-tone, var(--color-brand)) 9%, transparent), transparent 70%),
+    var(--dash-card-alt, #f5f4f2);
+  overflow: hidden;
+}
+
+.cardBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 19px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary, #6b7280);
+  background: color-mix(in srgb, var(--surface-base, #fff) 86%, transparent);
+  border: 1px solid var(--border-card, var(--dash-border, #e5e7eb));
+  backdrop-filter: blur(4px);
+}
+
+.cardMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, #1a1a1a);
+  padding: 0 4px 2px;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 32px;
+}
+
+.cardSub {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 8px;
+  border-top: 1px solid var(--dash-border-subtle, #eeede9);
+  margin-top: 2px;
+}
+
+/* ── Signature faux document ── */
+
+.miniDoc {
+  width: 94px;
+  height: 116px;
+  border-radius: 5px 5px 0 0;
+  background: #fff;
+  box-shadow: 0 6px 16px -6px rgba(16, 24, 40, 0.28);
+  padding: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.miniDocBand {
+  height: 11px;
+  width: 58%;
+  border-radius: 3px;
+  background: var(--tone, #1b77be);
+  opacity: 0.92;
+}
+.miniDocLines {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.miniDocLines span {
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e1de;
+}
+.miniDocSign {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.miniDocSignLine {
+  height: 4px;
+  width: 68%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tone, #1b77be) 40%, #e2e1de);
+}
+.miniDocSignMark {
+  height: 8px;
+  width: 36%;
+  border-radius: 2px;
+  background: var(--tone, #1b77be);
+  opacity: 0.55;
+}
+
+/* ── Form icon tile ── */
+
+.formTile {
+  width: 100%;
+  height: 112px;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--tile-fg, #1b77be) 11%, var(--surface-base, #fff));
+  border: 1px solid color-mix(in srgb, var(--tile-fg, #1b77be) 20%, transparent);
+}
+.formTileIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--tile-fg, #1b77be);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--tile-fg, #1b77be) 60%, transparent);
+}
+.formTileEmoji {
+  font-size: 24px;
+  line-height: 1;
+}
+.formTileLines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+.formTileLines span {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tile-fg, #1b77be) 32%, #e2e1de);
+}
+
+/* ── Dark: lift cards above the canvas; soften the doc/tile surfaces ── */
+
+:global(.dark) .cardPreview {
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--preview-tone, var(--color-brand)) 18%, transparent), transparent 70%),
+    rgba(255, 255, 255, 0.035);
+}
+:global(.dark) .miniDoc {
+  background: #20242c;
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.6);
+}
+:global(.dark) .miniDocLines span {
+  background: rgba(255, 255, 255, 0.12);
+}
+:global(.dark) .formTile {
+  background: color-mix(in srgb, var(--tile-fg, #1b77be) 16%, rgba(255, 255, 255, 0.035));
+  border-color: color-mix(in srgb, var(--tile-fg, #1b77be) 30%, transparent);
+}
+:global(.dark) .cardBadge {
+  background: color-mix(in srgb, var(--surface-floating, #1a1b21) 88%, transparent);
+}
