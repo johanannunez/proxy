@@ -1,0 +1,111 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Matches the 26px icon-button footprint used by the hub card footers. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text-secondary, var(--color-text-secondary, #6b7280));
+  background: transparent;
+  border: 1px solid var(--border-default, var(--border-card, rgba(0, 0, 0, 0.08)));
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+}
+.trigger:hover {
+  color: var(--text-primary, var(--color-text-primary, #1a1a1a));
+  border-color: var(--border-strong, rgba(0, 0, 0, 0.16));
+}
+.trigger:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+.trigger:active {
+  transform: translateY(1px);
+}
+
+.menu {
+  position: fixed;
+  width: 190px;
+  padding: 5px;
+  border-radius: 11px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
+  box-shadow:
+    0 16px 40px -12px rgba(15, 23, 42, 0.28),
+    0 2px 6px rgba(15, 23, 42, 0.06);
+  z-index: 2147483000;
+  animation: cardMenuIn 0.13s var(--ease-spring, ease);
+}
+
+@keyframes cardMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation: none;
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-secondary, var(--color-text-secondary, #475569));
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.item:hover,
+.item:focus-visible {
+  background: var(--surface-hover, rgba(27, 119, 190, 0.07));
+  color: var(--text-primary, var(--color-text-primary, #1a1a1a));
+  outline: none;
+}
+
+.itemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-tertiary, #9aa1ab);
+  flex-shrink: 0;
+}
+.item:hover .itemIcon,
+.item:focus-visible .itemIcon {
+  color: inherit;
+}
+
+.itemDanger {
+  color: var(--color-error, #dc2626);
+}
+.itemDanger .itemIcon {
+  color: var(--color-error, #dc2626);
+}
+.itemDanger:hover,
+.itemDanger:focus-visible {
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--color-error, #dc2626);
+}

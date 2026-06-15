@@ -55,6 +55,10 @@ import {
   TemplateCard,
 } from "@/components/admin/paperwork/TemplateCard";
 import {
+  CardActionMenu,
+  type CardMenuItem,
+} from "@/components/admin/paperwork/CardActionMenu";
+import {
   ActivityTable,
   type ActivityRow,
 } from "@/components/admin/paperwork/ActivityTable";
@@ -293,7 +297,6 @@ function FormCardItem({
   onArchive: () => void;
 }) {
   const router = useRouter();
-  const [copied, setCopied] = useState(false);
   const detailHref = `/admin/paperwork/templates/${form.id}`;
   const a = resolveFormAppearance({
     id: form.id,
@@ -301,13 +304,9 @@ function FormCardItem({
     icon_color: form.icon_color,
   });
 
-  function handleCopyLink(e: React.MouseEvent) {
-    e.stopPropagation();
+  function copyLink() {
     if (!form.slug) return;
-    navigator.clipboard.writeText(publicFormUrl(form.slug)).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+    navigator.clipboard.writeText(publicFormUrl(form.slug));
   }
 
   const spec = {
@@ -323,38 +322,35 @@ function FormCardItem({
 
   const badge = !form.is_active ? "Draft" : undefined;
 
+  // Secondary actions collapse into a "⋯" menu so the footer (Edit + Send) never
+  // wraps on a narrow card. Copy-link only exists once the form is published.
+  const menuItems: CardMenuItem[] = [];
+  if (form.is_active && form.slug) {
+    menuItems.push({
+      label: "Copy share link",
+      icon: <LinkSimple size={15} weight="bold" />,
+      onSelect: copyLink,
+    });
+  }
+  menuItems.push({
+    label: "Duplicate",
+    icon: <Copy size={15} weight="bold" />,
+    onSelect: onDuplicate,
+  });
+  menuItems.push({
+    label: "Archive",
+    icon: <Archive size={15} weight="bold" />,
+    onSelect: onArchive,
+    danger: true,
+  });
+
   const cardActions = busy ? (
     <span className={styles.actionSpinner} aria-label="Working">
       <SpinnerGap size={14} weight="bold" />
     </span>
   ) : (
     <span className={styles.cardActionRow}>
-      {form.is_active && form.slug && (
-        <button
-          type="button"
-          className={`${styles.actionIconBtn} ${copied ? styles.actionCopied : ""}`}
-          onClick={handleCopyLink}
-          title="Copy share link"
-        >
-          {copied ? <Check size={13} weight="bold" /> : <LinkSimple size={13} weight="bold" />}
-        </button>
-      )}
-      <button
-        type="button"
-        className={styles.actionIconBtn}
-        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-        title="Duplicate"
-      >
-        <Copy size={13} weight="bold" />
-      </button>
-      <button
-        type="button"
-        className={`${styles.actionIconBtn} ${styles.actionDanger}`}
-        onClick={(e) => { e.stopPropagation(); onArchive(); }}
-        title="Archive"
-      >
-        <Archive size={13} weight="bold" />
-      </button>
+      <CardActionMenu items={menuItems} label={`More actions for ${form.name}`} />
       {/* Edit is always available; Send only once the form is published. */}
       <button
         type="button"

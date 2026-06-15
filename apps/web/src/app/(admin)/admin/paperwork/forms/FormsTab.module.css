@@ -511,12 +511,21 @@
   gap: 15px;
 }
 
-/* Card-level action row (inside TemplateCard footer) */
+/* Card-level action row (inside TemplateCard footer). The "⋯" menu holds its
+   width; Edit + Send share the remainder so the row stays one line on a 190px
+   card and never wraps. */
 .cardActionRow {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.cardActionRow .actionBtn {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
 }
 
 .actionBtnSm {
