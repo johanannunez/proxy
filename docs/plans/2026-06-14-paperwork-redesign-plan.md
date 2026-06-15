@@ -48,6 +48,7 @@ No data-model or cron changes. Ships visible immediately. Light + dark verified 
 ### Task 1.5 — Action Center data route + trigger
 - Create `apps/web/src/app/api/admin/action-center/route.ts` returning `{ queue, expiring, lapsed }`. `queue` = existing `fetchActionQueue`. `expiring`/`lapsed` = empty/derived from any existing `expires_at` until Phase 3.
 - Board-header count pill in `StatusBoardTab` dispatches the toggle event. (Open for review: board-header vs persistent top-bar placement.)
+- The route calls `requireAdminUser` (page middleware does not cover `/api/*` routes).
 
 ### Task 1.6 — Board row + corner polish
 - `apps/web/src/lib/admin/status-board-types.ts`: add optional `expiresAt: string | null` to `EntityDetail`.
@@ -61,9 +62,24 @@ No data-model or cron changes. Ships visible immediately. Light + dark verified 
 
 ---
 
+## Phase 1.5 — Unify the document-type taxonomy (isolated, before reclassification)
+
+The board (`REQUIREMENT_CONFIG`) and orchestration (`WORKSPACE_DOCUMENT_DEFINITIONS`, a 4-way `secure_doc`/`form`/`upload`/`lifecycle` taxonomy) are two parallel registries that will drift. Unify to one source of truth for document-type classification BEFORE reclassifying, so Task 2.1 operates on a single model and there is no divergence to "document." Do this as its own phase so the migration is not stacked on the spine.ts/DocuSeal landmines.
+
+### Task 1.5.1 — Design the single model
+- Reconcile the two vocabularies into one source of truth for `kind` + `scope`, preserving the orchestration-only axis (`lifecycle` triggers are operational, not document types; keep them where the send/lifecycle logic needs them). Document the unified model with an ASCII map of old → new.
+
+### Task 1.5.2 — Migrate consumers
+- Point every consumer of `WORKSPACE_DOCUMENT_DEFINITIONS` (documents-hub, owner portal `lib/documents/*`, the per-workspace admin tab, `spine.ts` send paths) at the unified source. Keep behavior identical; this is a refactor, not a feature.
+
+### Task 1.5.3 — Lock it with tests
+- A test asserts both former registries' consumers resolve identical `kind`/`scope` for every existing doc_type, so the unification provably changed nothing operationally before the reclassification rides on top.
+
+---
+
 ## Phase 2 — Reclassification + upload Forms + DocuSeal W-9/Platform
 
-Data-model changes. No cron.
+Data-model changes. No cron. Operates on the unified taxonomy from Phase 1.5.
 
 ### Task 2.1 — Board reclassification
 - `status-board-config.ts`: `w9` + `platform_authorization` → `kind: "signature"`; `str_permit`, `insurance_certificate`, `identity` → `kind: "form"`; remove `"file"` from `KIND_ORDER` + `KIND_LABEL`.
@@ -106,7 +122,10 @@ Gated. Cron, multi-channel, new writes.
 - Extend `document_reminder_config` with per-`doc_type` lead-window rows (Permit 120, Insurance 90, ID 60, Card 60) and start reading its `channels` column.
 
 ### Task 3.3 — Renewal escalation module
-- Create `apps/web/src/lib/documents/renewal-escalation.ts`: `fetchRenewalCandidates`, `computeEscalationStage` (90/30/14/7/lapsed), `dispatchEscalation` with injectable `sendEmail` (Resend `sendViaResend`) + `sendSms` (OpenPhone `sendOpenPhoneSms`); phone from `contacts.phone` (join by profile_id, `getOwnerContact` pattern); import `normalize-phone.ts`. Separate from `reminders.ts` (creation-age cron).
+- Create `apps/web/src/lib/documents/renewal-escalation.ts`: `fetchRenewalCandidates` (org-scoped), `computeEscalationStage` (90/30/14/7/lapsed), `dispatchEscalation` with injectable `sendEmail` (Resend `sendViaResend`) + `sendSms` (OpenPhone `sendOpenPhoneSms`); phone from `contacts.phone` (join by profile_id, `getOwnerContact` pattern); import `normalize-phone.ts`. Separate from `reminders.ts` (creation-age cron).
+- Wrap each owner-send so one failure never aborts the run (log full context + leave the ledger row unmarked so it retries next run).
+- All owner-facing sends (this engine AND `reminders.ts`) route through one shared `canSendToOwnerToday(ownerId)` cadence gate backed by the ledger + a per-owner daily cap (the single cadence authority).
+- Resolve the owning org per candidate; send with that org's identity/branding (see Multi-tenancy).
 
 ### Task 3.4 — Cron route
 - Create `apps/web/src/app/api/cron/document-renewal/route.ts` (`CRON_SECRET` guard, `ENABLE_DOCUMENT_RENEWAL_CRON` gate). Add `vercel.json` cron `{ "path": "/api/cron/document-renewal", "schedule": "0 10 * * *" }`.
@@ -119,12 +138,32 @@ Gated. Cron, multi-channel, new writes.
 
 ### Task 3.7 — Card expiry (layered)
 - Create `apps/web/src/lib/billing/card-expiry-sync.ts`: daily read of `billing_payment_methods.exp_month/exp_year` → write `card_authorization.expires_at` (never touches PAN). Add a `payment_method.automatically_updated` / `payment_method.updated` case to the Stripe webhook route for real-time updates. (External: enable Card Account Updater in Stripe dashboard.)
+- Verify (or add) a `synced_at`/`updated_at` on `billing_payment_methods` so guardrail #2's staleness check is implementable; mirror data with no recent sync → admin task, not an owner message.
 
 ### Task 3.8 — Wire Action Center real data
 - `/api/admin/action-center` returns real `expiring` + `lapsed` from the engine; the drawer renders them with inline actions.
 
 ### Task 3.9 — Templates + deploy gates + verify
 - Branded owner email + SMS templates; admin notification copy. Unify the Resend `from` address. Confirm deploy gates set in Doppler prd: `RESEND_WEBHOOK_SECRET`, `ENABLE_DOCUMENT_RENEWAL_CRON`, `OPENPHONE_API_KEY`, `OPENPHONE_PHONE_NUMBER`. Test the full ladder with a seeded near-expiry instance (synthetic data only, never mutate prod).
+
+### Task 3.10 — Owner-respect controls
+Idempotency is already guaranteed by the Task 3.5 ledger: each (document, stage, channel) sends once, and the daily cron only sends when a document crosses a new stage threshold, never daily or duplicate. On top of that:
+- **Configurable stages per `doc_type`** (extend the lead-window config: which of 90/30/14/7 actually fire).
+- **Snooze:** per-document `snooze_until` (date) and/or `snooze_to_stage`, settable by the admin and by the owner via a tokenized "remind me closer" link in the reminder email/SMS. Suppresses earlier stages.
+- **Pause window:** global and per-owner "pause renewal reminders until [date]".
+- **Master switch:** `ENABLE_DOCUMENT_RENEWAL_CRON` toggles all sends; the fail-loud indicator shows OFF.
+
+All controls are org-scoped (each client tunes their own).
+
+---
+
+## Multi-tenancy (cross-cutting, build org-scoped from day one)
+
+Proxy is multi-tenant; each client is an org (context via `x-org-id`, default `PROXY_ORG_ID`). This redesign must sit on the docs-platform org model (reconciled in Phase 0), not a parallel one.
+- Every new fetch, route, cron query, and config row carries `org_id` and is scoped to it. The Action Center route, `fetchRenewalCandidates`, and the config tables are org-scoped.
+- The nightly cron processes every org and sends on behalf of each to that org's owners only.
+- W-9 = system template (`org_id` null); Platform Authorization + others may be per-org templates.
+- **Decisions to settle in Phase 0 (with the docs-platform white-label work):** (1) white-label sender identity (per-org email domain + OpenPhone number vs shared sender with org branding); (2) Stripe model (single account vs Connect per org) and its effect on card-expiry reads; (3) per-org cadence/template defaults.
 
 ---
 
