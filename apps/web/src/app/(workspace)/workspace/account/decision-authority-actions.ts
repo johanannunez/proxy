@@ -75,14 +75,29 @@ export async function saveAuthorityConfigAction(
 export async function sendAddendumForSignatureAction(
   authorityId: string
 ): Promise<{ ok: true } | { error: string }> {
+  // Input validation
+  if (!authorityId?.trim()) return { error: "Invalid authority ID." };
+
   const ctx = await getCurrentProfileAndWorkspace();
   if (!ctx) return { error: "Not authenticated." };
 
-  const templateId = process.env.DOCUSEAL_AUTHORITY_ADDENDUM_TEMPLATE_ID
-    ? parseInt(process.env.DOCUSEAL_AUTHORITY_ADDENDUM_TEMPLATE_ID, 10)
-    : null;
+  // IDOR guard: verify the authority record belongs to this workspace
+  const supabase = await createClient();
+  const db = untypedDatabase(supabase);
+  const { data: authority } = await db
+    .from("workspace_authority")
+    .select("id, workspace_id")
+    .eq("id", authorityId)
+    .single();
+  const a = authority as { id: string; workspace_id: string } | null;
+  if (!a || a.workspace_id !== ctx.workspace.id) {
+    return { error: "Not found." };
+  }
 
-  if (!templateId) {
+  const raw = process.env.DOCUSEAL_AUTHORITY_ADDENDUM_TEMPLATE_ID;
+  const templateId = raw ? parseInt(raw, 10) : null;
+
+  if (!templateId || isNaN(templateId)) {
     return { error: "Addendum template is not configured. Contact support." };
   }
 
