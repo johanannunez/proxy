@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
-import { PenNib, PaperPlaneTilt } from "@phosphor-icons/react";
+import { PenNib, PaperPlaneTilt, PencilSimple } from "@phosphor-icons/react";
 import {
   SECURE_DOC_TYPES,
   avatarColor,
@@ -193,11 +193,7 @@ export function SignaturesHub({
         tab={tab}
         onTab={setTab}
         libraryLabel="signatures"
-        crossLink={{
-          label: "Need a form instead?",
-          linkText: "Forms",
-          href: "/admin/paperwork/forms",
-        }}
+        activityLabel="History"
         right={
           tab === "library" ? (
             <ViewToggle view={view} onView={setView} />
@@ -233,14 +229,25 @@ export function SignaturesHub({
                   badge={t.isReady ? undefined : "Draft"}
                   onOpen={() => router.push(`/admin/paperwork/templates/${t.id}`)}
                   actions={
-                    <button
-                      type="button"
-                      className={styles.sendBtn}
-                      onClick={() => setSendTarget(t)}
-                    >
-                      <PaperPlaneTilt size={13} weight="bold" />
-                      Send
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className={styles.editIconBtn}
+                        onClick={() => router.push(`/admin/paperwork/templates/${t.id}`)}
+                        aria-label={`Edit ${t.name}`}
+                        title="Edit"
+                      >
+                        <PencilSimple size={14} weight="bold" />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.sendBtn} ${styles.cardSendBtn}`}
+                        onClick={() => setSendTarget(t)}
+                      >
+                        <PaperPlaneTilt size={13} weight="bold" />
+                        Request a signature
+                      </button>
+                    </>
                   }
                 />
               ))}
@@ -273,7 +280,7 @@ export function SignaturesHub({
                       onClick={() => setSendTarget(t)}
                     >
                       <PaperPlaneTilt size={13} weight="bold" />
-                      Send
+                      Request a signature
                     </button>
                   </div>
                 </div>

@@ -252,19 +252,22 @@ function FormRow({
                 <Archive size={14} weight="bold" />
               </button>
             </span>
-            {form.is_active ? (
-              <button type="button" className={styles.actionBtn} onClick={onSend}>
-                <PaperPlaneTilt size={13} weight="bold" />
-                Send
-              </button>
-            ) : (
+            <button
+              type="button"
+              className={styles.actionBtn}
+              onClick={() => router.push(detailHref)}
+            >
+              <PencilSimple size={13} weight="bold" />
+              Edit
+            </button>
+            {form.is_active && (
               <button
                 type="button"
-                className={styles.actionBtn}
-                onClick={() => router.push(detailHref)}
+                className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                onClick={onSend}
               >
-                <PencilSimple size={13} weight="bold" />
-                Edit
+                <PaperPlaneTilt size={13} weight="bold" />
+                Send
               </button>
             )}
           </>
@@ -352,23 +355,23 @@ function FormCardItem({
       >
         <Archive size={13} weight="bold" />
       </button>
-      {form.is_active ? (
+      {/* Edit is always available; Send only once the form is published. */}
+      <button
+        type="button"
+        className={`${styles.actionBtn} ${styles.actionBtnSm}`}
+        onClick={(e) => { e.stopPropagation(); router.push(detailHref); }}
+      >
+        <PencilSimple size={12} weight="bold" />
+        Edit
+      </button>
+      {form.is_active && (
         <button
           type="button"
-          className={`${styles.actionBtn} ${styles.actionBtnSm}`}
+          className={`${styles.actionBtn} ${styles.actionBtnSm} ${styles.actionBtnPrimary}`}
           onClick={(e) => { e.stopPropagation(); onSend(); }}
         >
           <PaperPlaneTilt size={12} weight="bold" />
           Send
-        </button>
-      ) : (
-        <button
-          type="button"
-          className={`${styles.actionBtn} ${styles.actionBtnSm}`}
-          onClick={(e) => { e.stopPropagation(); router.push(detailHref); }}
-        >
-          <PencilSimple size={12} weight="bold" />
-          Edit
         </button>
       )}
     </span>
@@ -533,11 +536,7 @@ export function FormsTab({
         tab={tab}
         onTab={setTab}
         libraryLabel="forms"
-        crossLink={{
-          label: "Need a signature instead?",
-          linkText: "Signatures",
-          href: "/admin/paperwork/signatures",
-        }}
+        activityLabel="Responses"
         right={tab === "library" ? (
           <ViewToggle view={view} onView={setView} />
         ) : undefined}

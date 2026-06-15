@@ -37,8 +37,7 @@
   transform: scale(0.97);
 }
 .subTab:focus-visible,
-.viewToggle button:focus-visible,
-.crossLink:focus-visible {
+.viewToggle button:focus-visible {
   outline: 2px solid var(--color-brand, #1b77be);
   outline-offset: 2px;
   border-radius: 7px;
@@ -54,24 +53,6 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.crossLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text-secondary, #6b7280);
-  text-decoration: none;
-  transition: color 0.12s ease;
-}
-.crossLink:hover {
-  color: var(--text-primary, #1a1a1a);
-}
-.crossLink span {
-  color: var(--color-brand, #1b77be);
-  font-weight: 600;
 }
 
 .viewToggle {

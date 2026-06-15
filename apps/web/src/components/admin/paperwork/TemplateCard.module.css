@@ -42,8 +42,8 @@
 .cardBody {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 8px 8px 4px;
+  gap: 0;
+  padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -64,12 +64,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: 14px;
   border-radius: 9px;
   background:
     radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--preview-tone, var(--color-brand)) 9%, transparent), transparent 70%),
     var(--dash-card-alt, #f5f4f2);
   overflow: hidden;
+}
+
+/* Management card: the preview is a full-bleed thumbnail — it reaches the card's
+   top + side edges (the card's overflow + radius clip the top corners), so there
+   is no strip of card surface above it. */
+.cardBody .cardPreview {
+  border-radius: 0;
 }
 
 .cardBadge {
@@ -97,6 +103,7 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
+  padding: 9px 8px 0;
 }
 
 .cardName {

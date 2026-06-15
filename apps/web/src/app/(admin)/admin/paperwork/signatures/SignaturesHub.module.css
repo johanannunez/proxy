@@ -114,6 +114,35 @@
   outline-offset: 2px;
 }
 
+/* Edit (icon-only secondary) on a library card */
+.editIconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 8%, transparent);
+  color: var(--color-brand, #1b77be);
+  cursor: pointer;
+  transition: background-color 0.14s ease;
+}
+.editIconBtn:hover {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 15%, transparent);
+}
+.editIconBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand, #1b77be) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* On a card, the primary action fills the row beside the icon Edit. */
+.cardSendBtn {
+  flex: 1;
+  justify-content: center;
+}
+
 /* Send button (shared: cards + list) */
 .sendBtn {
   display: inline-flex;

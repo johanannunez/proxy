@@ -7,8 +7,7 @@
  */
 
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { SquaresFour, ListBullets, ArrowRight } from "@phosphor-icons/react";
+import { SquaresFour, ListBullets } from "@phosphor-icons/react";
 import styles from "./HubChrome.module.css";
 
 export type HubTab = "library" | "activity";
@@ -18,14 +17,15 @@ export function HubSubTabs({
   tab,
   onTab,
   libraryLabel,
-  crossLink,
+  activityLabel,
   right,
 }: {
   tab: HubTab;
   onTab: (next: HubTab) => void;
   /** "Library" label is fixed; this is the singular noun for a11y, e.g. "signatures". */
   libraryLabel: string;
-  crossLink?: { label: string; linkText: string; href: string };
+  /** Second tab name — "History" for signatures, "Responses" for forms. */
+  activityLabel: string;
   right?: ReactNode;
 }) {
   return (
@@ -45,23 +45,15 @@ export function HubSubTabs({
           type="button"
           role="tab"
           aria-selected={tab === "activity"}
-          aria-label={`${libraryLabel} activity`}
+          aria-label={`${libraryLabel} ${activityLabel.toLowerCase()}`}
           className={`${styles.subTab} ${tab === "activity" ? styles.subTabActive : ""}`}
           onClick={() => onTab("activity")}
         >
-          Activity
+          {activityLabel}
         </button>
       </div>
 
-      <div className={styles.subRight}>
-        {tab === "library" && crossLink && (
-          <Link href={crossLink.href} className={styles.crossLink}>
-            {crossLink.label} <span>{crossLink.linkText}</span>
-            <ArrowRight size={12} weight="bold" />
-          </Link>
-        )}
-        {right}
-      </div>
+      {right ? <div className={styles.subRight}>{right}</div> : null}
     </div>
   );
 }

@@ -36,9 +36,9 @@ const TABS: Array<{ key: PaperworkTab; label: string; href: string }> = [
 /** Primary action copy switches with the active tab so the button always
  * names the thing you would actually create from where you are. */
 const PRIMARY_BY_TAB: Record<PaperworkTab, string> = {
-  status: "New paperwork",
-  signatures: "New signature",
-  forms: "New form",
+  status: "New Paperwork",
+  signatures: "New Signature",
+  forms: "New Form",
 };
 
 /** Which type the gallery opens scoped to, per tab (status = no preselection). */
