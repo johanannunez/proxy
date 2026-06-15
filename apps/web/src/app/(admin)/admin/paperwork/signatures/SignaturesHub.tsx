@@ -193,6 +193,7 @@ export function SignaturesHub({
         tab={tab}
         onTab={setTab}
         libraryLabel="signatures"
+        libraryTabLabel="Documents"
         activityLabel="History"
         right={
           tab === "library" ? (
@@ -296,7 +297,7 @@ export function SignaturesHub({
           lastLabel="Signed"
           emptyText={
             allRows.length === 0
-              ? "No signatures have been sent yet. Send one from the Library tab."
+              ? "No signatures have been sent yet. Request one from the Documents tab."
               : "No results match your filters."
           }
         />

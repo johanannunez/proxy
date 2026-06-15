@@ -65,13 +65,16 @@
   overflow: hidden;
 }
 
-/* One grid template shared by the header and every row so columns line up. */
+/* One grid template shared by the header and every row so columns line up.
+   The actions column is a FIXED width (not content-sized) — otherwise the empty
+   header cell and the button-filled row cells resolve to different widths, which
+   redistributes the flexible columns and throws the header out of line. */
 .headerRow,
 .row {
   display: grid;
   grid-template-columns:
     38px minmax(200px, 1.9fr) 88px minmax(104px, 0.9fr) 96px 96px
-    minmax(196px, auto);
+    232px;
   align-items: center;
   gap: 14px;
 }
@@ -460,7 +463,7 @@
 @media (max-width: 1040px) {
   .headerRow,
   .row {
-    grid-template-columns: 38px minmax(180px, 1.8fr) 84px minmax(100px, 0.9fr) minmax(150px, auto);
+    grid-template-columns: 38px minmax(180px, 1.8fr) 84px minmax(100px, 0.9fr) 232px;
     gap: 12px;
   }
 

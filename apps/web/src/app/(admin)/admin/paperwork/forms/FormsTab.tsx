@@ -536,6 +536,7 @@ export function FormsTab({
         tab={tab}
         onTab={setTab}
         libraryLabel="forms"
+        libraryTabLabel="Forms"
         activityLabel="Responses"
         right={tab === "library" ? (
           <ViewToggle view={view} onView={setView} />

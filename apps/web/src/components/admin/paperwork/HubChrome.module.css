@@ -7,6 +7,9 @@
   gap: 16px;
   margin-bottom: 18px;
   flex-wrap: wrap;
+  /* Fixed height so swapping the right-side control between tabs never nudges
+     the sub-tabs up or down. */
+  min-height: 38px;
 }
 
 .subTabs {

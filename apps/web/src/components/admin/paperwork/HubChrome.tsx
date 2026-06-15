@@ -17,13 +17,16 @@ export function HubSubTabs({
   tab,
   onTab,
   libraryLabel,
+  libraryTabLabel = "Library",
   activityLabel,
   right,
 }: {
   tab: HubTab;
   onTab: (next: HubTab) => void;
-  /** "Library" label is fixed; this is the singular noun for a11y, e.g. "signatures". */
+  /** Singular hub noun for a11y, e.g. "signatures" / "forms". */
   libraryLabel: string;
+  /** First tab name — "Documents" for signatures, "Forms" for forms. */
+  libraryTabLabel?: string;
   /** Second tab name — "History" for signatures, "Responses" for forms. */
   activityLabel: string;
   right?: ReactNode;
@@ -35,11 +38,11 @@ export function HubSubTabs({
           type="button"
           role="tab"
           aria-selected={tab === "library"}
-          aria-label={`Your ${libraryLabel} library`}
+          aria-label={`Your ${libraryTabLabel.toLowerCase()}`}
           className={`${styles.subTab} ${tab === "library" ? styles.subTabActive : ""}`}
           onClick={() => onTab("library")}
         >
-          Library
+          {libraryTabLabel}
         </button>
         <button
           type="button"
