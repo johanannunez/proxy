@@ -44,7 +44,8 @@ export async function getCurrentWorkspaceAuthority(
     .eq("workspace_id", workspaceId)
     .in("status", ["active", "pending_signatures", "draft"])
     .order("created_at", { ascending: false })
-    .single();
+    .limit(1)
+    .maybeSingle();
   if (error || !data) return null;
   return data as WorkspaceAuthority;
 }
@@ -68,14 +69,17 @@ export async function getAuthorityWithAssignments(
   const supabase = await createClient();
   const db = untypedDatabase(supabase);
 
-  const [{ data: authority, error: authErr }, { data: domains }, { data: escalations }] =
-    await Promise.all([
-      db.from("workspace_authority").select("*").eq("id", authorityId).single(),
-      db.from("workspace_authority_domains").select("*").eq("authority_id", authorityId),
-      db.from("workspace_authority_escalation").select("*").eq("authority_id", authorityId),
-    ]);
+  const [
+    { data: authority, error: authErr },
+    { data: domains, error: domainsErr },
+    { data: escalations, error: escalationsErr },
+  ] = await Promise.all([
+    db.from("workspace_authority").select("*").eq("id", authorityId).single(),
+    db.from("workspace_authority_domains").select("*").eq("authority_id", authorityId),
+    db.from("workspace_authority_escalation").select("*").eq("authority_id", authorityId),
+  ]);
 
-  if (authErr || !authority) return null;
+  if (authErr || !authority || domainsErr || escalationsErr) return null;
 
   // Group domains and escalation into AuthorityConfig per property_id (null = workspace-wide)
   const configMap = new Map<string | null, AuthorityConfig>();
@@ -121,8 +125,10 @@ export interface SaveAuthorityInput {
 }
 
 /**
- * Supersedes any existing non-superseded authority for this workspace, then
- * creates a new draft record with the provided config.
+ * Creates a new draft authority record for this workspace, then supersedes any
+ * existing non-superseded records only after all new data is safely inserted.
+ * This ordering prevents data loss: if any insert fails, prior active records
+ * remain untouched.
  * Returns the new authority ID, or null on error.
  */
 export async function saveWorkspaceAuthority(
@@ -131,16 +137,9 @@ export async function saveWorkspaceAuthority(
   const supabase = await createClient();
   const db = untypedDatabase(supabase);
 
-  // Mark existing non-superseded records as superseded
-  await db
-    .from("workspace_authority")
-    .update({ status: "superseded" })
-    .eq("workspace_id", input.workspaceId)
-    .in("status", ["draft", "pending_signatures", "active"]);
-
-  // Insert new draft record
+  // Insert new draft record FIRST — if anything below fails, prior records are untouched
   const { data: newAuth, error: authErr } = await db
-    .from<{ id: string }>("workspace_authority")
+    .from("workspace_authority")
     .insert({
       workspace_id: input.workspaceId,
       org_id: input.orgId,
@@ -152,7 +151,7 @@ export async function saveWorkspaceAuthority(
 
   if (authErr || !newAuth) return null;
 
-  const authorityId = newAuth.id;
+  const authorityId = (newAuth as { id: string }).id;
 
   // Insert domain assignments
   const domainRows = input.configs.flatMap((config) =>
@@ -174,7 +173,7 @@ export async function saveWorkspaceAuthority(
   }
 
   // Insert escalation routing
-  const escalRows = input.configs
+  const escalationRows = input.configs
     .filter((c) => c.escalation_owner_ids.length > 0)
     .map((config) => ({
       authority_id: authorityId,
@@ -182,12 +181,20 @@ export async function saveWorkspaceAuthority(
       notify_owner_ids: config.escalation_owner_ids,
     }));
 
-  if (escalRows.length > 0) {
+  if (escalationRows.length > 0) {
     const { error: escErr } = await db
       .from("workspace_authority_escalation")
-      .insert(escalRows);
+      .insert(escalationRows);
     if (escErr) return null;
   }
+
+  // Supersede existing records ONLY after all new data is safely inserted
+  await db
+    .from("workspace_authority")
+    .update({ status: "superseded" })
+    .eq("workspace_id", input.workspaceId)
+    .neq("id", authorityId)
+    .in("status", ["draft", "pending_signatures", "active"]);
 
   return authorityId;
 }
