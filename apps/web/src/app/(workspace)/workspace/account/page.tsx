@@ -16,6 +16,7 @@ import { RegionSection } from "./components/RegionSection";
 import { DataExportSection } from "./components/DataExportSection";
 import { DangerZoneSection } from "./components/DangerZoneSection";
 import { WorkspaceSection } from "./components/WorkspaceSection";
+import { DecisionAuthoritySection } from "./components/DecisionAuthoritySection";
 import { getWorkspaceNotificationPreferences } from "@/lib/workspace/notification-preferences-server";
 
 export const metadata: Metadata = { title: "Account" };
@@ -135,6 +136,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
               members={workspaceMembers}
               currentUserId={userId}
             />
+          ) : null}
+
+          {workspace ? (
+            <DecisionAuthoritySection workspaceId={workspace.id} />
           ) : null}
 
           {!isImpersonating ? (
