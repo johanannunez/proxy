@@ -10,6 +10,21 @@
 
 ---
 
+## Phase 0 — Reconcile in-flight paperwork work (do this first)
+
+The docs-platform initiative has unmerged branches restructuring the same surface. Build on a settled base, not shifting ground.
+
+### Task 0.1 — Audit and decide r45 / r46
+- Review `docs-platform/r45-paperwork-unification` (certificate-of-completion + document-drawer audit panel) and `docs-platform/r46-ia-amendment` (onboarding link rewire, matrix bulk-bar removal). For each: merge into main, fold its good parts into this design, or close it. Record the decision per branch.
+
+### Task 0.2 — Absorb the keepers
+- The cert-of-completion + audit panel belong in the **Signatures** tab's `DocumentDrawer`. Fold them into the Phase 1 Signatures design so they are not lost. Re-point r46's onboarding link change to the new routes (supersedes Task 1.7's onboarding edit; reconcile, don't double-edit).
+
+### Task 0.3 — Settle the base
+- After reconciliation, re-confirm `main` is the single source for the paperwork surface, then start Phase 1.
+
+---
+
 ## Phase 1 — Navigation + Action Center shell
 
 No data-model or cron changes. Ships visible immediately. Light + dark verified via `screenshot.mjs`.
@@ -113,8 +128,17 @@ Gated. Cron, multi-channel, new writes.
 
 ---
 
+## Trust guardrails (HOLD-scope, from CEO review) — non-negotiable in Phase 3
+
+1. **No misdelivery.** Every owner-facing email/SMS must resolve a verified recipient for the correct owner of the correct workspace. Missing/ambiguous email or `contacts.phone` → skip that channel and raise an admin "can't reach owner X" action item. Never guess a recipient.
+2. **Never cry wolf.** An owner-facing expiry alert fires only on a valid parsed `date` (or Stripe-confirmed card expiry). Unparseable/missing date, or card-mirror data older than the last sync, → an admin "fix this date" task, not an owner message.
+3. **No reminder storms.** One coordinator owns owner-facing cadence. The renewal engine, the existing `reminders.ts` cron, and the legacy expiry writers must not independently message the same owner about the same document. Enforce via the `document_renewal_escalations` ledger plus a per-owner per-day send cap.
+4. **Fail loud, not dark.** When the renewal cron is gated off or a channel fails, the admin surface must show "renewal reminders OFF / N failed to send." A new health indicator + the env gates (`ENABLE_DOCUMENT_RENEWAL_CRON`, `OPENPHONE_*`, `RESEND_WEBHOOK_SECRET`) are hard deploy blockers, verified post-deploy.
+5. **Protect signed documents.** Task 2.6's `spine.ts` guard rewrite ships with a regression test proving a signed W-9/Platform survives a sync, before any DocuSeal conversion (Task 2.7) runs.
+
 ## Cross-cutting rules
 - Never mutate production data for demos; seed synthetic.
 - `DatePickerInput`/`CustomSelect` only; no native `<select>`/`<input type=date>`.
 - `var(--*)` tokens; `transition` specific properties; motion/react.
+- Every new owner-facing send and cron path gets structured logs (attempt, recipient-resolution outcome, channel, result) for post-incident reconstruction.
 - Each task: implement → `tsc`/lint → test → screenshot (UI) → commit. Advisor before merging any phase branch.
