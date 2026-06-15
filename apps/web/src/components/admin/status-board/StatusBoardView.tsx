@@ -28,7 +28,6 @@ import {
 } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useReducedMotion } from "motion/react";
 import {
-  MagnifyingGlass,
   X,
   House,
   PushPin,
@@ -44,6 +43,7 @@ import type {
 import type { RequirementKind } from "@/lib/admin/status-board-config";
 import { KIND_LABEL, KIND_ORDER } from "@/lib/admin/status-board-config";
 import { setRequirementNotNeeded } from "@/lib/admin/status-board-actions";
+import { StatusBoardToolbar } from "./StatusBoardToolbar";
 import { FileCardTile } from "./FileCardTile";
 import { getReqKeyIconConfig } from "./status-board-icons";
 import styles from "./StatusBoard.module.css";
@@ -59,6 +59,21 @@ function initials(name: string): string {
     .map((w) => w[0].toUpperCase())
     .slice(0, 2)
     .join("");
+}
+
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
+/**
+ * Owner label for a workspace row: one full name for a single owner, both names
+ * for a couple, the first two plus a count beyond that. Holds one truncated line.
+ */
+function ownerNames(owners: { name: string }[]): string {
+  if (owners.length === 0) return "";
+  if (owners.length === 1) return owners[0].name;
+  if (owners.length === 2) return `${firstName(owners[0].name)} & ${firstName(owners[1].name)}`;
+  return `${firstName(owners[0].name)}, ${firstName(owners[1].name)} +${owners.length - 2}`;
 }
 
 const AVATAR_PALETTE = [
@@ -249,7 +264,6 @@ function statusChipLabel(state: CellSummary["status"]): string {
 /** Pick milestone labels based on requirement kind */
 function milestoneLabels(kind: RequirementKind): string[] {
   if (kind === "signature") return ["Sent", "Viewed", "Signed"];
-  if (kind === "file") return ["Uploaded", "Reviewed"];
   return ["Submitted", "Reviewed"];
 }
 
@@ -260,9 +274,6 @@ function milestoneDates(
 ): (string | null)[] {
   if (kind === "signature") {
     return [entity.sentAt, entity.viewedAt, entity.signedAt];
-  }
-  if (kind === "file") {
-    return [entity.completedAt, entity.reviewedAt];
   }
   return [entity.submittedAt, entity.reviewedAt];
 }
@@ -344,6 +355,17 @@ function StatusBoardCursorCard({ hovered }: CursorCardProps) {
               {statusChipLabel(cell.status)}
             </span>
           </div>
+
+          {/* Property scope: name the property this requirement tracks */}
+          {cell.scope === "property" && entity && (
+            <div className={styles.sbCursorScope}>
+              <House size={11} weight="duotone" aria-hidden />
+              <span>
+                {entity.entityName}
+                {cell.totalCount > 1 ? ` +${cell.totalCount - 1} more` : ""}
+              </span>
+            </div>
+          )}
 
           {/* Breakdown: N of M complete */}
           <div className={styles.sbCursorBreakdown}>
@@ -473,7 +495,6 @@ function WorkspaceDrawer({ workspace, focusedReqKey, onClose }: WorkspaceDrawerP
   const kindGroups: { kind: RequirementKind; reqKeys: string[] }[] = [
     { kind: "signature", reqKeys: [] },
     { kind: "form",      reqKeys: [] },
-    { kind: "file",      reqKeys: [] },
   ];
   if (workspace) {
     for (const [rk, cell] of Object.entries(workspace.cells)) {
@@ -955,6 +976,40 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
   /* Columns panel open state */
   const [colsPanelOpen, setColsPanelOpen] = useState(false);
 
+  /* Deep-link filters: hydrate from the URL once, then mirror state back into it
+     via history.replaceState. No navigation and no server refetch, so the board
+     view is shareable and survives a refresh; the back button is intentionally
+     left alone (replaceState adds no history entry). */
+  const urlHydratedRef = useRef(false);
+  useEffect(() => {
+    if (!urlHydratedRef.current) {
+      urlHydratedRef.current = true;
+      const p = new URLSearchParams(window.location.search);
+      const q = p.get("q");
+      if (q) setSearch(q);
+      const k = p.get("kind");
+      if (k === "signature" || k === "form") setKindFilter(k);
+      const s = p.get("status");
+      if (s === "outstanding" || s === "complete" || s === "declined" || s === "not_needed") {
+        setStatusFilter(s);
+      }
+      const cols = p.get("cols");
+      if (cols) {
+        const valid = new Set(board.columns.map((c) => c.reqKey));
+        const keys = cols.split(",").filter((rk) => valid.has(rk));
+        if (keys.length) setFocusedKeys(new Set(keys));
+      }
+      return;
+    }
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("q", search.trim());
+    if (kindFilter !== "all") params.set("kind", kindFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (focusedKeys.size > 0) params.set("cols", [...focusedKeys].join(","));
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+  }, [search, kindFilter, statusFilter, focusedKeys, board.columns]);
+
   /* ── Drawer / cursor / hover-row state ── */
   const [openWorkspace, setOpenWorkspace] = useState<WorkspaceRow | null>(null);
   const [focusedReqKey, setFocusedReqKey] = useState<string | null>(null);
@@ -1038,52 +1093,46 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
     }))
     .filter((kg) => kg.reqKeys.length > 0);
 
-  /* Workspaces after search + status filter */
-  const filteredWorkspaces = board.workspaces.filter((ws) => {
-    /* Search: match workspace name, any owner name, or any property name */
-    if (search) {
-      const q = search.trim().toLowerCase();
-      const matchesName = ws.name.toLowerCase().includes(q);
-      const matchesOwner = ws.owners.some((o) => o.name.toLowerCase().includes(q));
-      const matchesProp = ws.properties.some((p) => p.name.toLowerCase().includes(q));
-      if (!matchesName && !matchesOwner && !matchesProp) return false;
-    }
-    /* Status filter — per spec */
-    if (statusFilter === "all") return true;
-    if (statusFilter === "complete") return ws.pct === 100;
-    /* Outstanding: at least one required non-waived item not complete (pct < 100) */
-    if (statusFilter === "outstanding") return ws.pct < 100;
-    if (statusFilter === "declined") {
-      return Object.values(ws.cells).some((c) => c.status === "declined");
-    }
-    if (statusFilter === "not_needed") {
-      return Object.values(ws.cells).some((c) => c.status === "not_needed");
-    }
+  /* Workspaces after search + status filter. Search and status are separate
+     predicates so the Status menu can show per-status counts within the current
+     search context. */
+  const matchesSearch = (ws: WorkspaceRow): boolean => {
+    if (!search) return true;
+    const q = search.trim().toLowerCase();
+    return (
+      ws.name.toLowerCase().includes(q) ||
+      ws.owners.some((o) => o.name.toLowerCase().includes(q)) ||
+      ws.properties.some((p) => p.name.toLowerCase().includes(q))
+    );
+  };
+  const matchesStatus = (ws: WorkspaceRow, sf: StatusFilter): boolean => {
+    if (sf === "all") return true;
+    if (sf === "complete") return ws.pct === 100;
+    /* Outstanding: at least one required non-waived item not complete */
+    if (sf === "outstanding") return ws.pct < 100;
+    if (sf === "declined") return Object.values(ws.cells).some((c) => c.status === "declined");
+    if (sf === "not_needed") return Object.values(ws.cells).some((c) => c.status === "not_needed");
     return true;
-  });
+  };
 
-  /* Kind counts for tab badges */
+  const searchFiltered = board.workspaces.filter(matchesSearch);
+  const filteredWorkspaces = searchFiltered.filter((ws) => matchesStatus(ws, statusFilter));
+
+  /* Live per-status counts (within current search) for the Status dropdown */
+  const statusCounts: Partial<Record<StatusFilter, number>> = {
+    all: searchFiltered.length,
+    outstanding: searchFiltered.filter((ws) => matchesStatus(ws, "outstanding")).length,
+    complete: searchFiltered.filter((ws) => matchesStatus(ws, "complete")).length,
+    declined: searchFiltered.filter((ws) => matchesStatus(ws, "declined")).length,
+    not_needed: searchFiltered.filter((ws) => matchesStatus(ws, "not_needed")).length,
+  };
+
+  /* Kind counts for the segmented control */
   const kindCounts: Record<KindFilter, number> = {
     all: board.columns.length,
     signature: board.columns.filter((c) => c.kind === "signature").length,
     form: board.columns.filter((c) => c.kind === "form").length,
-    file: board.columns.filter((c) => c.kind === "file").length,
   };
-
-  const statusFilters: { key: StatusFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "outstanding", label: "Outstanding" },
-    { key: "complete", label: "Complete" },
-    { key: "declined", label: "Declined" },
-    { key: "not_needed", label: "Waived" },
-  ];
-
-  const kindTabs: { key: KindFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "signature", label: "Signatures" },
-    { key: "form", label: "Forms" },
-    { key: "file", label: "Files" },
-  ];
 
   const openDrawer = useCallback((ws: WorkspaceRow, reqKey?: string) => {
     setOpenWorkspace(ws);
@@ -1122,71 +1171,21 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
   return (
     <>
       {/* ── Filter bar ── */}
-      <div className={styles.sbFilterBar} role="toolbar" aria-label="Status board filters">
-        {/* Left: search */}
-        <div className={styles.sbSearchWrap}>
-          <span className={styles.sbSearchIcon} aria-hidden>
-            <MagnifyingGlass size={13} weight="bold" />
-          </span>
-          <input
-            type="text"
-            className={styles.sbSearchInput}
-            placeholder="Search workspaces..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search workspaces"
-          />
-        </div>
-
-        {/* Center: kind tabs — dim when focused columns override */}
-        <div
-          className={`${styles.sbKindTabs} ${focusedKeys.size > 0 ? styles.sbKindTabsDisabled : ""}`}
-          role="tablist"
-          aria-label="Filter by requirement kind"
-        >
-          {kindTabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={focusedKeys.size === 0 && kindFilter === t.key}
-              aria-disabled={focusedKeys.size > 0 ? "true" : undefined}
-              className={`${styles.sbKindTab} ${focusedKeys.size === 0 && kindFilter === t.key ? styles.sbKindTabActive : ""}`}
-              onClick={() => { if (focusedKeys.size === 0) setKindFilter(t.key); }}
-            >
-              {t.key !== "all" && (
-                <span
-                  className={`${styles.sbKindDot} ${styles[`sbKindDot_${t.key}` as keyof typeof styles]}`}
-                  aria-hidden
-                />
-              )}
-              {t.label}
-              <span className={styles.sbKindTabCount}>{kindCounts[t.key]}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Right: status filter + Columns button */}
-        <div className={styles.sbFilterRight}>
-          <div className={styles.sbStatusGroup} role="group" aria-label="Filter by status">
-            {statusFilters.map((sf) => (
-              <button
-                key={sf.key}
-                type="button"
-                className={`${styles.sbStatusBtn} ${statusFilter === sf.key ? styles.sbStatusBtnActive : ""}`}
-                onClick={() => setStatusFilter(sf.key)}
-                aria-pressed={statusFilter === sf.key}
-              >
-                {sf.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Columns button + panel */}
+      <StatusBoardToolbar
+        search={search}
+        onSearchChange={setSearch}
+        kindFilter={kindFilter}
+        onKindChange={setKindFilter}
+        kindCounts={kindCounts}
+        kindDisabled={focusedKeys.size > 0}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusCounts={statusCounts}
+        columnsSlot={
           <div className={styles.sbColsWrap} ref={colsWrapRef}>
             <button
               type="button"
-              className={`${styles.sbColsBtn} ${focusedKeys.size > 0 ? styles.sbColsBtnActive : ""}`}
+              className={`${styles.sbCtrlBtn} ${focusedKeys.size > 0 ? styles.sbCtrlBtnActive : ""}`}
               onClick={() => setColsPanelOpen((v) => !v)}
               aria-haspopup="dialog"
               aria-expanded={colsPanelOpen}
@@ -1209,8 +1208,8 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
               )}
             </AnimatePresence>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Focus chips row ── */}
       <AnimatePresence>
@@ -1259,8 +1258,14 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
            tracked-document set, never the filtered column count, so "tracked"
            stays truthful when a kind filter narrows the visible columns). */}
       <p className={styles.sbResultSummary} aria-live="polite">
-        <span className={styles.sbResultSummaryStrong}>{filteredWorkspaces.length}</span>{" "}
-        {filteredWorkspaces.length === 1 ? "workspace" : "workspaces"}
+        <span className={styles.sbResultSummaryStrong}>{filteredWorkspaces.length}</span>
+        {filteredWorkspaces.length !== board.workspaces.length && (
+          <>
+            {" of "}
+            <span className={styles.sbResultSummaryStrong}>{board.workspaces.length}</span>
+          </>
+        )}{" "}
+        {board.workspaces.length === 1 ? "workspace" : "workspaces"}
         {" · "}
         <span className={styles.sbResultSummaryStrong}>{board.columns.length}</span>{" "}
         {board.columns.length === 1 ? "document tracked" : "documents tracked"}
@@ -1354,9 +1359,7 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                           )}
                         </span>
                         <span className={styles.matrixOwnerPeopleNames}>
-                          {ws.owners.length === 1
-                            ? ws.owners[0].name
-                            : `${ws.owners[0].name.split(" ")[0]} +${ws.owners.length - 1}`}
+                          {ownerNames(ws.owners)}
                         </span>
                       </div>
                     ) : ws.type ? (

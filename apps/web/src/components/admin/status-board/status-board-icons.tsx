@@ -92,7 +92,7 @@ const STATUS_BOARD_ICON_MAP: Record<string, DocIconConfig> = {
     motif: "card",
   },
 
-  // ── Files ──
+  // ── Upload-backed compliance docs (permit/cert/ID = forms; W-9/platform auth = signatures) ──
   str_permit: {
     Icon: Certificate,
     label: "STR Permit",

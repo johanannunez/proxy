@@ -4,6 +4,10 @@
 
 import type { RequirementKind, RequirementScope } from "./status-board-config";
 
+/** Filter-bar selections, shared by the board view and its toolbar. */
+export type StatusFilter = "all" | "outstanding" | "complete" | "declined" | "not_needed";
+export type KindFilter = "all" | RequirementKind;
+
 /** State of a single entity's requirement instance. */
 export type CellState =
   | "complete"
