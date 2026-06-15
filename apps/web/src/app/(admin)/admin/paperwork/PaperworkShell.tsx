@@ -23,6 +23,7 @@ import {
   FilePdf,
   Rows,
   SpinnerGap,
+  Lightning,
 } from "@phosphor-icons/react";
 import { createFormAction } from "./templates/form-actions";
 import { CreateTemplateModal } from "./templates/CreateTemplateModal";
@@ -40,7 +41,7 @@ const TABS: Array<{ key: PaperworkTab; label: string; href: string }> = [
 /** Primary action copy switches with the active tab so the button always
  * names the thing you would actually create from where you are. */
 const PRIMARY_BY_TAB: Record<PaperworkTab, string> = {
-  status: "New document",
+  status: "New paperwork",
   signatures: "New signature",
   forms: "New form",
 };
@@ -102,7 +103,7 @@ function NewDocumentChooser({
         >
           <X size={14} weight="bold" />
         </button>
-        <h2 className={styles.chooserTitle}>New document</h2>
+        <h2 className={styles.chooserTitle}>New paperwork</h2>
         <p className={styles.chooserSub}>
           Whatever you create is saved as a template, so you can send it again
           without rebuilding it.
@@ -184,11 +185,15 @@ export function PaperworkShell({
   active,
   orgId,
   counts,
+  actionCount,
   children,
 }: {
   active: PaperworkTab;
   orgId: string;
   counts?: Partial<Record<PaperworkTab, number>>;
+  /** Items needing attention. When provided, the Action Center trigger renders
+   * inline beside the create button and shows this count. */
+  actionCount?: number;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -268,6 +273,26 @@ export function PaperworkShell({
           </nav>
         </div>
         <div className={styles.headerActions}>
+          {typeof actionCount === "number" && (
+            <button
+              type="button"
+              className={`${styles.actionCenterBtn} ${actionCount > 0 ? styles.actionCenterBtnActive : ""}`}
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent("admin:action-center-toggle"))
+              }
+              aria-label={
+                actionCount > 0
+                  ? `Open Action Center, ${actionCount} ${actionCount === 1 ? "item needs" : "items need"} attention`
+                  : "Open Action Center"
+              }
+            >
+              <Lightning size={15} weight="duotone" aria-hidden />
+              Action Center
+              {actionCount > 0 && (
+                <span className={styles.actionCenterCount}>{actionCount}</span>
+              )}
+            </button>
+          )}
           <button
             type="button"
             className={styles.newDocBtn}

@@ -7,7 +7,7 @@
  * error prevention (premium upgrade 4, 2026-06-12 design doc).
  *
  * Signature templates: multi-select owners, one tracked document instance per
- * recipient lands in the Documents tab. Form templates: the form is link-based,
+ * recipient lands on the Status Board. Form templates: the form is link-based,
  * so the sheet previews the fill experience and hands you the share link.
  */
 
@@ -233,7 +233,7 @@ export function SendSheet({
             <p className={styles.subtitle}>
               {isForm
                 ? "Forms are link-based: share the link below, or send it from your own inbox."
-                : "Each recipient gets their own tracked copy in the Documents tab."}
+                : "Each recipient gets their own tracked copy you can follow on the Status Board."}
             </p>
           </div>
           <button

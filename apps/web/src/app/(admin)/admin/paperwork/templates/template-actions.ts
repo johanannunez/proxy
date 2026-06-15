@@ -343,8 +343,8 @@ export async function updateTemplateMeta(
 }
 
 /**
- * Coverage tracking (2026-06-12 IA amendment): tracked templates become
- * Coverage matrix columns, grouped by category.
+ * Status Board tracking (2026-06-14 redesign): tracked templates become
+ * Status Board columns, grouped by category.
  */
 export async function updateTemplateTracking(
   id: string,

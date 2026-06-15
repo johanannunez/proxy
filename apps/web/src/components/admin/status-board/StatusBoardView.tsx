@@ -1154,6 +1154,12 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
               className={`${styles.sbKindTab} ${focusedKeys.size === 0 && kindFilter === t.key ? styles.sbKindTabActive : ""}`}
               onClick={() => { if (focusedKeys.size === 0) setKindFilter(t.key); }}
             >
+              {t.key !== "all" && (
+                <span
+                  className={`${styles.sbKindDot} ${styles[`sbKindDot_${t.key}` as keyof typeof styles]}`}
+                  aria-hidden
+                />
+              )}
               {t.label}
               <span className={styles.sbKindTabCount}>{kindCounts[t.key]}</span>
             </button>
@@ -1249,12 +1255,15 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
         )}
       </AnimatePresence>
 
-      {/* ── Result summary ── */}
+      {/* ── Unified count line ── (N reflects active filters; M is the stable
+           tracked-document set, never the filtered column count, so "tracked"
+           stays truthful when a kind filter narrows the visible columns). */}
       <p className={styles.sbResultSummary} aria-live="polite">
         <span className={styles.sbResultSummaryStrong}>{filteredWorkspaces.length}</span>{" "}
-        {filteredWorkspaces.length === 1 ? "workspace" : "workspaces"},{" "}
-        <span className={styles.sbResultSummaryStrong}>{visibleColumns.length}</span>{" "}
-        {visibleColumns.length === 1 ? "requirement" : "requirements"}
+        {filteredWorkspaces.length === 1 ? "workspace" : "workspaces"}
+        {" · "}
+        <span className={styles.sbResultSummaryStrong}>{board.columns.length}</span>{" "}
+        {board.columns.length === 1 ? "document tracked" : "documents tracked"}
       </p>
 
       {/* ── Matrix: two-region layout ── */}
@@ -1398,7 +1407,7 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                   <div
                     key={col.reqKey}
                     role="columnheader"
-                    className={`${styles.matrixItemHeader} ${isPinned ? styles.matrixItemHeaderPinned : ""}`}
+                    className={`${styles.matrixItemHeader} ${styles[`matrixItemHeader_${col.kind}` as keyof typeof styles]} ${isPinned ? styles.matrixItemHeaderPinned : ""}`}
                   >
                     <button
                       type="button"
@@ -1461,7 +1470,7 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                     <div
                       key={col.reqKey}
                       role="gridcell"
-                      className={`${styles.matrixCell} ${
+                      className={`${styles.matrixCell} ${styles[`matrixCell_${col.kind}` as keyof typeof styles]} ${
                         isLastInKind && isNotLastColumn ? styles.matrixCellGroupEnd : ""
                       }`}
                     >

@@ -25,8 +25,8 @@ export default async function PaperworkStatusPage() {
   ]);
 
   return (
-    <PaperworkShell active="status" orgId={orgId}>
-      <StatusBoardTab board={statusBoard} actionCount={actionQueue.length} />
+    <PaperworkShell active="status" orgId={orgId} actionCount={actionQueue.length}>
+      <StatusBoardTab board={statusBoard} />
     </PaperworkShell>
   );
 }
