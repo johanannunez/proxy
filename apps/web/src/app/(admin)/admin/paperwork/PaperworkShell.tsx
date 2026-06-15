@@ -2,11 +2,13 @@
 
 /**
  * PaperworkShell — the shared chrome for the unified Paperwork section.
- * Three tabs (Documents | Forms | Templates) and one global "+ New document"
- * button that opens the three-path create chooser. Per the 2026-06-12 IA
- * amendment: Documents holds tracked instances, Forms holds form masters
- * (Hubflo-style library), Templates holds signature/PDF masters plus the
- * Proxy library. Everything created here is saved as a master automatically.
+ * Three tabs (Status Board | Signatures | Forms) and one global "+ New" button
+ * that opens the three-path create chooser. Per the 2026-06-14 redesign:
+ * Status Board is the default landing (the cross-workspace completion matrix),
+ * Signatures holds tracked e-sign instances plus a signature-master Library,
+ * Forms holds form submissions plus a form-master Library. The old standalone
+ * Templates tab is gone; masters live in each tab's Library, and the
+ * /admin/paperwork/templates/[id] master-detail route stays as shared infra.
  */
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -27,20 +29,20 @@ import { CreateTemplateModal } from "./templates/CreateTemplateModal";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./PaperworkShell.module.css";
 
-type PaperworkTab = "documents" | "forms" | "templates";
+type PaperworkTab = "status" | "signatures" | "forms";
 
 const TABS: Array<{ key: PaperworkTab; label: string; href: string }> = [
-  { key: "documents", label: "Documents", href: "/admin/paperwork" },
+  { key: "status", label: "Status Board", href: "/admin/paperwork" },
+  { key: "signatures", label: "Signatures", href: "/admin/paperwork/signatures" },
   { key: "forms", label: "Forms", href: "/admin/paperwork/forms" },
-  { key: "templates", label: "Templates", href: "/admin/paperwork/templates" },
 ];
 
 /** Primary action copy switches with the active tab so the button always
  * names the thing you would actually create from where you are. */
 const PRIMARY_BY_TAB: Record<PaperworkTab, string> = {
-  documents: "New document",
+  status: "New document",
+  signatures: "New signature",
   forms: "New form",
-  templates: "New template",
 };
 
 function NewDocumentChooser({
@@ -111,7 +113,7 @@ function NewDocumentChooser({
             type="button"
             className={styles.pathCard}
             onClick={() => {
-              router.push("/admin/paperwork/templates");
+              router.push("/admin/paperwork/signatures");
               onClose();
             }}
           >
@@ -200,7 +202,7 @@ export function PaperworkShell({
   useEffect(() => {
     if (searchParams.get("create") === "pdf") {
       setTemplateModalOpen(true);
-      router.replace("/admin/paperwork/templates");
+      router.replace("/admin/paperwork/signatures");
     }
   }, [searchParams, router]);
 
@@ -211,12 +213,12 @@ export function PaperworkShell({
   }
 
   async function handlePrimary() {
-    if (active === "documents") {
+    if (active === "status") {
       setChooserOpen(true);
       return;
     }
-    if (active === "templates") {
-      // Opens instantly from client state, no route navigation.
+    if (active === "signatures") {
+      // Create a signature master directly; opens instantly from client state.
       setTemplateModalOpen(true);
       return;
     }

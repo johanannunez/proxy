@@ -218,9 +218,9 @@ export function FormTemplateDetail({
   return (
     <div className={styles.root}>
       <div className={styles.tabBar} role="tablist" aria-label={`${form.name} sections`}>
-        <Link href="/admin/paperwork/templates" className={styles.crumb}>
+        <Link href="/admin/paperwork/forms" className={styles.crumb}>
           <ArrowLeft size={13} weight="bold" />
-          Templates
+          Forms
         </Link>
         {tabs.map((t) => (
           <button

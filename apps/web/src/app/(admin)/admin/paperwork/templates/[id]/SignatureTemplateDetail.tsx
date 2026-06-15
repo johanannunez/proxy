@@ -400,7 +400,7 @@ function SignatureSettings({
         setError(res.error ?? "Could not remove the template.");
         return;
       }
-      router.push("/admin/paperwork/templates");
+      router.push("/admin/paperwork/signatures");
       router.refresh();
     });
   }
@@ -597,7 +597,7 @@ export function SignatureTemplateDetail({
       setFinishing(false);
       return;
     }
-    router.push("/admin/paperwork/templates");
+    router.push("/admin/paperwork/signatures");
   }
 
   const tabs: Array<{ key: TabKey; label: string }> = [
@@ -612,9 +612,9 @@ export function SignatureTemplateDetail({
         role="tablist"
         aria-label={`${template.display_name} sections`}
       >
-        <Link href="/admin/paperwork/templates" className={styles.crumb}>
+        <Link href="/admin/paperwork/signatures" className={styles.crumb}>
           <ArrowLeft size={13} weight="bold" />
-          Templates
+          Signatures
         </Link>
         {tabs.map((t) => (
           <button

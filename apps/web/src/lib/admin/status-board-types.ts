@@ -26,6 +26,10 @@ export type EntityDetail = {
   reviewedAt: string | null;
   completedAt: string | null;
   waived: boolean;
+  /** Renewal/expiry date for time-bound requirements (insurance, permit, ID,
+   * card). Null until the expiry engine (Phase 3) populates it. Drives the
+   * "Expiring" treatment and the Action Center's Expiring/Lapsed sections. */
+  expiresAt?: string | null;
   /** Populated for signature-kind requirements. */
   signers: {
     name: string;

@@ -1,0 +1,99 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Slim board toolbar: workspace count (left), Action Center trigger (right). */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.caption {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  letter-spacing: 0.01em;
+}
+
+.captionStrong {
+  font-weight: 650;
+  color: var(--text-primary, #1a1a1a);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Action Center trigger ─── */
+
+.actionCenterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 10px;
+  border: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--surface-base, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.05));
+  transition: transform 0.16s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.actionCenterBtn svg {
+  color: var(--text-tertiary, #9ca3af);
+  transition: color 0.16s ease;
+}
+
+.actionCenterBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(16, 24, 40, 0.08));
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 32%, var(--dash-border, #e5e7eb));
+}
+
+.actionCenterBtn:active {
+  transform: translateY(0);
+}
+
+.actionCenterBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand, #1b77be) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* Active = at least one item needs attention: brand-tinted, alive. */
+.actionCenterBtnActive {
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 40%, transparent);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 7%, var(--surface-base, #ffffff));
+  color: var(--color-brand, #1b77be);
+}
+
+.actionCenterBtnActive svg {
+  color: var(--color-brand, #1b77be);
+}
+
+.actionCenterCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-brand, #1b77be) 40%, transparent);
+}
+
+@media (max-width: 640px) {
+  .toolbar {
+    margin-bottom: 12px;
+  }
+}

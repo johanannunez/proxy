@@ -13,6 +13,7 @@ import { CommandPalette } from "@/components/admin/chrome/CommandPalette";
 import { QuickCapture } from "@/components/admin/chrome/QuickCapture";
 import { SidebarDrawer } from "@/components/admin/chrome/SidebarDrawer";
 import { NotificationPopover } from "@/components/admin/chrome/NotificationPopover";
+import { ActionCenterDrawer } from "@/components/admin/chrome/ActionCenterDrawer";
 import { HelpSupportModal } from "@/components/admin/HelpSupportModal";
 import { AdminAIChatTrigger } from "@/components/admin/AdminAIChatTrigger";
 
@@ -114,6 +115,7 @@ export default async function AdminLayout({
         <CommandPalette />
         <QuickCapture />
         <NotificationPopover />
+        <ActionCenterDrawer />
         <HelpSupportModal />
         <AdminAIChatTrigger />
         <SidebarDrawer

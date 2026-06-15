@@ -81,6 +81,17 @@ function fmtDate(iso: string | null): string {
   }
 }
 
+/** Corner-cell legend: the six cell states, in reading order. The swatch
+ * classes echo the CompletionRing colors so the key matches the matrix. */
+const STATUS_LEGEND: { label: string; swatch: string }[] = [
+  { label: "Complete", swatch: "legendComplete" },
+  { label: "In progress", swatch: "legendProgress" },
+  { label: "Sent", swatch: "legendSent" },
+  { label: "Declined", swatch: "legendDeclined" },
+  { label: "Not sent", swatch: "legendNeeded" },
+  { label: "Waived", swatch: "legendWaived" },
+];
+
 /* ─────────────────────────────────────────────────────────────
    Types
 ───────────────────────────────────────────────────────────── */
@@ -1253,7 +1264,18 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
           {/* Header area: matches right region header height */}
           <div className={styles.matrixLeftHeader} role="presentation">
             <div className={styles.matrixCornerCell}>
-              Workspace
+              <span className={styles.legendHeading}>Status key</span>
+              <div className={styles.legendGrid}>
+                {STATUS_LEGEND.map((entry) => (
+                  <span key={entry.label} className={styles.legendItem}>
+                    <span
+                      className={`${styles.legendSwatch} ${styles[entry.swatch as keyof typeof styles]}`}
+                      aria-hidden
+                    />
+                    {entry.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1295,11 +1317,42 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                     >
                       {ws.name}
                     </button>
-                    {ws.type && (
-                      <div className={styles.matrixOwnerType}>
-                        {ws.type}
+                    {ws.owners.length > 0 ? (
+                      <div
+                        className={styles.matrixOwnerPeople}
+                        title={ws.owners.map((o) => o.name).join(", ")}
+                      >
+                        <span className={styles.matrixOwnerStack} aria-hidden>
+                          {ws.owners.slice(0, 3).map((o) =>
+                            o.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase avatar
+                              <img
+                                key={o.id}
+                                src={o.avatarUrl}
+                                alt=""
+                                className={styles.matrixOwnerPeep}
+                                style={{ objectFit: "cover" }}
+                              />
+                            ) : (
+                              <span
+                                key={o.id}
+                                className={styles.matrixOwnerPeep}
+                                style={{ background: avatarColor(o.name) }}
+                              >
+                                {initials(o.name)}
+                              </span>
+                            ),
+                          )}
+                        </span>
+                        <span className={styles.matrixOwnerPeopleNames}>
+                          {ws.owners.length === 1
+                            ? ws.owners[0].name
+                            : `${ws.owners[0].name.split(" ")[0]} +${ws.owners.length - 1}`}
+                        </span>
                       </div>
-                    )}
+                    ) : ws.type ? (
+                      <div className={styles.matrixOwnerType}>{ws.type}</div>
+                    ) : null}
                     <div className={styles.matrixOwnerBar}>
                       <div
                         className={styles.matrixOwnerBarFill}
