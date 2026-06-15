@@ -8,7 +8,13 @@ import {
   markAuthorityPendingSignatures,
   getWorkspaceMembers,
 } from "@/lib/workspace/decision-authority";
-import { createSubmission } from "@/lib/signing/docuseal";
+import { createSubmission, createTemplateFromHtml } from "@/lib/signing/docuseal";
+import {
+  AUTHORITY_ADDENDUM_DOCUMENT_KEY,
+  AUTHORITY_ADDENDUM_SUBMITTERS,
+  AUTHORITY_ADDENDUM_FIELDS,
+  buildAuthorityAddendumHtml,
+} from "@/lib/signing/authority-addendum-html";
 import type { AuthorityConfig, GovernanceMode } from "@/types/decision-authority";
 import { revalidatePath } from "next/cache";
 
@@ -95,11 +101,9 @@ export async function sendAddendumForSignatureAction(
     return { error: "Not found." };
   }
 
-  const raw = process.env.DOCUSEAL_AUTHORITY_ADDENDUM_TEMPLATE_ID;
-  const templateId = raw ? parseInt(raw, 10) : null;
-
-  if (!templateId || isNaN(templateId)) {
-    return { error: "Addendum template is not configured. Contact support." };
+  const templateId = await ensureAuthorityAddendumTemplate();
+  if (!templateId) {
+    return { error: "Addendum template could not be provisioned. Check DocuSeal configuration." };
   }
 
   const members = await getWorkspaceMembers(ctx.workspace.id);
@@ -138,6 +142,65 @@ export async function sendAddendumForSignatureAction(
 
   revalidatePath("/workspace/account");
   return { ok: true };
+}
+
+/**
+ * Returns the DocuSeal template ID for the authority addendum, provisioning
+ * it from code on first use. The template is stored in document_templates
+ * (key: "decision_authority_addendum") so it survives across deploys.
+ * No env var, no DocuSeal UI setup required.
+ */
+async function ensureAuthorityAddendumTemplate(): Promise<number | null> {
+  const db = createServiceClient() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  const { data: existing } = await db
+    .from("document_templates")
+    .select("docuseal_template_id")
+    .eq("document_key", AUTHORITY_ADDENDUM_DOCUMENT_KEY)
+    .is("org_id", null)
+    .eq("is_active", true)
+    .not("docuseal_template_id", "is", null)
+    .maybeSingle();
+
+  if (existing?.docuseal_template_id) {
+    return existing.docuseal_template_id as number;
+  }
+
+  const result = await createTemplateFromHtml(
+    "Decision Authority Addendum",
+    buildAuthorityAddendumHtml(),
+    {
+      submitters: [...AUTHORITY_ADDENDUM_SUBMITTERS],
+      fields: [...AUTHORITY_ADDENDUM_FIELDS],
+    },
+  );
+
+  if (!result) {
+    console.error("[authority] failed to provision addendum template via DocuSeal");
+    return null;
+  }
+
+  const { error: upsertErr } = await db.from("document_templates").upsert(
+    {
+      org_id: null,
+      document_key: AUTHORITY_ADDENDUM_DOCUMENT_KEY,
+      display_name: "Decision Authority Addendum",
+      description: "Workspace governance addendum signed by all co-owners.",
+      docuseal_template_id: result.templateId,
+      signer_roles: AUTHORITY_ADDENDUM_SUBMITTERS.map((s) => s.name),
+      requires_countersignature: false,
+      gate_step: null,
+      is_system: true,
+      is_active: true,
+    },
+    { onConflict: "document_key,org_id", ignoreDuplicates: false },
+  );
+
+  if (upsertErr) {
+    console.error("[authority] failed to persist template row:", upsertErr.message);
+  }
+
+  return result.templateId;
 }
 
 /**
