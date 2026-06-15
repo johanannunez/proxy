@@ -44,7 +44,7 @@ import {
   ActivityTable,
   type ActivityRow,
 } from "@/components/admin/paperwork/ActivityTable";
-import { CustomSelect } from "@/components/admin/CustomSelect";
+import { ActivityFilters } from "@/components/admin/paperwork/ActivityFilters";
 import styles from "./SignaturesHub.module.css";
 
 /** True e-sign instruments (DocuSeal-backed). */
@@ -90,6 +90,8 @@ export function SignaturesHub({
   /* ── Activity filters ── */
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [docFilter, setDocFilter] = useState("");
+  const [personFilter, setPersonFilter] = useState("");
 
   /* Deep link from the Action Center:
      /admin/paperwork/signatures?owner=<profileId|contactId>&doc=<secureDocKey> */
@@ -153,12 +155,24 @@ export function SignaturesHub({
     return bTime.localeCompare(aTime);
   });
 
-  /* Apply search + status filter. */
+  /* Facet options derived from the rows that actually exist. */
+  const docOptions = [
+    { value: "", label: "All documents" },
+    ...Array.from(new Set(allRows.map((r) => r.doc))).map((d) => ({ value: d, label: d })),
+  ];
+  const personOptions = [
+    { value: "", label: "All people" },
+    ...Array.from(new Set(allRows.map((r) => r.who))).map((p) => ({ value: p, label: p })),
+  ];
+
+  /* Apply search + facet filters. */
   const filteredRows = allRows.filter((r) => {
     if (search) {
       const q = search.toLowerCase();
       if (!r.who.toLowerCase().includes(q) && !r.doc.toLowerCase().includes(q)) return false;
     }
+    if (docFilter && r.doc !== docFilter) return false;
+    if (personFilter && r.who !== personFilter) return false;
     if (statusFilter !== "all") {
       if (statusFilter === "awaiting" && r.status.tone !== "awaiting") return false;
       if (statusFilter === "viewed" && r.status.tone !== "viewed") return false;
@@ -168,23 +182,17 @@ export function SignaturesHub({
   });
 
   const activityFilters = (
-    <div className={styles.actFilters}>
-      <input
-        type="text"
-        className={styles.actSearch}
-        placeholder="Search owner or document"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        aria-label="Search signatures"
-      />
-      <div className={styles.actSelectWrap}>
-        <CustomSelect
-          value={statusFilter}
-          options={STATUS_OPTIONS}
-          onChange={(v) => setStatusFilter(v as StatusFilter)}
-        />
-      </div>
-    </div>
+    <ActivityFilters
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Search owner or document"
+      searchAriaLabel="Search signatures"
+      facets={[
+        { key: "doc", placeholder: "All documents", value: docFilter, onChange: setDocFilter, options: docOptions },
+        { key: "person", placeholder: "All people", value: personFilter, onChange: setPersonFilter, options: personOptions },
+        { key: "status", placeholder: "All statuses", value: statusFilter, onChange: (v) => setStatusFilter(v as StatusFilter), options: STATUS_OPTIONS },
+      ]}
+    />
   );
 
   return (

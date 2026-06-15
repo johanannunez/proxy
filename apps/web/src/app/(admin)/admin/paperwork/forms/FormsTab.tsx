@@ -26,7 +26,6 @@ import {
   FileDashed,
   CaretRight,
   PencilSimple,
-  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { resolveFormAppearance, FormGlyph } from "./form-icon";
 import type { Form } from "@/lib/admin/forms-types";
@@ -62,7 +61,7 @@ import {
   ActivityTable,
   type ActivityRow,
 } from "@/components/admin/paperwork/ActivityTable";
-import { CustomSelect } from "@/components/admin/CustomSelect";
+import { ActivityFilters } from "@/components/admin/paperwork/ActivityFilters";
 import styles from "./FormsTab.module.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -78,6 +77,12 @@ type LibraryTemplate = {
 type FormActivityRow = UnifiedFormResponse;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const FORM_STATUS_OPTIONS = [
+  { value: "", label: "All statuses" },
+  { value: "submitted", label: "Submitted" },
+  { value: "started", label: "Started" },
+];
 
 function publicFormUrl(slug: string): string {
   const base =
@@ -411,6 +416,8 @@ export function FormsTab({
   // Activity filters
   const [search, setSearch] = useState("");
   const [filterFormId, setFilterFormId] = useState("");
+  const [filterPerson, setFilterPerson] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
   const active = useMemo(() => forms.filter((f) => f.archived_at === null), [forms]);
   const archived = useMemo(() => forms.filter((f) => f.archived_at !== null), [forms]);
@@ -421,10 +428,21 @@ export function FormsTab({
     ...forms.map((f) => ({ value: f.id, label: f.name })),
   ], [forms]);
 
+  // Respondent options derived from the responses that exist
+  const personFilterOptions = useMemo(() => [
+    { value: "", label: "All people" },
+    ...Array.from(
+      new Set(responses.map((r) => r.respondent_name ?? "Anonymous")),
+    ).map((p) => ({ value: p, label: p })),
+  ], [responses]);
+
   // Map responses to ActivityRow
   const activityRows = useMemo<ActivityRow[]>(() => {
     let rows = responses;
     if (filterFormId) rows = rows.filter((r) => r.form_id === filterFormId);
+    if (filterPerson) rows = rows.filter((r) => (r.respondent_name ?? "Anonymous") === filterPerson);
+    if (filterStatus === "submitted") rows = rows.filter((r) => r.completed_at !== null);
+    if (filterStatus === "started") rows = rows.filter((r) => r.completed_at === null);
     if (search.trim()) {
       const q = search.toLowerCase();
       rows = rows.filter(
@@ -455,7 +473,7 @@ export function FormsTab({
         onOpen: () => router.push(`/admin/paperwork/templates/${r.form_id}?tab=responses`),
       };
     });
-  }, [responses, filterFormId, search, router]);
+  }, [responses, filterFormId, filterPerson, filterStatus, search, router]);
 
   function runRowAction(
     id: string,
@@ -503,27 +521,17 @@ export function FormsTab({
   }
 
   const activityFilters = (
-    <div className={styles.activityFilters}>
-      <span className={styles.searchWrap}>
-        <MagnifyingGlass size={13} weight="bold" className={styles.searchIcon} />
-        <input
-          type="text"
-          className={styles.searchInput}
-          placeholder="Search responses..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search responses"
-        />
-      </span>
-      <span className={styles.filterSelectWrap}>
-        <CustomSelect
-          value={filterFormId}
-          onChange={setFilterFormId}
-          options={formFilterOptions}
-          placeholder="All forms"
-        />
-      </span>
-    </div>
+    <ActivityFilters
+      search={search}
+      onSearch={setSearch}
+      searchPlaceholder="Search responses…"
+      searchAriaLabel="Search responses"
+      facets={[
+        { key: "form", placeholder: "All forms", value: filterFormId, onChange: setFilterFormId, options: formFilterOptions },
+        { key: "person", placeholder: "All people", value: filterPerson, onChange: setFilterPerson, options: personFilterOptions },
+        { key: "status", placeholder: "All statuses", value: filterStatus, onChange: setFilterStatus, options: FORM_STATUS_OPTIONS },
+      ]}
+    />
   );
 
   return (
