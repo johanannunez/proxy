@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { listForms } from "@/lib/admin/forms";
+import { listForms, listAllFormResponsesForOrg } from "@/lib/admin/forms";
 import { listDocumentTemplates } from "@/lib/admin/document-templates";
 import { fetchDocumentsHubData } from "@/lib/admin/documents-hub";
 import { SECURE_DOC_TYPES, type SecureDocKey } from "@/lib/admin/documents-hub-shared";
@@ -15,18 +15,18 @@ export const dynamic = "force-dynamic";
 const secureKeys = Object.keys(SECURE_DOC_TYPES) as SecureDocKey[];
 
 /**
- * Forms tab — the form-master library (2026-06-12 IA amendment). Managing a
- * form library is a distinct activity from chasing signatures, so form
- * masters get their own tab between Documents and Templates.
+ * Forms tab: form-master library (Library sub-tab) and cross-form response
+ * feed (Activity sub-tab). The three data fetches run in parallel.
  */
 export default async function FormsPage() {
   const headerList = await headers();
   const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
 
-  const [forms, systemTemplates, owners] = await Promise.all([
+  const [forms, systemTemplates, owners, responses] = await Promise.all([
     listForms(orgId),
     listDocumentTemplates(),
     fetchDocumentsHubData(),
+    listAllFormResponsesForOrg(orgId, 100),
   ]);
 
   const recipients: SendRecipient[] = owners
@@ -52,7 +52,12 @@ export default async function FormsPage() {
 
   return (
     <PaperworkShell active="forms" orgId={orgId}>
-      <FormsTab forms={forms} recipients={recipients} library={library} />
+      <FormsTab
+        forms={forms}
+        recipients={recipients}
+        library={library}
+        responses={responses}
+      />
     </PaperworkShell>
   );
 }

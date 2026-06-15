@@ -1,4 +1,4 @@
-/* ─── Forms tab — Hubflo-style form-master list ─── */
+/* ─── Forms tab — Library | Activity sub-tabs (Round 2) ─── */
 
 .root {
   padding: 18px 24px 32px;
@@ -484,4 +484,78 @@
   .actionReveal {
     opacity: 1;
   }
+
+  .libGrid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+}
+
+/* ─── Cards grid (Library, cards view) ─── */
+
+.libGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 15px;
+}
+
+/* Card-level action row (inside TemplateCard footer) */
+.cardActionRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.actionBtnSm {
+  padding: 4px 9px;
+  font-size: 11.5px;
+}
+
+/* ─── Activity filters ─── */
+
+.activityFilters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-tertiary, #9aa1ab);
+  pointer-events: none;
+}
+
+.searchInput {
+  height: 34px;
+  padding: 0 12px 0 30px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-elevated, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.10));
+  border-radius: 8px;
+  outline: none;
+  min-width: 200px;
+  transition: border-color 0.14s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--text-tertiary, #9aa1ab);
+}
+
+.searchInput:focus {
+  border-color: var(--color-brand, #1b77be);
+}
+
+.filterSelectWrap {
+  min-width: 160px;
 }

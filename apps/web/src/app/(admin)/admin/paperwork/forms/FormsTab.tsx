@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * FormsTab — Hubflo-style form-master library (2026-06-12 IA amendment).
- * A clean list: icon + name, response count, created, updated, row actions
- * (Send, Share link, Duplicate, Archive). Archived forms collapse behind a
- * count link at the top right. Row click opens the existing Build |
- * Responses | Settings detail page.
+ * FormsTab — Library | Activity sub-tabs (Round 2 IA).
+ *
+ * Library: card or list view of form masters. Preserves Send/Share/Duplicate/
+ * Archive row wiring, the SendSheet block, and the archived toggle.
+ *
+ * Activity: cross-form response feed via ActivityTable (shared component).
+ * Search + form filter narrow the visible rows client-side.
  */
 
 import { useMemo, useState, useTransition } from "react";
@@ -24,10 +26,16 @@ import {
   FileDashed,
   CaretRight,
   PencilSimple,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { resolveFormAppearance, FormGlyph } from "./form-icon";
 import type { Form } from "@/lib/admin/forms-types";
-import { fmtShortDate } from "@/lib/admin/documents-hub-shared";
+import {
+  fmtShortDate,
+  fmtDate,
+  avatarColor,
+} from "@/lib/admin/documents-hub-shared";
+import type { UnifiedFormResponse } from "@/lib/admin/responses-csv";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import { SendSheet } from "../templates/SendSheet";
 import {
@@ -37,7 +45,24 @@ import {
   deleteFormAction,
 } from "../templates/form-actions";
 import type { SendRecipient, UnifiedTemplate } from "../templates/unified-types";
+import {
+  HubSubTabs,
+  ViewToggle,
+  HubGroupLabel,
+  type HubTab,
+  type HubView,
+} from "@/components/admin/paperwork/HubChrome";
+import {
+  TemplateCard,
+} from "@/components/admin/paperwork/TemplateCard";
+import {
+  ActivityTable,
+  type ActivityRow,
+} from "@/components/admin/paperwork/ActivityTable";
+import { CustomSelect } from "@/components/admin/CustomSelect";
 import styles from "./FormsTab.module.css";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type FormListItem = Form & { response_count: number };
 
@@ -47,6 +72,10 @@ export type LibraryTemplate = {
   description: string | null;
 };
 
+export type FormActivityRow = UnifiedFormResponse;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function publicFormUrl(slug: string): string {
   const base =
     typeof window !== "undefined"
@@ -55,8 +84,6 @@ function publicFormUrl(slug: string): string {
   return `${base}/f/${slug}`;
 }
 
-
-/** Map a form master into the SendSheet's unified shape (link-based send). */
 function toUnifiedTemplate(form: FormListItem): UnifiedTemplate {
   return {
     id: form.id,
@@ -79,6 +106,8 @@ function toUnifiedTemplate(form: FormListItem): UnifiedTemplate {
     isPublic: form.is_public,
   };
 }
+
+// ── FormRow (list view) ───────────────────────────────────────────────────────
 
 function FormRow({
   form,
@@ -196,8 +225,6 @@ function FormRow({
           </>
         ) : (
           <>
-            {/* Secondary actions reveal to the LEFT of the pinned primary on
-                hover, filling reserved space so the row never reflows. */}
             <span className={styles.actionReveal}>
               {form.is_active && form.slug && (
                 <button
@@ -226,8 +253,6 @@ function FormRow({
                 <Archive size={14} weight="bold" />
               </button>
             </span>
-            {/* Primary slot is always filled so rows never shift: Live forms
-                send, Drafts edit. */}
             {form.is_active ? (
               <button type="button" className={styles.actionBtn} onClick={onSend}>
                 <PaperPlaneTilt size={13} weight="bold" />
@@ -250,16 +275,133 @@ function FormRow({
   );
 }
 
+// ── FormCardItem (cards view) ─────────────────────────────────────────────────
+
+function FormCardItem({
+  form,
+  busy,
+  onSend,
+  onDuplicate,
+  onArchive,
+}: {
+  form: FormListItem;
+  busy: boolean;
+  onSend: () => void;
+  onDuplicate: () => void;
+  onArchive: () => void;
+}) {
+  const router = useRouter();
+  const [copied, setCopied] = useState(false);
+  const detailHref = `/admin/paperwork/templates/${form.id}`;
+  const a = resolveFormAppearance({
+    id: form.id,
+    icon: form.icon,
+    icon_color: form.icon_color,
+  });
+
+  function handleCopyLink(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!form.slug) return;
+    navigator.clipboard.writeText(publicFormUrl(form.slug)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  const spec = {
+    kind: "form" as const,
+    Icon: a.emoji ? undefined : a.Icon,
+    emoji: a.emoji ?? undefined,
+    bg: a.bg,
+    fg: a.fg,
+  };
+
+  const metaText = `${form.schema.fields.length} question${form.schema.fields.length === 1 ? "" : "s"} · ${form.response_count} ${form.response_count === 1 ? "response" : "responses"}`;
+
+  const badge = !form.is_active ? "Draft" : undefined;
+
+  const cardActions = busy ? (
+    <span className={styles.actionSpinner} aria-label="Working">
+      <SpinnerGap size={14} weight="bold" />
+    </span>
+  ) : (
+    <span className={styles.cardActionRow}>
+      {form.is_active && form.slug && (
+        <button
+          type="button"
+          className={`${styles.actionIconBtn} ${copied ? styles.actionCopied : ""}`}
+          onClick={handleCopyLink}
+          title="Copy share link"
+        >
+          {copied ? <Check size={13} weight="bold" /> : <LinkSimple size={13} weight="bold" />}
+        </button>
+      )}
+      <button
+        type="button"
+        className={styles.actionIconBtn}
+        onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+        title="Duplicate"
+      >
+        <Copy size={13} weight="bold" />
+      </button>
+      <button
+        type="button"
+        className={`${styles.actionIconBtn} ${styles.actionDanger}`}
+        onClick={(e) => { e.stopPropagation(); onArchive(); }}
+        title="Archive"
+      >
+        <Archive size={13} weight="bold" />
+      </button>
+      {form.is_active ? (
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.actionBtnSm}`}
+          onClick={(e) => { e.stopPropagation(); onSend(); }}
+        >
+          <PaperPlaneTilt size={12} weight="bold" />
+          Send
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.actionBtnSm}`}
+          onClick={(e) => { e.stopPropagation(); router.push(detailHref); }}
+        >
+          <PencilSimple size={12} weight="bold" />
+          Edit
+        </button>
+      )}
+    </span>
+  );
+
+  return (
+    <TemplateCard
+      spec={spec}
+      name={form.name}
+      meta={metaText}
+      badge={badge}
+      onOpen={() => router.push(detailHref)}
+      actions={cardActions}
+    />
+  );
+}
+
+// ── FormsTab ──────────────────────────────────────────────────────────────────
+
 export function FormsTab({
   forms,
   recipients,
   library,
+  responses,
 }: {
   forms: FormListItem[];
   recipients: SendRecipient[];
   library: LibraryTemplate[];
+  responses: FormActivityRow[];
 }) {
   const router = useRouter();
+  const [tab, setTab] = useState<HubTab>("library");
+  const [view, setView] = useState<HubView>("cards");
   const [showArchived, setShowArchived] = useState(false);
   const [sendTarget, setSendTarget] = useState<UnifiedTemplate | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FormListItem | null>(null);
@@ -267,8 +409,52 @@ export function FormsTab({
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
+  // Activity filters
+  const [search, setSearch] = useState("");
+  const [filterFormId, setFilterFormId] = useState("");
+
   const active = useMemo(() => forms.filter((f) => f.archived_at === null), [forms]);
   const archived = useMemo(() => forms.filter((f) => f.archived_at !== null), [forms]);
+
+  // Build form filter options from the fetched forms
+  const formFilterOptions = useMemo(() => [
+    { value: "", label: "All forms" },
+    ...forms.map((f) => ({ value: f.id, label: f.name })),
+  ], [forms]);
+
+  // Map responses to ActivityRow
+  const activityRows = useMemo<ActivityRow[]>(() => {
+    let rows = responses;
+    if (filterFormId) rows = rows.filter((r) => r.form_id === filterFormId);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      rows = rows.filter(
+        (r) =>
+          r.form_name.toLowerCase().includes(q) ||
+          (r.respondent_name ?? "").toLowerCase().includes(q) ||
+          (r.respondent_email ?? "").toLowerCase().includes(q),
+      );
+    }
+    return rows.map((r) => {
+      const formAppearance = resolveFormAppearance({ id: r.form_id, icon: null, icon_color: null });
+      const who = r.respondent_name ?? "Anonymous";
+      const isSubmitted = !!r.submitted_at;
+      return {
+        id: r.id,
+        doc: r.form_name,
+        glyph: <FormGlyph appearance={formAppearance} size={14} />,
+        who,
+        whoColor: avatarColor(who),
+        status: isSubmitted
+          ? { label: "Submitted", tone: "complete" as const }
+          : { label: "Started", tone: "draft" as const },
+        sent: fmtDate(r.submitted_at ?? r.completed_at),
+        seen: null,
+        last: fmtDate(r.submitted_at),
+        onOpen: () => router.push(`/admin/paperwork/templates/${r.form_id}?tab=responses`),
+      };
+    });
+  }, [responses, filterFormId, search, router]);
 
   function runRowAction(
     id: string,
@@ -315,29 +501,45 @@ export function FormsTab({
     runRowAction(target.id, () => deleteFormAction(target.id), "Delete failed.");
   }
 
+  const activityFilters = (
+    <div className={styles.activityFilters}>
+      <span className={styles.searchWrap}>
+        <MagnifyingGlass size={13} weight="bold" className={styles.searchIcon} />
+        <input
+          type="text"
+          className={styles.searchInput}
+          placeholder="Search responses..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search responses"
+        />
+      </span>
+      <span className={styles.filterSelectWrap}>
+        <CustomSelect
+          value={filterFormId}
+          onChange={setFilterFormId}
+          options={formFilterOptions}
+          placeholder="All forms"
+        />
+      </span>
+    </div>
+  );
+
   return (
     <div className={styles.root}>
-      <div className={styles.toolbar}>
-        <span className={styles.countLabel}>
-          {active.length} {active.length === 1 ? "form" : "forms"}
-        </span>
-        {archived.length > 0 && (
-          <button
-            type="button"
-            className={styles.archivedLink}
-            onClick={() => setShowArchived((v) => !v)}
-            aria-expanded={showArchived}
-          >
-            <Archive size={13} weight="bold" />
-            {archived.length} archived
-            <CaretRight
-              size={11}
-              weight="bold"
-              className={`${styles.archivedCaret} ${showArchived ? styles.archivedCaretOpen : ""}`}
-            />
-          </button>
-        )}
-      </div>
+      <HubSubTabs
+        tab={tab}
+        onTab={setTab}
+        libraryLabel="forms"
+        crossLink={{
+          label: "Need a signature instead?",
+          linkText: "Signatures",
+          href: "/admin/paperwork/signatures",
+        }}
+        right={tab === "library" ? (
+          <ViewToggle view={view} onView={setView} />
+        ) : undefined}
+      />
 
       {error && (
         <div className={styles.errorBanner} role="alert">
@@ -346,94 +548,156 @@ export function FormsTab({
         </div>
       )}
 
-      {active.length === 0 ? (
-        <div className={styles.emptyState}>
-          <FileDashed size={40} weight="duotone" />
-          <p className={styles.emptyTitle}>No forms yet</p>
-          <p className={styles.emptyBody}>
-            Use the New document button to build your first form. Drag and drop
-            questions, then share a link or send it out.
-          </p>
-          {library.length > 0 ? (
-            <div className={styles.libraryBlock}>
-              <p className={styles.libraryLabel}>Start with one of these</p>
-              <div className={styles.libraryGrid}>
-                {library.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={styles.libraryCard}
-                    onClick={() => router.push(`/admin/paperwork/templates/${t.id}`)}
-                  >
-                    <span className={styles.libraryName}>{t.name}</span>
-                    {t.description && (
-                      <span className={styles.libraryDesc}>{t.description}</span>
-                    )}
-                    <span className={styles.libraryBadge}>Proxy library</span>
-                  </button>
+      {/* ── Library tab ─────────────────────────────────────────── */}
+      {tab === "library" && (
+        <>
+          <div className={styles.toolbar}>
+            <span className={styles.countLabel}>
+              {active.length} {active.length === 1 ? "form" : "forms"}
+            </span>
+            {archived.length > 0 && (
+              <button
+                type="button"
+                className={styles.archivedLink}
+                onClick={() => setShowArchived((v) => !v)}
+                aria-expanded={showArchived}
+              >
+                <Archive size={13} weight="bold" />
+                {archived.length} archived
+                <CaretRight
+                  size={11}
+                  weight="bold"
+                  className={`${styles.archivedCaret} ${showArchived ? styles.archivedCaretOpen : ""}`}
+                />
+              </button>
+            )}
+          </div>
+
+          {active.length === 0 ? (
+            <div className={styles.emptyState}>
+              <FileDashed size={40} weight="duotone" />
+              <p className={styles.emptyTitle}>No forms yet</p>
+              <p className={styles.emptyBody}>
+                Use the New document button to build your first form. Drag and drop
+                questions, then share a link or send it out.
+              </p>
+              {library.length > 0 ? (
+                <div className={styles.libraryBlock}>
+                  <p className={styles.libraryLabel}>Start with one of these</p>
+                  <div className={styles.libraryGrid}>
+                    {library.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className={styles.libraryCard}
+                        onClick={() => router.push(`/admin/paperwork/templates/${t.id}`)}
+                      >
+                        <span className={styles.libraryName}>{t.name}</span>
+                        {t.description && (
+                          <span className={styles.libraryDesc}>{t.description}</span>
+                        )}
+                        <span className={styles.libraryBadge}>Proxy library</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className={styles.emptyBody}>
+                  The Proxy pre-made library has nothing to suggest yet.
+                </p>
+              )}
+            </div>
+          ) : view === "cards" ? (
+            <>
+              <HubGroupLabel>Your forms</HubGroupLabel>
+              <div className={styles.libGrid}>
+                {active.map((form) => (
+                  <FormCardItem
+                    key={form.id}
+                    form={form}
+                    busy={busyId === form.id}
+                    onSend={() => setSendTarget(toUnifiedTemplate(form))}
+                    onDuplicate={() => handleDuplicate(form)}
+                    onArchive={() =>
+                      runRowAction(form.id, () => archiveFormAction(form.id), "Archive failed.")
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className={styles.tableWrap}>
+              <div className={styles.headerRow} aria-hidden>
+                <span />
+                <span className={styles.headerCell}>Name</span>
+                <span className={`${styles.headerCell} ${styles.statusCell}`}>Status</span>
+                <span className={`${styles.headerCell} ${styles.responseCell}`}>Responses</span>
+                <span className={`${styles.headerCell} ${styles.dateCell}`}>Created</span>
+                <span className={`${styles.headerCell} ${styles.dateCell}`}>Updated</span>
+                <span />
+              </div>
+              <div className={styles.list} role="list">
+                {active.map((form) => (
+                  <FormRow
+                    key={form.id}
+                    form={form}
+                    archived={false}
+                    busy={busyId === form.id}
+                    onSend={() => setSendTarget(toUnifiedTemplate(form))}
+                    onDuplicate={() => handleDuplicate(form)}
+                    onArchive={() =>
+                      runRowAction(form.id, () => archiveFormAction(form.id), "Archive failed.")
+                    }
+                    onRestore={() => undefined}
+                    onDeleteRequest={() => setDeleteTarget(form)}
+                  />
                 ))}
               </div>
             </div>
-          ) : (
-            <p className={styles.emptyBody}>
-              The Proxy pre-made library has nothing to suggest yet.
-            </p>
           )}
-        </div>
-      ) : (
-        <div className={styles.tableWrap}>
-          <div className={styles.headerRow} aria-hidden>
-            <span />
-            <span className={styles.headerCell}>Name</span>
-            <span className={`${styles.headerCell} ${styles.statusCell}`}>Status</span>
-            <span className={`${styles.headerCell} ${styles.responseCell}`}>Responses</span>
-            <span className={`${styles.headerCell} ${styles.dateCell}`}>Created</span>
-            <span className={`${styles.headerCell} ${styles.dateCell}`}>Updated</span>
-            <span />
-          </div>
-          <div className={styles.list} role="list">
-            {active.map((form) => (
-              <FormRow
-                key={form.id}
-                form={form}
-                archived={false}
-                busy={busyId === form.id}
-                onSend={() => setSendTarget(toUnifiedTemplate(form))}
-                onDuplicate={() => handleDuplicate(form)}
-                onArchive={() =>
-                  runRowAction(form.id, () => archiveFormAction(form.id), "Archive failed.")
-                }
-                onRestore={() => undefined}
-                onDeleteRequest={() => setDeleteTarget(form)}
-              />
-            ))}
-          </div>
-        </div>
+
+          {showArchived && archived.length > 0 && (
+            <div className={styles.archivedSection}>
+              <p className={styles.archivedTitle}>Archived</p>
+              <div className={styles.list} role="list">
+                {archived.map((form) => (
+                  <FormRow
+                    key={form.id}
+                    form={form}
+                    archived
+                    busy={busyId === form.id}
+                    onSend={() => undefined}
+                    onDuplicate={() => handleDuplicate(form)}
+                    onArchive={() => undefined}
+                    onRestore={() =>
+                      runRowAction(form.id, () => unarchiveFormAction(form.id), "Restore failed.")
+                    }
+                    onDeleteRequest={() => setDeleteTarget(form)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {showArchived && archived.length > 0 && (
-        <div className={styles.archivedSection}>
-          <p className={styles.archivedTitle}>Archived</p>
-          <div className={styles.list} role="list">
-            {archived.map((form) => (
-              <FormRow
-                key={form.id}
-                form={form}
-                archived
-                busy={busyId === form.id}
-                onSend={() => undefined}
-                onDuplicate={() => handleDuplicate(form)}
-                onArchive={() => undefined}
-                onRestore={() =>
-                  runRowAction(form.id, () => unarchiveFormAction(form.id), "Restore failed.")
-                }
-                onDeleteRequest={() => setDeleteTarget(form)}
-              />
-            ))}
-          </div>
-        </div>
+      {/* ── Activity tab ─────────────────────────────────────────── */}
+      {tab === "activity" && (
+        <ActivityTable
+          rows={activityRows}
+          hideSeen
+          sentLabel="Started"
+          lastLabel="Submitted"
+          filters={activityFilters}
+          emptyText={
+            search || filterFormId
+              ? "No responses match your filters."
+              : "No form responses yet."
+          }
+        />
       )}
 
+      {/* ── SendSheet ─────────────────────────────────────────────── */}
       <AnimatePresence>
         {sendTarget && (
           <SendSheet

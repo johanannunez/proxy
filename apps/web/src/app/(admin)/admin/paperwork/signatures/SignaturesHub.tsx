@@ -1,18 +1,24 @@
 "use client";
 
 /**
- * SignaturesHub — the Signatures tab body (2026-06-14 redesign). Two jobs,
- * deliberately kept distinct from the workspace-centric Status Board:
- *   1. Sent signatures — an owner-centric management list. Each owner shows
- *      their true e-sign documents as status pills; clicking one opens the
- *      DocumentDrawer (audit trail, resend, remind, certificate, mute, reset).
- *   2. Signature library — the reusable signature masters + send sheet.
- * Form masters live on the Forms tab; W-9 + Identity are uploads today and
- * convert to real signatures in Phase 2, so they are not listed here yet.
+ * SignaturesHub — Library | Activity sub-tab layout (2026-06-15 redesign).
+ *
+ * Library tab: TemplateCard grid or list view for signature masters. Send button
+ * opens SendSheet (same pattern as TemplatesTab). A cross-link nudges admins
+ * toward Forms when they want a form instead.
+ *
+ * Activity tab: ActivityTable of every owner-document pair that has been sent at
+ * least once. Rows open the DocumentDrawer (same drawer as before). Filters:
+ * search + status select.
+ *
+ * Deep-link (?owner=&doc=) preserved verbatim from the old hub; also switches to
+ * Activity so the opened row is visible behind the drawer.
  */
 
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
+import { useRouter } from "next/navigation";
+import { PenNib, PaperPlaneTilt } from "@phosphor-icons/react";
 import {
   SECURE_DOC_TYPES,
   avatarColor,
@@ -20,34 +26,47 @@ import {
   type SecureDocKey,
 } from "@/lib/admin/documents-hub-shared";
 import type { SendRecipient, UnifiedTemplate } from "../templates/unified-types";
-import { TemplatesTab } from "../templates/TemplatesTab";
 import { DocumentDrawer } from "../DocumentDrawer";
+import { SendSheet } from "../templates/SendSheet";
+import {
+  HubSubTabs,
+  ViewToggle,
+  HubGroupLabel,
+  type HubTab,
+  type HubView,
+} from "@/components/admin/paperwork/HubChrome";
+import {
+  TemplateCard,
+  accentForSeed,
+} from "@/components/admin/paperwork/TemplateCard";
+import {
+  ActivityTable,
+  type ActivityRow,
+} from "@/components/admin/paperwork/ActivityTable";
+import { CustomSelect } from "@/components/admin/CustomSelect";
 import styles from "./SignaturesHub.module.css";
 
-/** True e-sign instruments (DocuSeal-backed). Order = how they read in a row. */
+/** True e-sign instruments (DocuSeal-backed). */
 const SIGNATURE_DOC_KEYS: SecureDocKey[] = [
   "host_rental_agreement",
   "ach_authorization",
   "card_authorization",
 ];
 
-type SecureStatus = DocHubOwner["secureDocs"][SecureDocKey]["status"];
+type StatusFilter = "all" | "awaiting" | "viewed" | "signed";
 
-function statusTone(status: SecureStatus): "complete" | "pending" | "notSent" {
-  return status === "completed" ? "complete" : status === "pending" ? "pending" : "notSent";
-}
+const STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "awaiting", label: "Awaiting" },
+  { value: "viewed", label: "Viewed" },
+  { value: "signed", label: "Signed" },
+];
 
-function statusLabel(status: SecureStatus): string {
-  return status === "completed" ? "On file" : status === "pending" ? "Awaiting" : "Not sent";
-}
-
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((p) => p[0] ?? "")
-    .join("")
-    .toUpperCase();
+/** Format an ISO string as "Jun 14" (short month + day), or "—" when null. */
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export function SignaturesHub({
@@ -59,12 +78,26 @@ export function SignaturesHub({
   templates: UnifiedTemplate[];
   recipients: SendRecipient[];
 }) {
+  const router = useRouter();
+
+  /* ── Tab + view state ── */
+  const [tab, setTab] = useState<HubTab>("library");
+  const [view, setView] = useState<HubView>("cards");
+
+  /* ── Send sheet (Library tab) ── */
+  const [sendTarget, setSendTarget] = useState<UnifiedTemplate | null>(null);
+
+  /* ── Document drawer (Activity tab) ── */
   const [drawerEntry, setDrawerEntry] = useState<{
     owner: DocHubOwner;
     docKey: SecureDocKey;
   } | null>(null);
 
-  /* Deep link from the Action Center (and elsewhere):
+  /* ── Activity filters ── */
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  /* Deep link from the Action Center:
      /admin/paperwork/signatures?owner=<profileId|contactId>&doc=<secureDocKey> */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -74,105 +107,210 @@ export function SignaturesHub({
     const owner = owners.find(
       (o) => o.profileId === ownerParam || o.contactId === ownerParam,
     );
-    if (owner) setDrawerEntry({ owner, docKey: docParam as SecureDocKey });
+    if (owner) {
+      setDrawerEntry({ owner, docKey: docParam as SecureDocKey });
+      setTab("activity");
+    }
   }, [owners]);
 
-  /* Only owners with at least one signature in flight: the library below is
-     where you start a brand-new send. Keeps this list calm and meaningful. */
-  const tracked = owners
-    .filter((o) => SIGNATURE_DOC_KEYS.some((k) => o.secureDocs[k].status !== "not_sent"))
-    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+  /* ── Signature templates only (filter out form templates) ── */
+  const sigTemplates = templates.filter((t) => t.kind === "signature");
+
+  /* ── Build ActivityRows from owners × SIGNATURE_DOC_KEYS ── */
+  const allRows: ActivityRow[] = [];
+  for (const owner of owners) {
+    for (const key of SIGNATURE_DOC_KEYS) {
+      const entry = owner.secureDocs[key];
+      if (entry.status === "not_sent") continue;
+      const latest = entry.latest;
+
+      let status: ActivityRow["status"];
+      if (entry.status === "completed") {
+        status = { label: "Signed", tone: "complete" };
+      } else if (entry.status === "pending" && latest?.viewedAt) {
+        status = { label: "Viewed", tone: "viewed" };
+      } else {
+        status = { label: "Awaiting", tone: "awaiting" };
+      }
+
+      allRows.push({
+        id: `${owner.contactId}__${key}`,
+        doc: SECURE_DOC_TYPES[key].label,
+        glyph: <PenNib size={14} weight="duotone" />,
+        who: owner.fullName,
+        whoColor: avatarColor(owner.fullName),
+        status,
+        sent: fmtDate(latest?.sentAt ?? null),
+        seen: latest?.viewedAt ? fmtDate(latest.viewedAt) : null,
+        last: latest?.signedAt ? fmtDate(latest.signedAt) : "—",
+        onOpen: () => setDrawerEntry({ owner, docKey: key }),
+      });
+    }
+  }
+
+  /* Sort most recently sent first. */
+  allRows.sort((a, b) => {
+    const aTime = owners
+      .find((o) => o.contactId === a.id.split("__")[0])
+      ?.secureDocs[a.id.split("__")[1] as SecureDocKey]?.latest?.sentAt ?? "";
+    const bTime = owners
+      .find((o) => o.contactId === b.id.split("__")[0])
+      ?.secureDocs[b.id.split("__")[1] as SecureDocKey]?.latest?.sentAt ?? "";
+    return bTime.localeCompare(aTime);
+  });
+
+  /* Apply search + status filter. */
+  const filteredRows = allRows.filter((r) => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!r.who.toLowerCase().includes(q) && !r.doc.toLowerCase().includes(q)) return false;
+    }
+    if (statusFilter !== "all") {
+      if (statusFilter === "awaiting" && r.status.tone !== "awaiting") return false;
+      if (statusFilter === "viewed" && r.status.tone !== "viewed") return false;
+      if (statusFilter === "signed" && r.status.tone !== "complete") return false;
+    }
+    return true;
+  });
+
+  const activityFilters = (
+    <div className={styles.actFilters}>
+      <input
+        type="text"
+        className={styles.actSearch}
+        placeholder="Search owner or document"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        aria-label="Search signatures"
+      />
+      <div className={styles.actSelectWrap}>
+        <CustomSelect
+          value={statusFilter}
+          options={STATUS_OPTIONS}
+          onChange={(v) => setStatusFilter(v as StatusFilter)}
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.hub}>
-      {/* ─── Sent signatures: owner-centric management ─── */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Sent signatures</h2>
-          <p className={styles.sectionSub}>
-            Every owner with a signature in flight. Open one to see its audit
-            trail, resend, remind, or download the completed certificate.
-          </p>
-        </div>
+      <HubSubTabs
+        tab={tab}
+        onTab={setTab}
+        libraryLabel="signatures"
+        crossLink={{
+          label: "Need a form instead?",
+          linkText: "Forms",
+          href: "/admin/paperwork/forms",
+        }}
+        right={
+          tab === "library" ? (
+            <ViewToggle view={view} onView={setView} />
+          ) : (
+            activityFilters
+          )
+        }
+      />
 
-        {tracked.length === 0 ? (
-          <div className={styles.empty}>
-            <p className={styles.emptyTitle}>No signatures sent yet</p>
-            <p className={styles.emptyBody}>
-              Send a document from the library below and it will appear here so
-              you can track it through to completion.
-            </p>
-          </div>
-        ) : (
-          <ul className={styles.ownerList}>
-            {tracked.map((owner) => (
-              <li key={owner.contactId} className={styles.ownerRow}>
-                <div className={styles.ownerIdentity}>
-                  {owner.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase avatar URL, dimensions unknown
-                    <img
-                      src={owner.avatarUrl}
-                      alt={owner.fullName}
-                      className={styles.ownerAvatar}
-                      style={{ objectFit: "cover" }}
-                    />
-                  ) : (
-                    <span
-                      className={styles.ownerAvatar}
-                      style={{ background: avatarColor(owner.fullName) }}
-                      aria-hidden
+      {tab === "library" && (
+        <div className={styles.libBody}>
+          <HubGroupLabel>Your signatures</HubGroupLabel>
+
+          {sigTemplates.length === 0 ? (
+            <div className={styles.empty}>
+              <p className={styles.emptyTitle}>No signature templates yet</p>
+              <p className={styles.emptyBody}>
+                Create a signature template to get started. Each template becomes
+                a tracked document you can send to any owner.
+              </p>
+            </div>
+          ) : view === "cards" ? (
+            <div className={styles.libGrid}>
+              {sigTemplates.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  spec={{
+                    kind: "signature",
+                    accent: accentForSeed(t.documentKey ?? t.id),
+                  }}
+                  name={t.name}
+                  meta={t.sentCount > 0 ? `${t.sentCount} sent` : "Not sent yet"}
+                  badge={t.isReady ? undefined : "Draft"}
+                  onOpen={() => router.push(`/admin/paperwork/templates/${t.id}`)}
+                  actions={
+                    <button
+                      type="button"
+                      className={styles.sendBtn}
+                      onClick={() => setSendTarget(t)}
                     >
-                      {initialsOf(owner.fullName)}
-                    </span>
+                      <PaperPlaneTilt size={13} weight="bold" />
+                      Send
+                    </button>
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.libList}>
+              {sigTemplates.map((t) => (
+                <div key={t.id} className={styles.libRow}>
+                  <span className={styles.libRowGlyph}>
+                    <PenNib size={15} weight="duotone" />
+                  </span>
+                  <span className={styles.libRowName}>{t.name}</span>
+                  <span className={styles.libRowMeta}>
+                    {t.sentCount > 0 ? `${t.sentCount} sent` : "Not sent yet"}
+                  </span>
+                  {!t.isReady && (
+                    <span className={styles.libRowBadge}>Draft</span>
                   )}
-                  <div className={styles.ownerMeta}>
-                    <span className={styles.ownerName}>{owner.fullName}</span>
-                    <span className={styles.ownerSub}>
-                      {owner.propertyCount}{" "}
-                      {owner.propertyCount === 1 ? "property" : "properties"}
-                    </span>
+                  <div className={styles.libRowActions}>
+                    <button
+                      type="button"
+                      className={styles.libRowOpen}
+                      onClick={() => router.push(`/admin/paperwork/templates/${t.id}`)}
+                    >
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.sendBtn}
+                      onClick={() => setSendTarget(t)}
+                    >
+                      <PaperPlaneTilt size={13} weight="bold" />
+                      Send
+                    </button>
                   </div>
                 </div>
-
-                <div className={styles.docPills}>
-                  {SIGNATURE_DOC_KEYS.map((key) => {
-                    const entry = owner.secureDocs[key];
-                    const def = SECURE_DOC_TYPES[key];
-                    const tone = statusTone(entry.status);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        className={`${styles.docPill} ${styles[`docPill_${tone}`]}`}
-                        onClick={() => setDrawerEntry({ owner, docKey: key })}
-                        aria-label={`${owner.fullName}: ${def.label} — ${statusLabel(entry.status)}. Open to manage.`}
-                      >
-                        <span className={styles.docPillDot} aria-hidden />
-                        <span className={styles.docPillLabel}>{def.rowLabel}</span>
-                        <span className={styles.docPillStatus}>
-                          {statusLabel(entry.status)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* ─── Signature library: masters + send ─── */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle}>Signature library</h2>
-          <p className={styles.sectionSub}>
-            Your reusable signature templates. Send one to an owner, or open it
-            to edit its fields and sending settings.
-          </p>
+              ))}
+            </div>
+          )}
         </div>
-        <TemplatesTab templates={templates} recipients={recipients} />
-      </section>
+      )}
+
+      {tab === "activity" && (
+        <ActivityTable
+          rows={filteredRows}
+          lastLabel="Signed"
+          emptyText={
+            allRows.length === 0
+              ? "No signatures have been sent yet. Send one from the Library tab."
+              : "No results match your filters."
+          }
+        />
+      )}
+
+      <AnimatePresence>
+        {sendTarget && (
+          <SendSheet
+            key={sendTarget.id}
+            template={sendTarget}
+            recipients={recipients}
+            onClose={() => setSendTarget(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {drawerEntry && (
