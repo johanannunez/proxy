@@ -8,7 +8,7 @@ import {
   useEffect,
   type KeyboardEvent,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -61,6 +61,7 @@ type Props = {
 
 export function FormBuilderCanvas({ form: initialForm }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [schema, setSchema] = useState<FormSchema>(initialForm.schema);
   const [formName, setFormName] = useState(initialForm.name);
   const [isPublished, setIsPublished] = useState(initialForm.is_active);
@@ -112,6 +113,15 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
     setSchema(nextSchema);
     scheduleAutoSave(nextSchema);
   }
+
+  // Arriving from the gallery's "Generate with AI" choice (?ai=1): open the
+  // generator immediately, then strip the flag so a refresh won't reopen it.
+  useEffect(() => {
+    if (searchParams.get("ai") === "1") {
+      setShowAiSlideOver(true);
+      router.replace(`/admin/paperwork/templates/${initialForm.id}`);
+    }
+  }, [searchParams, router, initialForm.id]);
 
   // Undo/redo keyboard handler
   useEffect(() => {

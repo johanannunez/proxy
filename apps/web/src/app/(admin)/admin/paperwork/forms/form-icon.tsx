@@ -2,11 +2,18 @@
 
 /**
  * Form appearance catalog — the curated icon + accent palette an admin can
- * assign per form. Shared by the Forms library row and the appearance picker
- * so the two never drift. SVG glyphs only (no emoji), drawn from Phosphor.
+ * assign per form. Shared by the Forms library row, the cards, and the icon
+ * picker so they never drift.
+ *
+ * A form's stored `icon` string can be one of three things, resolved here:
+ *   - a legacy FormIconKey from the table below (e.g. "clipboard")
+ *   - a "ph:Name" reference into the larger searchable Phosphor catalog
+ *   - a literal emoji glyph (e.g. "🏠")
+ * `resolveFormAppearance` normalizes all three. `icon_color` stays a FormTintKey.
  */
 
 import type { Icon } from "@phosphor-icons/react";
+import { ICON_BY_NAME } from "@/components/admin/icon-picker-data";
 import {
   Rows,
   House,
@@ -118,18 +125,54 @@ export interface ResolvedFormAppearance {
   Icon: Icon;
   bg: string;
   fg: string;
+  /** Set when the form's icon is a literal emoji; render this instead of Icon. */
+  emoji: string | null;
 }
 
-/** Resolve a form's icon + accent, falling back to a deterministic tint and
- * the default glyph when the admin has not chosen one. */
+/** Resolve a form's icon + accent. Handles legacy FormIconKeys, "ph:Name"
+ * references, and literal emoji, falling back to a deterministic tint and the
+ * default glyph when the admin has not chosen one. */
 export function resolveFormAppearance(form: {
   id: string;
   icon: string | null;
   icon_color: string | null;
 }): ResolvedFormAppearance {
-  const Icon = (form.icon && ICON_BY_KEY.get(form.icon as FormIconKey)) || Rows;
+  let Icon: Icon = Rows;
+  let emoji: string | null = null;
+
+  const raw = form.icon;
+  if (raw) {
+    if (raw.startsWith("ph:")) {
+      Icon = ICON_BY_NAME[raw.slice(3)] ?? Rows;
+    } else if (ICON_BY_KEY.has(raw as FormIconKey)) {
+      Icon = ICON_BY_KEY.get(raw as FormIconKey) ?? Rows;
+    } else {
+      // Not a known key or Phosphor ref — treat as a chosen emoji glyph.
+      emoji = raw;
+    }
+  }
+
   const tint =
     (form.icon_color && TINT_BY_KEY.get(form.icon_color as FormTintKey)) ||
     FORM_TINTS[hash(form.id) % FORM_TINTS.length];
-  return { Icon, bg: tint.bg, fg: tint.fg };
+
+  return { Icon, bg: tint.bg, fg: tint.fg, emoji };
+}
+
+/** Render a resolved appearance's glyph (emoji or Phosphor icon) inline.
+ * Single source of truth so every form-icon surface renders emoji the same. */
+export function FormGlyph({
+  appearance,
+  size = 18,
+  weight = "duotone",
+}: {
+  appearance: ResolvedFormAppearance;
+  size?: number;
+  weight?: "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+}) {
+  if (appearance.emoji) {
+    return <span style={{ fontSize: size, lineHeight: 1 }}>{appearance.emoji}</span>;
+  }
+  const { Icon } = appearance;
+  return <Icon size={size} weight={weight} />;
 }

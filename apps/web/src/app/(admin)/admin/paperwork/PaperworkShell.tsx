@@ -2,31 +2,26 @@
 
 /**
  * PaperworkShell — the shared chrome for the unified Paperwork section.
- * Three tabs (Status Board | Signatures | Forms) and one global "+ New" button
- * that opens the three-path create chooser. Per the 2026-06-14 redesign:
- * Status Board is the default landing (the cross-workspace completion matrix),
- * Signatures holds tracked e-sign instances plus a signature-master Library,
- * Forms holds form submissions plus a form-master Library. The old standalone
- * Templates tab is gone; masters live in each tab's Library, and the
- * /admin/paperwork/templates/[id] master-detail route stays as shared infra.
+ * Three tabs (Status Board | Signatures | Forms), the inline Action Center
+ * trigger, and one "+ New" button that opens the Template Gallery create modal.
+ * Per the 2026-06-14 redesign: Status Board is the default landing, Signatures
+ * holds tracked e-sign instances plus a signature Library, Forms holds form
+ * submissions plus a form Library. The /admin/paperwork/templates/[id]
+ * master-detail route stays as shared infra.
  */
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "motion/react";
-import {
-  Plus,
-  X,
-  CaretRight,
-  FileDashed,
-  FilePdf,
-  Rows,
-  SpinnerGap,
-  Lightning,
-} from "@phosphor-icons/react";
+import { motion } from "motion/react";
+import { Plus, SpinnerGap, Lightning } from "@phosphor-icons/react";
 import { createFormAction } from "./templates/form-actions";
 import { CreateTemplateModal } from "./templates/CreateTemplateModal";
+import {
+  TemplateGallery,
+  type GalleryKind,
+  type CreateChoice,
+} from "@/components/admin/paperwork/TemplateGallery";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./PaperworkShell.module.css";
 
@@ -46,140 +41,12 @@ const PRIMARY_BY_TAB: Record<PaperworkTab, string> = {
   forms: "New form",
 };
 
-function NewDocumentChooser({
-  orgId,
-  onClose,
-  onUploadPdf,
-}: {
-  orgId: string;
-  onClose: () => void;
-  onUploadPdf: () => void;
-}) {
-  const router = useRouter();
-  const [creatingForm, setCreatingForm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleBuildForm() {
-    setError(null);
-    setCreatingForm(true);
-    try {
-      const result = await createFormAction(orgId, "Untitled Form");
-      if (!result.ok || !result.data?.id) {
-        setError(result.ok ? "Could not create the form. Try again." : result.error);
-        return;
-      }
-      router.push(`/admin/paperwork/templates/${result.data.id}`);
-      onClose();
-    } finally {
-      setCreatingForm(false);
-    }
-  }
-
-  return (
-    <>
-      <motion.div
-        className={styles.backdrop}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.16 }}
-        onClick={onClose}
-      />
-      <motion.div
-        className={styles.chooser}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Create a new document"
-        initial={{ opacity: 0, scale: 0.96, x: "-50%", y: "-48%" }}
-        animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
-        exit={{ opacity: 0, scale: 0.96, x: "-50%", y: "-48%" }}
-        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-      >
-        <button
-          type="button"
-          className={styles.chooserClose}
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <X size={14} weight="bold" />
-        </button>
-        <h2 className={styles.chooserTitle}>New paperwork</h2>
-        <p className={styles.chooserSub}>
-          Whatever you create is saved as a template, so you can send it again
-          without rebuilding it.
-        </p>
-
-        <div className={styles.pathList}>
-          <button
-            type="button"
-            className={styles.pathCard}
-            onClick={() => {
-              router.push("/admin/paperwork/signatures");
-              onClose();
-            }}
-          >
-            <span className={styles.pathIcon}>
-              <FileDashed size={20} weight="duotone" />
-            </span>
-            <span className={styles.pathBody}>
-              <span className={styles.pathName}>From a template</span>
-              <span className={styles.pathDesc}>
-                Pick from your library or the Proxy pre-made templates.
-              </span>
-            </span>
-            <CaretRight size={14} weight="bold" className={styles.pathArrow} />
-          </button>
-
-          <button
-            type="button"
-            className={styles.pathCard}
-            onClick={() => {
-              onUploadPdf();
-              onClose();
-            }}
-          >
-            <span className={styles.pathIcon}>
-              <FilePdf size={20} weight="duotone" />
-            </span>
-            <span className={styles.pathBody}>
-              <span className={styles.pathName}>Upload a PDF</span>
-              <span className={styles.pathDesc}>
-                Drop in a PDF and place the signature fields.
-              </span>
-            </span>
-            <CaretRight size={14} weight="bold" className={styles.pathArrow} />
-          </button>
-
-          <button
-            type="button"
-            className={styles.pathCard}
-            onClick={handleBuildForm}
-            disabled={creatingForm}
-          >
-            <span className={styles.pathIcon}>
-              {creatingForm ? (
-                <SpinnerGap size={20} weight="bold" />
-              ) : (
-                <Rows size={20} weight="duotone" />
-              )}
-            </span>
-            <span className={styles.pathBody}>
-              <span className={styles.pathName}>
-                {creatingForm ? "Creating your form…" : "Build a form"}
-              </span>
-              <span className={styles.pathDesc}>
-                Drag and drop questions, then share a link or send it out.
-              </span>
-            </span>
-            <CaretRight size={14} weight="bold" className={styles.pathArrow} />
-          </button>
-        </div>
-
-        {error && <div className={styles.chooserError}>{error}</div>}
-      </motion.div>
-    </>
-  );
-}
+/** Which type the gallery opens scoped to, per tab (status = no preselection). */
+const GALLERY_KIND_BY_TAB: Record<PaperworkTab, GalleryKind | null> = {
+  status: null,
+  signatures: "signature",
+  forms: "form",
+};
 
 export function PaperworkShell({
   active,
@@ -198,12 +65,13 @@ export function PaperworkShell({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [chooserOpen, setChooserOpen] = useState(false);
-  const [creatingForm, setCreatingForm] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryKind, setGalleryKind] = useState<GalleryKind | null>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [routingForm, setRoutingForm] = useState(false);
 
-  // Deep link: /admin/paperwork/templates?create=pdf opens the modal and then
-  // cleans the query so a refresh does not reopen it.
+  // Deep link: /admin/paperwork/templates?create=pdf opens the signature create
+  // modal (PDF path) and cleans the query so a refresh does not reopen it.
   useEffect(() => {
     if (searchParams.get("create") === "pdf") {
       setTemplateModalOpen(true);
@@ -213,30 +81,39 @@ export function PaperworkShell({
 
   function handleTemplateCreated(template: DocumentTemplate) {
     setTemplateModalOpen(false);
-    // Hand off to full-screen field placement (Step 3) on the detail page.
     router.push(`/admin/paperwork/templates/${template.id}`);
   }
 
-  async function handlePrimary() {
-    if (active === "status") {
-      setChooserOpen(true);
+  function openGallery() {
+    setGalleryKind(GALLERY_KIND_BY_TAB[active]);
+    setGalleryOpen(true);
+  }
+
+  async function handleGalleryCreate(choice: CreateChoice) {
+    // Pick an existing template → open its detail to send or customize.
+    if (choice.selection === "template") {
+      router.push(`/admin/paperwork/templates/${choice.templateId}`);
+      setGalleryOpen(false);
       return;
     }
-    if (active === "signatures") {
-      // Create a signature master directly; opens instantly from client state.
+
+    // Blank signature → the dedicated signature create modal (PDF or written).
+    if (choice.kind === "signature" && choice.selection === "blank") {
+      setGalleryOpen(false);
       setTemplateModalOpen(true);
       return;
     }
-    // Forms: create the master immediately and drop into its builder, the same
-    // path the chooser's "Build a form" uses.
-    setCreatingForm(true);
+
+    // Blank or AI form → create the master, then drop into its builder.
+    setRoutingForm(true);
     try {
       const result = await createFormAction(orgId, "Untitled Form");
-      if (result.ok && result.data?.id) {
-        router.push(`/admin/paperwork/templates/${result.data.id}`);
-      }
+      if (!result.ok || !result.data?.id) return;
+      const suffix = choice.selection === "ai" ? "?ai=1" : "";
+      router.push(`/admin/paperwork/templates/${result.data.id}${suffix}`);
+      setGalleryOpen(false);
     } finally {
-      setCreatingForm(false);
+      setRoutingForm(false);
     }
   }
 
@@ -296,15 +173,15 @@ export function PaperworkShell({
           <button
             type="button"
             className={styles.newDocBtn}
-            onClick={handlePrimary}
-            disabled={creatingForm}
+            onClick={openGallery}
+            disabled={routingForm}
           >
-            {creatingForm ? (
+            {routingForm ? (
               <SpinnerGap size={14} weight="bold" className={styles.btnSpinner} />
             ) : (
               <Plus size={14} weight="bold" />
             )}
-            {creatingForm ? "Creating…" : PRIMARY_BY_TAB[active]}
+            {PRIMARY_BY_TAB[active]}
           </button>
         </div>
       </div>
@@ -320,15 +197,13 @@ export function PaperworkShell({
         {children}
       </motion.div>
 
-      <AnimatePresence>
-        {chooserOpen && (
-          <NewDocumentChooser
-            orgId={orgId}
-            onClose={() => setChooserOpen(false)}
-            onUploadPdf={() => setTemplateModalOpen(true)}
-          />
-        )}
-      </AnimatePresence>
+      <TemplateGallery
+        open={galleryOpen}
+        orgId={orgId}
+        initialKind={galleryKind}
+        onClose={() => setGalleryOpen(false)}
+        onCreate={handleGalleryCreate}
+      />
 
       <CreateTemplateModal
         open={templateModalOpen}

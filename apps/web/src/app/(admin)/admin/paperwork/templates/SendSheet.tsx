@@ -23,11 +23,104 @@ import {
   LinkSimple,
   ArrowSquareOut,
   SpinnerGap,
+  LockKey,
 } from "@phosphor-icons/react";
 import { avatarColor } from "@/lib/admin/documents-hub-shared";
+import { CustomSelect } from "@/components/admin/CustomSelect";
 import { sendTemplateToOwners } from "./template-send-actions";
 import type { SendRecipient, UnifiedTemplate } from "./unified-types";
 import styles from "./SendSheet.module.css";
+
+const EXPIRY_OPTIONS = [
+  { value: "never", label: "Never" },
+  { value: "7", label: "After 7 days" },
+  { value: "30", label: "After 30 days" },
+  { value: "90", label: "After 90 days" },
+];
+
+/**
+ * Delivery & security controls — a preview of the per-recipient secure-link
+ * layer (audience + access code + expiry). UI only this wave; the controls
+ * reflect state but the tokenized links that enforce them ship in R2-E, which
+ * the gating note makes explicit.
+ */
+function DeliveryOptions({ kind }: { kind: "signature" | "form" }) {
+  const [audience, setAudience] = useState<"specific" | "workspace" | "public">(
+    kind === "form" ? "public" : "specific",
+  );
+  const [requireCode, setRequireCode] = useState(false);
+  const [code, setCode] = useState("");
+  const [expiry, setExpiry] = useState("never");
+
+  const audiences = [
+    { key: "specific" as const, label: "Specific client" },
+    { key: "workspace" as const, label: "Entire workspace" },
+    { key: "public" as const, label: "Public link" },
+  ];
+
+  return (
+    <div className={styles.delivery}>
+      <div className={styles.deliveryHead}>
+        <span className={styles.deliveryTitle}>Delivery &amp; security</span>
+        <span className={styles.deliveryPill}>Preview</span>
+      </div>
+
+      <span className={styles.deliveryLabel}>Who can open this</span>
+      <div className={styles.audienceRow} role="group" aria-label="Audience">
+        {audiences.map((a) => (
+          <button
+            key={a.key}
+            type="button"
+            className={`${styles.audienceBtn} ${audience === a.key ? styles.audienceBtnActive : ""}`}
+            onClick={() => setAudience(a.key)}
+            aria-pressed={audience === a.key}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.securityRow}>
+        <span className={styles.securityText}>
+          <LockKey size={14} weight="duotone" aria-hidden />
+          Require an access code
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={requireCode}
+          aria-label="Require an access code"
+          className={`${styles.switch} ${requireCode ? styles.switchOn : ""}`}
+          onClick={() => setRequireCode((v) => !v)}
+        >
+          <span className={styles.switchKnob} />
+        </button>
+      </div>
+      {requireCode && (
+        <input
+          className={styles.codeInput}
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder="6-digit code"
+          inputMode="numeric"
+          aria-label="Access code"
+        />
+      )}
+
+      <div className={styles.expiryRow}>
+        <span className={styles.deliveryLabel}>Link expires</span>
+        <div style={{ minWidth: 156 }}>
+          <CustomSelect value={expiry} options={EXPIRY_OPTIONS} onChange={setExpiry} />
+        </div>
+      </div>
+
+      <p className={styles.deliveryNote}>
+        These options apply to per-recipient secure links, which ship in an
+        upcoming update.
+      </p>
+    </div>
+  );
+}
 
 function initialsOf(name: string): string {
   return name
@@ -360,6 +453,8 @@ export function SendSheet({
               <EmailPreview template={template} recipientName={previewName} />
             )}
             <PortalCardPreview template={template} recipientName={previewName} />
+
+            <DeliveryOptions kind={template.kind} />
           </div>
         </div>
 

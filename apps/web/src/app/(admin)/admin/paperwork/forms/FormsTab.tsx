@@ -25,7 +25,7 @@ import {
   CaretRight,
   PencilSimple,
 } from "@phosphor-icons/react";
-import { resolveFormAppearance } from "./form-icon";
+import { resolveFormAppearance, FormGlyph } from "./form-icon";
 import type { Form } from "@/lib/admin/forms-types";
 import { fmtShortDate } from "@/lib/admin/documents-hub-shared";
 import ConfirmModal from "@/components/admin/ConfirmModal";
@@ -125,7 +125,7 @@ function FormRow({
         className={styles.rowIcon}
         style={{ background: appearance.bg, color: appearance.fg }}
       >
-        <appearance.Icon size={17} weight="duotone" />
+        <FormGlyph appearance={appearance} size={17} />
       </span>
 
       <span className={styles.nameCell}>
