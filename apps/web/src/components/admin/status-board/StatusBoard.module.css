@@ -128,14 +128,14 @@
   opacity: 0.85;
 }
 
-/* Not started: a clean, faint solid ring (lowest emphasis) */
+/* Not started: a clean, faint DASHED ring (lowest emphasis, reads as "not sent") */
 .cellNeeded {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 1.5px solid var(--text-tertiary, #9ca3af);
-  opacity: 0.3;
+  border: 1.5px dashed var(--text-tertiary, #9ca3af);
+  opacity: 0.42;
 }
 
 :global(.dark) .cellNeeded {
