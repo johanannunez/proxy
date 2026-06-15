@@ -17,6 +17,7 @@ export async function getAuthorityOwner(
   domain: AuthorityDomain,
   propertyId?: string
 ): Promise<string | null> {
+  // DB errors resolve as null/[]; callers fall back to notify-all behavior.
   const authority = await getActiveWorkspaceAuthority(workspaceId);
   if (!authority) return null;
 
@@ -59,6 +60,7 @@ export async function getEscalationOwners(
   workspaceId: string,
   propertyId?: string
 ): Promise<string[]> {
+  // DB errors resolve as null/[]; callers fall back to notify-all behavior.
   const authority = await getActiveWorkspaceAuthority(workspaceId);
   if (!authority) return [];
 
