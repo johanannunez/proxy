@@ -382,6 +382,55 @@ export async function renameDocuSealTemplate(
 }
 
 /**
+ * True if the DocuSeal template has at least one submission. Used as a
+ * FAIL-CLOSED gate before hard-deleting a template that looks never-sent in our
+ * DB: it catches the case where createSubmission succeeded but our
+ * non-transactional persistSubmission left no local trace (see TODOS.md).
+ * THROWS on ANY unverifiable state — a network/HTTP error OR an unset token —
+ * so the caller can fail closed (block the delete). It must NOT return false
+ * when unconfigured: a template that owns a docuseal_template_id was built while
+ * the engine WAS configured, so a live remote submission may exist; returning
+ * false there would silently fail open after a token rotation.
+ */
+export async function docuSealTemplateHasSubmissions(templateId: number): Promise<boolean> {
+  if (!isDocuSealConfigured()) {
+    throw new Error("docuseal not configured: cannot verify submissions");
+  }
+  const res = await fetch(`${baseUrl()}/submissions?template_id=${templateId}&limit=1`, {
+    headers: headers(),
+  });
+  if (!res.ok) {
+    throw new Error(`docuseal submissions check failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { data?: unknown[] };
+  return Array.isArray(data.data) && data.data.length > 0;
+}
+
+/**
+ * Archive the DocuSeal template behind a deleted row. Best-effort: never throws,
+ * returns false on failure (a DocuSeal outage must not block a completed local
+ * delete). DocuSeal's DELETE /templates/:id archives rather than hard-purges.
+ * Mirrors the renameDocuSealTemplate resilience pattern.
+ */
+export async function archiveDocuSealTemplate(templateId: number): Promise<boolean> {
+  if (!isDocuSealConfigured()) return false;
+  try {
+    const res = await fetch(`${baseUrl()}/templates/${templateId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    if (!res.ok) {
+      console.error("[docuseal] archiveDocuSealTemplate failed:", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[docuseal] archiveDocuSealTemplate error:", err);
+    return false;
+  }
+}
+
+/**
  * Clone an existing DocuSeal template (used for the system-template fork flow).
  */
 export async function cloneTemplate(
