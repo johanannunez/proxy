@@ -195,15 +195,16 @@
 
 .formTile {
   width: 100%;
-  height: 112px;
-  border-radius: 9px;
+  /* Fill the preview edge-to-edge so no gray strip shows above or below the
+     tile (the card's overflow:hidden rounds the outer corners). */
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
   background: color-mix(in srgb, var(--tile-fg, #1b77be) 11%, var(--surface-base, #fff));
-  border: 1px solid color-mix(in srgb, var(--tile-fg, #1b77be) 20%, transparent);
+  border: none;
 }
 .formTileIcon {
   display: inline-flex;
