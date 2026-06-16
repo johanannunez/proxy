@@ -1025,9 +1025,6 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
   const [scrolledRight, setScrolledRight] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  /* Reduced-motion gate for chip row animation */
-  const prefersReducedMotion = useReducedMotion();
-
   useEffect(() => {
     const el = rightScrollRef.current;
     if (!el) return;
@@ -1166,16 +1163,6 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
 
   const closeColsPanel = useCallback(() => setColsPanelOpen(false), []);
 
-  /* Chips for pinned columns (in stable KIND_ORDER) */
-  const focusChips = [...board.columns]
-    .filter((col) => focusedKeys.has(col.reqKey))
-    .sort((a, b) => {
-      const ki = KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind);
-      if (ki !== 0) return ki;
-      /* Within same kind, keep board order */
-      return board.columns.indexOf(a) - board.columns.indexOf(b);
-    });
-
   return (
     <>
       {/* ── Filter bar ── */}
@@ -1203,6 +1190,18 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
               {focusedKeys.size > 0 ? `${focusedKeys.size} pinned` : "Columns"}
             </button>
 
+            {focusedKeys.size > 0 && (
+              <button
+                type="button"
+                className={styles.sbColsClear}
+                onClick={clearFocusedKeys}
+                aria-label="Clear pinned columns"
+              >
+                <X size={11} weight="bold" aria-hidden />
+                Clear
+              </button>
+            )}
+
             <AnimatePresence>
               {colsPanelOpen && (
                 <ColumnsPanel
@@ -1218,49 +1217,6 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
           </div>
         }
       />
-
-      {/* ── Focus chips row ── */}
-      <AnimatePresence>
-        {focusChips.length > 0 && (
-          <motion.div
-            className={styles.sbFocusChipsRow}
-            role="group"
-            aria-label="Pinned columns"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.15, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {focusChips.map((col) => {
-              const config = getReqKeyIconConfig(col.reqKey);
-              return (
-                <span key={col.reqKey} className={styles.sbFocusChip}>
-                  <span className={styles.sbFocusChipIcon} aria-hidden>
-                    <config.Icon size={11} weight="duotone" color={config.tintFg} />
-                  </span>
-                  <span className={styles.sbFocusChipLabel}>{config.shortLabel}</span>
-                  <button
-                    type="button"
-                    className={styles.sbFocusChipX}
-                    onClick={() => toggleFocusKey(col.reqKey)}
-                    aria-label={`Unpin ${config.label}`}
-                  >
-                    <X size={9} weight="bold" aria-hidden />
-                  </button>
-                </span>
-              );
-            })}
-            <button
-              type="button"
-              className={styles.sbFocusChipsClear}
-              onClick={clearFocusedKeys}
-              aria-label="Clear all pinned columns"
-            >
-              Clear
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Unified count line ── (N reflects active filters; M is the stable
            tracked-document set, never the filtered column count, so "tracked"

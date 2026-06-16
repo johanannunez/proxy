@@ -1152,6 +1152,36 @@
 /* Columns button popover anchor */
 .sbColsWrap {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Inline Clear sits beside the Columns button (replaces the old chips row that
+ * pushed the board down). Quiet by default, red on hover to read as a reset. */
+.sbColsClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 9px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, var(--color-text-secondary, #6b7280));
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+.sbColsClear:hover {
+  color: var(--color-error, #dc2626);
+  background: color-mix(in srgb, var(--color-error, #dc2626) 8%, transparent);
+}
+.sbColsClear:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
 }
 
 /* Columns panel */
@@ -1278,88 +1308,8 @@
   flex-shrink: 0;
 }
 
-/* Focus chips row */
-.sbFocusChipsRow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 6px 16px 2px;
-  overflow: hidden;
-}
-
-.sbFocusChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 6px 3px 7px;
-  background: rgba(27, 119, 190, 0.08);
-  border: 1px solid rgba(27, 119, 190, 0.22);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-brand, #1b77be);
-  white-space: nowrap;
-}
-
-.sbFocusChipIcon {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.sbFocusChipLabel {
-  /* inherits from .sbFocusChip */
-}
-
-.sbFocusChipX {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--color-brand, #1b77be);
-  cursor: pointer;
-  padding: 0;
-  opacity: 0.7;
-  transition: opacity 0.1s ease, background-color 0.1s ease;
-}
-
-.sbFocusChipX:hover {
-  opacity: 1;
-  background: rgba(27, 119, 190, 0.15);
-}
-
-.sbFocusChipX:focus-visible {
-  outline: 2px solid var(--color-brand, #1b77be);
-  outline-offset: 1px;
-}
-
-.sbFocusChipsClear {
-  font-size: 11px;
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-tertiary, #9ca3af);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 3px 5px;
-  border-radius: 4px;
-  transition: color 0.1s ease;
-}
-
-.sbFocusChipsClear:hover {
-  color: var(--text-secondary, #6b7280);
-}
-
-.sbFocusChipsClear:focus-visible {
-  outline: 2px solid var(--color-brand, #1b77be);
-  outline-offset: 1px;
-}
+/* (Pinned-column chips row removed in R4-A; Clear now sits beside the Columns
+ * button via .sbColsClear so the board never shifts.) */
 
 /* Result summary line */
 .sbResultSummary {
@@ -2155,8 +2105,6 @@
   .sbStatusBtn,
   .sbColsBtn,
   .sbColsPanelItem,
-  .sbFocusChipX,
-  .sbFocusChipsClear,
   .matrixItemHeaderBtn,
   .matrixPinIcon,
   .matrixLeftRow,
