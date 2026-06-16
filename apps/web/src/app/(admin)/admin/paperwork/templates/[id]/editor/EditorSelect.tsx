@@ -61,8 +61,8 @@ export function EditorSelect({
           setOpen((v) => !v);
         }}
       >
-        <span className={`${styles.label} ${current ? "" : styles.placeholder}`}>
-          {current?.label ?? placeholder}
+        <span className={`${styles.label} ${current || value ? "" : styles.placeholder}`}>
+          {current?.label ?? (value || placeholder)}
         </span>
         <CaretDown
           size={11}

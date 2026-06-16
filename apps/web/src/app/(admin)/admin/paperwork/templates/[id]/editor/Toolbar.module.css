@@ -117,6 +117,34 @@
   padding: 10px;
 }
 
+/* "None" chip — clears the color/highlight mark. */
+.paletteNone {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(15, 23, 42, 0.2);
+  background:
+    linear-gradient(
+      to top right,
+      transparent calc(50% - 1px),
+      #dc2626 calc(50% - 1px),
+      #dc2626 calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    #fff;
+  cursor: pointer;
+  transition: box-shadow 0.1s var(--ease-spring);
+}
+
+.paletteNone:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+.paletteNone:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
 .paletteChip {
   width: 22px;
   height: 22px;

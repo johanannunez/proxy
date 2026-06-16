@@ -1,6 +1,6 @@
 "use client";
 
-import { PlateElement } from "platejs/react";
+import { PlateElement, useEditorRef } from "platejs/react";
 import type { ComponentProps } from "react";
 
 type ElProps = ComponentProps<typeof PlateElement>;
@@ -18,7 +18,38 @@ export const BlockquoteEl = (p: ElProps) => (
 export const HrEl = (p: ElProps) => <PlateElement as="hr" {...p} />;
 export const UlEl = (p: ElProps) => <PlateElement as="ul" {...p} />;
 export const OlEl = (p: ElProps) => <PlateElement as="ol" {...p} />;
-export const LiEl = (p: ElProps) => <PlateElement as="li" {...p} />;
+
+/**
+ * List item. Task-list items carry a boolean `checked` on the node; render a
+ * real checkbox bound to it (the `data-task-checkbox` wrapper lets the editor
+ * CSS swap the bullet for a flex checkbox row). Plain list items are unchanged.
+ */
+export function LiEl(p: ElProps) {
+  const editor = useEditorRef();
+  const checked = (p.element as { checked?: boolean }).checked;
+  if (typeof checked !== "boolean") return <PlateElement as="li" {...p} />;
+  return (
+    <PlateElement as="li" {...p}>
+      <span
+        data-task-checkbox=""
+        contentEditable={false}
+        style={{ flexShrink: 0, marginTop: 3 }}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => {
+            const path = editor.api.findPath(p.element);
+            if (path) {
+              editor.tf.setNodes({ checked: e.target.checked }, { at: path });
+            }
+          }}
+        />
+      </span>
+      {p.children}
+    </PlateElement>
+  );
+}
 export const LicEl = (p: ElProps) => <PlateElement as="div" {...p} />;
 export const CodeBlockEl = (p: ElProps) => <PlateElement as="pre" {...p} />;
 export const CodeLineEl = (p: ElProps) => <PlateElement as="div" {...p} />;

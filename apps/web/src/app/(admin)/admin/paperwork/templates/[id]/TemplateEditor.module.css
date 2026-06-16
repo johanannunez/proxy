@@ -58,6 +58,16 @@
   background: color-mix(in srgb, var(--color-navy) 10%, transparent);
 }
 
+.btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn:disabled:hover {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
 .btnActive,
 .btnActive:hover {
   background: color-mix(in srgb, var(--color-brand) 12%, transparent);
@@ -316,6 +326,24 @@
 .page :global(li) {
   display: list-item;
   margin-bottom: 4px;
+}
+
+/* Task-list items: swap the bullet for a real checkbox in a flex row. The
+   data-task-checkbox wrapper is rendered only for todo items, so :has targets
+   them without depending on hashed class names. */
+.page :global(li:has(> span[data-task-checkbox])) {
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: 0;
+}
+
+.page :global(li > span[data-task-checkbox] > input[type="checkbox"]) {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-brand);
+  cursor: pointer;
 }
 
 /* The placeholder shown on an empty editor. */

@@ -49,10 +49,14 @@ import {
   Minus,
   FileDashed,
   DotsThreeVertical,
+  ArrowUUpLeft,
+  ArrowUUpRight,
   X,
 } from "@phosphor-icons/react";
+import { upsertLink } from "@platejs/link";
 import { EditorSelect, type EditorSelectOption } from "./EditorSelect";
 import { EditorPopover } from "./EditorPopover";
+import { useActiveTextStyle } from "./useActiveTextStyle";
 import { FONTS, FONT_SIZES, loadFont } from "./fonts";
 import base from "../TemplateEditor.module.css";
 import tStyles from "./Toolbar.module.css";
@@ -64,7 +68,7 @@ import tStyles from "./Toolbar.module.css";
  * while keeping usage explicit.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EditorHandle = { tf: any; api: any };
+type EditorHandle = { tf: any; api: any; selection: unknown; undo: () => void; redo: () => void; history: { undos: unknown[]; redos: unknown[] } };
 
 // ---- Overflow measurement constants ------------------------------------
 
@@ -146,11 +150,13 @@ const HIGHLIGHT_COLORS = [
 
 function Btn({
   active,
+  disabled,
   label,
   onAction,
   children,
 }: {
   active?: boolean;
+  disabled?: boolean;
   label: string;
   onAction: () => void;
   children: ReactNode;
@@ -161,12 +167,13 @@ function Btn({
       className={[base.btn, active ? base.btnActive : ""].filter(Boolean).join(" ")}
       aria-label={label}
       aria-pressed={active}
+      disabled={disabled}
       title={label}
       // onMouseDown + preventDefault keeps the editor selection alive so the
       // mark applies to the live text instead of a lost selection.
       onMouseDown={(e) => {
         e.preventDefault();
-        onAction();
+        if (!disabled) onAction();
       }}
     >
       {children}
@@ -181,12 +188,14 @@ function ColorSwatch({
   currentColor,
   label,
   onPick,
+  onClear,
   renderTrigger,
 }: {
   colors: string[];
   currentColor: string;
   label: string;
   onPick: (hex: string) => void;
+  onClear: () => void;
   renderTrigger: () => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -217,6 +226,19 @@ function ColorSwatch({
         ariaLabel={label}
       >
         <div className={tStyles.palette} role="listbox" aria-label={label}>
+          <button
+            type="button"
+            role="option"
+            aria-selected={false}
+            aria-label="None"
+            title="None"
+            className={tStyles.paletteNone}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onClear();
+              setOpen(false);
+            }}
+          />
           {colors.map((hex) => (
             <button
               key={hex}
@@ -246,6 +268,14 @@ function LinkControl({ editor }: { editor: EditorHandle }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("https://");
   const anchorRef = useRef<HTMLButtonElement>(null);
+  // The popover input blurs the editor and collapses its selection; remember
+  // where the selection was when the popover opened.
+  const savedSelection = useRef<unknown>(null);
+
+  function toggle() {
+    if (!open) savedSelection.current = editor.selection ?? null;
+    setOpen((v) => !v);
+  }
 
   function commit() {
     const href = url.trim();
@@ -253,9 +283,13 @@ function LinkControl({ editor }: { editor: EditorHandle }) {
       setOpen(false);
       return;
     }
-    // Inserts a link node whose text is the URL. Full selection-wrapping is out
-    // of scope (it depends on the link plugin transform).
-    editor.tf.insertNodes({ type: "a", url: href, children: [{ text: href }] });
+    // Restore the selection captured on open, then wrap it in a link. A
+    // non-collapsed selection turns the selected text into the link; a
+    // collapsed selection inserts the URL as the link text.
+    if (savedSelection.current) editor.tf.select(savedSelection.current);
+    // editor is the real Plate editor; the narrow EditorHandle omits the fields
+    // upsertLink reads, so cast to its expected editor type.
+    upsertLink(editor as unknown as Parameters<typeof upsertLink>[0], { url: href });
     setOpen(false);
     setUrl("https://");
   }
@@ -271,7 +305,7 @@ function LinkControl({ editor }: { editor: EditorHandle }) {
         title="Insert link"
         onMouseDown={(e) => {
           e.preventDefault();
-          setOpen((v) => !v);
+          toggle();
         }}
       >
         <LinkSimple size={15} weight="bold" />
@@ -455,20 +489,10 @@ export function EditorToolbar({
     [],
   );
 
-  // ---- Active font states ----
-  const activeFontId = useEditorSelector((ed) => {
-    const stack = ed.api.marks()?.fontFamily as string | undefined;
-    if (!stack) return "";
-    return FONTS.find((f) => f.stack === stack)?.id ?? "";
-  }, []);
-  const activeSize = useEditorSelector(
-    (ed) => (ed.api.marks()?.fontSize as string | undefined) ?? "",
-    [],
-  );
-  const activeWeight = useEditorSelector(
-    (ed) => (ed.api.marks()?.fontWeight as string | undefined) ?? "",
-    [],
-  );
+  // ---- Active font states: explicit mark first, else the selection's real
+  // computed style (so a CSS-styled heading reports Arial/17pt/Bold, not blank).
+  const { fontId: activeFontId, size: activeSize, weight: activeWeight } =
+    useActiveTextStyle(editor);
   const activeColor = useEditorSelector(
     (ed) => (ed.api.marks()?.color as string | undefined) ?? "#1a1a1a",
     [],
@@ -477,6 +501,10 @@ export function EditorToolbar({
     (ed) => (ed.api.marks()?.backgroundColor as string | undefined) ?? "",
     [],
   );
+
+  // ---- Undo / redo availability ----
+  const canUndo = useEditorSelector((ed) => ed.history.undos.length > 0, []);
+  const canRedo = useEditorSelector((ed) => ed.history.redos.length > 0, []);
 
   const selectedFont = FONTS.find((f) => f.id === activeFontId);
   const weightOptions: EditorSelectOption[] = (
@@ -527,6 +555,24 @@ export function EditorToolbar({
 
   // ---- Tiered item lists (display order = priority; Tier-2 folds from end) ----
   const tier1Items: ToolbarItem[] = [
+    {
+      id: "undo",
+      group: "history",
+      node: (
+        <Btn label="Undo" disabled={!canUndo} onAction={() => editor.undo()}>
+          <ArrowUUpLeft size={15} weight="bold" />
+        </Btn>
+      ),
+    },
+    {
+      id: "redo",
+      group: "history",
+      node: (
+        <Btn label="Redo" disabled={!canRedo} onAction={() => editor.redo()}>
+          <ArrowUUpRight size={15} weight="bold" />
+        </Btn>
+      ),
+    },
     {
       id: "block",
       group: "block",
@@ -625,6 +671,7 @@ export function EditorToolbar({
           currentColor={activeColor}
           label="Text color"
           onPick={(hex) => editor.tf.color.addMark(hex)}
+          onClear={() => editor.tf.removeMark("color")}
           renderTrigger={() => (
             <>
               <span
@@ -651,6 +698,7 @@ export function EditorToolbar({
           currentColor={activeBgColor}
           label="Highlight color"
           onPick={(hex) => editor.tf.backgroundColor.addMark(hex)}
+          onClear={() => editor.tf.removeMark("backgroundColor")}
           renderTrigger={() => (
             <span
               className={tStyles.swatchCircle}
