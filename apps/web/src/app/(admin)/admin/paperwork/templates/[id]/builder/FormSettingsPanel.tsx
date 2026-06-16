@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Form, FormField, FormSchema } from "@/lib/admin/forms-types";
+import type { Form, FormField, FormSchema, FormCompletion } from "@/lib/admin/forms-types";
 import type { updateFormMetaAction } from "../../form-actions";
 import styles from "./FormSettingsPanel.module.css";
 
@@ -15,11 +15,28 @@ type Props = {
   onUpdateSchema: (next: FormSchema) => void;
 };
 
+const COMPLETION_OPTIONS: Array<{
+  value: FormCompletion["type"];
+  label: string;
+}> = [
+  { value: "message", label: "Thank-you message" },
+  { value: "portal_home", label: "Send to portal home" },
+  { value: "custom", label: "Custom link" },
+];
+
 export function FormSettingsPanel({ form, schema, onUpdateMeta, onUpdateSchema }: Props) {
   const [description, setDescription] = useState(form.description ?? "");
   const [submitText, setSubmitText] = useState(schema.settings.submitButtonText ?? "");
   const [successMessage, setSuccessMessage] = useState(schema.settings.successMessage ?? "");
-  const [redirectUrl, setRedirectUrl] = useState(schema.settings.redirectUrl ?? "");
+
+  // Derive completion state — seed customUrl from legacy redirectUrl if present
+  const existingCompletion = schema.settings.completion;
+  const [completionType, setCompletionType] = useState<FormCompletion["type"]>(
+    existingCompletion?.type ?? "message",
+  );
+  const [customUrl, setCustomUrl] = useState(
+    existingCompletion?.customUrl ?? schema.settings.redirectUrl ?? "",
+  );
 
   const lastField = schema.fields[schema.fields.length - 1];
   const hasSignature = lastField?.type === "signature";
@@ -37,6 +54,25 @@ export function FormSettingsPanel({ form, schema, onUpdateMeta, onUpdateSchema }
       };
       onUpdateSchema({ ...schema, fields: [...schema.fields, signatureField] });
     }
+  }
+
+  function updateCompletion(type: FormCompletion["type"], url?: string) {
+    const completion: FormCompletion = {
+      type,
+      ...(type === "custom" ? { customUrl: url ?? customUrl } : {}),
+    };
+    onUpdateSchema({
+      ...schema,
+      settings: {
+        ...schema.settings,
+        completion,
+      },
+    });
+  }
+
+  function handleCompletionTypeChange(type: FormCompletion["type"]) {
+    setCompletionType(type);
+    updateCompletion(type);
   }
 
   return (
@@ -73,44 +109,65 @@ export function FormSettingsPanel({ form, schema, onUpdateMeta, onUpdateSchema }
           />
         </div>
 
+        {/* ── When they finish ─────────────────────── */}
         <div className={styles.field}>
-          <label className={styles.label}>Thank you message</label>
-          <textarea
-            className={styles.textarea}
-            value={successMessage}
-            onChange={(e) => setSuccessMessage(e.target.value)}
-            onBlur={() =>
-              onUpdateSchema({
-                ...schema,
-                settings: {
-                  ...schema.settings,
-                  successMessage: successMessage.trim() || undefined,
-                },
-              })
-            }
-            placeholder="Thank you for your submission!"
-            rows={3}
-          />
-        </div>
+          <label className={styles.label}>When they finish</label>
+          <div className={styles.segmentedGroup} role="group" aria-label="Completion action">
+            {COMPLETION_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`${styles.segmentedBtn} ${completionType === opt.value ? styles.segmentedBtnActive : ""}`}
+                onClick={() => handleCompletionTypeChange(opt.value)}
+                aria-pressed={completionType === opt.value}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
 
-        <div className={styles.field}>
-          <label className={styles.label}>Redirect URL after submission</label>
-          <input
-            className={styles.input}
-            type="url"
-            value={redirectUrl}
-            onChange={(e) => setRedirectUrl(e.target.value)}
-            onBlur={() =>
-              onUpdateSchema({
-                ...schema,
-                settings: {
-                  ...schema.settings,
-                  redirectUrl: redirectUrl.trim() || undefined,
-                },
-              })
-            }
-            placeholder="https://..."
-          />
+          {completionType === "message" && (
+            <div className={styles.completionDetail}>
+              <label className={styles.subLabel}>Thank you message</label>
+              <textarea
+                className={styles.textarea}
+                value={successMessage}
+                onChange={(e) => setSuccessMessage(e.target.value)}
+                onBlur={() =>
+                  onUpdateSchema({
+                    ...schema,
+                    settings: {
+                      ...schema.settings,
+                      successMessage: successMessage.trim() || undefined,
+                      completion: { type: "message" },
+                    },
+                  })
+                }
+                placeholder="Thank you for your submission!"
+                rows={3}
+              />
+            </div>
+          )}
+
+          {completionType === "portal_home" && (
+            <p className={styles.completionHint}>
+              Takes signed-in owners to their portal home. Guests with a public link will be asked to sign in.
+            </p>
+          )}
+
+          {completionType === "custom" && (
+            <div className={styles.completionDetail}>
+              <label className={styles.subLabel}>Destination URL</label>
+              <input
+                className={styles.input}
+                type="url"
+                value={customUrl}
+                onChange={(e) => setCustomUrl(e.target.value)}
+                onBlur={() => updateCompletion("custom", customUrl.trim())}
+                placeholder="https://..."
+              />
+            </div>
+          )}
         </div>
 
         <div className={styles.toggleRow}>

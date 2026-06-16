@@ -32,7 +32,19 @@ import {
 } from "../form-actions";
 import { CoverageSettingsCard } from "./CoverageSettingsCard";
 import { FormAppearancePicker } from "../../forms/FormAppearancePicker";
+import {
+  resolveFormAppearance,
+  FormGlyph,
+} from "../../forms/form-icon";
 import styles from "./TemplateDetail.module.css";
+
+function fmtDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(iso));
+}
 
 type TabKey = "build" | "responses" | "settings";
 
@@ -169,28 +181,6 @@ function FormSettings({ form }: { form: Form }) {
         </div>
       )}
 
-      <div className={styles.settingsCard}>
-        <h3 className={styles.settingsTitle}>About this template</h3>
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldLabel}>Name</span>
-          <span className={styles.fieldValue}>{form.name}</span>
-        </div>
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldLabel}>Fields</span>
-          <span className={styles.fieldValue}>{form.schema.fields.length}</span>
-        </div>
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldLabel}>Created</span>
-          <span className={styles.fieldValue}>
-            {new Date(form.created_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-        </div>
-      </div>
-
       {error && <p className={styles.errorNote}>{error}</p>}
     </div>
   );
@@ -212,15 +202,66 @@ export function FormTemplateDetail({
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "build", label: "Build" },
     { key: "responses", label: "Responses", count: responses.length },
-    { key: "settings", label: "Settings" },
+    { key: "settings", label: "Publish & Share" },
   ];
+
+  const appearance = resolveFormAppearance({
+    id: form.id,
+    icon: form.icon,
+    icon_color: form.icon_color,
+  });
+
+  const fieldCount = form.schema.fields.length;
+  const responseCount = responses.length;
 
   return (
     <div className={styles.root}>
+      {/* Identity header — visible above all tabs */}
+      <div className={styles.identityHeader}>
+        <span
+          className={styles.identityIconTile}
+          style={{ background: appearance.bg, color: appearance.fg }}
+        >
+          <FormGlyph appearance={appearance} size={22} />
+        </span>
+        <div className={styles.identityBody}>
+          <h1 className={styles.identityName}>{form.name}</h1>
+          <p className={styles.identityMeta}>
+            {fieldCount} {fieldCount === 1 ? "question" : "questions"}
+            {" · "}
+            {responseCount} {responseCount === 1 ? "response" : "responses"}
+            {" · "}
+            Updated {fmtDate(form.updated_at)}
+          </p>
+        </div>
+        <div className={styles.identityChips}>
+          <span
+            className={`${styles.identityChip} ${form.is_active ? styles.identityChipLive : styles.identityChipDraft}`}
+          >
+            {form.is_active ? "Published" : "Draft"}
+          </span>
+          {form.slug && (
+            <span className={styles.identityChipAccess}>
+              {form.is_public ? (
+                <>
+                  <Globe size={11} weight="bold" />
+                  Public
+                </>
+              ) : (
+                <>
+                  <Lock size={11} weight="bold" />
+                  Private
+                </>
+              )}
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className={styles.tabBar} role="tablist" aria-label={`${form.name} sections`}>
-        <Link href="/admin/paperwork/templates" className={styles.crumb}>
+        <Link href="/admin/paperwork/forms" className={styles.crumb}>
           <ArrowLeft size={13} weight="bold" />
-          Templates
+          Forms
         </Link>
         {tabs.map((t) => (
           <button

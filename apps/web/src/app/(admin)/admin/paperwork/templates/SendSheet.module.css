@@ -273,15 +273,17 @@
   gap: 2px;
 }
 
+/* The mock surfaces are a fixed-white preview of what the client receives, so
+   their text uses fixed inks (not theme tokens) to stay legible in dark mode. */
 .emailMockMetaRow {
   display: flex;
   gap: 6px;
   font-size: 11.5px;
-  color: var(--text-secondary, var(--color-text-secondary));
+  color: #64748b;
 }
 
 .emailMockMetaLabel {
-  color: var(--text-tertiary);
+  color: #94a3b8;
   width: 38px;
   flex-shrink: 0;
 }
@@ -289,7 +291,7 @@
 .emailMockSubject {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, var(--color-text-primary));
+  color: #0f172a;
   margin-top: 4px;
 }
 
@@ -355,12 +357,12 @@
 .portalCardTitle {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, var(--color-text-primary));
+  color: #0f172a;
 }
 
 .portalCardSub {
   font-size: 11.5px;
-  color: var(--text-secondary, var(--color-text-secondary));
+  color: #64748b;
 }
 
 .portalCardCta {
@@ -496,4 +498,172 @@
     border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
     max-height: 44vh;
   }
+}
+
+/* ── Delivery & security (preview of the per-recipient link layer) ── */
+
+.delivery {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 13px;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  background: var(--dash-card-alt, #f8f7f6);
+}
+
+.deliveryHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.deliveryTitle {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.deliveryPill {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-brand, #1b77be);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 12%, transparent);
+}
+
+.deliveryLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, #9ca3af);
+  margin-bottom: 7px;
+}
+
+.audienceRow {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.06));
+  margin-bottom: 14px;
+}
+
+.audienceBtn {
+  flex: 1;
+  height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.audienceBtn:hover {
+  color: var(--text-primary, #1a1a1a);
+}
+.audienceBtnActive {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 12%, transparent);
+  color: var(--color-brand, #1b77be);
+}
+
+.securityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.securityText {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+}
+.securityText svg {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--border-strong, rgba(0, 0, 0, 0.18));
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+.switchOn {
+  background: var(--color-brand, #1b77be);
+}
+.switchKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.3);
+  transition: transform 0.16s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.switchOn .switchKnob {
+  transform: translateX(16px);
+}
+
+.codeInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.1));
+  background: var(--surface-base, #fff);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--text-primary, #1a1a1a);
+  margin-bottom: 12px;
+}
+.codeInput:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+
+.expiryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.expiryRow .deliveryLabel {
+  margin-bottom: 0;
+}
+
+.deliveryNote {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+:global(.dark) .delivery {
+  background: var(--surface-elevated, #131418);
+}
+:global(.dark) .audienceRow,
+:global(.dark) .codeInput {
+  background: var(--surface-floating, #1a1b21);
 }

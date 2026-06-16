@@ -4,6 +4,10 @@
 
 import type { RequirementKind, RequirementScope } from "./status-board-config";
 
+/** Filter-bar selections, shared by the board view and its toolbar. */
+export type StatusFilter = "all" | "outstanding" | "complete" | "declined" | "not_needed";
+export type KindFilter = "all" | RequirementKind;
+
 /** State of a single entity's requirement instance. */
 export type CellState =
   | "complete"
@@ -26,6 +30,10 @@ export type EntityDetail = {
   reviewedAt: string | null;
   completedAt: string | null;
   waived: boolean;
+  /** Renewal/expiry date for time-bound requirements (insurance, permit, ID,
+   * card). Null until the expiry engine (Phase 3) populates it. Drives the
+   * "Expiring" treatment and the Action Center's Expiring/Lapsed sections. */
+  expiresAt?: string | null;
   /** Populated for signature-kind requirements. */
   signers: {
     name: string;

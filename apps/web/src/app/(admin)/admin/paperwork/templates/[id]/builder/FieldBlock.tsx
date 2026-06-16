@@ -182,6 +182,15 @@ export function FieldBlock({ field }: Props) {
       );
     }
 
+    case "page_break":
+      return (
+        <div className={styles.pageBreak}>
+          <span className={styles.pageBreakLine} />
+          <span className={styles.pageBreakPill}>Page Break</span>
+          <span className={styles.pageBreakLine} />
+        </div>
+      );
+
     default:
       return (
         <div className={styles.field}>

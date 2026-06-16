@@ -28,7 +28,6 @@ import {
 } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useReducedMotion } from "motion/react";
 import {
-  MagnifyingGlass,
   X,
   House,
   PushPin,
@@ -44,8 +43,10 @@ import type {
 import type { RequirementKind } from "@/lib/admin/status-board-config";
 import { KIND_LABEL, KIND_ORDER } from "@/lib/admin/status-board-config";
 import { setRequirementNotNeeded } from "@/lib/admin/status-board-actions";
+import { StatusBoardToolbar } from "./StatusBoardToolbar";
 import { FileCardTile } from "./FileCardTile";
 import { getReqKeyIconConfig } from "./status-board-icons";
+import { shadeStepForColumns } from "./column-shade";
 import styles from "./StatusBoard.module.css";
 
 /* ─────────────────────────────────────────────────────────────
@@ -59,6 +60,21 @@ function initials(name: string): string {
     .map((w) => w[0].toUpperCase())
     .slice(0, 2)
     .join("");
+}
+
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
+/**
+ * Owner label for a workspace row: one full name for a single owner, both names
+ * for a couple, the first two plus a count beyond that. Holds one truncated line.
+ */
+function ownerNames(owners: { name: string }[]): string {
+  if (owners.length === 0) return "";
+  if (owners.length === 1) return owners[0].name;
+  if (owners.length === 2) return `${firstName(owners[0].name)} & ${firstName(owners[1].name)}`;
+  return `${firstName(owners[0].name)}, ${firstName(owners[1].name)} +${owners.length - 2}`;
 }
 
 const AVATAR_PALETTE = [
@@ -80,6 +96,17 @@ function fmtDate(iso: string | null): string {
     return "Not yet";
   }
 }
+
+/** Corner-cell legend: the six cell states, in reading order. The swatch
+ * classes echo the CompletionRing colors so the key matches the matrix. */
+const STATUS_LEGEND: { label: string; swatch: string }[] = [
+  { label: "Complete", swatch: "legendComplete" },
+  { label: "In progress", swatch: "legendProgress" },
+  { label: "Sent", swatch: "legendSent" },
+  { label: "Declined", swatch: "legendDeclined" },
+  { label: "Not sent", swatch: "legendNeeded" },
+  { label: "Waived", swatch: "legendWaived" },
+];
 
 /* ─────────────────────────────────────────────────────────────
    Types
@@ -238,7 +265,6 @@ function statusChipLabel(state: CellSummary["status"]): string {
 /** Pick milestone labels based on requirement kind */
 function milestoneLabels(kind: RequirementKind): string[] {
   if (kind === "signature") return ["Sent", "Viewed", "Signed"];
-  if (kind === "file") return ["Uploaded", "Reviewed"];
   return ["Submitted", "Reviewed"];
 }
 
@@ -249,9 +275,6 @@ function milestoneDates(
 ): (string | null)[] {
   if (kind === "signature") {
     return [entity.sentAt, entity.viewedAt, entity.signedAt];
-  }
-  if (kind === "file") {
-    return [entity.completedAt, entity.reviewedAt];
   }
   return [entity.submittedAt, entity.reviewedAt];
 }
@@ -333,6 +356,17 @@ function StatusBoardCursorCard({ hovered }: CursorCardProps) {
               {statusChipLabel(cell.status)}
             </span>
           </div>
+
+          {/* Property scope: name the property this requirement tracks */}
+          {cell.scope === "property" && entity && (
+            <div className={styles.sbCursorScope}>
+              <House size={11} weight="duotone" aria-hidden />
+              <span>
+                {entity.entityName}
+                {cell.totalCount > 1 ? ` +${cell.totalCount - 1} more` : ""}
+              </span>
+            </div>
+          )}
 
           {/* Breakdown: N of M complete */}
           <div className={styles.sbCursorBreakdown}>
@@ -462,7 +496,6 @@ function WorkspaceDrawer({ workspace, focusedReqKey, onClose }: WorkspaceDrawerP
   const kindGroups: { kind: RequirementKind; reqKeys: string[] }[] = [
     { kind: "signature", reqKeys: [] },
     { kind: "form",      reqKeys: [] },
-    { kind: "file",      reqKeys: [] },
   ];
   if (workspace) {
     for (const [rk, cell] of Object.entries(workspace.cells)) {
@@ -944,6 +977,40 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
   /* Columns panel open state */
   const [colsPanelOpen, setColsPanelOpen] = useState(false);
 
+  /* Deep-link filters: hydrate from the URL once, then mirror state back into it
+     via history.replaceState. No navigation and no server refetch, so the board
+     view is shareable and survives a refresh; the back button is intentionally
+     left alone (replaceState adds no history entry). */
+  const urlHydratedRef = useRef(false);
+  useEffect(() => {
+    if (!urlHydratedRef.current) {
+      urlHydratedRef.current = true;
+      const p = new URLSearchParams(window.location.search);
+      const q = p.get("q");
+      if (q) setSearch(q);
+      const k = p.get("kind");
+      if (k === "signature" || k === "form") setKindFilter(k);
+      const s = p.get("status");
+      if (s === "outstanding" || s === "complete" || s === "declined" || s === "not_needed") {
+        setStatusFilter(s);
+      }
+      const cols = p.get("cols");
+      if (cols) {
+        const valid = new Set(board.columns.map((c) => c.reqKey));
+        const keys = cols.split(",").filter((rk) => valid.has(rk));
+        if (keys.length) setFocusedKeys(new Set(keys));
+      }
+      return;
+    }
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("q", search.trim());
+    if (kindFilter !== "all") params.set("kind", kindFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (focusedKeys.size > 0) params.set("cols", [...focusedKeys].join(","));
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+  }, [search, kindFilter, statusFilter, focusedKeys, board.columns]);
+
   /* ── Drawer / cursor / hover-row state ── */
   const [openWorkspace, setOpenWorkspace] = useState<WorkspaceRow | null>(null);
   const [focusedReqKey, setFocusedReqKey] = useState<string | null>(null);
@@ -957,9 +1024,6 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
   const rightScrollRef = useRef<HTMLDivElement>(null);
   const [scrolledRight, setScrolledRight] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
-  /* Reduced-motion gate for chip row animation */
-  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const el = rightScrollRef.current;
@@ -1007,6 +1071,13 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
     ? board.columns.filter((col) => focusedKeys.has(col.reqKey))
     : board.columns.filter((col) => kindFilter === "all" || col.kind === kindFilter);
 
+  /* Alternating shade step per column, computed over the *visible* set so the
+     light/dark-within-kind pattern recomputes whenever columns are pinned or a
+     kind filter narrows them. Read as a `--shade` CSS var by header + cells. */
+  const shadeByReqKey = new Map(
+    visibleColumns.map((col) => [col.reqKey, shadeStepForColumns(visibleColumns, col.reqKey)]),
+  );
+
   /* Re-measure edge-fade when the visible column set changes (pin/unpin changes content width
      but not the container element size, so the ResizeObserver alone won't catch it). */
   useEffect(() => {
@@ -1027,52 +1098,61 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
     }))
     .filter((kg) => kg.reqKeys.length > 0);
 
-  /* Workspaces after search + status filter */
-  const filteredWorkspaces = board.workspaces.filter((ws) => {
-    /* Search: match workspace name, any owner name, or any property name */
-    if (search) {
-      const q = search.trim().toLowerCase();
-      const matchesName = ws.name.toLowerCase().includes(q);
-      const matchesOwner = ws.owners.some((o) => o.name.toLowerCase().includes(q));
-      const matchesProp = ws.properties.some((p) => p.name.toLowerCase().includes(q));
-      if (!matchesName && !matchesOwner && !matchesProp) return false;
-    }
-    /* Status filter — per spec */
-    if (statusFilter === "all") return true;
-    if (statusFilter === "complete") return ws.pct === 100;
-    /* Outstanding: at least one required non-waived item not complete (pct < 100) */
-    if (statusFilter === "outstanding") return ws.pct < 100;
-    if (statusFilter === "declined") {
-      return Object.values(ws.cells).some((c) => c.status === "declined");
-    }
-    if (statusFilter === "not_needed") {
-      return Object.values(ws.cells).some((c) => c.status === "not_needed");
-    }
-    return true;
-  });
+  /* Per-kind column width. Columns are 64px by default, but when a kind has only
+     one visible column that column (and its band) grows to fit the band label so
+     "SIGNATURES" / "FORMS" never clips. With two+ columns the natural width
+     already exceeds the label, so it stays 64px. Band, headers and cells all read
+     this so the three stay aligned. */
+  const COL_W = 64;
+  const colWidthByKind = new Map<RequirementKind, number>(
+    visibleKindGroups.map((kg) => {
+      const count = kg.reqKeys.length;
+      const labelMin = Math.max(COL_W, kg.label.length * 8 + 30);
+      return [kg.kind, Math.max(COL_W, Math.ceil(labelMin / count))] as const;
+    }),
+  );
+  const colWidth = (kind: RequirementKind) => colWidthByKind.get(kind) ?? COL_W;
 
-  /* Kind counts for tab badges */
+  /* Workspaces after search + status filter. Search and status are separate
+     predicates so the Status menu can show per-status counts within the current
+     search context. */
+  const matchesSearch = (ws: WorkspaceRow): boolean => {
+    if (!search) return true;
+    const q = search.trim().toLowerCase();
+    return (
+      ws.name.toLowerCase().includes(q) ||
+      ws.owners.some((o) => o.name.toLowerCase().includes(q)) ||
+      ws.properties.some((p) => p.name.toLowerCase().includes(q))
+    );
+  };
+  const matchesStatus = (ws: WorkspaceRow, sf: StatusFilter): boolean => {
+    if (sf === "all") return true;
+    if (sf === "complete") return ws.pct === 100;
+    /* Outstanding: at least one required non-waived item not complete */
+    if (sf === "outstanding") return ws.pct < 100;
+    if (sf === "declined") return Object.values(ws.cells).some((c) => c.status === "declined");
+    if (sf === "not_needed") return Object.values(ws.cells).some((c) => c.status === "not_needed");
+    return true;
+  };
+
+  const searchFiltered = board.workspaces.filter(matchesSearch);
+  const filteredWorkspaces = searchFiltered.filter((ws) => matchesStatus(ws, statusFilter));
+
+  /* Live per-status counts (within current search) for the Status dropdown */
+  const statusCounts: Partial<Record<StatusFilter, number>> = {
+    all: searchFiltered.length,
+    outstanding: searchFiltered.filter((ws) => matchesStatus(ws, "outstanding")).length,
+    complete: searchFiltered.filter((ws) => matchesStatus(ws, "complete")).length,
+    declined: searchFiltered.filter((ws) => matchesStatus(ws, "declined")).length,
+    not_needed: searchFiltered.filter((ws) => matchesStatus(ws, "not_needed")).length,
+  };
+
+  /* Kind counts for the segmented control */
   const kindCounts: Record<KindFilter, number> = {
     all: board.columns.length,
     signature: board.columns.filter((c) => c.kind === "signature").length,
     form: board.columns.filter((c) => c.kind === "form").length,
-    file: board.columns.filter((c) => c.kind === "file").length,
   };
-
-  const statusFilters: { key: StatusFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "outstanding", label: "Outstanding" },
-    { key: "complete", label: "Complete" },
-    { key: "declined", label: "Declined" },
-    { key: "not_needed", label: "Waived" },
-  ];
-
-  const kindTabs: { key: KindFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "signature", label: "Signatures" },
-    { key: "form", label: "Forms" },
-    { key: "file", label: "Files" },
-  ];
 
   const openDrawer = useCallback((ws: WorkspaceRow, reqKey?: string) => {
     setOpenWorkspace(ws);
@@ -1098,78 +1178,24 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
 
   const closeColsPanel = useCallback(() => setColsPanelOpen(false), []);
 
-  /* Chips for pinned columns (in stable KIND_ORDER) */
-  const focusChips = [...board.columns]
-    .filter((col) => focusedKeys.has(col.reqKey))
-    .sort((a, b) => {
-      const ki = KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind);
-      if (ki !== 0) return ki;
-      /* Within same kind, keep board order */
-      return board.columns.indexOf(a) - board.columns.indexOf(b);
-    });
-
   return (
     <>
       {/* ── Filter bar ── */}
-      <div className={styles.sbFilterBar} role="toolbar" aria-label="Status board filters">
-        {/* Left: search */}
-        <div className={styles.sbSearchWrap}>
-          <span className={styles.sbSearchIcon} aria-hidden>
-            <MagnifyingGlass size={13} weight="bold" />
-          </span>
-          <input
-            type="text"
-            className={styles.sbSearchInput}
-            placeholder="Search workspaces..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search workspaces"
-          />
-        </div>
-
-        {/* Center: kind tabs — dim when focused columns override */}
-        <div
-          className={`${styles.sbKindTabs} ${focusedKeys.size > 0 ? styles.sbKindTabsDisabled : ""}`}
-          role="tablist"
-          aria-label="Filter by requirement kind"
-        >
-          {kindTabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={focusedKeys.size === 0 && kindFilter === t.key}
-              aria-disabled={focusedKeys.size > 0 ? "true" : undefined}
-              className={`${styles.sbKindTab} ${focusedKeys.size === 0 && kindFilter === t.key ? styles.sbKindTabActive : ""}`}
-              onClick={() => { if (focusedKeys.size === 0) setKindFilter(t.key); }}
-            >
-              {t.label}
-              <span className={styles.sbKindTabCount}>{kindCounts[t.key]}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Right: status filter + Columns button */}
-        <div className={styles.sbFilterRight}>
-          <div className={styles.sbStatusGroup} role="group" aria-label="Filter by status">
-            {statusFilters.map((sf) => (
-              <button
-                key={sf.key}
-                type="button"
-                className={`${styles.sbStatusBtn} ${statusFilter === sf.key ? styles.sbStatusBtnActive : ""}`}
-                onClick={() => setStatusFilter(sf.key)}
-                aria-pressed={statusFilter === sf.key}
-              >
-                {sf.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Columns button + panel */}
+      <StatusBoardToolbar
+        search={search}
+        onSearchChange={setSearch}
+        kindFilter={kindFilter}
+        onKindChange={setKindFilter}
+        kindCounts={kindCounts}
+        kindDisabled={focusedKeys.size > 0}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusCounts={statusCounts}
+        columnsSlot={
           <div className={styles.sbColsWrap} ref={colsWrapRef}>
             <button
               type="button"
-              className={`${styles.sbColsBtn} ${focusedKeys.size > 0 ? styles.sbColsBtnActive : ""}`}
+              className={`${styles.sbCtrlBtn} ${focusedKeys.size > 0 ? styles.sbCtrlBtnActive : ""}`}
               onClick={() => setColsPanelOpen((v) => !v)}
               aria-haspopup="dialog"
               aria-expanded={colsPanelOpen}
@@ -1178,6 +1204,18 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
               <Columns size={13} weight="duotone" aria-hidden />
               {focusedKeys.size > 0 ? `${focusedKeys.size} pinned` : "Columns"}
             </button>
+
+            {focusedKeys.size > 0 && (
+              <button
+                type="button"
+                className={styles.sbColsClear}
+                onClick={clearFocusedKeys}
+                aria-label="Clear pinned columns"
+              >
+                <X size={11} weight="bold" aria-hidden />
+                Clear
+              </button>
+            )}
 
             <AnimatePresence>
               {colsPanelOpen && (
@@ -1192,58 +1230,24 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
               )}
             </AnimatePresence>
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* ── Focus chips row ── */}
-      <AnimatePresence>
-        {focusChips.length > 0 && (
-          <motion.div
-            className={styles.sbFocusChipsRow}
-            role="group"
-            aria-label="Pinned columns"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.15, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {focusChips.map((col) => {
-              const config = getReqKeyIconConfig(col.reqKey);
-              return (
-                <span key={col.reqKey} className={styles.sbFocusChip}>
-                  <span className={styles.sbFocusChipIcon} aria-hidden>
-                    <config.Icon size={11} weight="duotone" color={config.tintFg} />
-                  </span>
-                  <span className={styles.sbFocusChipLabel}>{config.shortLabel}</span>
-                  <button
-                    type="button"
-                    className={styles.sbFocusChipX}
-                    onClick={() => toggleFocusKey(col.reqKey)}
-                    aria-label={`Unpin ${config.label}`}
-                  >
-                    <X size={9} weight="bold" aria-hidden />
-                  </button>
-                </span>
-              );
-            })}
-            <button
-              type="button"
-              className={styles.sbFocusChipsClear}
-              onClick={clearFocusedKeys}
-              aria-label="Clear all pinned columns"
-            >
-              Clear
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Result summary ── */}
+      {/* ── Unified count line ── (N reflects active filters; M is the stable
+           tracked-document set, never the filtered column count, so "tracked"
+           stays truthful when a kind filter narrows the visible columns). */}
       <p className={styles.sbResultSummary} aria-live="polite">
-        <span className={styles.sbResultSummaryStrong}>{filteredWorkspaces.length}</span>{" "}
-        {filteredWorkspaces.length === 1 ? "workspace" : "workspaces"},{" "}
-        <span className={styles.sbResultSummaryStrong}>{visibleColumns.length}</span>{" "}
-        {visibleColumns.length === 1 ? "requirement" : "requirements"}
+        <span className={styles.sbResultSummaryStrong}>{filteredWorkspaces.length}</span>
+        {filteredWorkspaces.length !== board.workspaces.length && (
+          <>
+            {" of "}
+            <span className={styles.sbResultSummaryStrong}>{board.workspaces.length}</span>
+          </>
+        )}{" "}
+        {board.workspaces.length === 1 ? "workspace" : "workspaces"}
+        {" · "}
+        <span className={styles.sbResultSummaryStrong}>{board.columns.length}</span>{" "}
+        {board.columns.length === 1 ? "document type" : "document types"}
       </p>
 
       {/* ── Matrix: two-region layout ── */}
@@ -1253,7 +1257,18 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
           {/* Header area: matches right region header height */}
           <div className={styles.matrixLeftHeader} role="presentation">
             <div className={styles.matrixCornerCell}>
-              Workspace
+              <span className={styles.legendHeading}>Status key</span>
+              <div className={styles.legendGrid}>
+                {STATUS_LEGEND.map((entry) => (
+                  <span key={entry.label} className={styles.legendItem}>
+                    <span
+                      className={`${styles.legendSwatch} ${styles[entry.swatch as keyof typeof styles]}`}
+                      aria-hidden
+                    />
+                    {entry.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1295,11 +1310,40 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                     >
                       {ws.name}
                     </button>
-                    {ws.type && (
-                      <div className={styles.matrixOwnerType}>
-                        {ws.type}
+                    {ws.owners.length > 0 ? (
+                      <div
+                        className={styles.matrixOwnerPeople}
+                        title={ws.owners.map((o) => o.name).join(", ")}
+                      >
+                        <span className={styles.matrixOwnerStack} aria-hidden>
+                          {ws.owners.slice(0, 3).map((o) =>
+                            o.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase avatar
+                              <img
+                                key={o.id}
+                                src={o.avatarUrl}
+                                alt=""
+                                className={styles.matrixOwnerPeep}
+                                style={{ objectFit: "cover" }}
+                              />
+                            ) : (
+                              <span
+                                key={o.id}
+                                className={styles.matrixOwnerPeep}
+                                style={{ background: avatarColor(o.name) }}
+                              >
+                                {initials(o.name)}
+                              </span>
+                            ),
+                          )}
+                        </span>
+                        <span className={styles.matrixOwnerPeopleNames}>
+                          {ownerNames(ws.owners)}
+                        </span>
                       </div>
-                    )}
+                    ) : ws.type ? (
+                      <div className={styles.matrixOwnerType}>{ws.type}</div>
+                    ) : null}
                     <div className={styles.matrixOwnerBar}>
                       <div
                         className={styles.matrixOwnerBarFill}
@@ -1329,7 +1373,10 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                   key={kg.kind}
                   className={`${styles.matrixGroupBand} ${styles[`matrixGroupBand_${kg.kind}` as keyof typeof styles]}`}
                   role="columnheader"
-                  style={{ width: `${kg.reqKeys.length * 64}px`, minWidth: `${kg.reqKeys.length * 64}px` }}
+                  style={{
+                    width: `${kg.reqKeys.length * colWidth(kg.kind)}px`,
+                    minWidth: `${kg.reqKeys.length * colWidth(kg.kind)}px`,
+                  }}
                 >
                   {kg.label}
                 </div>
@@ -1338,14 +1385,24 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
 
             {/* Column header row — toggle buttons for pinning */}
             <div className={styles.matrixItemHeaderRow} role="row">
-              {visibleColumns.map((col) => {
+              {visibleColumns.map((col, idx) => {
                 const config = getReqKeyIconConfig(col.reqKey);
                 const isPinned = focusedKeys.has(col.reqKey);
+                const hdrKgReqKeys =
+                  visibleKindGroups.find((kg) => kg.kind === col.kind)?.reqKeys ?? [];
+                const isHdrGroupEnd =
+                  col.reqKey === hdrKgReqKeys[hdrKgReqKeys.length - 1] &&
+                  idx < visibleColumns.length - 1;
                 return (
                   <div
                     key={col.reqKey}
                     role="columnheader"
-                    className={`${styles.matrixItemHeader} ${isPinned ? styles.matrixItemHeaderPinned : ""}`}
+                    style={{
+                      ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0,
+                      width: colWidth(col.kind),
+                      minWidth: colWidth(col.kind),
+                    }}
+                    className={`${styles.matrixItemHeader} ${styles[`matrixItemHeader_${col.kind}` as keyof typeof styles]} ${isPinned ? styles.matrixItemHeaderPinned : ""} ${isHdrGroupEnd ? styles.matrixItemHeaderGroupEnd : ""}`}
                   >
                     <button
                       type="button"
@@ -1408,7 +1465,12 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                     <div
                       key={col.reqKey}
                       role="gridcell"
-                      className={`${styles.matrixCell} ${
+                      style={{
+                        ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0,
+                        width: colWidth(col.kind),
+                        minWidth: colWidth(col.kind),
+                      }}
+                      className={`${styles.matrixCell} ${styles[`matrixCell_${col.kind}` as keyof typeof styles]} ${
                         isLastInKind && isNotLastColumn ? styles.matrixCellGroupEnd : ""
                       }`}
                     >

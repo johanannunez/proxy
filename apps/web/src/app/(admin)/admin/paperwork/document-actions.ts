@@ -97,6 +97,7 @@ export async function sendDocumentToOwner(
     }
 
     revalidatePath("/admin/paperwork");
+    revalidatePath("/admin/paperwork/signatures");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] sendDocumentToOwner error:", err);
@@ -139,6 +140,7 @@ export async function sendDocumentReminder(
       .eq("id", documentId);
 
     revalidatePath("/admin/paperwork");
+    revalidatePath("/admin/paperwork/signatures");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] sendDocumentReminder error:", err);
@@ -244,6 +246,7 @@ export async function setDocumentReminderMute(
     }
 
     revalidatePath("/admin/paperwork");
+    revalidatePath("/admin/paperwork/signatures");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] setDocumentReminderMute error:", err);
@@ -281,6 +284,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult> 
     }
 
     revalidatePath("/admin/paperwork");
+    revalidatePath("/admin/paperwork/signatures");
     return { ok: true };
   } catch (err) {
     console.error("[document-actions] deleteDocument error:", err);

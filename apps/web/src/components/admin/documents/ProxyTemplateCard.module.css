@@ -1,0 +1,145 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: var(--surface-elevated, #fff);
+  border: 1px solid var(--border-default, rgba(0,0,0,0.08));
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s ease;
+  overflow: hidden;
+  cursor: default;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(135deg, #02aaeb, #1b77be);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.iconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgba(27, 119, 190, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lockBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(27, 119, 190, 0.07);
+  border: 1px solid rgba(27, 119, 190, 0.18);
+  border-radius: 999px;
+  color: var(--color-brand);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+}
+
+.catBadge {
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 999px;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 10.5px;
+  padding: 3px 8px;
+}
+
+.name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1a1a);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.description {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.signerRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.signer {
+  font-size: 11.5px;
+  color: var(--color-text-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.arrow {
+  opacity: 0.4;
+}
+
+.forkBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 9px;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.forkBtn:hover {
+  background: rgba(27, 119, 190, 0.05);
+  border-color: rgba(27, 119, 190, 0.2);
+  color: var(--color-brand);
+}

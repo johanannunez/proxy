@@ -1,0 +1,451 @@
+/* ── Template Gallery create modal ── */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-navy, #0f172a) 55%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  position: relative;
+  width: min(940px, 96vw);
+  height: min(640px, 90vh);
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border-card, var(--dash-border, #e5e7eb));
+  box-shadow: 0 40px 100px -30px rgba(11, 27, 43, 0.6);
+  transition: background-color 0.32s ease, border-color 0.32s ease;
+}
+
+/* Header */
+.modalHead {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+}
+.typeSwitch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--dash-card-alt, #efeeec);
+}
+.typeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+.typeBtn svg {
+  color: var(--text-tertiary, #9ca3af);
+}
+.typeBtnActive {
+  background: var(--surface-base, #fff);
+  color: var(--text-primary, #1a1a1a);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.1));
+}
+.typeBtnActive svg {
+  color: var(--color-brand, #1b77be);
+}
+.modalClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.modalClose:hover {
+  background: var(--dash-card-alt, #f3f2f0);
+  color: var(--text-primary, #1a1a1a);
+}
+
+/* Body */
+.modalBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--dash-card-alt, #f8f7f6);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.catBtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.catBtn svg {
+  color: var(--text-tertiary, #9ca3af);
+  flex-shrink: 0;
+}
+.catBtn:hover {
+  background: color-mix(in srgb, var(--text-secondary, #6b7280) 8%, transparent);
+}
+.catBtnActive {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 11%, transparent);
+  color: var(--color-brand, #1b77be);
+  font-weight: 650;
+}
+.catBtnActive svg {
+  color: var(--color-brand, #1b77be);
+}
+.catDivider {
+  height: 1px;
+  background: var(--dash-border, #e5e7eb);
+  margin: 10px 8px;
+}
+.catGroupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 0 11px 4px;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 18px 22px 24px;
+}
+.mainHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.mainTitle {
+  font-family: var(--font-sora, inherit);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, #1a1a1a);
+}
+.search {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--surface-base, #fff);
+  color: var(--text-tertiary, #9ca3af);
+  width: 220px;
+}
+.search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: var(--text-primary, #1a1a1a);
+  width: 100%;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+  margin: 20px 0 11px;
+}
+.groupHint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+  gap: 15px;
+}
+
+.statusBlock {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 12px;
+  border: 1px dashed var(--dash-border, #e5e7eb);
+  background: var(--dash-card-alt, #f8f7f6);
+  color: var(--text-secondary, #6b7280);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Start cards (blank / ai) */
+.startCard {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 13px;
+  border: 1px solid var(--border-card, var(--dash-border, #e5e7eb));
+  background: var(--surface-card, var(--surface-base, #fff));
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.16s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.startCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -16px rgba(16, 24, 40, 0.26);
+}
+.startCard:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 2px;
+}
+.cardSelected {
+  border-color: var(--color-brand, #1b77be);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand, #1b77be) 22%, transparent);
+}
+.startPreview {
+  height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: var(--color-brand, #1b77be);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 7%, var(--dash-card-alt, #f5f4f2));
+  border: 1.5px dashed color-mix(in srgb, var(--color-brand, #1b77be) 30%, transparent);
+}
+.aiPreview {
+  color: #fff;
+  border: none;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+}
+.startName {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary, #1a1a1a);
+  padding: 0 4px 2px;
+}
+
+/* Footer */
+.modalFoot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--surface-base, #fff);
+}
+.footError {
+  margin-right: auto;
+  font-size: 12.5px;
+  color: var(--color-error, #dc2626);
+}
+.cancelBtn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--surface-base, #fff);
+  color: var(--text-secondary, #6b7280);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.cancelBtn:hover {
+  color: var(--text-primary, #1a1a1a);
+  border-color: var(--text-tertiary, #9ca3af);
+}
+.createBtn {
+  height: 36px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-brand, #1b77be) 36%, transparent);
+  transition: transform 0.14s var(--ease-spring, ease), opacity 0.14s ease;
+}
+.createBtn:hover {
+  transform: translateY(-1px);
+}
+.createBtn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
+
+/* AI morph — dark modal variant.
+   Uses .modal.modalDark (two classes = specificity 0,2,0) so it beats the
+   system-dark `:global(.dark) .modal` rule that follows.
+   The base color interpolates via `background-color`; the brand radial
+   gradients live on a ::before that crossfades opacity, so the whole morph is
+   smooth (no gradient "pop"). ::before sits at z-index -1: above the base
+   color, below the modal content. */
+.modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  background: radial-gradient(ellipse 55% 45% at 15% 10%, rgba(2, 170, 235, 0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 90%, rgba(27, 119, 190, 0.06) 0%, transparent 60%);
+}
+.modal.modalDark {
+  background-color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+.modal.modalDark::before {
+  opacity: 1;
+}
+
+/* Dark header strip (back arrow row) */
+.modalHeadDark {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Back button inside dark header */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.backBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.11);
+  color: rgba(255, 255, 255, 0.88);
+}
+.backBtn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Close button override for dark header */
+.modalCloseDark {
+  color: rgba(255, 255, 255, 0.38);
+}
+.modalCloseDark:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+}
+.modalCloseDark:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+/* AI flow host: fills remaining modal height below the header */
+.aiBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Short steps center via margin:auto; tall ones (form review) scroll.
+     The signature split fills exactly, so no scrollbar appears for it. */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .modal::before {
+    transition: none;
+  }
+}
+
+/* Dark surfaces */
+:global(.dark) .modal {
+  background: var(--surface-floating, #1a1b21);
+}
+:global(.dark) .sidebar {
+  background: var(--surface-elevated, #131418);
+}
+:global(.dark) .startCard {
+  background: var(--surface-card, #1d212a);
+  border-color: var(--border-card, rgba(255, 255, 255, 0.09));
+}
+:global(.dark) .startPreview {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 14%, rgba(255, 255, 255, 0.035));
+}
+:global(.dark) .modalFoot,
+:global(.dark) .cancelBtn,
+:global(.dark) .search {
+  background: var(--surface-floating, #1a1b21);
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    display: none;
+  }
+}

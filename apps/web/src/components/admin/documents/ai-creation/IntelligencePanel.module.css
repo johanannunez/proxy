@@ -1,0 +1,166 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(2, 170, 235, 0.12);
+  border: 1px solid rgba(2, 170, 235, 0.28);
+  border-radius: 999px;
+  color: var(--color-brand-light);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  width: fit-content;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fieldInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13.5px;
+  padding: 9px 12px;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+.fieldInput:focus {
+  border-color: rgba(2, 170, 235, 0.45);
+  box-shadow: 0 0 0 3px rgba(2, 170, 235, 0.1);
+}
+
+.mono {
+  font-family: var(--font-ibm-plex-mono, monospace);
+  font-size: 12.5px;
+}
+
+.textarea {
+  resize: none;
+  line-height: 1.55;
+}
+
+.fieldHint {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.fieldSelect {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13.5px;
+  padding: 9px 12px;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.signerList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.signerRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  padding: 8px 12px;
+}
+
+.signerNum {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  background: rgba(2, 170, 235, 0.14);
+  border: 1px solid rgba(2, 170, 235, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-brand-light);
+}
+
+.signerName {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
+  flex: 1;
+}
+
+.signerLast {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.confirmArea {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.confirmBtn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #02aaeb, #1b77be);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  min-height: 44px;
+}
+
+.confirmBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.confirmHint {
+  margin: 0;
+  text-align: center;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.2);
+}

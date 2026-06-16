@@ -89,6 +89,8 @@ export async function createForm(input: CreateFormInput): Promise<Form | null> {
       is_public: input.is_public ?? false,
       is_active: false,
       created_by: input.created_by ?? null,
+      icon: input.icon ?? null,
+      icon_color: input.icon_color ?? null,
     })
     .select("*")
     .single();
@@ -358,6 +360,45 @@ export async function getRespondentCrossFormData(
 }
 
 // ── Unified cross-form responses view (Today cockpit / cross-form consumers) ──
+
+/**
+ * Org-scoped cross-form response list for the Forms hub Activity tab.
+ * Joins to forms to filter by org, and to profiles for respondent display name.
+ * Ordered newest first, capped at `limit` rows (default 100).
+ */
+export async function listAllFormResponsesForOrg(
+  orgId: string,
+  limit = 100,
+): Promise<UnifiedFormResponse[]> {
+  const { data, error } = await db()
+    .from("form_responses")
+    .select(
+      `id, form_id, property_id, data, submitted_at, completed_at,
+       forms:form_id!inner(name, org_id),
+       profiles:respondent_profile_id(full_name, email),
+       properties:property_id(name)`,
+    )
+    .eq("forms.org_id", orgId)
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[forms] listAllFormResponsesForOrg:", error.message);
+    return [];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    form_id: r.form_id,
+    form_name: r.forms?.name ?? "Untitled form",
+    respondent_name: r.profiles?.full_name ?? null,
+    respondent_email: r.profiles?.email ?? null,
+    property_id: r.property_id ?? null,
+    property_name: r.properties?.name ?? null,
+    submitted_at: r.submitted_at,
+    completed_at: r.completed_at ?? null,
+    data: r.data ?? {},
+  }));
+}
 
 export async function listAllFormResponses(): Promise<UnifiedFormResponse[]> {
   const { data, error } = await db()

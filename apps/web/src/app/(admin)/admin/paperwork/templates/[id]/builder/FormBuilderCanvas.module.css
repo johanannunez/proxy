@@ -2,12 +2,30 @@
 
 .root {
   display: grid;
-  grid-template-columns: 200px 1fr 300px;
+  grid-template-columns: 220px 1fr minmax(360px, 440px);
   grid-template-rows: auto 1fr;
-  height: 100vh;
+  /* Height is set at runtime to (viewport bottom − this element's top) so the
+     page never scrolls; only the column bodies (row 2) scroll. The admin shell
+     is a grow-based scroll chain, so a measured height is the reliable cap. */
+  min-height: 0;
   overflow: hidden;
   background: var(--color-warm-gray-50, #f8f7f6);
   outline: none;
+}
+
+@media (max-width: 1180px) {
+  .root {
+    grid-template-columns: 220px 1fr 320px;
+  }
+}
+
+@media (max-width: 980px) {
+  .root {
+    grid-template-columns: 220px 1fr 0px;
+  }
+  .rightPanel {
+    display: none;
+  }
 }
 
 /* ── Top bar (spans all columns) ─────────────────────────── */
@@ -197,12 +215,12 @@
 
 .canvasWrap {
   overflow-y: auto;
-  padding: 2rem 1.25rem;
+  padding: 2rem 1rem;
   min-height: 0;
 }
 
 .canvas {
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -359,6 +377,16 @@
   border: 1.5px dashed var(--color-border);
   border-radius: var(--radius-lg, 1rem);
   background: #fff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* While a palette item is being dragged, the empty canvas is the drop target. */
+.emptyCanvasArmed {
+  border-color: color-mix(in srgb, var(--color-brand-light, #02aaeb) 55%, transparent);
+}
+.emptyCanvasOver {
+  border-color: var(--color-brand-light, #02aaeb);
+  background: color-mix(in srgb, var(--color-brand-light, #02aaeb) 7%, #fff);
 }
 
 .emptyCanvasHint {
@@ -452,6 +480,45 @@
 .rightPanelTabActive {
   color: var(--color-brand);
   border-bottom-color: var(--color-brand);
+}
+
+/* ── Drop gaps (palette drag insertion) ─────────────────── */
+
+.dropGap {
+  height: 6px;
+  border-radius: 3px;
+  margin: 1px 0;
+  transition: height 0.12s ease, background 0.12s ease;
+}
+
+.dropGapActive {
+  height: 4px;
+  background: var(--color-brand-light, #02aaeb);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-light, #02aaeb) 30%, transparent);
+}
+
+/* ── Palette drag overlay chip ───────────────────────────── */
+
+.dragOverlayChip {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-brand);
+  color: #fff;
+  border-radius: var(--radius-sm, 0.5rem);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(27, 119, 190, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── Palette item dragging state ─────────────────────────── */
+
+.typeItemDragging {
+  opacity: 0.4;
 }
 
 /* ── Spin ────────────────────────────────────────────────── */

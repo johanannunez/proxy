@@ -6,17 +6,24 @@ import {
   useRef,
   useTransition,
   useEffect,
+  useLayoutEffect,
   type KeyboardEvent,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type CollisionDetection,
+  type DroppableContainer,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -52,8 +59,49 @@ import { FieldPropertyPopover } from "./FieldPropertyPopover";
 import { FieldTypePanel } from "./FieldTypePanel";
 import { FormPreviewPanel } from "./FormPreviewPanel";
 import { FormSettingsPanel } from "./FormSettingsPanel";
-import type { Form, FormField, FormSchema } from "@/lib/admin/forms-types";
+import type { Form, FormField, FormFieldType, FormSchema } from "@/lib/admin/forms-types";
+import { FIELD_TYPE_LABELS } from "@/lib/admin/forms-types";
 import styles from "./FormBuilderCanvas.module.css";
+
+/* ── Drag data types ──────────────────────────────────────── */
+
+type PaletteDragData = { kind: "palette"; fieldType: FormFieldType };
+type GapDropData = { kind: "gap"; index: number };
+
+function isPaletteDrag(data: unknown): data is PaletteDragData {
+  return typeof data === "object" && data !== null && (data as PaletteDragData).kind === "palette";
+}
+
+function isGapDrop(data: unknown): data is GapDropData {
+  return typeof data === "object" && data !== null && (data as GapDropData).kind === "gap";
+}
+
+/* ── Custom collision detection ───────────────────────────── */
+
+function makeCollisionDetection(isPalette: boolean): CollisionDetection {
+  return (args) => {
+    const gapPrefix = "gap-";
+    if (isPalette) {
+      // Only consider gap droppables during a palette drag
+      const gaps: DroppableContainer[] = [];
+      args.droppableContainers.forEach((c) => {
+        if (String(c.id).startsWith(gapPrefix)) {
+          gaps.push(c);
+        }
+      });
+      return closestCenter({ ...args, droppableContainers: gaps });
+    } else {
+      // Only consider field droppables during a field reorder drag
+      const fieldDroppables: DroppableContainer[] = [];
+      args.droppableContainers.forEach((c) => {
+        if (!String(c.id).startsWith(gapPrefix)) {
+          fieldDroppables.push(c);
+        }
+      });
+      return closestCenter({ ...args, droppableContainers: fieldDroppables });
+    }
+  };
+}
 
 type Props = {
   form: Form;
@@ -61,6 +109,7 @@ type Props = {
 
 export function FormBuilderCanvas({ form: initialForm }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [schema, setSchema] = useState<FormSchema>(initialForm.schema);
   const [formName, setFormName] = useState(initialForm.name);
   const [isPublished, setIsPublished] = useState(initialForm.is_active);
@@ -73,6 +122,12 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const [savedFlash, setSavedFlash] = useState(false);
   const [publishing, startPublishing] = useTransition();
   const [rightPanelTab, setRightPanelTab] = useState<"preview" | "settings">("preview");
+
+  // Active drag state for collision detection and DragOverlay
+  const [activeDragData, setActiveDragData] = useState<PaletteDragData | null>(null);
+  const [activeGapIndex, setActiveGapIndex] = useState<number | null>(null);
+
+  const rootRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Undo/redo stacks — refs avoid triggering re-renders for the stacks themselves
@@ -80,7 +135,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const futureRef = useRef<FormSchema[]>([]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -90,6 +145,11 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const selectedField = fields.find((f) => f.id === selectedFieldId) ?? null;
 
   const liveForm: Form = { ...initialForm, name: formName, schema };
+
+  const collisionDetection: CollisionDetection = useCallback(
+    (args) => makeCollisionDetection(activeDragData !== null)(args),
+    [activeDragData],
+  );
 
   const scheduleAutoSave = useCallback(
     (nextSchema: FormSchema) => {
@@ -112,6 +172,46 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
     setSchema(nextSchema);
     scheduleAutoSave(nextSchema);
   }
+
+  // Arriving from the gallery's "Generate with AI" choice (?ai=1): open the
+  // generator immediately, then strip the flag so a refresh won't reopen it.
+  useEffect(() => {
+    if (searchParams.get("ai") === "1") {
+      setShowAiSlideOver(true);
+      router.replace(`/admin/paperwork/templates/${initialForm.id}`);
+    }
+  }, [searchParams, router, initialForm.id]);
+
+  // Pin the builder to the remaining viewport height (viewport bottom − its
+  // own top) so the page never scrolls and only the three column bodies do.
+  // The admin shell is a grow-based scroll chain, so a measured height is the
+  // only reliable cap that survives the shared PullToRefresh/Shell wrappers.
+  // useLayoutEffect so the height is set before paint (no first-frame flash).
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const main = el.closest("main");
+    function fit() {
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const base = Math.max(420, window.innerHeight - top);
+      el.style.height = `${base}px`;
+      // Subtract any trailing space below the builder (e.g. the shell's bottom
+      // padding) that still makes the scroll container overflow, so the page
+      // itself never scrolls — only the column bodies do.
+      if (main) {
+        const over = main.scrollHeight - main.clientHeight;
+        if (over > 0) el.style.height = `${Math.max(420, base - over)}px`;
+      }
+    }
+    fit();
+    const settle = window.setTimeout(fit, 120);
+    window.addEventListener("resize", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+      window.clearTimeout(settle);
+    };
+  }, []);
 
   // Undo/redo keyboard handler
   useEffect(() => {
@@ -138,15 +238,51 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
     return () => document.removeEventListener("keydown", handleUndoRedo);
   }, [schema, scheduleAutoSave]);
 
+  function handleDragStart(event: DragStartEvent) {
+    const data = event.active.data.current;
+    if (isPaletteDrag(data)) {
+      setActiveDragData(data);
+    }
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    if (!activeDragData) return;
+    const overData = event.over?.data.current;
+    if (isGapDrop(overData)) {
+      setActiveGapIndex(overData.index);
+    } else {
+      setActiveGapIndex(null);
+    }
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+
+    setActiveDragData(null);
+    setActiveGapIndex(null);
+
+    if (!over) return;
+
+    const activeData = active.data.current;
+
+    // Palette drag → insert new field at the gap index
+    if (isPaletteDrag(activeData)) {
+      const overData = over.data.current;
+      if (!isGapDrop(overData)) return;
+      insertField(activeData.fieldType, overData.index);
+      return;
+    }
+
+    // Field reorder → existing behavior
+    if (active.id === over.id) return;
     const oldIndex = fields.findIndex((f) => f.id === active.id);
     const newIndex = fields.findIndex((f) => f.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
     updateFields(arrayMove(fields, oldIndex, newIndex));
   }
 
-  function addField(type: FormField["type"], atIndex?: number) {
+  /** Insert a new field at the given absolute index (0 = top, fields.length = bottom). */
+  function insertField(type: FormFieldType, atIndex: number) {
     const id = `field_${Date.now().toString(36)}`;
     const newField: FormField = { id, type, label: labelFor(type), required: false };
     if (type === "single_choice" || type === "multiple_choice" || type === "dropdown") {
@@ -156,11 +292,20 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
       newField.ratingMax = 5;
     }
     const next = [...fields];
-    const insertAt = atIndex !== undefined ? atIndex + 1 : next.length;
-    next.splice(insertAt, 0, newField);
+    const clampedIndex = Math.max(0, Math.min(atIndex, next.length));
+    next.splice(clampedIndex, 0, newField);
     updateFields(next);
     setSelectedFieldId(id);
     setPaletteAnchorIndex(null);
+  }
+
+  /** Click-to-add: inserts after the currently selected field, or at end. */
+  function addField(type: FormFieldType) {
+    const selectedIndex = selectedFieldId
+      ? fields.findIndex((f) => f.id === selectedFieldId)
+      : -1;
+    const atIndex = selectedIndex >= 0 ? selectedIndex + 1 : fields.length;
+    insertField(type, atIndex);
   }
 
   function updateField(id: string, patch: Partial<FormField>) {
@@ -233,102 +378,120 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const statusLabel = isPublished ? "Published" : "Draft";
 
   return (
-    <div className={styles.root} onKeyDown={handleCanvasKeyDown} tabIndex={0}>
-      {/* ── Top bar (spans all columns) ────────────── */}
-      <div className={styles.topBar}>
-        <div className={styles.topLeft}>
-          <button
-            type="button"
-            className={styles.backBtn}
-            onClick={() => router.push("/admin/paperwork/templates")}
-          >
-            <ArrowLeft size={16} weight="bold" />
-          </button>
-          <input
-            className={styles.nameInput}
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            onBlur={handleNameBlur}
-            placeholder="Untitled Form"
-            aria-label="Form name"
-          />
-          <span className={styles.saveStatus}>
-            {saving ? (
-              <SpinnerGap size={13} weight="bold" className={styles.spin} />
-            ) : savedFlash ? (
-              <>
-                <CheckCircle size={13} weight="bold" className={styles.savedIcon} />
-                Saved
-              </>
-            ) : null}
-          </span>
-          {fieldCount > 0 && (
-            <span className={styles.fieldCounter}>
-              {fieldCountLabel} · {statusLabel}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div ref={rootRef} className={styles.root} onKeyDown={handleCanvasKeyDown} tabIndex={0}>
+        {/* ── Top bar (spans all columns) ────────────── */}
+        <div className={styles.topBar}>
+          <div className={styles.topLeft}>
+            <button
+              type="button"
+              className={styles.backBtn}
+              onClick={() => router.push("/admin/paperwork/forms")}
+            >
+              <ArrowLeft size={16} weight="bold" />
+            </button>
+            <input
+              className={styles.nameInput}
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              onBlur={handleNameBlur}
+              placeholder="Untitled Form"
+              aria-label="Form name"
+            />
+            <span className={styles.saveStatus}>
+              {saving ? (
+                <SpinnerGap size={13} weight="bold" className={styles.spin} />
+              ) : savedFlash ? (
+                <>
+                  <CheckCircle size={13} weight="bold" className={styles.savedIcon} />
+                  Saved
+                </>
+              ) : null}
             </span>
-          )}
-        </div>
-
-        <div className={styles.topRight}>
-          <button
-            type="button"
-            className={styles.aiBtn}
-            onClick={() => setShowAiSlideOver(true)}
-          >
-            <Sparkle size={14} weight="bold" />
-            Generate with AI
-          </button>
-          <button
-            type="button"
-            className={styles.shareBtn}
-            onClick={() => setShowShareModal(true)}
-          >
-            <ShareNetwork size={14} weight="bold" />
-            Share
-          </button>
-          <a
-            href={isPublished && initialForm.slug ? `/f/${initialForm.slug}` : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${styles.previewBtn} ${!isPublished ? styles.previewBtnDisabled : ""}`}
-            aria-disabled={!isPublished}
-            onClick={(e) => !isPublished && e.preventDefault()}
-          >
-            <Eye size={14} weight="bold" />
-            Preview
-          </a>
-          <button
-            type="button"
-            className={`${styles.publishBtn} ${isPublished ? styles.unpublishBtn : ""}`}
-            onClick={handlePublishToggle}
-            disabled={publishing}
-          >
-            {publishing ? (
-              <SpinnerGap size={14} weight="bold" className={styles.spin} />
-            ) : isPublished ? (
-              "Unpublish"
-            ) : (
-              "Publish"
+            {fieldCount > 0 && (
+              <span className={styles.fieldCounter}>
+                {fieldCountLabel} · {statusLabel}
+              </span>
             )}
-          </button>
+          </div>
+
+          <div className={styles.topRight}>
+            <button
+              type="button"
+              className={styles.aiBtn}
+              onClick={() => setShowAiSlideOver(true)}
+            >
+              <Sparkle size={14} weight="bold" />
+              Generate with AI
+            </button>
+            <button
+              type="button"
+              className={styles.shareBtn}
+              onClick={() => setShowShareModal(true)}
+            >
+              <ShareNetwork size={14} weight="bold" />
+              Share
+            </button>
+            <a
+              href={isPublished && initialForm.slug ? `/f/${initialForm.slug}` : undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.previewBtn} ${!isPublished ? styles.previewBtnDisabled : ""}`}
+              aria-disabled={!isPublished}
+              onClick={(e) => !isPublished && e.preventDefault()}
+            >
+              <Eye size={14} weight="bold" />
+              Preview
+            </a>
+            <button
+              type="button"
+              className={`${styles.publishBtn} ${isPublished ? styles.unpublishBtn : ""}`}
+              onClick={handlePublishToggle}
+              disabled={publishing}
+            >
+              {publishing ? (
+                <SpinnerGap size={14} weight="bold" className={styles.spin} />
+              ) : isPublished ? (
+                "Unpublish"
+              ) : (
+                "Publish"
+              )}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* ── Left panel: field type picker ──────────── */}
-      <FieldTypePanel onAddField={(type) => addField(type)} />
+        {/* ── Left panel: field type picker ──────────── */}
+        <FieldTypePanel
+          onAddField={addField}
+          isDragging={activeDragData !== null}
+        />
 
-      {/* ── Center: canvas ─────────────────────────── */}
-      <div className={styles.canvasWrap}>
-        <div className={styles.canvas}>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
+        {/* ── Center: canvas ─────────────────────────── */}
+        <div className={styles.canvasWrap}>
+          <div className={styles.canvas}>
             <SortableContext
               items={fields.map((f) => f.id)}
               strategy={verticalListSortingStrategy}
             >
+              {fields.length === 0 ? (
+                <EmptyDropZone
+                  isDragActive={activeDragData !== null}
+                  isOver={activeGapIndex === 0}
+                  onAi={() => setShowAiSlideOver(true)}
+                />
+              ) : (
+                <DropGap
+                  index={0}
+                  isActive={activeDragData !== null && activeGapIndex === 0}
+                />
+              )}
+
               {fields.map((field, index) => (
                 <SortableFieldItem
                   key={field.id}
@@ -350,93 +513,144 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
                   }}
                   onAddBelow={() => setPaletteAnchorIndex(index)}
                   showPaletteBelow={paletteAnchorIndex === index}
-                  onPaletteSelect={(type) => addField(type, index)}
+                  onPaletteSelect={(type) => insertField(type, index + 1)}
                   onPaletteClose={() => setPaletteAnchorIndex(null)}
-                />
+                >
+                  {/* Gap after this field (index + 1) */}
+                  <DropGap
+                    index={index + 1}
+                    isActive={activeDragData !== null && activeGapIndex === index + 1}
+                  />
+                </SortableFieldItem>
               ))}
             </SortableContext>
-          </DndContext>
+          </div>
+        </div>
 
-          {fields.length === 0 && (
-            <div className={styles.emptyCanvas}>
-              <p className={styles.emptyCanvasHint}>
-                Pick a field type from the left panel to get started, or use{" "}
+        {/* ── Right panel: preview or field properties ── */}
+        <div className={styles.rightPanel}>
+          {selectedField ? (
+            <FieldPropertyPopover
+              field={selectedField}
+              allFields={fields}
+              onUpdate={(patch) => updateField(selectedField.id, patch)}
+              onClose={() => setSelectedFieldId(null)}
+            />
+          ) : (
+            <div className={styles.rightPanelTabbed}>
+              <div className={styles.rightPanelTabs}>
                 <button
                   type="button"
-                  className={styles.emptyAiLink}
-                  onClick={() => setShowAiSlideOver(true)}
+                  className={`${styles.rightPanelTab} ${rightPanelTab === "preview" ? styles.rightPanelTabActive : ""}`}
+                  onClick={() => setRightPanelTab("preview")}
                 >
-                  Generate with AI
+                  Preview
                 </button>
-                .
-              </p>
+                <button
+                  type="button"
+                  className={`${styles.rightPanelTab} ${rightPanelTab === "settings" ? styles.rightPanelTabActive : ""}`}
+                  onClick={() => setRightPanelTab("settings")}
+                >
+                  Form Setup
+                </button>
+              </div>
+              {rightPanelTab === "preview" ? (
+                <FormPreviewPanel form={liveForm} />
+              ) : (
+                <FormSettingsPanel
+                  form={initialForm}
+                  formName={formName}
+                  schema={schema}
+                  onUpdateMeta={(updates) => {
+                    updateFormMetaAction(initialForm.id, updates);
+                  }}
+                  onUpdateSchema={(nextSchema) => {
+                    setSchema(nextSchema);
+                    scheduleAutoSave(nextSchema);
+                  }}
+                />
+              )}
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Right panel: preview or field properties ── */}
-      <div className={styles.rightPanel}>
-        {selectedField ? (
-          <FieldPropertyPopover
-            field={selectedField}
-            allFields={fields}
-            onUpdate={(patch) => updateField(selectedField.id, patch)}
-            onClose={() => setSelectedFieldId(null)}
+        {/* ── AI slide-over ──────────────────────────── */}
+        <AiGenerateSlideOver
+          open={showAiSlideOver}
+          existingFields={fields}
+          onConfirm={handleAiFieldsConfirm}
+          onClose={() => setShowAiSlideOver(false)}
+        />
+
+        {/* ── Share modal ────────────────────────────── */}
+        {showShareModal && (
+          <ShareModal
+            form={{ ...initialForm, is_active: isPublished, is_public: formIsPublic }}
+            onClose={() => setShowShareModal(false)}
+            onIsPublicChange={(val) => setFormIsPublic(val)}
           />
-        ) : (
-          <div className={styles.rightPanelTabbed}>
-            <div className={styles.rightPanelTabs}>
-              <button
-                type="button"
-                className={`${styles.rightPanelTab} ${rightPanelTab === "preview" ? styles.rightPanelTabActive : ""}`}
-                onClick={() => setRightPanelTab("preview")}
-              >
-                Preview
-              </button>
-              <button
-                type="button"
-                className={`${styles.rightPanelTab} ${rightPanelTab === "settings" ? styles.rightPanelTabActive : ""}`}
-                onClick={() => setRightPanelTab("settings")}
-              >
-                Settings
-              </button>
-            </div>
-            {rightPanelTab === "preview" ? (
-              <FormPreviewPanel form={liveForm} />
-            ) : (
-              <FormSettingsPanel
-                form={initialForm}
-                formName={formName}
-                schema={schema}
-                onUpdateMeta={(updates) => {
-                  updateFormMetaAction(initialForm.id, updates);
-                }}
-                onUpdateSchema={(nextSchema) => {
-                  setSchema(nextSchema);
-                  scheduleAutoSave(nextSchema);
-                }}
-              />
-            )}
-          </div>
         )}
       </div>
 
-      {/* ── AI slide-over ──────────────────────────── */}
-      <AiGenerateSlideOver
-        open={showAiSlideOver}
-        existingFields={fields}
-        onConfirm={handleAiFieldsConfirm}
-        onClose={() => setShowAiSlideOver(false)}
-      />
+      {/* ── Drag overlay (palette preview chip) ───────── */}
+      <DragOverlay dropAnimation={null}>
+        {activeDragData ? (
+          <div className={styles.dragOverlayChip}>
+            {FIELD_TYPE_LABELS[activeDragData.fieldType]}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
 
-      {/* ── Share modal ────────────────────────────── */}
-      {showShareModal && (
-        <ShareModal
-          form={{ ...initialForm, is_active: isPublished, is_public: formIsPublic }}
-          onClose={() => setShowShareModal(false)}
-          onIsPublicChange={(val) => setFormIsPublic(val)}
-        />
+/* ── Drop gap component ───────────────────────────────────── */
+
+function DropGap({ index, isActive }: { index: number; isActive: boolean }) {
+  const { setNodeRef } = useDroppable({
+    id: `gap-${index}`,
+    data: { kind: "gap", index } satisfies GapDropData,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${styles.dropGap} ${isActive ? styles.dropGapActive : ""}`}
+    />
+  );
+}
+
+/* ── Empty-canvas drop zone (generous first-field target) ─── */
+
+function EmptyDropZone({
+  isDragActive,
+  isOver,
+  onAi,
+}: {
+  isDragActive: boolean;
+  isOver: boolean;
+  onAi: () => void;
+}) {
+  const { setNodeRef } = useDroppable({
+    id: "gap-0",
+    data: { kind: "gap", index: 0 } satisfies GapDropData,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${styles.emptyCanvas} ${isDragActive ? styles.emptyCanvasArmed : ""} ${isOver ? styles.emptyCanvasOver : ""}`}
+    >
+      {isDragActive ? (
+        <p className={styles.emptyCanvasHint}>Drop the field here to start</p>
+      ) : (
+        <p className={styles.emptyCanvasHint}>
+          Drag a field type from the left panel, or use{" "}
+          <button type="button" className={styles.emptyAiLink} onClick={onAi}>
+            Generate with AI
+          </button>
+          .
+        </p>
       )}
     </div>
   );
@@ -445,7 +659,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
 /* ── Layout field helper ──────────────────────────────────── */
 
 function isLayoutField(type: FormField["type"]): boolean {
-  return type === "section_header" || type === "description" || type === "divider";
+  return type === "section_header" || type === "description" || type === "divider" || type === "page_break";
 }
 
 /* ── Sortable wrapper ─────────────────────────────────────── */
@@ -461,6 +675,7 @@ function SortableFieldItem({
   showPaletteBelow,
   onPaletteSelect,
   onPaletteClose,
+  children,
 }: {
   field: FormField;
   isSelected: boolean;
@@ -473,6 +688,7 @@ function SortableFieldItem({
   showPaletteBelow: boolean;
   onPaletteSelect: (type: FormField["type"]) => void;
   onPaletteClose: () => void;
+  children?: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: field.id });
@@ -562,6 +778,9 @@ function SortableFieldItem({
           </div>
         )}
       </div>
+
+      {/* Gap droppable after this field */}
+      {children}
     </div>
   );
 }
@@ -585,6 +804,7 @@ function labelFor(type: FormField["type"]): string {
     section_header: "Section Header",
     description: "Description",
     divider: "Divider",
+    page_break: "Page Break",
   };
   return labels[type] ?? "Field";
 }

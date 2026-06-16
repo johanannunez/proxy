@@ -7,6 +7,118 @@
   flex: 1;
 }
 
+/* ─── Identity header (above tabs) ─── */
+
+.identityHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px 16px;
+  border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
+  flex-wrap: wrap;
+}
+
+.identityIconTile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md, 12px);
+  font-size: 22px;
+}
+
+.identityBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.identityName {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary, var(--color-text-primary));
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identityMeta {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary, var(--color-text-secondary));
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identityChips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.identityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+
+.identityChipLive {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--color-success, #16a34a);
+}
+
+.identityChipDraft {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+.identityChipAccess {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary, #6b7280) 12%, transparent);
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+@media (max-width: 640px) {
+  .identityHeader {
+    padding: 14px 16px 12px;
+    gap: 10px;
+  }
+
+  .identityIconTile {
+    width: 38px;
+    height: 38px;
+  }
+
+  .identityName {
+    font-size: 15px;
+  }
+
+  .identityMeta {
+    font-size: 11px;
+  }
+}
+
 .tabBar {
   display: flex;
   align-items: center;

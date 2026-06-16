@@ -44,6 +44,7 @@ export function FieldPropertyPopover({ field, allFields, onUpdate, onClose }: Pr
 
   const isLayoutType =
     field.type === "divider" ||
+    field.type === "page_break" ||
     field.type === "section_header" ||
     field.type === "description";
 

@@ -35,10 +35,21 @@ import { createHtmlTemplateRecord } from "./html-actions";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./CreateTemplateModal.module.css";
 
+export interface TemplatePrefillData {
+  displayName: string;
+  documentKey: string;
+  description: string;
+  clientSigners: string[];
+  youSigns: boolean;
+  gateStep: string;
+  bodyText: string;
+}
+
 type Props = {
   open: boolean;
   onClose: () => void;
   onCreated: (template: DocumentTemplate) => void;
+  prefill?: TemplatePrefillData;
 };
 
 const GATE_OPTIONS: SelectOption[] = [
@@ -62,7 +73,7 @@ function toSlug(value: string): string {
 
 const STEPS = ["Details", "Document", "Place fields"] as const;
 
-export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
+export function CreateTemplateModal({ open, onClose, onCreated, prefill }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +100,23 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     description.trim() !== "" ||
     pdfFile !== null ||
     keyEdited;
+
+  // When opened with AI-generated prefill data, populate all fields.
+  useEffect(() => {
+    if (!open || !prefill) return;
+    setDisplayName(prefill.displayName);
+    setDocumentKey(prefill.documentKey);
+    setKeyEdited(true);
+    setDescription(prefill.description);
+    setClientSigners(prefill.clientSigners.length > 0 ? prefill.clientSigners : ["Owner"]);
+    setYouSigns(prefill.youSigns);
+    setGateStep(prefill.gateStep);
+    // NOTE: prefill.bodyText (AI-generated content) is not yet wired into the
+    // Plate editor. The modal creates an empty HTML record and the editor opens
+    // on the detail page; flowing AI content into source_html is a pending
+    // follow-up (the create-flow now uses the Plate editor, not inline markdown).
+    setDocMode("write");
+  }, [open, prefill]);
 
   // Live document-key availability, debounced.
   useEffect(() => {

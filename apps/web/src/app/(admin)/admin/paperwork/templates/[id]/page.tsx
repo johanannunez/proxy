@@ -42,7 +42,7 @@ export default async function TemplateDetailPage({ params, searchParams }: Props
     const initialTab =
       tab === "responses" ? "responses" : tab === "settings" ? "settings" : "build";
     return (
-      <PaperworkShell active="templates" orgId={orgId}>
+      <PaperworkShell active="forms" orgId={orgId}>
         <FormTemplateDetail
           form={form}
           responses={responses}
@@ -79,7 +79,7 @@ export default async function TemplateDetailPage({ params, searchParams }: Props
         ? "settings"
         : "fields";
   return (
-    <PaperworkShell active="templates" orgId={orgId}>
+    <PaperworkShell active="signatures" orgId={orgId}>
       <SignatureTemplateDetail
         template={template}
         initialTab={initialTab}

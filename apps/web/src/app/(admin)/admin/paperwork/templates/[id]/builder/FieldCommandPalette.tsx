@@ -17,6 +17,7 @@ import {
   TextHTwo,
   AlignLeft,
   Minus,
+  Rows,
 } from "@phosphor-icons/react";
 import type { FormFieldType } from "@/lib/admin/forms-types";
 import { FIELD_TYPE_LABELS, INPUT_FIELD_TYPES, LAYOUT_FIELD_TYPES } from "@/lib/admin/forms-types";
@@ -43,6 +44,7 @@ const FIELD_ICONS: Record<FormFieldType, React.ReactNode> = {
   section_header: <TextHTwo size={14} weight="bold" />,
   description: <AlignLeft size={14} weight="bold" />,
   divider: <Minus size={14} weight="bold" />,
+  page_break: <Rows size={14} weight="bold" />,
 };
 
 const ALL_TYPES: FormFieldType[] = [...INPUT_FIELD_TYPES, ...LAYOUT_FIELD_TYPES];

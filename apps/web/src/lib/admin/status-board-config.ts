@@ -3,7 +3,7 @@
  * Client-safe: no server imports.
  */
 
-export type RequirementKind = "signature" | "form" | "file";
+export type RequirementKind = "signature" | "form";
 export type RequirementScope = "owner" | "property" | "shared";
 
 export type RequirementConfig = {
@@ -17,19 +17,17 @@ export type RequirementConfig = {
  * Ordered within each kind group in the order columns should appear.
  */
 export const REQUIREMENT_CONFIG: Record<string, RequirementConfig> = {
-  // Signatures
+  // Signatures (signed documents, incl. W-9 and platform authorization)
   host_rental_agreement:   { label: "Host Rental Agreement", kind: "signature", scope: "property" },
   ach_authorization:       { label: "ACH Authorization",     kind: "signature", scope: "owner" },
   card_authorization:      { label: "Card Authorization",    kind: "signature", scope: "owner" },
+  w9:                      { label: "W-9",                   kind: "signature", scope: "owner" },
+  platform_authorization:  { label: "Platform Authorization",kind: "signature", scope: "property" },
 
-  // Files
-  str_permit:              { label: "STR Permit",              kind: "file", scope: "property" },
-  insurance_certificate:   { label: "Insurance Certificate",   kind: "file", scope: "property" },
-  w9:                      { label: "W-9",                     kind: "file", scope: "owner" },
-  identity:                { label: "Identity",                kind: "file", scope: "owner" },
-  platform_authorization:  { label: "Platform Authorization",  kind: "file", scope: "property" },
-
-  // Forms
+  // Forms (incl. upload-backed compliance docs: permit, cert, ID)
+  str_permit:              { label: "STR Permit",              kind: "form", scope: "property" },
+  insurance_certificate:   { label: "Insurance Certificate",   kind: "form", scope: "property" },
+  identity:                { label: "Identity",                kind: "form", scope: "owner" },
   wifi_info:               { label: "WiFi Info",            kind: "form", scope: "property" },
   hoa_info:                { label: "HOA Info",             kind: "form", scope: "shared" },
   guidebook:               { label: "Guidebook",            kind: "form", scope: "shared" },
@@ -40,13 +38,12 @@ export const REQUIREMENT_CONFIG: Record<string, RequirementConfig> = {
   paid_onboarding_fee:     { label: "Onboarding Fee",       kind: "form", scope: "owner" },
 };
 
-/** Column grouping order: signatures first, then forms, then files. */
-export const KIND_ORDER: RequirementKind[] = ["signature", "form", "file"];
+/** Column grouping order: signatures first, then forms. */
+export const KIND_ORDER: RequirementKind[] = ["signature", "form"];
 
 export const KIND_LABEL: Record<RequirementKind, string> = {
   signature: "Signatures",
   form: "Forms",
-  file: "Files",
 };
 
 /**

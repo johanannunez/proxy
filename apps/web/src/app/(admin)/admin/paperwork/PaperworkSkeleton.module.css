@@ -1,0 +1,159 @@
+/* Dark-aware shimmer surface, matching the Action Center drawer treatment. */
+.sk {
+  display: block;
+  background: linear-gradient(
+    100deg,
+    var(--dash-card-alt, #f1f0ed) 30%,
+    color-mix(in srgb, var(--dash-card-alt, #f1f0ed) 55%, #fff) 50%,
+    var(--dash-card-alt, #f1f0ed) 70%
+  );
+  background-size: 200% 100%;
+  animation: pwShimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes pwShimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+  }
+}
+
+/* ── Header right-side action placeholders ── */
+.pill {
+  height: 34px;
+  border-radius: 9px;
+}
+.pillWide {
+  width: 132px;
+}
+.pillBrand {
+  width: 118px;
+}
+
+/* ── Hub sub-tabs (Documents | History / Forms | Responses) ── */
+.subTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.subTab {
+  width: 104px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+/* ── Library toolbar (count + filters) ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.toolbarCount {
+  width: 88px;
+  height: 18px;
+  border-radius: 6px;
+}
+.toolbarFilters {
+  width: 168px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+/* ── Card grid (signatures / forms library) ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 15px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-card, #fff);
+}
+.cardPreview {
+  height: 92px;
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 12px 0;
+}
+.lineName {
+  width: 72%;
+  height: 13px;
+  border-radius: 5px;
+}
+.lineMeta {
+  width: 46%;
+  height: 11px;
+  border-radius: 5px;
+}
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 12px;
+  margin-top: 10px;
+  border-top: 1px solid var(--dash-border-subtle, #eeede9);
+}
+.footIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.footBtn {
+  flex: 1;
+  height: 26px;
+  border-radius: 7px;
+}
+
+/* ── Status board matrix ── */
+.boardToolbar {
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.board {
+  border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-card, #fff);
+}
+.boardRow {
+  display: grid;
+  grid-template-columns: 220px repeat(5, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+}
+.boardRow + .boardRow {
+  border-top: 1px solid var(--dash-border-subtle, #eeede9);
+}
+.boardHeadCell {
+  height: 13px;
+  border-radius: 5px;
+}
+.boardLabel {
+  height: 30px;
+  border-radius: 8px;
+}
+.boardCell {
+  height: 20px;
+  border-radius: 6px;
+}

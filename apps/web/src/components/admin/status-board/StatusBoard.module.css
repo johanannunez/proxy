@@ -128,14 +128,14 @@
   opacity: 0.85;
 }
 
-/* Not started: a clean, faint solid ring (lowest emphasis) */
+/* Not started: a clean, faint DASHED ring (lowest emphasis, reads as "not sent") */
 .cellNeeded {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 1.5px solid var(--text-tertiary, #9ca3af);
-  opacity: 0.3;
+  border: 1.5px dashed var(--text-tertiary, #9ca3af);
+  opacity: 0.42;
 }
 
 :global(.dark) .cellNeeded {
@@ -211,15 +211,77 @@
   width: 100%;
   height: 114px;
   display: flex;
-  align-items: flex-end;
-  padding: 7px 12px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px 11px;
+  background: var(--dash-card-alt, #f3f2f0);
+  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+}
+
+/* ─── Corner-cell status legend ─── */
+
+.legendHeading {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
+  text-align: center;
   color: var(--text-tertiary, #9ca3af);
-  background: var(--dash-card-alt, #f3f2f0);
-  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+}
+
+.legendGrid {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  gap: 5px 14px;
+  width: auto;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+.legendSwatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.legendComplete {
+  background: var(--color-success, #16a34a);
+}
+.legendProgress {
+  background: var(--color-brand, #1b77be);
+}
+.legendSent {
+  background: transparent;
+  border: 2px solid #d99409;
+}
+.legendDeclined {
+  background: var(--color-error, #dc2626);
+}
+.legendNeeded {
+  background: transparent;
+  border: 1.5px dashed var(--text-tertiary, #9ca3af);
+  opacity: 0.85;
+}
+.legendWaived {
+  background: var(--text-tertiary, #9ca3af);
+  opacity: 0.42;
 }
 
 .matrixLeftRow {
@@ -359,7 +421,7 @@
   text-align: center;
   background: var(--dash-card-alt, #f3f2f0);
   border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
-  border-right: 1px solid var(--dash-border, #e5e7eb);
+  border-right: 2px solid var(--text-primary, #1a1a1a);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -368,17 +430,56 @@
   border-right: none;
 }
 
-/* Semantic kind tints */
+/* ─── Semantic kind color language ───
+ * Each kind owns a hue: signature = brand blue, form = #7c3aed (violet).
+ * The band header carries a wash plus a saturated underline; that same hue
+ * is echoed faintly down the column headers and cells so a kind reads as one
+ * continuous vertical zone from the filter tabs to the matrix body. The
+ * signature mixes run a touch stronger than the form ones so the brand blue
+ * does not read as faint teal next to the violet. */
 .matrixGroupBand_signature {
-  background: color-mix(in srgb, var(--color-brand, #1b77be) 6%, var(--dash-card-alt, #f3f2f0));
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 82%, var(--dash-card-alt, #f3f2f0));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-brand, #1b77be) 92%, #000 8%);
+  color: #fff;
 }
 
 .matrixGroupBand_form {
-  background: color-mix(in srgb, #7c5cd9 6%, var(--dash-card-alt, #f3f2f0));
+  background: color-mix(in srgb, #7c3aed 78%, var(--dash-card-alt, #f3f2f0));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, #7c3aed 92%, #000 8%);
+  color: #fff;
 }
 
-.matrixGroupBand_file {
-  background: color-mix(in srgb, var(--color-success, #16a34a) 6%, var(--dash-card-alt, #f3f2f0));
+/* Column-header wash per kind (sits under the FileCardTile + label). The
+ * pinned state (brand 5%) intentionally overrides these. */
+/* `--shade` (0 or 1, set per column in StatusBoardView) deepens every other
+ * column within a kind so each hue reads as a light/dark family, recomputed as
+ * columns are pinned/filtered. Step values kept subtle so it never stripes. */
+.matrixItemHeader_signature {
+  background: color-mix(
+    in srgb,
+    var(--color-brand, #1b77be) calc(8% + var(--shade, 0) * 9%),
+    var(--dash-card-alt, #f3f2f0)
+  );
+}
+.matrixItemHeader_form {
+  background: color-mix(
+    in srgb,
+    #7c3aed calc(5% + var(--shade, 0) * 9%),
+    var(--dash-card-alt, #f3f2f0)
+  );
+}
+
+/* Body-cell wash per kind — overlays the row surface so the hue survives row
+ * hover. Kept faint enough not to fight the completion rings. */
+.matrixCell_signature {
+  background-color: color-mix(
+    in srgb,
+    var(--color-brand, #1b77be) calc(6% + var(--shade, 0) * 7%),
+    transparent
+  );
+}
+.matrixCell_form {
+  background-color: color-mix(in srgb, #7c3aed calc(4% + var(--shade, 0) * 7%), transparent);
 }
 
 /* ─── Item header row ─── */
@@ -571,6 +672,45 @@
   line-height: 1.3;
 }
 
+/* ─── Owner people (replaces the entity-type line) ─── */
+.matrixOwnerPeople {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.matrixOwnerStack {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.matrixOwnerPeep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 700;
+  object-fit: cover;
+  box-shadow: 0 0 0 1.5px var(--surface-base, #ffffff);
+}
+.matrixOwnerPeep:not(:first-child) {
+  margin-left: -5px;
+}
+
+.matrixOwnerPeopleNames {
+  font-size: 10px;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 .matrixOwnerPct {
   font-size: 10.5px;
   font-weight: 700;
@@ -596,8 +736,14 @@
 }
 
 /* Group end separator */
+/* Strong vertical divider between kind categories (Signatures | Forms). Drawn
+ * continuously down the band, headers, and cells. --text-primary keeps it
+ * near-black in light mode and visible (light) in dark mode. */
 .matrixCellGroupEnd {
-  border-right: 1px solid var(--dash-border, #e5e7eb) !important;
+  border-right: 2px solid var(--text-primary, #1a1a1a) !important;
+}
+.matrixItemHeaderGroupEnd {
+  border-right: 2px solid var(--text-primary, #1a1a1a) !important;
 }
 
 .matrixCell {
@@ -680,106 +826,161 @@
   transform: scale(0.96);
 }
 
-/* ─── Status Board filter bar ─── */
-
-.sbFilterBar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
-  flex-wrap: wrap;
-}
-
-.sbSearchWrap {
-  position: relative;
+/* ─── Kind dot — ties each kind segment to its column band hue ─── */
+.sbKindDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   flex-shrink: 0;
+  opacity: 0.75;
+}
+.sbKindDot_signature {
+  background: var(--color-brand, #1b77be);
+}
+.sbKindDot_form {
+  background: #7c3aed;
 }
 
-.sbSearchIcon {
-  position: absolute;
-  left: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-tertiary, #9ca3af);
-  pointer-events: none;
+/* ════════════════════════════════════════════════════════════════════
+   Grouped filter toolbar (R3) — one elevated bar, two anchored clusters:
+   search + segmented kind control left, status dropdown + Columns right.
+   ════════════════════════════════════════════════════════════════════ */
+.sbBar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  margin-bottom: 14px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-card, var(--dash-border, #e8e7e4));
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 5px 18px -10px rgba(15, 23, 42, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.sbSearchInput {
-  height: 32px;
-  padding: 0 10px 0 30px;
-  font-size: 12.5px;
-  font-family: inherit;
-  color: var(--text-primary, #111827);
-  background: var(--surface-elevated, #f9fafb);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: var(--radius-sm, 6px);
-  width: 200px;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+/* "fill" layout: kind leads, search grows to close the middle gap. */
+.sbBarFill {
+  justify-content: flex-start;
+  gap: 10px;
 }
 
-.sbSearchInput::placeholder {
-  color: var(--text-tertiary, #9ca3af);
-}
-
-.sbSearchInput:focus {
-  border-color: var(--color-brand, #1b77be);
-  box-shadow: 0 0 0 2px rgba(27, 119, 190, 0.12);
-}
-
-/* Kind tabs */
-.sbKindTabs {
+.sbBarLeft,
+.sbBarRight {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.sbBarLeft { flex: 1 1 auto; }
+.sbBarRight { flex: 0 0 auto; }
+
+/* Feathered group divider (articulates search / kind / controls) */
+.sbBarDivider {
+  width: 1px;
+  height: 24px;
+  flex-shrink: 0;
+  margin: 0 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--border-card, #d9d8d5) 22%,
+    var(--border-card, #d9d8d5) 78%,
+    transparent
+  );
+}
+
+/* Search */
+.sbSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 11px;
+  min-width: 0;
+  flex: 0 1 280px;
+  border-radius: 9px;
+  background: var(--dash-card-alt, #f5f4f2);
+  border: 1px solid transparent;
+  color: var(--text-tertiary, #9ca3af);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.sbSearchGrow { flex: 1 1 auto; }
+.sbSearch:focus-within {
+  background: var(--surface-base, #fff);
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 45%, transparent);
+}
+.sbSearch:focus-within svg { color: var(--color-brand, #1b77be); }
+.sbSearchField {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text-primary, #1a1a1a);
+}
+.sbSearchField::placeholder { color: var(--text-tertiary, #9ca3af); }
+
+/* Segmented kind control */
+.sbSeg {
+  display: inline-flex;
   align-items: center;
   gap: 2px;
   padding: 3px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 9px;
-  flex: 1;
-  justify-content: center;
+  border-radius: 10px;
+  background: var(--dash-card-alt, #f0efec);
+  flex-shrink: 0;
 }
+.sbSegDisabled { opacity: 0.45; pointer-events: none; }
 
-.sbKindTab {
+.sbSegBtn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--text-secondary, #6b7280);
-  background: transparent;
+  justify-content: center;
+  height: 28px;
+  padding: 0 11px;
   border: none;
   border-radius: 7px;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
   cursor: pointer;
-  white-space: nowrap;
-  min-height: 28px;
   transition: color 0.12s ease, background-color 0.12s ease;
 }
-
-.sbKindTab:hover {
-  color: var(--text-primary, #111827);
-}
-
-.sbKindTab:focus-visible {
+.sbSegBtn:hover { color: var(--text-primary, #111827); background: rgba(0, 0, 0, 0.03); }
+.sbSegBtn:disabled { cursor: default; }
+.sbSegBtnActive { color: var(--text-primary, #111827); }
+.sbSegBtn:focus-visible {
   outline: 2px solid var(--color-brand, #1b77be);
   outline-offset: 1px;
 }
 
-.sbKindTab:active {
-  opacity: 0.8;
+/* Inner content sits above the sliding pill */
+.sbSegInner {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.sbKindTabActive {
-  color: var(--text-primary, #111827);
+/* Shared layout pill — glides between the active segment */
+.sbSegActivePill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 7px;
   background: var(--surface-base, #fff);
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.03);
 }
-
-.sbKindTabCount {
+.sbSegCount {
   font-size: 9.5px;
   font-weight: 700;
   padding: 1px 5px;
@@ -787,112 +988,200 @@
   background: rgba(0, 0, 0, 0.06);
   color: var(--text-secondary, #6b7280);
 }
+.sbSegBtnActive .sbSegCount {
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 12%, transparent);
+  color: var(--color-brand, #1b77be);
+}
 
-.sbKindTabActive .sbKindTabCount {
-  background: rgba(0, 0, 0, 0.08);
+/* Right-side control buttons (status, columns) share this base */
+.sbCtrlBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
+  border-radius: 9px;
+  background: var(--surface-base, #fff);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+}
+.sbCtrlBtn:hover {
+  color: var(--text-primary, #111827);
+  border-color: color-mix(in srgb, var(--text-tertiary, #9ca3af) 60%, transparent);
+}
+.sbCtrlBtn:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
+}
+.sbCtrlBtnActive,
+.sbCtrlBtnActive:hover {
+  color: var(--color-brand, #1b77be);
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 40%, transparent);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 6%, var(--surface-base, #fff));
+}
+.sbCtrlBtnLabel { color: var(--text-tertiary, #9ca3af); font-weight: 600; }
+.sbCtrlBtnActive .sbCtrlBtnLabel { color: color-mix(in srgb, var(--color-brand, #1b77be) 70%, transparent); }
+.sbCtrlBtnValue { color: inherit; }
+.sbCaretOpen { transform: rotate(180deg); }
+.sbCtrlBtn svg { transition: transform 0.15s var(--ease-spring, ease); flex-shrink: 0; }
+
+/* Status dropdown menu */
+.sbStatusWrap { position: relative; }
+.sbStatusMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 180px;
+  padding: 5px;
+  border-radius: 11px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.22), 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+.sbStatusMenuHeader {
+  margin: 0;
+  padding: 5px 9px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9ca3af);
+}
+.sbStatusItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary, #4b5563);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+.sbStatusItem:hover {
+  background: var(--dash-row-alt, rgba(0, 0, 0, 0.04));
   color: var(--text-primary, #111827);
 }
-
-/* Kind tabs disabled state */
-.sbKindTabsDisabled {
-  opacity: 0.45;
-  pointer-events: none;
+.sbStatusItemActive,
+.sbStatusItemActive:hover { color: var(--color-brand, #1b77be); font-weight: 600; }
+.sbStatusItemActive svg { color: var(--color-brand, #1b77be); }
+.sbStatusItemLabel { display: inline-flex; align-items: center; gap: 9px; }
+.sbStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  outline-offset: -1px;
 }
-
-/* Right-side filter controls */
-.sbFilterRight {
-  display: flex;
+.sbStatusItemMeta {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
-
-/* Status filter pill group */
-.sbStatusGroup {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.sbStatusBtn {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  font-size: 11.5px;
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-secondary, #6b7280);
-  background: var(--surface-base, #fff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 28px;
-  transition: color 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
-}
-
-.sbStatusBtn:hover:not(.sbStatusBtnActive) {
-  color: var(--text-primary, #111827);
-  border-color: var(--border-strong, #d1d5db);
-}
-
-.sbStatusBtn:focus-visible {
-  outline: 2px solid var(--color-brand, #1b77be);
-  outline-offset: 1px;
-}
-
-.sbStatusBtn:active {
-  transform: translateY(1px);
-}
-
-.sbStatusBtnActive {
-  color: #fff;
-  background: var(--color-navy, #0f172a);
-  border-color: var(--color-navy, #0f172a);
+.sbStatusItemCount {
+  font-size: 11px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary, #9ca3af);
 }
+.sbStatusItemActive .sbStatusItemCount { color: var(--color-brand, #1b77be); }
 
-/* Columns button */
-.sbColsWrap {
-  position: relative;
-}
-
-.sbColsBtn {
+/* Clear-all — appears only when a filter is active */
+.sbClearBtn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
-  font-size: 11.5px;
-  font-weight: 500;
+  height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 9px;
+  background: none;
   font-family: inherit;
-  color: var(--text-secondary, #6b7280);
-  background: var(--surface-base, #fff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  /* Visible only when a filter is active, so it reads red from the start. */
+  color: var(--color-error, #dc2626);
   cursor: pointer;
-  white-space: nowrap;
-  min-height: 28px;
-  transition: color 0.12s ease, border-color 0.12s ease;
+  transition: color 0.12s ease, background-color 0.12s ease;
 }
-
-.sbColsBtn:hover {
-  color: var(--text-primary, #111827);
-  border-color: var(--border-strong, #d1d5db);
+.sbClearBtn:hover {
+  background: var(--color-error, #dc2626);
+  color: #fff;
 }
-
-.sbColsBtn:focus-visible {
-  outline: 2px solid var(--color-brand, #1b77be);
+.sbClearBtn:focus-visible {
+  outline: 2px solid var(--color-error, #dc2626);
   outline-offset: 1px;
 }
 
-.sbColsBtn:active {
-  opacity: 0.85;
+/* Dark-mode lifts for the toolbar (tokens flip; these fix raw rgba bits) */
+:global(.dark) .sbBar {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 6px 20px -10px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+:global(.dark) .sbSegCount {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary, #9ca3af);
+}
+:global(.dark) .sbSegActivePill {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+:global(.dark) .sbStatusItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+:global(.dark) .sbSegBtn:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* Columns button popover anchor */
+.sbColsWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.sbColsBtnActive {
-  color: var(--color-brand, #1b77be);
-  border-color: var(--color-brand, #1b77be);
+/* Inline Clear sits beside the Columns button (replaces the old chips row that
+ * pushed the board down). Quiet by default, red on hover to read as a reset. */
+.sbColsClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 9px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: 600;
+  color: var(--text-secondary, var(--color-text-secondary, #6b7280));
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+.sbColsClear:hover {
+  color: var(--color-error, #dc2626);
+  background: color-mix(in srgb, var(--color-error, #dc2626) 8%, transparent);
+}
+.sbColsClear:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: 1px;
 }
 
 /* Columns panel */
@@ -1019,88 +1308,8 @@
   flex-shrink: 0;
 }
 
-/* Focus chips row */
-.sbFocusChipsRow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 6px 16px 2px;
-  overflow: hidden;
-}
-
-.sbFocusChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 6px 3px 7px;
-  background: rgba(27, 119, 190, 0.08);
-  border: 1px solid rgba(27, 119, 190, 0.22);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-brand, #1b77be);
-  white-space: nowrap;
-}
-
-.sbFocusChipIcon {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.sbFocusChipLabel {
-  /* inherits from .sbFocusChip */
-}
-
-.sbFocusChipX {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--color-brand, #1b77be);
-  cursor: pointer;
-  padding: 0;
-  opacity: 0.7;
-  transition: opacity 0.1s ease, background-color 0.1s ease;
-}
-
-.sbFocusChipX:hover {
-  opacity: 1;
-  background: rgba(27, 119, 190, 0.15);
-}
-
-.sbFocusChipX:focus-visible {
-  outline: 2px solid var(--color-brand, #1b77be);
-  outline-offset: 1px;
-}
-
-.sbFocusChipsClear {
-  font-size: 11px;
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-tertiary, #9ca3af);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 3px 5px;
-  border-radius: 4px;
-  transition: color 0.1s ease;
-}
-
-.sbFocusChipsClear:hover {
-  color: var(--text-secondary, #6b7280);
-}
-
-.sbFocusChipsClear:focus-visible {
-  outline: 2px solid var(--color-brand, #1b77be);
-  outline-offset: 1px;
-}
+/* (Pinned-column chips row removed in R4-A; Clear now sits beside the Columns
+ * button via .sbColsClear so the board never shifts.) */
 
 /* Result summary line */
 .sbResultSummary {
@@ -1207,6 +1416,25 @@
 }
 
 /* Breakdown line */
+.sbCursorScope {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+.sbCursorScope svg {
+  color: var(--color-brand-light, #02aaeb);
+  flex-shrink: 0;
+}
+.sbCursorScope span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .sbCursorBreakdown {
   padding: 7px 12px;
   font-size: 10.5px;
@@ -1877,8 +2105,6 @@
   .sbStatusBtn,
   .sbColsBtn,
   .sbColsPanelItem,
-  .sbFocusChipX,
-  .sbFocusChipsClear,
   .matrixItemHeaderBtn,
   .matrixPinIcon,
   .matrixLeftRow,

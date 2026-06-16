@@ -1,34 +1,32 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { fetchDocumentsHubData } from "@/lib/admin/documents-hub";
 import { fetchActionQueue } from "@/lib/admin/action-queue";
 import { fetchWorkspaceStatusBoard } from "@/lib/admin/status-board";
 import { PROXY_ORG_ID } from "@/types/organizations";
 import { PaperworkShell } from "./PaperworkShell";
-import { DocumentsHub } from "./DocumentsHub";
+import { StatusBoardTab } from "./StatusBoardTab";
 
 export const metadata: Metadata = { title: "Paperwork" };
 export const dynamic = "force-dynamic";
 
-export default async function DocumentsPage() {
+/**
+ * Status Board — the default Paperwork tab (2026-06-14 redesign). The workspace
+ * completion matrix is the whole page. The action queue is fetched here only
+ * for its count (the Action Center pill); the queue itself lives in the
+ * on-demand Action Center slide-over, which lazy-fetches its full payload.
+ */
+export default async function PaperworkStatusPage() {
   const headerList = await headers();
   const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
 
-  // owners powers the Needs Action queue's detail drawer; statusBoard powers
-  // the workspace completion matrix that is the Documents tab itself.
-  const [owners, actionQueue, statusBoard] = await Promise.all([
-    fetchDocumentsHubData(),
+  const [actionQueue, statusBoard] = await Promise.all([
     fetchActionQueue(),
     fetchWorkspaceStatusBoard(orgId),
   ]);
 
   return (
-    <PaperworkShell active="documents" orgId={orgId}>
-      <DocumentsHub
-        owners={owners}
-        actionQueue={actionQueue}
-        statusBoard={statusBoard}
-      />
+    <PaperworkShell active="status" orgId={orgId} actionCount={actionQueue.length}>
+      <StatusBoardTab board={statusBoard} />
     </PaperworkShell>
   );
 }

@@ -24,7 +24,7 @@ export function FieldRenderer({ field, value, onChange, error, readOnly }: Props
   const arrValue = Array.isArray(value) ? (value as string[]) : [];
 
   function labelEl() {
-    if (type === "divider" || type === "section_header" || type === "description") return null;
+    if (type === "divider" || type === "section_header" || type === "description" || type === "page_break") return null;
     return (
       <label className={styles.label}>
         {label}
@@ -47,6 +47,11 @@ export function FieldRenderer({ field, value, onChange, error, readOnly }: Props
   }
   if (type === "divider") {
     return <hr className={styles.divider} />;
+  }
+  // page_break is consumed by FormRenderer before reaching here; render nothing
+  // for safety in case a stray instance reaches this component directly.
+  if (type === "page_break") {
+    return null;
   }
 
   // ── Signature ─────────────────────────────────────────────────────────────
