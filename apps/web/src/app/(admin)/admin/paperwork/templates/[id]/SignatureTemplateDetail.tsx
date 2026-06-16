@@ -23,6 +23,7 @@ import ConfirmModal from "@/components/admin/ConfirmModal";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import { DocuSealBuilderView } from "../DocuSealBuilderView";
 import { TemplateEditor } from "./TemplateEditor";
+import { publishTemplateAction } from "../draft-actions";
 import {
   activateTemplate,
   deactivateTemplate,
@@ -567,6 +568,38 @@ export function SignatureTemplateDetail({
   const [savingName, setSavingName] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
+  const [publishPromptOpen, setPublishPromptOpen] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  // True when the Write draft has content that is not yet in the field layout:
+  // either never published, or edited since the last publish.
+  const needsPublish =
+    template.source_html !== null &&
+    template.source_html !== "" &&
+    template.source_html !== template.published_html;
+
+  // Switching to Fields with unpublished draft changes must publish first, or
+  // the field layout would be stale. Other tabs switch directly.
+  function requestTab(key: TabKey) {
+    if (key === "fields" && needsPublish) {
+      setPublishError(null);
+      setPublishPromptOpen(true);
+      return;
+    }
+    setTab(key);
+  }
+
+  async function handlePublishConfirm() {
+    const res = await publishTemplateAction(template.id);
+    setPublishPromptOpen(false);
+    if (!res.ok) {
+      setPublishError(res.error);
+      return;
+    }
+    setPublishError(null);
+    setTab("fields");
+    router.refresh();
+  }
 
   // The document name is the single source of truth (display_name). Editing it
   // here pushes the new name into DocuSeal so the document name matches.
@@ -629,7 +662,7 @@ export function SignatureTemplateDetail({
             role="tab"
             aria-selected={tab === t.key}
             className={`${styles.tab} ${tab === t.key ? styles.tabActive : ""}`}
-            onClick={() => setTab(t.key)}
+            onClick={() => requestTab(t.key)}
           >
             {t.label}
             {tab === t.key && (
@@ -716,22 +749,28 @@ export function SignatureTemplateDetail({
           <TemplateEditor
             templateId={template.id}
             initialHtml={template.source_html ?? ""}
-            hasExistingDocusealId={template.docuseal_template_id !== null}
           />
         )}
         {tab === "fields" &&
           (template.docuseal_template_id ? (
-            <DocuSealBuilderView
-              templateId={template.docuseal_template_id}
-              dbTemplateId={template.id}
-            />
+            <div className={styles.fieldsArea}>
+              <p className={styles.partiesHint}>
+                Signing parties: {template.signer_roles.join(", ")}. Switch party
+                in the panel on the right to give each one a Signature and Date
+                field.
+              </p>
+              <DocuSealBuilderView
+                templateId={template.docuseal_template_id}
+                dbTemplateId={template.id}
+              />
+            </div>
           ) : template.source_html !== null ? (
             <div className={styles.builderEmpty}>
               <PencilSimple size={40} weight="duotone" />
-              <p className={styles.builderEmptyTitle}>Write the document first</p>
+              <p className={styles.builderEmptyTitle}>Publish the document first</p>
               <p className={styles.builderEmptyBody}>
-                Save your content on the Write tab. Field placement opens here
-                automatically once the document has been saved.
+                Open the Write tab and click Sync to fields. Field placement opens
+                here once the document is published.
               </p>
             </div>
           ) : (
@@ -750,10 +789,23 @@ export function SignatureTemplateDetail({
             template={template}
             missingRoles={missingRoles}
             hasBeenSent={hasBeenSent}
-            onGoToFields={() => setTab("fields")}
+            onGoToFields={() => requestTab("fields")}
           />
         )}
       </div>
+
+      {publishError && tab !== "fields" && (
+        <p className={styles.builderError}>{publishError}</p>
+      )}
+
+      <ConfirmModal
+        open={publishPromptOpen}
+        title="Publish your latest content?"
+        description="Your draft has changes that are not in the field layout yet. Publishing rebuilds the document for signing and resets field positions."
+        confirmLabel="Publish"
+        onConfirm={handlePublishConfirm}
+        onCancel={() => setPublishPromptOpen(false)}
+      />
     </div>
   );
 }

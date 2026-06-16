@@ -89,12 +89,23 @@
   gap: 10px;
 }
 
-.dirtyDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-brand);
-  flex-shrink: 0;
+.saveStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.saveStatusOk {
+  color: var(--color-success);
+}
+
+.saveStatusErr {
+  color: var(--color-error);
 }
 
 .saveBtn {

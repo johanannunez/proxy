@@ -3,23 +3,23 @@
 /**
  * TemplateEditor — Plate v53 rich-text editor for HTML-authored document
  * templates. Rendered on the "Write" tab only. The "Fields" tab (DocuSeal
- * builder) handles all signature/field placement after content is saved here.
+ * builder) handles all signature/field placement.
  *
- * Save flow:
- *  1. valueToHtml(editor.children) -> a clean, semantic HTML fragment.
- *  2. saveTemplateHtmlAction wraps the fragment in the document shell and mints
- *     a fresh DocuSeal template, storing source_html + docuseal_template_id.
- *  3. router.refresh() so the parent sees the new DocuSeal id (Fields tab opens).
- *
- * Every save mints a new DocuSeal template, which resets field positions, so a
- * warning banner appears whenever there are unsaved changes over an existing
- * signing layout.
- *
- * v1 scope: headings, bold/italic/underline, bulleted + numbered lists. Tables
- * are supported by the serializer/loader but are not yet a toolbar action.
+ * Save model (v2):
+ *  - Draft autosave: edits serialize to HTML and persist to the database via
+ *    saveTemplateDraftAction (debounced). Cheap, never loses work, no DocuSeal.
+ *  - Publish ("Sync to fields"): publishTemplateAction (re)builds the DocuSeal
+ *    template from the current draft and snapshots it. This resets field
+ *    positions, so it is deliberate.
  */
 
-import { useEffect, useRef, useState, type ComponentProps } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
 import { useRouter } from "next/navigation";
 import type { Value } from "platejs";
 import {
@@ -51,12 +51,14 @@ import {
   TextUnderline,
   ListBullets,
   ListNumbers,
-  FloppyDisk,
+  CloudCheck,
+  ArrowsClockwise,
   Warning,
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { valueToHtml, type SerializableNode } from "./html-serialize";
-import { saveTemplateHtmlAction } from "../html-actions";
+import { saveTemplateDraftAction, publishTemplateAction } from "../draft-actions";
+import { useAutosave, type SaveState } from "./editor/useAutosave";
 import styles from "./TemplateEditor.module.css";
 
 /* ---- Semantic element components -------------------------------------- *
@@ -152,16 +154,40 @@ function ToolbarButton({
   );
 }
 
+function SaveStatus({ state }: { state: SaveState }) {
+  const tone =
+    state === "saved" ? styles.saveStatusOk : state === "error" ? styles.saveStatusErr : "";
+  return (
+    <span className={`${styles.saveStatus} ${tone}`} role="status" aria-live="polite">
+      {state === "saving" && (
+        <>
+          <SpinnerGap size={13} weight="bold" className={styles.spin} /> Saving…
+        </>
+      )}
+      {state === "saved" && (
+        <>
+          <CloudCheck size={14} weight="fill" /> Saved
+        </>
+      )}
+      {state === "error" && (
+        <>
+          <Warning size={13} weight="fill" /> Save failed
+        </>
+      )}
+    </span>
+  );
+}
+
 function EditorToolbar({
   editor,
-  dirty,
-  saving,
-  onSave,
+  saveState,
+  publishing,
+  onSync,
 }: {
   editor: TemplateEditorInstance;
-  dirty: boolean;
-  saving: boolean;
-  onSave: () => void;
+  saveState: SaveState;
+  publishing: boolean;
+  onSync: () => void;
 }) {
   const isBold = useEditorSelector((ed) => Boolean(ed.api.marks()?.bold), []);
   const isItalic = useEditorSelector((ed) => Boolean(ed.api.marks()?.italic), []);
@@ -218,22 +244,21 @@ function EditorToolbar({
       <span className={styles.spacer} />
 
       <div className={styles.saveArea}>
-        {dirty && <span className={styles.dirtyDot} aria-label="Unsaved changes" />}
+        <SaveStatus state={saveState} />
         <button
           type="button"
           className={styles.saveBtn}
-          onClick={onSave}
-          disabled={saving || !dirty}
+          onClick={onSync}
+          disabled={publishing}
+          title="Rebuilds the document for signing. Resets field positions in the Fields tab."
         >
-          {saving ? (
+          {publishing ? (
             <>
-              <SpinnerGap size={14} weight="bold" className={styles.spin} />
-              Saving
+              <SpinnerGap size={14} weight="bold" className={styles.spin} /> Publishing…
             </>
           ) : (
             <>
-              <FloppyDisk size={14} weight="bold" />
-              Save document
+              <ArrowsClockwise size={14} weight="bold" /> Sync to fields
             </>
           )}
         </button>
@@ -245,65 +270,76 @@ function EditorToolbar({
 function TemplateEditorInner({
   templateId,
   initialHtml,
-  hasExistingDocusealId,
 }: {
   templateId: string;
   initialHtml: string;
-  hasExistingDocusealId: boolean;
 }) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [savedOnce, setSavedOnce] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   // Value (including any loaded HTML) is set at creation inside the hook.
   const editor = useTemplateEditor(initialHtml);
 
-  // Ignore the editor's mount-time normalization onChange so loading content
-  // does not immediately mark the document dirty.
+  const serialize = useCallback(
+    () => valueToHtml(editor.children as unknown as SerializableNode[]),
+    [editor],
+  );
+
+  const autosave = useAutosave({
+    serialize,
+    save: (html) => saveTemplateDraftAction(templateId, html),
+  });
+
+  // Track edits that may not be flushed yet, for the leave guard.
+  const pendingRef = useRef(false);
+  useEffect(() => {
+    if (autosave.state === "saved") pendingRef.current = false;
+  }, [autosave.state]);
+
+  // Ignore the editor's mount-time normalization onChange, and set the autosave
+  // baseline to the current serialized content so loading does not autosave.
   const trackEdits = useRef(false);
   useEffect(() => {
+    autosave.setBaseline(serialize());
     const id = window.setTimeout(() => {
       trackEdits.current = true;
     }, 0);
     return () => window.clearTimeout(id);
+    // Mount-only: editor + initialHtml are fixed for this template.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Warn before leaving with unsaved changes.
+  // Warn (and flush) before leaving while a draft is unsaved or mid-save.
   useEffect(() => {
-    if (!dirty) return;
     function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (autosave.state !== "saving" && !pendingRef.current) return;
+      void autosave.flush();
       e.preventDefault();
       e.returnValue = "";
     }
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [dirty]);
+  }, [autosave]);
 
-  async function handleSave() {
-    setSaving(true);
-    setSaveError(null);
+  async function handleSync() {
+    setPublishing(true);
+    setPublishError(null);
     try {
-      const html = valueToHtml(editor.children as unknown as SerializableNode[]);
-      const result = await saveTemplateHtmlAction(templateId, html);
+      // Persist the latest draft before publishing it.
+      await autosave.flush();
+      const result = await publishTemplateAction(templateId);
       if (!result.ok) {
-        setSaveError(result.error);
+        setPublishError(result.error);
         return;
       }
-      setDirty(false);
-      setSavedOnce(true);
       // Re-fetch the server component so the new DocuSeal id flows in and the
       // Fields tab unlocks.
       router.refresh();
     } finally {
-      setSaving(false);
+      setPublishing(false);
     }
   }
-
-  // Saving always resets the DocuSeal field layout once a signing template
-  // exists (first save here, or one created earlier).
-  const showResetWarning = (hasExistingDocusealId || savedOnce) && dirty;
 
   return (
     <div className={styles.editorWrap}>
@@ -312,32 +348,26 @@ function TemplateEditorInner({
         onChange={() => {
           if (!trackEdits.current) return;
           // onChange also fires on pure cursor moves (set_selection ops). Only a
-          // real content change should mark the document dirty, otherwise a
-          // single click would arm the unsaved-changes prompt.
+          // real content change should mark the draft dirty for autosave.
           if (editor.operations.some((op) => op.type !== "set_selection")) {
-            setDirty(true);
+            pendingRef.current = true;
+            autosave.markDirty();
           }
         }}
       >
-        <EditorToolbar editor={editor} dirty={dirty} saving={saving} onSave={handleSave} />
+        <EditorToolbar
+          editor={editor}
+          saveState={autosave.state}
+          publishing={publishing}
+          onSync={handleSync}
+        />
 
-        {(showResetWarning || saveError) && (
+        {publishError && (
           <div className={styles.notices}>
-            {showResetWarning && (
-              <div className={styles.warning} role="status">
-                <Warning size={15} weight="fill" />
-                <span>
-                  Saving replaces the signing layout. Re-check the Fields tab and
-                  re-place any fields after you save.
-                </span>
-              </div>
-            )}
-            {saveError && (
-              <div className={styles.error} role="alert">
-                <Warning size={15} weight="fill" />
-                <span>{saveError}</span>
-              </div>
-            )}
+            <div className={styles.error} role="alert">
+              <Warning size={15} weight="fill" />
+              <span>{publishError}</span>
+            </div>
           </div>
         )}
 
@@ -364,7 +394,6 @@ function TemplateEditorInner({
 export function TemplateEditor(props: {
   templateId: string;
   initialHtml: string;
-  hasExistingDocusealId: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
