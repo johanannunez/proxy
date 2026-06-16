@@ -592,6 +592,8 @@ export type DocHubOwner = {
   email: string;
   phone: string | null;
   avatarUrl: string | null;
+  workspaceId: string | null;
+  workspaceName: string | null;
   propertyCount: number;
   secureDocs: Record<SecureDocKey, DocHubSecureEntry>;
   forms: Record<FormKey, DocHubFormEntry>;

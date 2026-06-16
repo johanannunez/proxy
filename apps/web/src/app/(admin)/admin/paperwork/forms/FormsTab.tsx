@@ -206,6 +206,7 @@ function responseSearchText(response: FormActivityRow): string {
     response.respondent_name ?? "",
     response.respondent_email ?? "",
     response.property_name ?? "",
+    response.workspace_name ?? "",
     searchValue(response.data),
   ].join(" ");
 }
@@ -1071,6 +1072,7 @@ export function FormsTab({
 
   // Activity filters
   const [search, setSearch] = useState("");
+  const [filterWorkspaceId, setFilterWorkspaceId] = useState("");
   const [filterFormId, setFilterFormId] = useState("");
   const [filterPropertyId, setFilterPropertyId] = useState("");
   const [filterPerson, setFilterPerson] = useState("");
@@ -1125,9 +1127,30 @@ export function FormsTab({
     ];
   }, [responses]);
 
+  const workspaceFilterOptions = useMemo(() => {
+    const attached = new Map<string, string>();
+    let hasUnattached = false;
+    for (const response of responses) {
+      if (response.workspace_id && response.workspace_name) {
+        attached.set(response.workspace_id, response.workspace_name);
+      } else {
+        hasUnattached = true;
+      }
+    }
+    return [
+      { value: "", label: "All workspaces" },
+      ...(hasUnattached ? [{ value: "__none", label: "No workspace" }] : []),
+      ...Array.from(attached, ([value, label]) => ({ value, label })),
+    ];
+  }, [responses]);
+
   // Map responses to ActivityRow
   const activityRows = useMemo<ActivityRow[]>(() => {
     let rows = responses;
+    if (filterWorkspaceId === "__none") rows = rows.filter((r) => r.workspace_id === null);
+    if (filterWorkspaceId && filterWorkspaceId !== "__none") {
+      rows = rows.filter((r) => r.workspace_id === filterWorkspaceId);
+    }
     if (filterFormId) rows = rows.filter((r) => r.form_id === filterFormId);
     if (filterPropertyId === "__none") rows = rows.filter((r) => r.property_id === null);
     if (filterPropertyId && filterPropertyId !== "__none") {
@@ -1170,6 +1193,7 @@ export function FormsTab({
     });
   }, [
     responses,
+    filterWorkspaceId,
     filterFormId,
     filterPropertyId,
     filterPerson,
@@ -1265,10 +1289,46 @@ export function FormsTab({
       searchPlaceholder="Search names, forms, answers, properties"
       searchAriaLabel="Search responses"
       facets={[
-        { key: "form", placeholder: "All forms", value: filterFormId, onChange: setFilterFormId, options: formFilterOptions },
-        { key: "property", placeholder: "All properties", value: filterPropertyId, onChange: setFilterPropertyId, options: propertyFilterOptions },
-        { key: "person", placeholder: "All people", value: filterPerson, onChange: setFilterPerson, options: personFilterOptions },
-        { key: "status", placeholder: "All statuses", value: filterStatus, onChange: setFilterStatus, options: RESPONSE_STATUS_OPTIONS },
+        {
+          key: "workspace",
+          label: "Workspace",
+          placeholder: "All workspaces",
+          value: filterWorkspaceId,
+          onChange: setFilterWorkspaceId,
+          options: workspaceFilterOptions,
+        },
+        {
+          key: "form",
+          label: "Form",
+          placeholder: "All forms",
+          value: filterFormId,
+          onChange: setFilterFormId,
+          options: formFilterOptions,
+        },
+        {
+          key: "property",
+          label: "Property",
+          placeholder: "All properties",
+          value: filterPropertyId,
+          onChange: setFilterPropertyId,
+          options: propertyFilterOptions,
+        },
+        {
+          key: "person",
+          label: "Person",
+          placeholder: "All people",
+          value: filterPerson,
+          onChange: setFilterPerson,
+          options: personFilterOptions,
+        },
+        {
+          key: "status",
+          label: "Status",
+          placeholder: "All statuses",
+          value: filterStatus,
+          onChange: setFilterStatus,
+          options: RESPONSE_STATUS_OPTIONS,
+        },
       ]}
     />
   );
@@ -1450,7 +1510,12 @@ export function FormsTab({
           sentLabel="Received"
           lastLabel="Submitted"
           emptyText={
-            search || filterFormId || filterPropertyId || filterPerson || filterStatus
+            search ||
+            filterWorkspaceId ||
+            filterFormId ||
+            filterPropertyId ||
+            filterPerson ||
+            filterStatus
               ? "No responses match your filters."
               : "No form responses yet."
           }
