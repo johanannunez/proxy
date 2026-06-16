@@ -1,0 +1,37 @@
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--color-warm-gray-50);
+  overflow: hidden;
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-warm-gray-50);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.overlay[data-hidden="true"] {
+  opacity: 0;
+}
+
+.renderingLabel {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}

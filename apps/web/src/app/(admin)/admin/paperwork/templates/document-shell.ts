@@ -10,7 +10,7 @@ import { FONTS, googleFontsHref } from "./[id]/editor/fonts";
  * family name, so a substring match is enough. @import rules must lead the
  * stylesheet, so this output is spliced in first.
  */
-function usedFontImports(html: string): string {
+export function usedFontImports(html: string): string {
   if (!html.includes("font-family:")) return "";
   return FONTS.filter((f) => html.includes(f.googleFamily))
     .map((f) => `@import url('${googleFontsHref(f)}');`)
@@ -18,28 +18,11 @@ function usedFontImports(html: string): string {
 }
 
 /**
- * Legal-document shell. Georgia-ish serif body, Arial-ish headings by default;
- * any per-run font choices come through as inline `font-family` styles backed by
- * the embedded @imports above. The `valueToHtml` fragment drops into the body.
+ * Typography rules shared between the PDF shell and the Paged.js preview.
+ * Covers h1–h6 through .sig-label. Does NOT include the box-sizing reset or
+ * the body block — those differ between the print shell and the preview.
  */
-export function wrapInDocumentShell(html: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<style>
-  ${usedFontImports(html)}
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 11pt;
-    line-height: 1.65;
-    color: #1a1a1a;
-    padding: 56px 72px;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  h1, h2, h3, h4, h5, h6 {
+export const DOCUMENT_TYPOGRAPHY_CSS = `h1, h2, h3, h4, h5, h6 {
     font-family: Arial, Helvetica, sans-serif;
     font-weight: 700;
     margin-top: 24px;
@@ -83,7 +66,31 @@ export function wrapInDocumentShell(html: string): string {
   .page-break { break-after: page; page-break-after: always; height: 0; }
   .signature-block { margin-top: 44px; padding-top: 20px; border-top: 2px solid #1a1a1a; }
   .sig-row { margin-bottom: 18px; }
-  .sig-label { display: inline-block; min-width: 90px; font-weight: 700; }
+  .sig-label { display: inline-block; min-width: 90px; font-weight: 700; }`;
+
+/**
+ * Legal-document shell. Georgia-ish serif body, Arial-ish headings by default;
+ * any per-run font choices come through as inline `font-family` styles backed by
+ * the embedded @imports above. The `valueToHtml` fragment drops into the body.
+ */
+export function wrapInDocumentShell(html: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  ${usedFontImports(html)}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.65;
+    color: #1a1a1a;
+    padding: 56px 72px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  ${DOCUMENT_TYPOGRAPHY_CSS}
 </style>
 </head>
 <body>
