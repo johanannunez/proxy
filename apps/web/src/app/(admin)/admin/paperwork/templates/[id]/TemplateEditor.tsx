@@ -16,6 +16,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -278,6 +279,24 @@ function TemplateEditorInner({
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
+  // Bound the editor to the viewport so the toolbar and all chrome above it stay
+  // pinned and only the document canvas scrolls. Measuring the wrap's own top
+  // adapts to any chrome height (responsive, topbar variants) with no magic
+  // numbers, and is fully scoped here (the shared admin scroll chain is unsafe
+  // to change globally).
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const fit = () => {
+      const top = el.getBoundingClientRect().top;
+      el.style.height = `${Math.max(360, window.innerHeight - top)}px`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
   // Value (including any loaded HTML) is set at creation inside the hook.
   const editor = useTemplateEditor(initialHtml);
 
@@ -342,7 +361,7 @@ function TemplateEditorInner({
   }
 
   return (
-    <div className={styles.editorWrap}>
+    <div ref={wrapRef} className={styles.editorWrap}>
       <Plate
         editor={editor}
         onChange={() => {
