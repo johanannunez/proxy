@@ -1,0 +1,172 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.toolbarBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.toolbarBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #111827;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  padding: 28px 36px;
+  outline: none;
+  overflow-y: auto;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.75;
+  color: #1a1a2e;
+  caret-color: #1b77be;
+  min-height: 200px;
+}
+
+.content [data-slate-placeholder] {
+  color: rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  font-style: italic;
+}
+
+/* The Base* plugins emit native slate-* element classes. Style them, scoped
+   to this editor's .content so nothing leaks to other Plate instances. */
+.content :global(.slate-h1) {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  margin: 18px 0 8px;
+}
+
+.content :global(.slate-h2) {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: #0f172a;
+  margin: 20px 0 6px;
+}
+
+.content :global(.slate-h3) {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  margin: 16px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.content :global(.slate-p) {
+  margin: 0 0 11px;
+}
+
+.content :global(.slate-h1):first-child,
+.content :global(.slate-h2):first-child,
+.content :global(.slate-p):first-child {
+  margin-top: 0;
+}
+
+.content :global(strong) {
+  font-weight: 700;
+}
+
+.content :global(hr) {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  margin: 20px 0;
+}
+
+/* ─── Dark theme: blend into a dark surface (AI overlay preview) ─── */
+.wrapper.dark {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.dark .toolbar {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .toolbarBtn {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.dark .toolbarBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.dark .toolbarDivider {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .content {
+  color: rgba(255, 255, 255, 0.82);
+  caret-color: var(--color-brand-light);
+}
+
+.dark .content [data-slate-placeholder] {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.dark .content :global(.slate-h1) {
+  color: #f1f5f9;
+}
+
+.dark .content :global(.slate-h2) {
+  color: #e2e8f0;
+}
+
+.dark .content :global(.slate-h3) {
+  color: #93c5d8;
+}
+
+.dark .content :global(hr) {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}

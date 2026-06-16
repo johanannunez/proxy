@@ -32,7 +32,6 @@ import { SendSheet } from "../templates/SendSheet";
 import {
   HubSubTabs,
   ViewToggle,
-  HubGroupLabel,
   type HubTab,
 } from "@/components/admin/paperwork/HubChrome";
 import {
@@ -214,8 +213,6 @@ export function SignaturesHub({
 
       {tab === "library" && (
         <div className={styles.libBody}>
-          <HubGroupLabel>Your signatures</HubGroupLabel>
-
           {sigTemplates.length === 0 ? (
             <div className={styles.empty}>
               <p className={styles.emptyTitle}>No signature templates yet</p>

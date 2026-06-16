@@ -28,6 +28,7 @@
   background: var(--surface-base, #fff);
   border: 1px solid var(--border-card, var(--dash-border, #e5e7eb));
   box-shadow: 0 40px 100px -30px rgba(11, 27, 43, 0.6);
+  transition: background-color 0.32s ease, border-color 0.32s ease;
 }
 
 /* Header */
@@ -332,6 +333,95 @@
   opacity: 0.65;
   cursor: wait;
   transform: none;
+}
+
+/* AI morph — dark modal variant.
+   Uses .modal.modalDark (two classes = specificity 0,2,0) so it beats the
+   system-dark `:global(.dark) .modal` rule that follows.
+   The base color interpolates via `background-color`; the brand radial
+   gradients live on a ::before that crossfades opacity, so the whole morph is
+   smooth (no gradient "pop"). ::before sits at z-index -1: above the base
+   color, below the modal content. */
+.modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.32s ease;
+  background: radial-gradient(ellipse 55% 45% at 15% 10%, rgba(2, 170, 235, 0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 85% 90%, rgba(27, 119, 190, 0.06) 0%, transparent 60%);
+}
+.modal.modalDark {
+  background-color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+.modal.modalDark::before {
+  opacity: 1;
+}
+
+/* Dark header strip (back arrow row) */
+.modalHeadDark {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Back button inside dark header */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.backBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.11);
+  color: rgba(255, 255, 255, 0.88);
+}
+.backBtn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Close button override for dark header */
+.modalCloseDark {
+  color: rgba(255, 255, 255, 0.38);
+}
+.modalCloseDark:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+}
+.modalCloseDark:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+/* AI flow host: fills remaining modal height below the header */
+.aiBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Short steps center via margin:auto; tall ones (form review) scroll.
+     The signature split fills exactly, so no scrollbar appears for it. */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .modal::before {
+    transition: none;
+  }
 }
 
 /* Dark surfaces */

@@ -7,6 +7,11 @@
  * library templates as selectable cards. Presentational + callback-driven: it
  * lazy-loads lean DTOs and reports the chosen create action to the host, which
  * owns routing and the create server actions (see PaperworkShell).
+ *
+ * When the user clicks "Generate with AI", the modal morphs in-place (light →
+ * dark) and renders the matching AI creation flow (AICreationFlow for
+ * signatures, FormAIFlow for forms). Back returns to the browse view; the modal
+ * stays open and owns the single portal/backdrop throughout.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +27,7 @@ import {
   SquaresFour,
   Folder,
   Buildings,
+  ArrowLeft,
 } from "@phosphor-icons/react";
 import {
   TemplatePickCard,
@@ -35,13 +41,16 @@ import {
   type GalleryForm,
 } from "./gallery-actions";
 import { resolveFormAppearance } from "@/app/(admin)/admin/paperwork/forms/form-icon";
+import { AICreationFlow } from "@/components/admin/documents/ai-creation";
+import type { AIGeneratedIntelligence } from "@/components/admin/documents/ai-creation/types";
+import { FormAIFlow } from "./FormAIFlow";
+import type { FormField } from "@/lib/admin/forms-types";
 import styles from "./TemplateGallery.module.css";
 
 export type GalleryKind = "signature" | "form";
 
 export type CreateChoice =
   | { kind: GalleryKind; selection: "blank" }
-  | { kind: "form"; selection: "ai" }
   | { kind: GalleryKind; selection: "template"; templateId: string };
 
 function signatureSpec(s: GallerySignature): TemplatePreviewSpec {
@@ -68,25 +77,40 @@ export function TemplateGallery({
   initialKind,
   onClose,
   onCreate,
+  onAiSignatureCreated,
+  onAiFormCreated,
   initialData,
 }: {
   open: boolean;
   initialKind?: GalleryKind | null;
   onClose: () => void;
   onCreate: (choice: CreateChoice) => void | Promise<void>;
+  onAiSignatureCreated: (intelligence: AIGeneratedIntelligence) => void;
+  onAiFormCreated: (input: {
+    name: string;
+    fields: FormField[];
+    icon: string | null;
+    iconColor: string | null;
+  }) => Promise<void>;
   /** Pre-supplied data; when present the modal skips the lazy fetch. */
   initialData?: GalleryData;
 }) {
   const prefersReduced = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [kind, setKind] = useState<GalleryKind>(initialKind ?? "signature");
-  const [selected, setSelected] = useState<string>("blank"); // "blank" | "ai" | <templateId>
+  const [selected, setSelected] = useState<string>("blank"); // "blank" | <templateId>
   const [cat, setCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [data, setData] = useState<GalleryData | null>(initialData ?? null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // "browse" = light template chooser; "ai" = dark in-modal AI flow
+  const [view, setView] = useState<"browse" | "ai">("browse");
+  // Tracks which step the active AI flow is on (forwarded via onStepChange).
+  const [aiStep, setAiStep] = useState<string>("prompt");
+
+  const isGenerating = view === "ai" && aiStep === "generating";
 
   useEffect(() => setMounted(true), []);
 
@@ -98,6 +122,8 @@ export function TemplateGallery({
     setCat("all");
     setQuery("");
     setError(null);
+    setView("browse");
+    setAiStep("prompt");
   }, [open, initialKind]);
 
   // Lazy-load templates + forms on open (unless data was supplied). The action
@@ -115,15 +141,15 @@ export function TemplateGallery({
     };
   }, [open, initialData]);
 
-  // Escape closes (unless a create is in flight).
+  // Escape closes (unless creating is in flight or AI is mid-generation).
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !creating) onClose();
+      if (e.key === "Escape" && !creating && !isGenerating) onClose();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose, creating]);
+  }, [open, onClose, creating, isGenerating]);
 
   const q = query.trim().toLowerCase();
 
@@ -171,7 +197,6 @@ export function TemplateGallery({
     setError(null);
     let choice: CreateChoice;
     if (selected === "blank") choice = { kind, selection: "blank" };
-    else if (selected === "ai") choice = { kind: "form", selection: "ai" };
     else choice = { kind, selection: "template", templateId: selected };
     setCreating(true);
     try {
@@ -183,10 +208,9 @@ export function TemplateGallery({
     }
   }
 
-  const createLabel =
-    selected === "ai" ? "Continue" : selected === "blank" ? "Create" : "Use template";
+  const createLabel = selected === "blank" ? "Create" : "Use template";
 
-  const showAi = kind === "form"; // signature AI is the deferred R2-G wave.
+  const showAi = true;
   const hasResults = yours.length > 0 || proxy.length > 0;
 
   if (!mounted) return null;
@@ -201,10 +225,10 @@ export function TemplateGallery({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.16 }}
-            onClick={() => !creating && onClose()}
+            onClick={() => !creating && !isGenerating && onClose()}
           />
           <motion.div
-            className={styles.modal}
+            className={`${styles.modal} ${view === "ai" ? styles.modalDark : ""}`}
             role="dialog"
             aria-modal="true"
             aria-label="Create new paperwork"
@@ -213,206 +237,265 @@ export function TemplateGallery({
             exit={{ opacity: 0, scale: prefersReduced ? 1 : 0.97, y: prefersReduced ? 0 : 8 }}
             transition={{ type: "spring", stiffness: 360, damping: 30 }}
           >
-            {/* Header: type switch + close */}
-            <div className={styles.modalHead}>
-              <div className={styles.typeSwitch} role="tablist" aria-label="Paperwork type">
+            {view === "ai" ? (
+              /* ── AI view header: back arrow + close ── */
+              <div className={`${styles.modalHead} ${styles.modalHeadDark}`}>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={kind === "signature"}
-                  className={`${styles.typeBtn} ${kind === "signature" ? styles.typeBtnActive : ""}`}
-                  onClick={() => switchKind("signature")}
+                  className={styles.backBtn}
+                  onClick={() => { setView("browse"); setSelected("blank"); }}
+                  disabled={isGenerating}
+                  aria-label="Back to templates"
                 >
-                  <Signature size={15} weight="duotone" /> Signature
+                  <ArrowLeft size={14} weight="bold" aria-hidden />
+                  Templates
                 </button>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={kind === "form"}
-                  className={`${styles.typeBtn} ${kind === "form" ? styles.typeBtnActive : ""}`}
-                  onClick={() => switchKind("form")}
+                  className={`${styles.modalClose} ${styles.modalCloseDark}`}
+                  onClick={() => !isGenerating && onClose()}
+                  disabled={isGenerating}
+                  aria-label="Close"
                 >
-                  <FileText size={15} weight="duotone" /> Form
+                  <X size={16} weight="bold" />
                 </button>
               </div>
-              <button
-                type="button"
-                className={styles.modalClose}
-                onClick={() => !creating && onClose()}
-                aria-label="Close"
-              >
-                <X size={16} weight="bold" />
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              {/* Sidebar */}
-              <nav className={styles.sidebar} aria-label="Filter templates">
-                <button
-                  type="button"
-                  className={`${styles.catBtn} ${cat === "all" ? styles.catBtnActive : ""}`}
-                  onClick={() => setCat("all")}
-                >
-                  <SquaresFour size={15} weight="duotone" /> All templates
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.catBtn} ${cat === "yours" ? styles.catBtnActive : ""}`}
-                  onClick={() => setCat("yours")}
-                >
-                  <Folder size={15} weight="duotone" /> Your {kind === "signature" ? "signatures" : "forms"}
-                </button>
-                {kind === "signature" && (
+            ) : (
+              /* ── Browse view header: type switch + close ── */
+              <div className={styles.modalHead}>
+                <div className={styles.typeSwitch} role="tablist" aria-label="Paperwork type">
                   <button
                     type="button"
-                    className={`${styles.catBtn} ${cat === "proxy" ? styles.catBtnActive : ""}`}
-                    onClick={() => setCat("proxy")}
+                    role="tab"
+                    aria-selected={kind === "signature"}
+                    className={`${styles.typeBtn} ${kind === "signature" ? styles.typeBtnActive : ""}`}
+                    onClick={() => switchKind("signature")}
                   >
-                    <Sparkle size={15} weight="duotone" /> Proxy library
+                    <Signature size={15} weight="duotone" /> Signature
                   </button>
-                )}
-                {categories.length > 0 && (
-                  <>
-                    <div className={styles.catDivider} />
-                    <p className={styles.catGroupLabel}>By category</p>
-                    {categories.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        className={`${styles.catBtn} ${cat === c ? styles.catBtnActive : ""}`}
-                        onClick={() => setCat(c)}
-                      >
-                        <Buildings size={15} weight="duotone" /> {titleize(c)}
-                      </button>
-                    ))}
-                  </>
-                )}
-              </nav>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={kind === "form"}
+                    className={`${styles.typeBtn} ${kind === "form" ? styles.typeBtnActive : ""}`}
+                    onClick={() => switchKind("form")}
+                  >
+                    <FileText size={15} weight="duotone" /> Form
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className={styles.modalClose}
+                  onClick={() => !creating && onClose()}
+                  aria-label="Close"
+                >
+                  <X size={16} weight="bold" />
+                </button>
+              </div>
+            )}
 
-              {/* Main */}
-              <div className={styles.main}>
-                <div className={styles.mainHead}>
-                  <h2 className={styles.mainTitle}>Choose a template</h2>
-                  <div className={styles.search}>
-                    <MagnifyingGlass size={13} weight="bold" aria-hidden />
-                    <input
-                      placeholder="Search templates"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      aria-label="Search templates"
+            {view === "ai" ? (
+              /* ── AI view body: full-width flow, no sidebar/footer ── */
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`ai-flow-${kind}`}
+                  className={styles.aiBody}
+                  initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {kind === "signature" ? (
+                    <AICreationFlow
+                      /* onExit fires on confirm — keep the modal dark while it
+                         closes (view resets on next open). The back button has
+                         its own handler that returns to the light chooser. */
+                      onExit={() => setSelected("blank")}
+                      onCreated={(intel) => onAiSignatureCreated(intel)}
+                      onStepChange={(s) => setAiStep(s)}
                     />
+                  ) : (
+                    <FormAIFlow
+                      onExit={() => setSelected("blank")}
+                      onCreated={(payload) => onAiFormCreated(payload)}
+                      onStepChange={(s) => setAiStep(s)}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              /* ── Browse view body: sidebar + main + footer ── */
+              <>
+                <div className={styles.modalBody}>
+                  {/* Sidebar */}
+                  <nav className={styles.sidebar} aria-label="Filter templates">
+                    <button
+                      type="button"
+                      className={`${styles.catBtn} ${cat === "all" ? styles.catBtnActive : ""}`}
+                      onClick={() => setCat("all")}
+                    >
+                      <SquaresFour size={15} weight="duotone" /> All templates
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.catBtn} ${cat === "yours" ? styles.catBtnActive : ""}`}
+                      onClick={() => setCat("yours")}
+                    >
+                      <Folder size={15} weight="duotone" /> Your {kind === "signature" ? "signatures" : "forms"}
+                    </button>
+                    {kind === "signature" && (
+                      <button
+                        type="button"
+                        className={`${styles.catBtn} ${cat === "proxy" ? styles.catBtnActive : ""}`}
+                        onClick={() => setCat("proxy")}
+                      >
+                        <Sparkle size={15} weight="duotone" /> Proxy library
+                      </button>
+                    )}
+                    {categories.length > 0 && (
+                      <>
+                        <div className={styles.catDivider} />
+                        <p className={styles.catGroupLabel}>By category</p>
+                        {categories.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            className={`${styles.catBtn} ${cat === c ? styles.catBtnActive : ""}`}
+                            onClick={() => setCat(c)}
+                          >
+                            <Buildings size={15} weight="duotone" /> {titleize(c)}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </nav>
+
+                  {/* Main */}
+                  <div className={styles.main}>
+                    <div className={styles.mainHead}>
+                      <h2 className={styles.mainTitle}>Choose a template</h2>
+                      <div className={styles.search}>
+                        <MagnifyingGlass size={13} weight="bold" aria-hidden />
+                        <input
+                          placeholder="Search templates"
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          aria-label="Search templates"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Start fresh — always available so a hidden Blank/AI selection
+                        can never get stranded behind a category filter. */}
+                    <p className={styles.groupLabel}>Start fresh</p>
+                    <div className={styles.grid}>
+                      <button
+                        type="button"
+                        className={`${styles.startCard} ${selected === "blank" ? styles.cardSelected : ""}`}
+                        onClick={() => setSelected("blank")}
+                        aria-pressed={selected === "blank"}
+                      >
+                        <span className={styles.startPreview}>
+                          <Plus size={22} weight="bold" />
+                        </span>
+                        <span className={styles.startName}>Blank</span>
+                      </button>
+                      {showAi && (
+                        <button
+                          type="button"
+                          className={styles.startCard}
+                          onClick={() => { setSelected("blank"); setView("ai"); }}
+                          aria-label="Generate with AI"
+                        >
+                          <span className={`${styles.startPreview} ${styles.aiPreview}`}>
+                            <Sparkle size={22} weight="fill" />
+                          </span>
+                          <span className={styles.startName}>Generate with AI</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Body states */}
+                    {loading ? (
+                      <div className={styles.statusBlock}>Loading your templates…</div>
+                    ) : error ? (
+                      <div className={styles.statusBlock}>{error}</div>
+                    ) : (
+                      <>
+                        {yours.length > 0 && (
+                          <>
+                            <p className={styles.groupLabel}>
+                              Your {kind === "signature" ? "signatures" : "forms"}
+                            </p>
+                            <div className={styles.grid}>
+                              {(yours as Array<GallerySignature | GalleryForm>).map((t) => (
+                                <TemplatePickCard
+                                  key={t.id}
+                                  spec={
+                                    kind === "signature"
+                                      ? signatureSpec(t as GallerySignature)
+                                      : formSpec(t as GalleryForm)
+                                  }
+                                  name={t.name}
+                                  selected={selected === t.id}
+                                  onSelect={() => setSelected(t.id)}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {proxy.length > 0 && (
+                          <>
+                            <p className={styles.groupLabel}>
+                              Proxy library <span className={styles.groupHint}>pre-made, ready to send</span>
+                            </p>
+                            <div className={styles.grid}>
+                              {(proxy as GallerySignature[]).map((t) => (
+                                <TemplatePickCard
+                                  key={t.id}
+                                  spec={signatureSpec(t)}
+                                  name={t.name}
+                                  selected={selected === t.id}
+                                  onSelect={() => setSelected(t.id)}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {!hasResults && (
+                          <div className={styles.statusBlock}>
+                            No {kind === "signature" ? "signatures" : "forms"} match. Start from blank
+                            {showAi ? " or generate one with AI" : ""}.
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* Start fresh — always available so a hidden Blank/AI selection
-                    can never get stranded behind a category filter. */}
-                <p className={styles.groupLabel}>Start fresh</p>
-                <div className={styles.grid}>
+                {/* Footer */}
+                <div className={styles.modalFoot}>
+                  {error && !loading && <span className={styles.footError}>{error}</span>}
                   <button
                     type="button"
-                    className={`${styles.startCard} ${selected === "blank" ? styles.cardSelected : ""}`}
-                    onClick={() => setSelected("blank")}
-                    aria-pressed={selected === "blank"}
+                    className={styles.cancelBtn}
+                    onClick={() => !creating && onClose()}
                   >
-                    <span className={styles.startPreview}>
-                      <Plus size={22} weight="bold" />
-                    </span>
-                    <span className={styles.startName}>Blank</span>
+                    Cancel
                   </button>
-                  {showAi && (
-                    <button
-                      type="button"
-                      className={`${styles.startCard} ${selected === "ai" ? styles.cardSelected : ""}`}
-                      onClick={() => setSelected("ai")}
-                      aria-pressed={selected === "ai"}
-                    >
-                      <span className={`${styles.startPreview} ${styles.aiPreview}`}>
-                        <Sparkle size={22} weight="fill" />
-                      </span>
-                      <span className={styles.startName}>Generate with AI</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className={styles.createBtn}
+                    onClick={handleCreate}
+                    disabled={creating || loading}
+                  >
+                    {creating ? "Working…" : createLabel}
+                  </button>
                 </div>
-
-                {/* Body states */}
-                {loading ? (
-                  <div className={styles.statusBlock}>Loading your templates…</div>
-                ) : error ? (
-                  <div className={styles.statusBlock}>{error}</div>
-                ) : (
-                  <>
-                    {yours.length > 0 && (
-                      <>
-                        <p className={styles.groupLabel}>
-                          Your {kind === "signature" ? "signatures" : "forms"}
-                        </p>
-                        <div className={styles.grid}>
-                          {(yours as Array<GallerySignature | GalleryForm>).map((t) => (
-                            <TemplatePickCard
-                              key={t.id}
-                              spec={
-                                kind === "signature"
-                                  ? signatureSpec(t as GallerySignature)
-                                  : formSpec(t as GalleryForm)
-                              }
-                              name={t.name}
-                              selected={selected === t.id}
-                              onSelect={() => setSelected(t.id)}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {proxy.length > 0 && (
-                      <>
-                        <p className={styles.groupLabel}>
-                          Proxy library <span className={styles.groupHint}>pre-made, ready to send</span>
-                        </p>
-                        <div className={styles.grid}>
-                          {(proxy as GallerySignature[]).map((t) => (
-                            <TemplatePickCard
-                              key={t.id}
-                              spec={signatureSpec(t)}
-                              name={t.name}
-                              selected={selected === t.id}
-                              onSelect={() => setSelected(t.id)}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {!hasResults && (
-                      <div className={styles.statusBlock}>
-                        No {kind === "signature" ? "signatures" : "forms"} match. Start from blank
-                        {showAi ? " or generate one with AI" : ""}.
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className={styles.modalFoot}>
-              {error && !loading && <span className={styles.footError}>{error}</span>}
-              <button
-                type="button"
-                className={styles.cancelBtn}
-                onClick={() => !creating && onClose()}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className={styles.createBtn}
-                onClick={handleCreate}
-                disabled={creating || loading}
-              >
-                {creating ? "Working…" : createLabel}
-              </button>
-            </div>
+              </>
+            )}
           </motion.div>
         </div>
       )}

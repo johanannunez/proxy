@@ -8,6 +8,10 @@
  * holds tracked e-sign instances plus a signature Library, Forms holds form
  * submissions plus a form Library. The /admin/paperwork/templates/[id]
  * master-detail route stays as shared infra.
+ *
+ * AI creation flows live INSIDE the gallery modal (light → dark morph). The
+ * gallery calls onAiSignatureCreated / onAiFormCreated when the user confirms.
+ * This shell owns the downstream create actions and routing.
  */
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -15,14 +19,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { Plus, SpinnerGap, Lightning } from "@phosphor-icons/react";
-import { createFormAction } from "./templates/form-actions";
-import { CreateTemplateModal } from "./templates/CreateTemplateModal";
+import { createFormAction, createFormWithFieldsAction } from "./templates/form-actions";
+import { CreateTemplateModal, type TemplatePrefillData } from "./templates/CreateTemplateModal";
 import {
   TemplateGallery,
   type GalleryKind,
   type CreateChoice,
 } from "@/components/admin/paperwork/TemplateGallery";
+import type { AIGeneratedIntelligence } from "@/components/admin/documents/ai-creation/types";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
+import type { FormField } from "@/lib/admin/forms-types";
 import styles from "./PaperworkShell.module.css";
 
 type PaperworkTab = "status" | "signatures" | "forms";
@@ -68,6 +74,7 @@ export function PaperworkShell({
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryKind, setGalleryKind] = useState<GalleryKind | null>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [templatePrefill, setTemplatePrefill] = useState<TemplatePrefillData | undefined>();
   const [routingForm, setRoutingForm] = useState(false);
 
   // Deep link: /admin/paperwork/templates?create=pdf opens the signature create
@@ -100,25 +107,61 @@ export function PaperworkShell({
     // Blank signature → the dedicated signature create modal (PDF or written).
     if (choice.kind === "signature" && choice.selection === "blank") {
       setGalleryOpen(false);
+      setTemplatePrefill(undefined);
       setTemplateModalOpen(true);
       return;
     }
 
-    // Blank or AI form → create the master, then drop into its builder. Throw on
-    // failure so the gallery's catch surfaces the error instead of silently
-    // re-enabling Create with no feedback.
+    // Blank form → create the master, then drop into its builder.
     setRoutingForm(true);
     try {
       const result = await createFormAction(orgId, "Untitled Form");
       if (!result.ok || !result.data?.id) {
         throw new Error(result.ok ? "Could not create the form." : result.error);
       }
-      const suffix = choice.selection === "ai" ? "?ai=1" : "";
-      router.push(`/admin/paperwork/templates/${result.data.id}${suffix}`);
+      router.push(`/admin/paperwork/templates/${result.data.id}`);
       setGalleryOpen(false);
     } finally {
       setRoutingForm(false);
     }
+  }
+
+  function handleSignatureAICreated(intelligence: AIGeneratedIntelligence) {
+    // Close the gallery (which hosted the AI flow), then open signature create modal prefilled.
+    setGalleryOpen(false);
+    const clientRoles = intelligence.signerRoles.filter((r) => r !== "Proxy");
+    const raw = intelligence.gateStep ?? "";
+    const gateStep = raw.includes("step 4") ? "4"
+      : raw.includes("step 3") ? "3"
+      : raw.includes("step 2") ? "2"
+      : raw.includes("step 1") ? "1"
+      : "";
+    setTemplatePrefill({
+      displayName: intelligence.templateName,
+      documentKey: intelligence.documentKey,
+      description: intelligence.description ?? "",
+      clientSigners: clientRoles.length > 0 ? clientRoles : ["Owner"],
+      youSigns: intelligence.signerRoles.includes("Proxy"),
+      gateStep,
+      bodyText: intelligence.documentBody ?? "",
+    });
+    setTemplateModalOpen(true);
+  }
+
+  async function handleFormAICreated(input: {
+    name: string;
+    fields: FormField[];
+    icon?: string | null;
+    iconColor?: string | null;
+  }) {
+    const result = await createFormWithFieldsAction(orgId, input.name, input.fields, {
+      icon: input.icon,
+      iconColor: input.iconColor,
+    });
+    if (!result.ok) throw new Error(result.error);
+    // Close the gallery (which hosted the AI flow), then drop into the new form's builder.
+    setGalleryOpen(false);
+    router.push(`/admin/paperwork/templates/${result.data.id}`);
   }
 
   return (
@@ -212,12 +255,15 @@ export function PaperworkShell({
         initialKind={galleryKind}
         onClose={() => setGalleryOpen(false)}
         onCreate={handleGalleryCreate}
+        onAiSignatureCreated={handleSignatureAICreated}
+        onAiFormCreated={handleFormAICreated}
       />
 
       <CreateTemplateModal
         open={templateModalOpen}
-        onClose={() => setTemplateModalOpen(false)}
+        onClose={() => { setTemplateModalOpen(false); setTemplatePrefill(undefined); }}
         onCreated={handleTemplateCreated}
+        prefill={templatePrefill}
       />
     </div>
   );

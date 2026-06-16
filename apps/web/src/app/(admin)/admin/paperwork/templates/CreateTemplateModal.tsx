@@ -12,7 +12,9 @@
  * placement (Step 3) on the template's detail page.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { DocumentEditor } from "@/components/admin/paperwork/DocumentEditor";
+import type { DocumentEditorHandle } from "@/components/admin/paperwork/DocumentEditor";
 import {
   X,
   FilePdf,
@@ -34,10 +36,21 @@ import {
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./CreateTemplateModal.module.css";
 
+export interface TemplatePrefillData {
+  displayName: string;
+  documentKey: string;
+  description: string;
+  clientSigners: string[];
+  youSigns: boolean;
+  gateStep: string;
+  bodyText: string;
+}
+
 type Props = {
   open: boolean;
   onClose: () => void;
   onCreated: (template: DocumentTemplate) => void;
+  prefill?: TemplatePrefillData;
 };
 
 const GATE_OPTIONS: SelectOption[] = [
@@ -61,7 +74,7 @@ function toSlug(value: string): string {
 
 const STEPS = ["Details", "Document", "Place fields"] as const;
 
-export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
+export function CreateTemplateModal({ open, onClose, onCreated, prefill }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +96,7 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const pdfUrlRef = useRef<string | null>(null);
+  const documentEditorRef = useRef<DocumentEditorHandle>(null) as RefObject<DocumentEditorHandle>;
 
   const dirty =
     displayName.trim() !== "" ||
@@ -90,6 +104,20 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     pdfFile !== null ||
     bodyText.trim() !== "" ||
     keyEdited;
+
+  // When opened with AI-generated prefill data, populate all fields.
+  useEffect(() => {
+    if (!open || !prefill) return;
+    setDisplayName(prefill.displayName);
+    setDocumentKey(prefill.documentKey);
+    setKeyEdited(true);
+    setDescription(prefill.description);
+    setClientSigners(prefill.clientSigners.length > 0 ? prefill.clientSigners : ["Owner"]);
+    setYouSigns(prefill.youSigns);
+    setGateStep(prefill.gateStep);
+    setBodyText(prefill.bodyText);
+    setDocMode("write");
+  }, [open, prefill]);
 
   // Live document-key availability, debounced.
   useEffect(() => {
@@ -212,14 +240,17 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     keyStatus !== "taken" &&
     clientSigners.length > 0;
 
-  const canBuild = docMode === "upload" ? pdfFile !== null : bodyText.trim() !== "";
+  const canBuild = docMode === "upload" ? pdfFile !== null : true;
 
   async function handleBuild() {
     if (docMode === "upload" && !pdfFile) {
       setError("A PDF document is required.");
       return;
     }
-    if (docMode === "write" && !bodyText.trim()) {
+    const editorContent = docMode === "write"
+      ? (documentEditorRef.current?.getMarkdown() ?? "").trim()
+      : "";
+    if (docMode === "write" && !editorContent) {
       setError("Write or paste the document text first.");
       return;
     }
@@ -241,7 +272,7 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
         formData.set("pdf", pdfFile);
         result = await uploadAndCreateTemplate(formData);
       } else {
-        formData.set("body_text", bodyText.trim());
+        formData.set("body_text", editorContent);
         result = await createWrittenTemplate(formData);
       }
 
@@ -479,16 +510,14 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
 
                 {docMode === "write" ? (
                   <div className={styles.writeWrap}>
-                    <textarea
-                      className={styles.writeArea}
-                      placeholder={"Paste or type your document here.\n\nLeave a blank line between paragraphs. You will place the signature fields on the next step."}
-                      value={bodyText}
-                      onChange={(e) => setBodyText(e.target.value)}
-                      autoFocus
+                    <DocumentEditor
+                      ref={documentEditorRef}
+                      initialMarkdown={bodyText}
+                      placeholder="Paste or type your document here. Leave a blank line between paragraphs. You will place the signature fields on the next step."
                     />
                     <p className={styles.hint}>
-                      We turn this into a clean document. You can place signature,
-                      date, and text fields on it after building.
+                      You can bold, italicize, and add headings. Signature fields
+                      go on the next step.
                     </p>
                   </div>
                 ) : pdfUrl ? (

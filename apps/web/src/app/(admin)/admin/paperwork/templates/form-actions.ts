@@ -12,12 +12,13 @@ import {
   archiveForm,
   unarchiveForm,
   createFormResponse,
+  countFormResponses,
   getForm,
   getRespondentCrossFormData,
   stripHiddenValues,
   type RespondentFormEntry,
 } from "@/lib/admin/forms";
-import type { FormSchema } from "@/lib/admin/forms-types";
+import type { FormField, FormSchema } from "@/lib/admin/forms-types";
 
 async function requireAdmin(): Promise<{ userId: string | null; error: string | null }> {
   const supabase = await createClient();
@@ -56,6 +57,30 @@ export async function createFormAction(
   if (error || !userId) return { ok: false, error: error ?? "Unauthorized." };
 
   const form = await createForm({ org_id: orgId, name, created_by: userId });
+  if (!form) return { ok: false, error: "Failed to create form." };
+
+  revalidatePath("/admin/paperwork/forms");
+  return { ok: true, data: { id: form.id } };
+}
+
+export async function createFormWithFieldsAction(
+  orgId: string,
+  name: string,
+  fields: FormField[],
+  appearance?: { icon?: string | null; iconColor?: string | null },
+): Promise<FormActionResult<{ id: string }>> {
+  const { userId, error } = await requireAdmin();
+  if (error || !userId) return { ok: false, error: error ?? "Unauthorized." };
+
+  const schema: FormSchema = { version: 1, fields, settings: {} };
+  const form = await createForm({
+    org_id: orgId,
+    name,
+    created_by: userId,
+    schema,
+    icon: appearance?.icon ?? null,
+    icon_color: appearance?.iconColor ?? null,
+  });
   if (!form) return { ok: false, error: "Failed to create form." };
 
   revalidatePath("/admin/paperwork/forms");
@@ -164,6 +189,14 @@ export async function unarchiveFormAction(id: string): Promise<FormActionResult>
 export async function deleteFormAction(id: string): Promise<FormActionResult> {
   const { error } = await requireAdmin();
   if (error) return { ok: false, error };
+
+  const responseCount = await countFormResponses(id);
+  if (responseCount > 0) {
+    return {
+      ok: false,
+      error: "Forms with responses cannot be deleted. Archive the form instead.",
+    };
+  }
 
   const ok = await deleteForm(id);
   if (!ok) return { ok: false, error: "Failed to delete form." };

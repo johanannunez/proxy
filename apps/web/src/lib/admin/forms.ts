@@ -89,6 +89,8 @@ export async function createForm(input: CreateFormInput): Promise<Form | null> {
       is_public: input.is_public ?? false,
       is_active: false,
       created_by: input.created_by ?? null,
+      icon: input.icon ?? null,
+      icon_color: input.icon_color ?? null,
     })
     .select("*")
     .single();

@@ -34,6 +34,20 @@
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.3fr) 118px 100px 100px;
 }
 
+.hasContext .head,
+.hasContext .row {
+  grid-template-columns:
+    minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 0.9fr) 112px 88px
+    88px 88px;
+}
+
+.hasContext.noSeen .head,
+.hasContext.noSeen .row {
+  grid-template-columns:
+    minmax(0, 1.45fr) minmax(0, 1.08fr) minmax(0, 1fr) 112px 88px
+    88px;
+}
+
 .head {
   height: 38px;
   background: var(--dash-card-alt, #f8f7f6);
@@ -102,6 +116,28 @@
   gap: 8px;
   min-width: 0;
 }
+
+.colContext {
+  display: flex;
+  min-width: 0;
+}
+
+.contextText,
+.contextMuted {
+  display: block;
+  overflow: hidden;
+  color: var(--text-secondary, #6b7280);
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextMuted {
+  color: var(--text-tertiary, #9ca3af);
+  font-style: italic;
+}
+
 .avatar {
   display: inline-flex;
   align-items: center;
@@ -188,10 +224,18 @@
   .row {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) 110px 88px;
   }
+  .hasContext.noSeen .head,
+  .hasContext.noSeen .row {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1.05fr) 104px 88px;
+  }
   .head span:nth-child(5),
   .head span:nth-child(6),
   .row > span:nth-child(5),
   .row > span:nth-child(6) {
+    display: none;
+  }
+  .hasContext.noSeen .head span:nth-child(3),
+  .hasContext.noSeen .row > span:nth-child(3) {
     display: none;
   }
 }

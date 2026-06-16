@@ -1,0 +1,31 @@
+.centeredContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  overflow-y: auto;
+}
+
+.splitContent {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 38fr 62fr;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.splitLeft {
+  padding: 36px 24px 36px 36px;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.splitRight {
+  padding: 36px 36px 36px 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

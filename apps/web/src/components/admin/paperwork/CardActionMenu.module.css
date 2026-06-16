@@ -35,7 +35,7 @@
   width: 190px;
   padding: 5px;
   border-radius: 11px;
-  background: var(--surface-card, #fff);
+  background: var(--surface-elevated, #fff);
   border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
   box-shadow:
     0 16px 40px -12px rgba(15, 23, 42, 0.28),
@@ -93,6 +93,21 @@
   color: var(--text-tertiary, #9aa1ab);
   flex-shrink: 0;
 }
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.itemLabel {
+  line-height: 1.15;
+}
+.itemDescription {
+  color: var(--text-tertiary, #9aa1ab);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.25;
+}
 .item:hover .itemIcon,
 .item:focus-visible .itemIcon {
   color: inherit;
@@ -118,4 +133,16 @@
 .itemDanger:focus-visible {
   background: rgba(220, 38, 38, 0.08);
   color: var(--color-error, #dc2626);
+}
+.itemDisabled,
+.itemDisabled:hover,
+.itemDisabled:focus-visible {
+  color: var(--text-tertiary, #9aa1ab);
+  background: transparent;
+  cursor: not-allowed;
+}
+.itemDisabled .itemIcon,
+.itemDisabled:hover .itemIcon,
+.itemDisabled:focus-visible .itemIcon {
+  color: var(--text-tertiary, #9aa1ab);
 }

@@ -9,7 +9,8 @@
  * predicate itself; this component only renders the controls.
  */
 
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CaretDown, MagnifyingGlass, SlidersHorizontal, X } from "@phosphor-icons/react";
 import { CustomSelect, type SelectOption } from "@/components/admin/CustomSelect";
 import styles from "./ActivityFilters.module.css";
 
@@ -34,6 +35,36 @@ export function ActivityFilters({
   searchAriaLabel?: string;
   facets: ActivityFacet[];
 }) {
+  const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const activeCount = useMemo(
+    () => facets.filter((facet) => facet.value !== "").length,
+    [facets],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      if (panelRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function clearFilters() {
+    for (const facet of facets) {
+      facet.onChange("");
+    }
+  }
+
   return (
     <div className={styles.bar}>
       <span className={styles.searchWrap}>
@@ -48,17 +79,53 @@ export function ActivityFilters({
         />
       </span>
       {facets.length > 0 && (
-        <div className={styles.facets}>
-          {facets.map((facet) => (
-            <span key={facet.key} className={styles.facet}>
-              <CustomSelect
-                value={facet.value}
-                onChange={facet.onChange}
-                options={facet.options}
-                placeholder={facet.placeholder}
-              />
-            </span>
-          ))}
+        <div className={styles.filterMenu} ref={panelRef}>
+          <button
+            type="button"
+            className={styles.filterButton}
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            onClick={() => setOpen((next) => !next)}
+          >
+            <SlidersHorizontal size={15} weight="bold" />
+            Filters
+            {activeCount > 0 ? <span className={styles.filterCount}>{activeCount}</span> : null}
+            <CaretDown
+              size={12}
+              weight="bold"
+              className={`${styles.filterCaret} ${open ? styles.filterCaretOpen : ""}`}
+            />
+          </button>
+          {open ? (
+            <div className={styles.filterPanel} role="dialog" aria-label="Activity filters">
+              <div className={styles.filterPanelHead}>
+                <span>Filters</span>
+                {activeCount > 0 ? (
+                  <button
+                    type="button"
+                    className={styles.clearButton}
+                    onClick={clearFilters}
+                  >
+                    <X size={12} weight="bold" />
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+              <div className={styles.facets}>
+                {facets.map((facet) => (
+                  <label key={facet.key} className={styles.facet}>
+                    <span className={styles.facetLabel}>{facet.placeholder}</span>
+                    <CustomSelect
+                      value={facet.value}
+                      onChange={facet.onChange}
+                      options={facet.options}
+                      placeholder={facet.placeholder}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

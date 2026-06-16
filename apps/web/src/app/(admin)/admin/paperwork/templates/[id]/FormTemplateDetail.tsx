@@ -202,7 +202,7 @@ export function FormTemplateDetail({
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "build", label: "Build" },
     { key: "responses", label: "Responses", count: responses.length },
-    { key: "settings", label: "Settings" },
+    { key: "settings", label: "Publish & Share" },
   ];
 
   const appearance = resolveFormAppearance({

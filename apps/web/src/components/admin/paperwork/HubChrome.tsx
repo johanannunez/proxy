@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { SquaresFour, ListBullets } from "@phosphor-icons/react";
 import styles from "./HubChrome.module.css";
 
-export type HubTab = "library" | "activity";
+export type HubTab = "library" | "activity" | "archive";
 export type HubView = "cards" | "list";
 
 export function HubSubTabs({
@@ -18,7 +18,11 @@ export function HubSubTabs({
   onTab,
   libraryLabel,
   libraryTabLabel = "Library",
+  libraryCount,
   activityLabel,
+  activityCount,
+  archiveLabel,
+  archiveCount,
   right,
 }: {
   tab: HubTab;
@@ -27,8 +31,13 @@ export function HubSubTabs({
   libraryLabel: string;
   /** First tab name — "Documents" for signatures, "Forms" for forms. */
   libraryTabLabel?: string;
+  libraryCount?: number;
   /** Second tab name — "History" for signatures, "Responses" for forms. */
   activityLabel: string;
+  activityCount?: number;
+  /** Optional third tab for archived items in hubs that support it. */
+  archiveLabel?: string;
+  archiveCount?: number;
   right?: ReactNode;
 }) {
   return (
@@ -42,7 +51,10 @@ export function HubSubTabs({
           className={`${styles.subTab} ${tab === "library" ? styles.subTabActive : ""}`}
           onClick={() => onTab("library")}
         >
-          {libraryTabLabel}
+          <span>{libraryTabLabel}</span>
+          {typeof libraryCount === "number" ? (
+            <span className={styles.tabBadge}>{libraryCount}</span>
+          ) : null}
         </button>
         <button
           type="button"
@@ -52,8 +64,26 @@ export function HubSubTabs({
           className={`${styles.subTab} ${tab === "activity" ? styles.subTabActive : ""}`}
           onClick={() => onTab("activity")}
         >
-          {activityLabel}
+          <span>{activityLabel}</span>
+          {typeof activityCount === "number" ? (
+            <span className={styles.tabBadge}>{activityCount}</span>
+          ) : null}
         </button>
+        {archiveLabel ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "archive"}
+            aria-label={`${libraryLabel} ${archiveLabel.toLowerCase()}`}
+            className={`${styles.subTab} ${tab === "archive" ? styles.subTabActive : ""}`}
+            onClick={() => onTab("archive")}
+          >
+            <span>{archiveLabel}</span>
+            {typeof archiveCount === "number" ? (
+              <span className={styles.tabBadge}>{archiveCount}</span>
+            ) : null}
+          </button>
+        ) : null}
       </div>
 
       {right ? <div className={styles.subRight}>{right}</div> : null}

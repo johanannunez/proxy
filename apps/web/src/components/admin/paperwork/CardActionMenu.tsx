@@ -29,6 +29,8 @@ export type CardMenuItem = {
   icon: ReactNode;
   onSelect: () => void;
   danger?: boolean;
+  disabled?: boolean;
+  description?: string;
   /** When set, selecting the item shows this confirmation in place for a beat
    * before the menu closes (e.g. "Link copied") instead of closing silently. */
   confirmLabel?: string;
@@ -117,6 +119,7 @@ export function CardActionMenu({
   }, []);
 
   function runItem(item: CardMenuItem, index: number) {
+    if (item.disabled) return;
     item.onSelect();
     if (item.confirmLabel) {
       // Hold the menu open with an inline confirmation, then dismiss.
@@ -178,7 +181,8 @@ export function CardActionMenu({
               }}
               type="button"
               role="menuitem"
-              className={`${styles.item} ${item.danger ? styles.itemDanger : ""} ${confirmed ? styles.itemConfirmed : ""}`}
+              aria-disabled={item.disabled ? true : undefined}
+              className={`${styles.item} ${item.danger ? styles.itemDanger : ""} ${item.disabled ? styles.itemDisabled : ""} ${confirmed ? styles.itemConfirmed : ""}`}
               onClick={(e) => {
                 e.stopPropagation();
                 runItem(item, i);
@@ -187,7 +191,14 @@ export function CardActionMenu({
               <span className={styles.itemIcon}>
                 {confirmed ? <Check size={15} weight="bold" /> : item.icon}
               </span>
-              <span>{confirmed && item.confirmLabel ? item.confirmLabel : item.label}</span>
+              <span className={styles.itemText}>
+                <span className={styles.itemLabel}>
+                  {confirmed && item.confirmLabel ? item.confirmLabel : item.label}
+                </span>
+                {item.description && !confirmed ? (
+                  <span className={styles.itemDescription}>{item.description}</span>
+                ) : null}
+              </span>
             </button>
           );
         })}

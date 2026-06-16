@@ -1247,3 +1247,43 @@ html.dark:has(.auth-page-root) body {
     background: var(--surface-base);
   }
 }
+
+/* ─── AI Template Creation: ColorOrb ─── */
+@property --orb-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.color-orb-proxy {
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from calc(var(--orb-angle) * 2) at 25% 70%,
+      #0ea5e9, transparent 20% 80%, #0ea5e9
+    ),
+    conic-gradient(
+      from calc(var(--orb-angle) * -3) at 80% 20%,
+      #1b77be, transparent 40% 60%, #1b77be
+    ),
+    conic-gradient(
+      from calc(var(--orb-angle) * 1) at 15% 5%,
+      #02aaeb, transparent 10% 90%, #02aaeb
+    );
+  filter: blur(2px) contrast(1.8);
+  animation: orb-spin 18s linear infinite;
+  box-shadow: 0 0 16px rgba(2, 170, 235, 0.4);
+}
+
+@keyframes orb-spin {
+  to { --orb-angle: 360deg; }
+}
+
+@keyframes ai-btn-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .color-orb-proxy { animation: none; }
+}

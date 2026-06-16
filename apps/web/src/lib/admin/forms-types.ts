@@ -13,7 +13,8 @@ export type FormFieldType =
   | "signature"
   | "section_header"
   | "description"
-  | "divider";
+  | "divider"
+  | "page_break";
 
 export type ConditionOperator =
   | "equals"
@@ -66,6 +67,11 @@ export type FormField = {
   conditions?: FieldConditionGroup;
 };
 
+export type FormCompletion = {
+  type: "message" | "portal_home" | "custom";
+  customUrl?: string;
+};
+
 export type FormSchema = {
   version: 1;
   fields: FormField[];
@@ -73,7 +79,9 @@ export type FormSchema = {
     submitButtonText?: string;
     successMessage?: string;
     notifyEmail?: string | null;
+    /** @deprecated Use completion instead. Kept for back-compat reads. */
     redirectUrl?: string;
+    completion?: FormCompletion;
   };
 };
 
@@ -109,6 +117,8 @@ export type CreateFormInput = {
   schema?: FormSchema;
   is_public?: boolean;
   created_by?: string;
+  icon?: string | null;
+  icon_color?: string | null;
 };
 
 export type UpdateFormInput = {
@@ -153,6 +163,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldType, string> = {
   section_header: "Section Header",
   description: "Description",
   divider: "Divider",
+  page_break: "Page Break",
 };
 
 export const INPUT_FIELD_TYPES: FormFieldType[] = [
@@ -174,6 +185,7 @@ export const LAYOUT_FIELD_TYPES: FormFieldType[] = [
   "section_header",
   "description",
   "divider",
+  "page_break",
 ];
 
 export const DEFAULT_FORM_SCHEMA: FormSchema = {

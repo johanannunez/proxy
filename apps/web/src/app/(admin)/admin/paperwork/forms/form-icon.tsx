@@ -40,6 +40,7 @@ import {
   ChatCircle,
   Star,
   Broom,
+  Buildings,
 } from "@phosphor-icons/react";
 
 export type FormIconKey =
@@ -98,6 +99,12 @@ export const FORM_ICONS: Array<{ key: FormIconKey; label: string; Icon: Icon }> 
 ];
 
 const ICON_BY_KEY = new Map(FORM_ICONS.map((entry) => [entry.key, entry.Icon]));
+const LEGACY_ICON_ALIASES: Record<string, Icon> = {
+  building: Buildings,
+  buildings: Buildings,
+  property: House,
+  properties: Buildings,
+};
 
 export type FormTintKey =
   | "blue" | "teal" | "violet" | "amber" | "rose" | "pine" | "indigo" | "slate"
@@ -170,12 +177,15 @@ export function resolveFormAppearance(form: {
 
   const raw = form.icon;
   if (raw) {
+    const legacyIconKey = raw.startsWith("icon:") ? raw.slice(5) : raw;
     if (raw.startsWith("ph:")) {
       Icon = ICON_BY_NAME[raw.slice(3)] ?? Rows;
-    } else if (ICON_BY_KEY.has(raw as FormIconKey)) {
-      Icon = ICON_BY_KEY.get(raw as FormIconKey) ?? Rows;
+    } else if (ICON_BY_KEY.has(legacyIconKey as FormIconKey)) {
+      Icon = ICON_BY_KEY.get(legacyIconKey as FormIconKey) ?? Rows;
+    } else if (raw.startsWith("icon:")) {
+      Icon = LEGACY_ICON_ALIASES[legacyIconKey] ?? Rows;
     } else {
-      // Not a known key or Phosphor ref — treat as a chosen emoji glyph.
+      // Not a known key or Phosphor ref. Treat as a chosen emoji glyph.
       emoji = raw;
     }
   }
