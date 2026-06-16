@@ -313,12 +313,27 @@ export async function createTemplate(
 /**
  * Create a template from HTML instead of an uploaded PDF. Lets an admin write
  * or paste the document text; DocuSeal renders it into a signable document.
+ * Pass `submitters` to define role names and `fields` to assign signature
+ * fields to those roles — all in code, no DocuSeal UI required.
  */
 export async function createTemplateFromHtml(
   name: string,
   html: string,
+  opts?: {
+    submitters?: { name: string }[];
+    fields?: {
+      name: string;
+      type: string;
+      submitter: string;
+      required?: boolean;
+    }[];
+  },
 ): Promise<CreateTemplateResult> {
   if (!isDocuSealConfigured()) return null;
+
+  const body: Record<string, unknown> = { name, html };
+  if (opts?.submitters?.length) body.submitters = opts.submitters;
+  if (opts?.fields?.length) body.fields = opts.fields;
 
   const res = await fetch(`${baseUrl()}/templates/html`, {
     method: "POST",
@@ -326,7 +341,7 @@ export async function createTemplateFromHtml(
       "X-Auth-Token": token() as string,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name, html }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

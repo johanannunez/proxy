@@ -17,6 +17,8 @@ import {
 } from "@/components/workspace/UpcomingBookings";
 import { propertyLabel } from "@/lib/address";
 import { getOwnerDocumentHub } from "@/lib/documents/workspace";
+import { AuthorityPromptBanner } from "../account/components/AuthorityPromptBanner";
+import { getCurrentWorkspaceAuthority, getWorkspaceMembers } from "@/lib/workspace/decision-authority";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -30,6 +32,25 @@ function isoDate(date: Date) {
 
 export default async function DashboardPage() {
   const { userId, client } = await getWorkspaceContext();
+
+  // Fetch profile to get workspace_id for authority banner
+  const { data: profileForBanner } = await client
+    .from("profiles")
+    .select("workspace_id")
+    .eq("id", userId)
+    .single();
+
+  const workspaceIdForBanner = profileForBanner?.workspace_id ?? null;
+
+  const [workspaceAuthority, workspaceMembers] = workspaceIdForBanner
+    ? await Promise.all([
+        getCurrentWorkspaceAuthority(workspaceIdForBanner),
+        getWorkspaceMembers(workspaceIdForBanner),
+      ])
+    : [null, [] as { id: string }[]];
+
+  const showAuthorityPrompt =
+    workspaceMembers.length >= 2 && workspaceAuthority?.status !== "active";
 
   const today = new Date();
   const todayIso = isoDate(today);
@@ -82,6 +103,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-10">
+      {showAuthorityPrompt ? (
+        <AuthorityPromptBanner workspaceMemberCount={workspaceMembers.length} />
+      ) : null}
+
       {/* Empty state for zero properties */}
       {totalProperties === 0 ? (
         <section

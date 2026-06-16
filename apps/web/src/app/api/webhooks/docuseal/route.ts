@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { applyDocuSealEvent, type DocuSealEvent } from "@/lib/documents/signing";
+import { activateWorkspaceAuthority } from "@/lib/workspace/decision-authority";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,12 @@ export async function POST(request: NextRequest) {
 
   try {
     await applyDocuSealEvent(event);
+    if (payload.event_type === "submission.completed" && submissionId !== null) {
+      await activateWorkspaceAuthority(
+        String(submissionId),
+        event.completedAt ?? new Date().toISOString(),
+      );
+    }
   } catch (err) {
     console.error("[docuseal-webhook] apply failed:", err instanceof Error ? err.message : err);
     // 200 so DocuSeal doesn't hammer retries on a transient app error we've logged.
