@@ -22,15 +22,16 @@ import {
   CaretRight,
   CaretLeft,
   SpinnerGap,
+  NotePencil,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { CustomSelect } from "@/components/admin/CustomSelect";
 import type { SelectOption } from "@/components/admin/CustomSelect";
 import {
   uploadAndCreateTemplate,
-  createWrittenTemplate,
   checkDocumentKeyAvailable,
 } from "./template-actions";
+import { createHtmlTemplateRecord } from "./html-actions";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import styles from "./CreateTemplateModal.module.css";
 
@@ -78,7 +79,6 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
   const [newRole, setNewRole] = useState("");
   const [gateStep, setGateStep] = useState("");
   const [docMode, setDocMode] = useState<"upload" | "write">("upload");
-  const [bodyText, setBodyText] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -88,7 +88,6 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     displayName.trim() !== "" ||
     description.trim() !== "" ||
     pdfFile !== null ||
-    bodyText.trim() !== "" ||
     keyEdited;
 
   // Live document-key availability, debounced.
@@ -148,7 +147,6 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     setNewRole("");
     setGateStep("");
     setDocMode("upload");
-    setBodyText("");
     setPdfFile(null);
     setPdfUrl(null);
     onClose();
@@ -212,15 +210,13 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
     keyStatus !== "taken" &&
     clientSigners.length > 0;
 
-  const canBuild = docMode === "upload" ? pdfFile !== null : bodyText.trim() !== "";
+  // "write" mode authors the document in the full editor after creation, so the
+  // modal needs no content; only the upload mode is gated on a chosen PDF.
+  const canBuild = docMode === "upload" ? pdfFile !== null : true;
 
   async function handleBuild() {
     if (docMode === "upload" && !pdfFile) {
       setError("A PDF document is required.");
-      return;
-    }
-    if (docMode === "write" && !bodyText.trim()) {
-      setError("Write or paste the document text first.");
       return;
     }
     setError(null);
@@ -241,8 +237,10 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
         formData.set("pdf", pdfFile);
         result = await uploadAndCreateTemplate(formData);
       } else {
-        formData.set("body_text", bodyText.trim());
-        result = await createWrittenTemplate(formData);
+        // "write" mode: create the HTML template record now; the rich editor
+        // opens on the detail page (?tab=write). No DocuSeal template is created
+        // until the admin saves content there.
+        result = await createHtmlTemplateRecord(formData);
       }
 
       if (!result.ok) {
@@ -478,17 +476,17 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
                 </div>
 
                 {docMode === "write" ? (
-                  <div className={styles.writeWrap}>
-                    <textarea
-                      className={styles.writeArea}
-                      placeholder={"Paste or type your document here.\n\nLeave a blank line between paragraphs. You will place the signature fields on the next step."}
-                      value={bodyText}
-                      onChange={(e) => setBodyText(e.target.value)}
-                      autoFocus
-                    />
-                    <p className={styles.hint}>
-                      We turn this into a clean document. You can place signature,
-                      date, and text fields on it after building.
+                  <div className={styles.editorIntro}>
+                    <span className={styles.editorIntroIcon}>
+                      <NotePencil size={28} weight="duotone" />
+                    </span>
+                    <p className={styles.editorIntroTitle}>
+                      Write it in the document editor
+                    </p>
+                    <p className={styles.editorIntroBody}>
+                      Create the template and the full editor opens next, on a
+                      clean letter-size page with headings, lists, and formatting.
+                      Place signature and date fields once your content is ready.
                     </p>
                   </div>
                 ) : pdfUrl ? (
@@ -580,8 +578,11 @@ export function CreateTemplateModal({ open, onClose, onCreated }: Props) {
               >
                 {submitting ? (
                   <>
-                    <SpinnerGap size={14} weight="bold" className={styles.spin} /> Building…
+                    <SpinnerGap size={14} weight="bold" className={styles.spin} />{" "}
+                    {docMode === "write" ? "Creating…" : "Building…"}
                   </>
+                ) : docMode === "write" ? (
+                  "Create & open editor"
                 ) : (
                   "Build template"
                 )}

@@ -531,26 +531,55 @@
   outline-offset: 1px;
 }
 
-.writeWrap {
+/* "Write it here" mode: an informational intro; the real authoring happens in
+   the full document editor on the next screen. */
+.editorIntro {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 280px;
+  padding: 40px 48px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--color-navy) 8%, transparent);
+  border-radius: var(--radius-lg, 16px);
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in srgb, var(--color-brand) 6%, transparent),
+      transparent 60%
+    ),
+    var(--color-warm-gray-50, #f8f7f6);
 }
 
-.writeArea {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 300px;
-  padding: 16px 18px;
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-primary, var(--color-text-primary));
-  background: var(--surface-base, #fff);
-  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.12));
-  border-radius: var(--radius-md, 12px);
-  resize: vertical;
+.editorIntroIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  color: var(--color-brand, #1b77be);
+  background: color-mix(in srgb, var(--color-brand) 10%, #fff);
+  box-shadow:
+    0 1px 2px rgba(27, 119, 190, 0.12),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-brand) 14%, transparent);
 }
+
+.editorIntroTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.editorIntroBody {
+  max-width: 360px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
 
 .writeArea:focus {
   outline: none;

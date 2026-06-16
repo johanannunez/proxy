@@ -206,8 +206,10 @@ export function PaperworkShell({
 
   function handleTemplateCreated(template: DocumentTemplate) {
     setTemplateModalOpen(false);
-    // Hand off to full-screen field placement (Step 3) on the detail page.
-    router.push(`/admin/paperwork/templates/${template.id}`);
+    // HTML templates open straight into the Write tab to author content; PDF
+    // templates hand off to full-screen field placement (Step 3).
+    const suffix = template.source_html !== null ? "?tab=write" : "";
+    router.push(`/admin/paperwork/templates/${template.id}${suffix}`);
   }
 
   async function handlePrimary() {
