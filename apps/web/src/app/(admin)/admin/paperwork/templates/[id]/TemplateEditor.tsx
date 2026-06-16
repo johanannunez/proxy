@@ -14,12 +14,15 @@
  */
 
 import {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
+  type Ref,
 } from "react";
 import { useRouter } from "next/navigation";
 import type { Value } from "platejs";
@@ -268,12 +271,24 @@ function EditorToolbar({
   );
 }
 
+/** Imperative handle so the parent (Fields-tab switch / publish) can read the
+ *  editor's live unpublished state and flush the latest draft before publishing,
+ *  instead of relying on a server prop that goes stale after each autosave. */
+export type TemplateEditorHandle = {
+  flush: () => Promise<void>;
+  hasUnpublishedChanges: () => boolean;
+};
+
 function TemplateEditorInner({
   templateId,
   initialHtml,
+  publishedHtml,
+  handleRef,
 }: {
   templateId: string;
   initialHtml: string;
+  publishedHtml: string;
+  handleRef: Ref<TemplateEditorHandle>;
 }) {
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
@@ -309,6 +324,21 @@ function TemplateEditorInner({
     serialize,
     save: (html) => saveTemplateDraftAction(templateId, html),
   });
+
+  // Live source of truth for the parent's publish flow (see TemplateEditorHandle).
+  useImperativeHandle(
+    handleRef,
+    () => ({
+      flush: () => autosave.flush(),
+      hasUnpublishedChanges: () => {
+        const cur = serialize();
+        if (cur === publishedHtml) return false;
+        // An effectively-empty document is not worth publishing.
+        return cur.replace(/<p>\s*<\/p>/g, "").trim() !== "";
+      },
+    }),
+    [autosave, serialize, publishedHtml],
+  );
 
   // Track edits that may not be flushed yet, for the leave guard.
   const pendingRef = useRef(false);
@@ -410,10 +440,10 @@ function TemplateEditorInner({
  * an SSR hydration mismatch between an empty server render and a populated
  * client one. Until mounted, a matching page skeleton holds the layout.
  */
-export function TemplateEditor(props: {
-  templateId: string;
-  initialHtml: string;
-}) {
+export const TemplateEditor = forwardRef<
+  TemplateEditorHandle,
+  { templateId: string; initialHtml: string; publishedHtml: string }
+>(function TemplateEditor(props, ref) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -426,5 +456,5 @@ export function TemplateEditor(props: {
       </div>
     );
   }
-  return <TemplateEditorInner {...props} />;
-}
+  return <TemplateEditorInner {...props} handleRef={ref} />;
+});

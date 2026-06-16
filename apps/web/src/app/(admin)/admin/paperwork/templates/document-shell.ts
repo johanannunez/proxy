@@ -44,6 +44,9 @@ export function wrapInDocumentShell(html: string): string {
   strong { font-weight: 700; }
   em { font-style: italic; }
   u { text-decoration: underline; }
+  .signature-block { margin-top: 44px; padding-top: 20px; border-top: 2px solid #1a1a1a; }
+  .sig-row { margin-bottom: 18px; }
+  .sig-label { display: inline-block; min-width: 90px; font-weight: 700; }
 </style>
 </head>
 <body>

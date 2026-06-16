@@ -25,6 +25,35 @@ async function requireAdmin(): Promise<{ error: string | null }> {
   return { error: null };
 }
 
+/** Escapes a value for safe use inside an HTML attribute. */
+function escapeAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&gt;");
+}
+
+/**
+ * The publish-time signature block: a Signature + Date field tag per signing
+ * role. DocuSeal parses these tags to create each party and its fields, so
+ * every signer (e.g. Owner AND the admin) appears in the Fields builder.
+ */
+function buildSignatureBlock(roles: string[]): string {
+  const rows = roles
+    .map((role) => {
+      const r = escapeAttr(role);
+      return (
+        `<p class="sig-row">` +
+        `<span class="sig-label">${escapeAttr(role)}</span> ` +
+        `<signature-field role="${r}" name="${r} Signature" required="true"></signature-field> ` +
+        `<date-field role="${r}" name="${r} Date" required="true"></date-field>` +
+        `</p>`
+      );
+    })
+    .join("");
+  return `<div class="signature-block"><h3>Signatures</h3>${rows}</div>`;
+}
+
 /** Cheap, DocuSeal-free draft persistence. Called by autosave + tab switch. */
 export async function saveTemplateDraftAction(
   templateId: string,
@@ -58,10 +87,17 @@ export async function publishTemplateAction(
   if (template.source_html === null)
     return { ok: false, error: "This template is not an HTML document." };
 
-  const fullHtml = wrapInDocumentShell(template.source_html);
-  const result = await createTemplateFromHtml(template.display_name, fullHtml, {
-    submitters: template.signer_roles.map((name) => ({ name })),
-  });
+  // DocuSeal materializes a signing party only from field TAGS embedded in the
+  // HTML; the submitters/fields JSON params are ignored by /templates/html.
+  // Append a signature block (a Signature + Date field tag per role) so every
+  // party (e.g. Owner AND the admin) appears in the builder with real,
+  // repositionable fields, replacing hand-typed "Owner: ___" lines. The clean
+  // draft (source_html) is what we snapshot for the needsPublish comparison; the
+  // signature block is publish-time signing infrastructure only.
+  const signedFragment =
+    template.source_html + buildSignatureBlock(template.signer_roles);
+  const fullHtml = wrapInDocumentShell(signedFragment);
+  const result = await createTemplateFromHtml(template.display_name, fullHtml);
   if (!result)
     return {
       ok: false,

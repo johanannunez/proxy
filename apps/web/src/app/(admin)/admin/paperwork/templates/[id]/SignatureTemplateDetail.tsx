@@ -6,7 +6,7 @@
  * collect signatures, not form data.
  */
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -22,7 +22,7 @@ import {
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import { DocuSealBuilderView } from "../DocuSealBuilderView";
-import { TemplateEditor } from "./TemplateEditor";
+import { TemplateEditor, type TemplateEditorHandle } from "./TemplateEditor";
 import { publishTemplateAction } from "../draft-actions";
 import {
   activateTemplate,
@@ -570,18 +570,23 @@ export function SignatureTemplateDetail({
   const [finishError, setFinishError] = useState<string | null>(null);
   const [publishPromptOpen, setPublishPromptOpen] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const editorRef = useRef<TemplateEditorHandle>(null);
 
-  // True when the Write draft has content that is not yet in the field layout:
-  // either never published, or edited since the last publish.
-  const needsPublish =
+  // Server-prop fallback for the never-mounted-editor case (e.g. landing on
+  // another tab): content exists and differs from the last publish.
+  const needsPublishFromProps =
     template.source_html !== null &&
     template.source_html !== "" &&
     template.source_html !== template.published_html;
 
   // Switching to Fields with unpublished draft changes must publish first, or
-  // the field layout would be stale. Other tabs switch directly.
+  // the field layout would be stale. The editor's live state is authoritative
+  // (the server prop goes stale after each autosave); fall back to the prop when
+  // the editor is not mounted. Other tabs switch directly.
   function requestTab(key: TabKey) {
-    if (key === "fields" && needsPublish) {
+    const unpublished =
+      editorRef.current?.hasUnpublishedChanges() ?? needsPublishFromProps;
+    if (key === "fields" && unpublished) {
       setPublishError(null);
       setPublishPromptOpen(true);
       return;
@@ -590,6 +595,8 @@ export function SignatureTemplateDetail({
   }
 
   async function handlePublishConfirm() {
+    // Persist the latest in-editor draft before publishing it.
+    await editorRef.current?.flush();
     const res = await publishTemplateAction(template.id);
     setPublishPromptOpen(false);
     if (!res.ok) {
@@ -747,17 +754,19 @@ export function SignatureTemplateDetail({
       <div className={styles.content}>
         {tab === "write" && (
           <TemplateEditor
+            ref={editorRef}
             templateId={template.id}
             initialHtml={template.source_html ?? ""}
+            publishedHtml={template.published_html ?? ""}
           />
         )}
         {tab === "fields" &&
           (template.docuseal_template_id ? (
             <div className={styles.fieldsArea}>
               <p className={styles.partiesHint}>
-                Signing parties: {template.signer_roles.join(", ")}. Switch party
-                in the panel on the right to give each one a Signature and Date
-                field.
+                Signing parties: {template.signer_roles.join(", ")}. Each party
+                already has a Signature and Date field at the end of the document.
+                Switch party on the right to add or move fields.
               </p>
               <DocuSealBuilderView
                 templateId={template.docuseal_template_id}
