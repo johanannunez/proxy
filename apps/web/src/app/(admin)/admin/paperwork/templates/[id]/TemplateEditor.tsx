@@ -11,6 +11,8 @@
  *  - Publish ("Sync to fields"): publishTemplateAction (re)builds the DocuSeal
  *    template from the current draft and snapshots it. This resets field
  *    positions, so it is deliberate.
+ *
+ * The plugin set, semantic element components, and the toolbar live in ./editor.
  */
 
 import {
@@ -21,89 +23,23 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type ComponentProps,
   type Ref,
 } from "react";
 import { useRouter } from "next/navigation";
 import type { Value } from "platejs";
-import {
-  Plate,
-  PlateContent,
-  PlateElement,
-  ParagraphPlugin,
-  usePlateEditor,
-  useEditorSelector,
-} from "platejs/react";
-import {
-  BoldPlugin,
-  ItalicPlugin,
-  UnderlinePlugin,
-  H1Plugin,
-  H2Plugin,
-  H3Plugin,
-} from "@platejs/basic-nodes/react";
-import {
-  ListPlugin,
-  BulletedListPlugin,
-  NumberedListPlugin,
-  ListItemPlugin,
-  ListItemContentPlugin,
-} from "@platejs/list-classic/react";
-import {
-  TextB,
-  TextItalic,
-  TextUnderline,
-  ListBullets,
-  ListNumbers,
-  CloudCheck,
-  ArrowsClockwise,
-  Warning,
-  SpinnerGap,
-} from "@phosphor-icons/react";
+import { Plate, PlateContent, usePlateEditor } from "platejs/react";
+import { CloudCheck, ArrowsClockwise, Warning, SpinnerGap } from "@phosphor-icons/react";
 import { valueToHtml, type SerializableNode } from "./html-serialize";
 import { saveTemplateDraftAction, publishTemplateAction } from "../draft-actions";
 import { useAutosave, type SaveState } from "./editor/useAutosave";
+import { EDITOR_PLUGINS } from "./editor/editor-plugins";
+import { EditorToolbar } from "./editor/Toolbar";
 import styles from "./TemplateEditor.module.css";
-
-/* ---- Semantic element components -------------------------------------- *
- * v53 plugins ship no default visual component, so we attach minimal ones
- * that render real HTML tags. This keeps the on-screen document semantic and
- * lets the page CSS (which targets h1/p/ul/li) style it like the final PDF. */
-
-type ElProps = ComponentProps<typeof PlateElement>;
-
-const H1El = (props: ElProps) => <PlateElement as="h1" {...props} />;
-const H2El = (props: ElProps) => <PlateElement as="h2" {...props} />;
-const H3El = (props: ElProps) => <PlateElement as="h3" {...props} />;
-const PEl = (props: ElProps) => <PlateElement as="p" {...props} />;
-const UlEl = (props: ElProps) => <PlateElement as="ul" {...props} />;
-const OlEl = (props: ElProps) => <PlateElement as="ol" {...props} />;
-const LiEl = (props: ElProps) => <PlateElement as="li" {...props} />;
-const LicEl = (props: ElProps) => <PlateElement as="div" {...props} />;
-
-const EDITOR_PLUGINS = [
-  BoldPlugin,
-  ItalicPlugin,
-  UnderlinePlugin,
-  ParagraphPlugin.withComponent(PEl),
-  H1Plugin.withComponent(H1El),
-  H2Plugin.withComponent(H2El),
-  H3Plugin.withComponent(H3El),
-  ListPlugin,
-  BulletedListPlugin.withComponent(UlEl),
-  NumberedListPlugin.withComponent(OlEl),
-  ListItemPlugin.withComponent(LiEl),
-  ListItemContentPlugin.withComponent(LicEl),
-];
 
 const EMPTY_VALUE: Value = [{ type: "p", children: [{ text: "" }] }];
 
 /**
- * Builds the editor. Extracted so its concrete return type (which carries the
- * plugin-injected transforms like tf.h1 / tf.bold / tf.ul) can be named and
- * passed to the toolbar. useEditorRef() would erase those plugin transforms.
- *
- * The value is set at CREATION (not via setValue after mount) for two reasons:
+ * Builds the editor. The value is set at CREATION (not via setValue after mount):
  *  - setValue-after-mount mutates editor.children without re-rendering
  *    PlateContent, so loaded content never appears.
  *  - value-at-creation IS the editor's baseline, so nothing lands on the undo
@@ -115,47 +51,9 @@ function useTemplateEditor(initialHtml: string) {
   return usePlateEditor({
     plugins: EDITOR_PLUGINS,
     value: initialHtml
-      ? (editor) =>
-          editor.api.html.deserialize({ element: initialHtml }) as Value
+      ? (editor) => editor.api.html.deserialize({ element: initialHtml }) as Value
       : EMPTY_VALUE,
   });
-}
-
-type TemplateEditorInstance = ReturnType<typeof useTemplateEditor>;
-
-/* ---- Toolbar ---------------------------------------------------------- *
- * Lives inside <Plate> so it can read live formatting state via
- * useEditorSelector. Actions run through the fully-typed editor passed in. */
-
-function ToolbarButton({
-  active,
-  label,
-  wide,
-  onToggle,
-  children,
-}: {
-  active: boolean;
-  label: string;
-  wide?: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={`${styles.btn} ${wide ? styles.btnWide : ""} ${active ? styles.btnActive : ""}`}
-      aria-label={label}
-      aria-pressed={active}
-      title={label}
-      // Prevent the mousedown from stealing selection/focus from the editor.
-      onMouseDown={(e) => {
-        e.preventDefault();
-        onToggle();
-      }}
-    >
-      {children}
-    </button>
-  );
 }
 
 function SaveStatus({ state }: { state: SaveState }) {
@@ -179,95 +77,6 @@ function SaveStatus({ state }: { state: SaveState }) {
         </>
       )}
     </span>
-  );
-}
-
-function EditorToolbar({
-  editor,
-  saveState,
-  publishing,
-  onSync,
-}: {
-  editor: TemplateEditorInstance;
-  saveState: SaveState;
-  publishing: boolean;
-  onSync: () => void;
-}) {
-  const isBold = useEditorSelector((ed) => Boolean(ed.api.marks()?.bold), []);
-  const isItalic = useEditorSelector((ed) => Boolean(ed.api.marks()?.italic), []);
-  const isUnderline = useEditorSelector((ed) => Boolean(ed.api.marks()?.underline), []);
-  const isH1 = useEditorSelector((ed) => ed.api.some({ match: { type: "h1" } }), []);
-  const isH2 = useEditorSelector((ed) => ed.api.some({ match: { type: "h2" } }), []);
-  const isH3 = useEditorSelector((ed) => ed.api.some({ match: { type: "h3" } }), []);
-  const isUl = useEditorSelector((ed) => ed.api.some({ match: { type: "ul" } }), []);
-  const isOl = useEditorSelector((ed) => ed.api.some({ match: { type: "ol" } }), []);
-
-  return (
-    <div className={styles.toolbar}>
-      <div className={styles.group}>
-        <ToolbarButton wide label="Heading 1" active={isH1} onToggle={() => editor.tf.h1.toggle()}>
-          H1
-        </ToolbarButton>
-        <ToolbarButton wide label="Heading 2" active={isH2} onToggle={() => editor.tf.h2.toggle()}>
-          H2
-        </ToolbarButton>
-        <ToolbarButton wide label="Heading 3" active={isH3} onToggle={() => editor.tf.h3.toggle()}>
-          H3
-        </ToolbarButton>
-      </div>
-
-      <span className={styles.divider} aria-hidden />
-
-      <div className={styles.group}>
-        <ToolbarButton label="Bold" active={isBold} onToggle={() => editor.tf.bold.toggle()}>
-          <TextB size={15} weight="bold" />
-        </ToolbarButton>
-        <ToolbarButton label="Italic" active={isItalic} onToggle={() => editor.tf.italic.toggle()}>
-          <TextItalic size={15} weight="bold" />
-        </ToolbarButton>
-        <ToolbarButton
-          label="Underline"
-          active={isUnderline}
-          onToggle={() => editor.tf.underline.toggle()}
-        >
-          <TextUnderline size={15} weight="bold" />
-        </ToolbarButton>
-      </div>
-
-      <span className={styles.divider} aria-hidden />
-
-      <div className={styles.group}>
-        <ToolbarButton label="Bulleted list" active={isUl} onToggle={() => editor.tf.ul.toggle()}>
-          <ListBullets size={15} weight="bold" />
-        </ToolbarButton>
-        <ToolbarButton label="Numbered list" active={isOl} onToggle={() => editor.tf.ol.toggle()}>
-          <ListNumbers size={15} weight="bold" />
-        </ToolbarButton>
-      </div>
-
-      <span className={styles.spacer} />
-
-      <div className={styles.saveArea}>
-        <SaveStatus state={saveState} />
-        <button
-          type="button"
-          className={styles.saveBtn}
-          onClick={onSync}
-          disabled={publishing}
-          title="Rebuilds the document for signing. Resets field positions in the Fields tab."
-        >
-          {publishing ? (
-            <>
-              <SpinnerGap size={14} weight="bold" className={styles.spin} /> Publishing…
-            </>
-          ) : (
-            <>
-              <ArrowsClockwise size={14} weight="bold" /> Sync to fields
-            </>
-          )}
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -406,9 +215,28 @@ function TemplateEditorInner({
       >
         <EditorToolbar
           editor={editor}
-          saveState={autosave.state}
-          publishing={publishing}
-          onSync={handleSync}
+          rightSlot={
+            <div className={styles.saveArea}>
+              <SaveStatus state={autosave.state} />
+              <button
+                type="button"
+                className={styles.saveBtn}
+                onClick={handleSync}
+                disabled={publishing}
+                title="Rebuilds the document for signing. Resets field positions in the Fields tab."
+              >
+                {publishing ? (
+                  <>
+                    <SpinnerGap size={14} weight="bold" className={styles.spin} /> Publishing…
+                  </>
+                ) : (
+                  <>
+                    <ArrowsClockwise size={14} weight="bold" /> Sync to fields
+                  </>
+                )}
+              </button>
+            </div>
+          }
         />
 
         {publishError && (
