@@ -41,6 +41,10 @@ export type DocumentTemplate = {
       not yet authored. Non-empty = HTML fragment authored in the Plate editor. The
       column presence is the discriminant between PDF and HTML templates. */
   source_html: string | null;
+  /** Snapshot of source_html at the last DocuSeal publish (migration
+      20260616020000_document_templates_published_html). Compared against
+      source_html to detect unpublished draft changes. null = never published. */
+  published_html: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -72,4 +76,5 @@ export type UpdateDocumentTemplateInput = Partial<Pick<
   | "category"
   | "settings"
   | "source_html"
+  | "published_html"
 >>;

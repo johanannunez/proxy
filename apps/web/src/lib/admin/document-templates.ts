@@ -51,6 +51,7 @@ function normalizeTemplate(row: DocumentTemplate): DocumentTemplate {
     title: row.title ?? null,
     settings: row.settings ?? {},
     source_html: row.source_html ?? null,
+    published_html: row.published_html ?? null,
   };
 }
 
