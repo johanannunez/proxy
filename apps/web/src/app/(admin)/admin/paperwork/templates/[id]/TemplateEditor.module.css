@@ -260,12 +260,20 @@
   margin-bottom: 12px;
 }
 
-.page :global(ul),
+/* Re-assert list markers: the admin global reset strips list-style, but a
+   document editor needs visible bullets and numbers. */
+.page :global(ul) {
+  margin: 0 0 12px 24px;
+  list-style: disc outside;
+}
+
 .page :global(ol) {
   margin: 0 0 12px 24px;
+  list-style: decimal outside;
 }
 
 .page :global(li) {
+  display: list-item;
   margin-bottom: 4px;
 }
 

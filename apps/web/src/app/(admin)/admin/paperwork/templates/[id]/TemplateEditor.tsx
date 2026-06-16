@@ -96,9 +96,23 @@ const EMPTY_VALUE: Value = [{ type: "p", children: [{ text: "" }] }];
  * Builds the editor. Extracted so its concrete return type (which carries the
  * plugin-injected transforms like tf.h1 / tf.bold / tf.ul) can be named and
  * passed to the toolbar. useEditorRef() would erase those plugin transforms.
+ *
+ * The value is set at CREATION (not via setValue after mount) for two reasons:
+ *  - setValue-after-mount mutates editor.children without re-rendering
+ *    PlateContent, so loaded content never appears.
+ *  - value-at-creation IS the editor's baseline, so nothing lands on the undo
+ *    stack and the user's first Ctrl+Z cannot wipe the loaded document.
+ * The deserialize callback runs client-side only: this hook is reached solely
+ * from TemplateEditorInner, which renders after mount, so the DOM is available.
  */
-function useTemplateEditor() {
-  return usePlateEditor({ plugins: EDITOR_PLUGINS, value: EMPTY_VALUE });
+function useTemplateEditor(initialHtml: string) {
+  return usePlateEditor({
+    plugins: EDITOR_PLUGINS,
+    value: initialHtml
+      ? (editor) =>
+          editor.api.html.deserialize({ element: initialHtml }) as Value
+      : EMPTY_VALUE,
+  });
 }
 
 type TemplateEditorInstance = ReturnType<typeof useTemplateEditor>;
@@ -228,7 +242,7 @@ function EditorToolbar({
   );
 }
 
-export function TemplateEditor({
+function TemplateEditorInner({
   templateId,
   initialHtml,
   hasExistingDocusealId,
@@ -243,31 +257,17 @@ export function TemplateEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedOnce, setSavedOnce] = useState(false);
 
-  // The editor starts empty (SSR-safe: no DOM access during render). Existing
-  // HTML is loaded after mount, on the client, where deserialize has a DOM.
-  const editor = useTemplateEditor();
+  // Value (including any loaded HTML) is set at creation inside the hook.
+  const editor = useTemplateEditor(initialHtml);
 
-  // Gate dirty-tracking until after the programmatic load so neither the load
-  // nor any mount-time normalization marks the document dirty.
+  // Ignore the editor's mount-time normalization onChange so loading content
+  // does not immediately mark the document dirty.
   const trackEdits = useRef(false);
-
   useEffect(() => {
-    if (initialHtml) {
-      // History-safe load: withoutSaving keeps the loaded content off the undo
-      // stack, so the user's first Ctrl+Z cannot wipe the document.
-      editor.tf.withoutSaving(() => {
-        // deserialize returns Descendant[]; the top-level editor value is a
-        // Value (TElement[]). The cast bridges the two compatible shapes.
-        const value = editor.api.html.deserialize({ element: initialHtml }) as Value;
-        editor.tf.setValue(value);
-      });
-    }
     const id = window.setTimeout(() => {
       trackEdits.current = true;
     }, 0);
     return () => window.clearTimeout(id);
-    // Mount-only: editor is stable and initialHtml is fixed for this template.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Warn before leaving with unsaved changes.
@@ -347,4 +347,30 @@ export function TemplateEditor({
       </Plate>
     </div>
   );
+}
+
+/**
+ * Client-only gate. The editor and its deserialize-at-creation value must run
+ * only in the browser, where the DOM parser exists; gating on mount also avoids
+ * an SSR hydration mismatch between an empty server render and a populated
+ * client one. Until mounted, a matching page skeleton holds the layout.
+ */
+export function TemplateEditor(props: {
+  templateId: string;
+  initialHtml: string;
+  hasExistingDocusealId: boolean;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <div className={styles.editorWrap}>
+        <div className={styles.canvas}>
+          <div className={styles.page} aria-hidden />
+        </div>
+      </div>
+    );
+  }
+  return <TemplateEditorInner {...props} />;
 }

@@ -122,8 +122,9 @@ function wrapInDocumentShell(html: string): string {
   h2 { font-size: 13pt; }
   h3 { font-size: 11pt; }
   p { margin-bottom: 12px; }
-  ul, ol { margin: 0 0 12px 24px; }
-  li { margin-bottom: 4px; }
+  ul { margin: 0 0 12px 24px; list-style: disc outside; }
+  ol { margin: 0 0 12px 24px; list-style: decimal outside; }
+  li { display: list-item; margin-bottom: 4px; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 10.5pt; }
   th { background: #1a1a1a; color: #fff; text-align: left; padding: 8px 12px;
        font-family: Arial, sans-serif; font-size: 9pt; font-weight: 700;
