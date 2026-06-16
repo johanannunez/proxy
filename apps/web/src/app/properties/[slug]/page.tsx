@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Image from "next/image";
-import FrostedNav from "@/components/FrostedNav";
+import { SiteHeader } from "@/components/site-header/SiteHeader";
 import DarkFooter from "@/components/DarkFooter";
 import HospitableBookingWidget from "@/components/HospitableBookingWidget";
 import BookingWidgetParamSync from "@/components/BookingWidgetParamSync";
@@ -54,7 +54,7 @@ export default async function PropertyPage({ params }: Props) {
 
   return (
     <>
-      <FrostedNav />
+      <SiteHeader overHero />
       <main>
         {/* Hero */}
         <section className="relative h-[60vh] min-h-[420px] overflow-hidden bg-warm-gray-200 pt-[72px]">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import FrostedNav from "@/components/FrostedNav";
+import { SiteHeader } from "@/components/site-header/SiteHeader";
 import DarkFooter from "@/components/DarkFooter";
 import { BLOG_POSTS, BLOG_CATEGORIES } from "@/data/blog-posts";
 
@@ -57,7 +57,7 @@ export default function BlogPage() {
 
   return (
     <>
-      <FrostedNav />
+      <SiteHeader />
       <main className="min-h-screen bg-warm-gray-50 pt-[120px] pb-24">
         <script
           type="application/ld+json"
