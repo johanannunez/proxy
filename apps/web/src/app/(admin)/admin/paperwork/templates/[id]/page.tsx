@@ -70,7 +70,14 @@ export default async function TemplateDetailPage({ params, searchParams }: Props
   // document key and signer-role editors in Settings.
   const hasBeenSent = await templateHasBeenSent(template.document_key);
 
-  const initialTab = tab === "settings" ? "settings" : "fields";
+  // ?tab=write is only valid for HTML-authored templates (source_html non-null);
+  // PDF templates fall through to the Fields tab.
+  const initialTab =
+    tab === "write" && template.source_html !== null
+      ? "write"
+      : tab === "settings"
+        ? "settings"
+        : "fields";
   return (
     <PaperworkShell active="templates" orgId={orgId}>
       <SignatureTemplateDetail

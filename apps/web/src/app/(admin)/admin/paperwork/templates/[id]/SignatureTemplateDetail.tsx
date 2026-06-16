@@ -22,6 +22,7 @@ import {
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
 import { DocuSealBuilderView } from "../DocuSealBuilderView";
+import { TemplateEditor } from "./TemplateEditor";
 import {
   activateTemplate,
   deactivateTemplate,
@@ -34,7 +35,7 @@ import { SendingSettings } from "./SendingSettings";
 import { signerRolesLabel } from "../signer-roles";
 import styles from "./TemplateDetail.module.css";
 
-type TabKey = "fields" | "settings";
+type TabKey = "write" | "fields" | "settings";
 
 // Client-side signer parties. "You" (stored as "Proxy") is the final
 // countersigner, handled separately, so it is not in this list.
@@ -600,7 +601,12 @@ export function SignatureTemplateDetail({
     router.push("/admin/paperwork/templates");
   }
 
+  // HTML-authored templates (source_html is non-null) get a Write tab for
+  // editing content in Proxy. PDF templates (source_html null) do not.
   const tabs: Array<{ key: TabKey; label: string }> = [
+    ...(template.source_html !== null
+      ? [{ key: "write" as const, label: "Write" }]
+      : []),
     { key: "fields", label: "Fields" },
     { key: "settings", label: "Settings" },
   ];
@@ -706,12 +712,28 @@ export function SignatureTemplateDetail({
       )}
 
       <div className={styles.content}>
+        {tab === "write" && (
+          <TemplateEditor
+            templateId={template.id}
+            initialHtml={template.source_html ?? ""}
+            hasExistingDocusealId={template.docuseal_template_id !== null}
+          />
+        )}
         {tab === "fields" &&
           (template.docuseal_template_id ? (
             <DocuSealBuilderView
               templateId={template.docuseal_template_id}
               dbTemplateId={template.id}
             />
+          ) : template.source_html !== null ? (
+            <div className={styles.builderEmpty}>
+              <PencilSimple size={40} weight="duotone" />
+              <p className={styles.builderEmptyTitle}>Write the document first</p>
+              <p className={styles.builderEmptyBody}>
+                Save your content on the Write tab. Field placement opens here
+                automatically once the document has been saved.
+              </p>
+            </div>
           ) : (
             <div className={styles.builderEmpty}>
               <FilePdf size={40} weight="duotone" />
