@@ -243,6 +243,7 @@ export function StatusBoardToolbar({
 
       {statusOpen && (
         <div className={styles.sbStatusMenu} role="menu" ref={statusMenuRef} onKeyDown={onMenuKeyDown}>
+          <p className={styles.sbStatusMenuHeader}>Workspaces by status</p>
           {STATUS_OPTIONS.map((opt) => {
             const selected = statusFilter === opt.key;
             const count = statusCounts?.[opt.key];
@@ -266,7 +267,12 @@ export function StatusBoardToolbar({
                 </span>
                 <span className={styles.sbStatusItemMeta}>
                   {typeof count === "number" && (
-                    <span className={styles.sbStatusItemCount}>{count}</span>
+                    <span
+                      className={styles.sbStatusItemCount}
+                      aria-label={`${count} ${count === 1 ? "workspace" : "workspaces"}`}
+                    >
+                      {count}
+                    </span>
                   )}
                   {selected && <Check size={13} weight="bold" aria-hidden />}
                 </span>

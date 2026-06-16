@@ -1268,7 +1268,7 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
         {board.workspaces.length === 1 ? "workspace" : "workspaces"}
         {" · "}
         <span className={styles.sbResultSummaryStrong}>{board.columns.length}</span>{" "}
-        {board.columns.length === 1 ? "document tracked" : "documents tracked"}
+        {board.columns.length === 1 ? "document type" : "document types"}
       </p>
 
       {/* ── Matrix: two-region layout ── */}
