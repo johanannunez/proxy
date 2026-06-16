@@ -21,7 +21,17 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  overflow: hidden;
+  /* Normal widths never overflow (Tier-2 folds into "More" first). This is only
+     a last-resort fallback for very narrow widths where the pinned Tier-1 row
+     itself cannot fit: the region scrolls so the controls and the "More" button
+     stay reachable. Menus are portaled, so overflow cannot clip them. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.primary::-webkit-scrollbar {
+  display: none;
 }
 
 .item {
