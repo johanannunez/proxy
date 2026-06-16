@@ -50,6 +50,7 @@ function normalizeTemplate(row: DocumentTemplate): DocumentTemplate {
     category: row.category ?? null,
     title: row.title ?? null,
     settings: row.settings ?? {},
+    source_html: row.source_html ?? null,
   };
 }
 
@@ -180,6 +181,7 @@ export async function createDocumentTemplateRecord(
       gate_step: input.gate_step ?? null,
       is_system: false,
       is_active: false,
+      source_html: input.source_html ?? null,
     })
     .select("*")
     .single();
@@ -187,7 +189,7 @@ export async function createDocumentTemplateRecord(
     console.error("[document-templates] create:", error.message);
     return null;
   }
-  return data as DocumentTemplate;
+  return data ? normalizeTemplate(data as DocumentTemplate) : null;
 }
 
 export async function updateDocumentTemplateRecord(

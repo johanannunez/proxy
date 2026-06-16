@@ -36,6 +36,11 @@ export type DocumentTemplate = {
       lack these columns; helpers normalize to null/{} so the path stays safe. */
   title: string | null;
   settings: TemplateSettings;
+  /** HTML-authored template body (migration 20260616013604_document_templates_source_html).
+      null = PDF-based template (existing behavior). '' = HTML template created but
+      not yet authored. Non-empty = HTML fragment authored in the Plate editor. The
+      column presence is the discriminant between PDF and HTML templates. */
+  source_html: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -49,6 +54,7 @@ export type CreateDocumentTemplateInput = {
   signer_roles: string[];
   requires_countersignature: boolean;
   gate_step?: number;
+  source_html?: string | null;
 };
 
 export type UpdateDocumentTemplateInput = Partial<Pick<
@@ -65,4 +71,5 @@ export type UpdateDocumentTemplateInput = Partial<Pick<
   | "tracked"
   | "category"
   | "settings"
+  | "source_html"
 >>;
