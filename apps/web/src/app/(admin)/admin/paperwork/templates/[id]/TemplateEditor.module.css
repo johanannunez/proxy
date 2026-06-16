@@ -1,0 +1,287 @@
+.editorWrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-warm-gray-50);
+}
+
+/* ---- Toolbar ---------------------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-navy) 8%, transparent);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background: color-mix(in srgb, var(--color-navy) 10%, transparent);
+  margin: 0 6px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background-color 0.16s var(--ease-spring), color 0.16s var(--ease-spring);
+}
+
+.btn:hover {
+  background: color-mix(in srgb, var(--color-navy) 6%, transparent);
+  color: var(--color-text-primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.btn:active {
+  background: color-mix(in srgb, var(--color-navy) 10%, transparent);
+}
+
+.btnActive,
+.btnActive:hover {
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  color: var(--color-brand);
+}
+
+/* Heading buttons carry a text label rather than an icon. */
+.btnWide {
+  width: auto;
+  min-width: 34px;
+  padding: 0 9px;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
+.spacer {
+  margin-left: auto;
+}
+
+.saveArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dirtyDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.saveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 15px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-gradient);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(27, 119, 190, 0.25);
+  transition: opacity 0.16s var(--ease-spring), box-shadow 0.16s var(--ease-spring);
+}
+
+.saveBtn:hover {
+  opacity: 0.92;
+  box-shadow: 0 2px 8px rgba(27, 119, 190, 0.3);
+}
+
+.saveBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.saveBtn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Notices (warning / error) --------------------------------------- */
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 0;
+  flex-shrink: 0;
+}
+
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 13px;
+  background: color-mix(in srgb, #f59e0b 11%, #fff);
+  border: 1px solid color-mix(in srgb, #f59e0b 32%, transparent);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #92400e;
+}
+
+.warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #d97706;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 13px;
+  background: color-mix(in srgb, var(--color-error) 9%, #fff);
+  border: 1px solid color-mix(in srgb, var(--color-error) 28%, transparent);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-error);
+}
+
+.error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ---- Canvas + page --------------------------------------------------- */
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 36px 24px 64px;
+  display: flex;
+  justify-content: center;
+}
+
+/* US Letter proportion: 8.5 x 11 -> 780 x 1010 at 91.7px/in. */
+.page {
+  width: 780px;
+  max-width: 100%;
+  min-height: 1010px;
+  background: #fff;
+  border-radius: 3px;
+  padding: 56px 72px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px -8px rgba(15, 23, 42, 0.12),
+    0 24px 48px -16px rgba(27, 119, 190, 0.07);
+}
+
+/* ---- Editor content typography (matches the DocuSeal document shell) -- */
+
+.page :global([data-slate-editor]) {
+  outline: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11pt;
+  line-height: 1.65;
+  color: #1a1a1a;
+}
+
+.page :global([data-slate-editor]) :global(::selection) {
+  background: color-mix(in srgb, var(--color-brand) 22%, transparent);
+}
+
+.page :global(h1) {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 17pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.3px;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.page :global(h2) {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13pt;
+  font-weight: 700;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+.page :global(h3) {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11pt;
+  font-weight: 700;
+  margin-top: 16px;
+  margin-bottom: 6px;
+}
+
+.page :global(p) {
+  margin-bottom: 12px;
+}
+
+.page :global(ul),
+.page :global(ol) {
+  margin: 0 0 12px 24px;
+}
+
+.page :global(li) {
+  margin-bottom: 4px;
+}
+
+/* The placeholder shown on an empty editor. */
+.page :global([data-slate-placeholder]) {
+  color: var(--color-text-secondary);
+  opacity: 0.6 !important;
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .saveBtn {
+    transition: none;
+  }
+  .spin {
+    animation: none;
+  }
+}
