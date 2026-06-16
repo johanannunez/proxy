@@ -141,6 +141,49 @@
   box-shadow: 0 0 0 2px var(--color-brand, #1b77be);
 }
 
+/* Custom hex entry sits at the end of the swatch row. */
+.hexField {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding: 0 6px 0 4px;
+  border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
+  border-radius: 7px;
+  background: var(--surface-base, #fff);
+  cursor: text;
+  transition: border-color 0.12s ease;
+}
+.hexField:focus-within,
+.hexFieldActive {
+  border-color: var(--color-brand, #1b77be);
+}
+.hexSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-card, rgba(0, 0, 0, 0.12));
+  background: repeating-conic-gradient(#d9d9d9 0% 25%, #fff 0% 50%) 0 / 8px 8px;
+}
+.hexHash {
+  font-size: 11px;
+  color: var(--text-tertiary, #9aa1ab);
+}
+.hexInput {
+  width: 52px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-ibm-plex-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-primary, var(--color-text-primary, #1a1a1a));
+}
+.hexInput::placeholder {
+  color: var(--text-tertiary, #9aa1ab);
+}
+
 .grid {
   flex: 1;
   min-height: 0;

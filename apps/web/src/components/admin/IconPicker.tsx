@@ -28,6 +28,10 @@ export type IconColorOption = { key: string; label: string; swatch: string };
 
 type Tab = "emoji" | "icon";
 
+function isHex(value: string): boolean {
+  return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
+}
+
 export function IconPicker({
   value,
   onChange,
@@ -53,7 +57,7 @@ export function IconPicker({
   triggerContent?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>(value?.kind === "icon" ? "icon" : "emoji");
+  const [tab, setTab] = useState<Tab>(value?.kind === "emoji" ? "emoji" : "icon");
   const [query, setQuery] = useState("");
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -63,8 +67,25 @@ export function IconPicker({
 
   useEffect(() => setMounted(true), []);
 
+  // Local draft so typing a hex doesn't persist on every keystroke (the host's
+  // onColorChange may run a server action + refresh). Commit only on blur/Enter
+  // with a complete, changed hex.
+  const [hexDraft, setHexDraft] = useState("");
+  useEffect(() => {
+    setHexDraft(color && isHex(color) ? color.replace(/^#/, "") : "");
+  }, [color]);
+
+  function commitHex() {
+    const v = hexDraft.toLowerCase();
+    if ((v.length === 6 || v.length === 3) && `#${v}` !== (color ?? "").toLowerCase()) {
+      onColorChange?.(`#${v}`);
+    }
+  }
+
   const activeSwatch = useMemo(
-    () => colorOptions?.find((c) => c.key === color)?.swatch,
+    () =>
+      colorOptions?.find((c) => c.key === color)?.swatch ??
+      (color && isHex(color) ? color : undefined),
     [colorOptions, color],
   );
 
@@ -176,20 +197,20 @@ export function IconPicker({
                   <button
                     type="button"
                     role="tab"
-                    aria-selected={tab === "emoji"}
-                    className={`${styles.tab} ${tab === "emoji" ? styles.tabActive : ""}`}
-                    onClick={() => setTab("emoji")}
-                  >
-                    Emoji
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
                     aria-selected={tab === "icon"}
                     className={`${styles.tab} ${tab === "icon" ? styles.tabActive : ""}`}
                     onClick={() => setTab("icon")}
                   >
                     Icons
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === "emoji"}
+                    className={`${styles.tab} ${tab === "emoji" ? styles.tabActive : ""}`}
+                    onClick={() => setTab("emoji")}
+                  >
+                    Emoji
                   </button>
                 </div>
                 <button
@@ -227,6 +248,38 @@ export function IconPicker({
                       aria-pressed={color === c.key}
                     />
                   ))}
+                  <label
+                    className={`${styles.hexField} ${color && isHex(color) ? styles.hexFieldActive : ""}`}
+                    title="Custom hex color"
+                  >
+                    <span
+                      className={styles.hexSwatch}
+                      style={{
+                        background:
+                          hexDraft.length === 6 || hexDraft.length === 3 ? `#${hexDraft}` : undefined,
+                      }}
+                      aria-hidden
+                    />
+                    <span className={styles.hexHash}>#</span>
+                    <input
+                      className={styles.hexInput}
+                      value={hexDraft}
+                      onChange={(e) =>
+                        setHexDraft(e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6))
+                      }
+                      onBlur={commitHex}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitHex();
+                        }
+                      }}
+                      placeholder="hex"
+                      maxLength={6}
+                      spellCheck={false}
+                      aria-label="Custom hex color"
+                    />
+                  </label>
                 </div>
               ) : null}
 
@@ -283,7 +336,7 @@ export function IconPicker({
                         aria-label={name}
                         title={name}
                       >
-                        <Icon size={19} weight="duotone" />
+                        <Icon size={19} weight="duotone" color={activeSwatch} />
                       </button>
                     ))}
                   </div>
