@@ -1411,15 +1411,20 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
 
             {/* Column header row — toggle buttons for pinning */}
             <div className={styles.matrixItemHeaderRow} role="row">
-              {visibleColumns.map((col) => {
+              {visibleColumns.map((col, idx) => {
                 const config = getReqKeyIconConfig(col.reqKey);
                 const isPinned = focusedKeys.has(col.reqKey);
+                const hdrKgReqKeys =
+                  visibleKindGroups.find((kg) => kg.kind === col.kind)?.reqKeys ?? [];
+                const isHdrGroupEnd =
+                  col.reqKey === hdrKgReqKeys[hdrKgReqKeys.length - 1] &&
+                  idx < visibleColumns.length - 1;
                 return (
                   <div
                     key={col.reqKey}
                     role="columnheader"
                     style={{ ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0 }}
-                    className={`${styles.matrixItemHeader} ${styles[`matrixItemHeader_${col.kind}` as keyof typeof styles]} ${isPinned ? styles.matrixItemHeaderPinned : ""}`}
+                    className={`${styles.matrixItemHeader} ${styles[`matrixItemHeader_${col.kind}` as keyof typeof styles]} ${isPinned ? styles.matrixItemHeaderPinned : ""} ${isHdrGroupEnd ? styles.matrixItemHeaderGroupEnd : ""}`}
                   >
                     <button
                       type="button"

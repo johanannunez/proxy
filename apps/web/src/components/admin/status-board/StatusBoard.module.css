@@ -421,7 +421,7 @@
   text-align: center;
   background: var(--dash-card-alt, #f3f2f0);
   border-bottom: 1px solid var(--dash-border-subtle, #eeede9);
-  border-right: 1px solid var(--dash-border, #e5e7eb);
+  border-right: 2px solid var(--text-primary, #1a1a1a);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -736,8 +736,14 @@
 }
 
 /* Group end separator */
+/* Strong vertical divider between kind categories (Signatures | Forms). Drawn
+ * continuously down the band, headers, and cells. --text-primary keeps it
+ * near-black in light mode and visible (light) in dark mode. */
 .matrixCellGroupEnd {
-  border-right: 1px solid var(--dash-border, #e5e7eb) !important;
+  border-right: 2px solid var(--text-primary, #1a1a1a) !important;
+}
+.matrixItemHeaderGroupEnd {
+  border-right: 2px solid var(--text-primary, #1a1a1a) !important;
 }
 
 .matrixCell {
