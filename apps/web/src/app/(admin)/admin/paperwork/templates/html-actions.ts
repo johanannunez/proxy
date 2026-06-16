@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createDocumentTemplateRecord } from "@/lib/admin/document-templates";
 import type { DocumentTemplate } from "@/lib/admin/document-templates-types";
+import { textToHtml } from "./text-to-html";
 
 export type HtmlTemplateResult =
   | { ok: true; template: DocumentTemplate }
@@ -63,6 +64,10 @@ export async function createHtmlTemplateRecord(
   const gateStep =
     gateStepRaw && gateStepRaw !== "" ? parseInt(gateStepRaw, 10) : undefined;
 
+  // Optional initial body (e.g. an AI-generated draft) seeds source_html so the
+  // editor opens populated instead of blank. Empty keeps the blank-page flow.
+  const bodyText = (formData.get("body_text") as string | null)?.trim() ?? "";
+
   const record = await createDocumentTemplateRecord({
     document_key: documentKey,
     display_name: displayName,
@@ -70,7 +75,7 @@ export async function createHtmlTemplateRecord(
     signer_roles: signerRoles,
     requires_countersignature: requiresCounter,
     gate_step: gateStep,
-    source_html: "",
+    source_html: bodyText ? textToHtml(displayName, bodyText) : "",
   });
 
   if (!record) {

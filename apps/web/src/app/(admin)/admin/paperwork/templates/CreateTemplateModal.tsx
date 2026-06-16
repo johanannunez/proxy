@@ -111,10 +111,8 @@ export function CreateTemplateModal({ open, onClose, onCreated, prefill }: Props
     setClientSigners(prefill.clientSigners.length > 0 ? prefill.clientSigners : ["Owner"]);
     setYouSigns(prefill.youSigns);
     setGateStep(prefill.gateStep);
-    // NOTE: prefill.bodyText (AI-generated content) is not yet wired into the
-    // Plate editor. The modal creates an empty HTML record and the editor opens
-    // on the detail page; flowing AI content into source_html is a pending
-    // follow-up (the create-flow now uses the Plate editor, not inline markdown).
+    // prefill.bodyText (AI-generated draft) is forwarded in handleBuild to seed
+    // source_html, so the editor opens populated on the detail page.
     setDocMode("write");
   }, [open, prefill]);
 
@@ -267,7 +265,9 @@ export function CreateTemplateModal({ open, onClose, onCreated, prefill }: Props
       } else {
         // "write" mode: create the HTML template record now; the rich editor
         // opens on the detail page (?tab=write). No DocuSeal template is created
-        // until the admin saves content there.
+        // until the admin saves content there. An AI-generated draft (prefill)
+        // seeds the initial content so the editor opens populated, not blank.
+        if (prefill?.bodyText) formData.set("body_text", prefill.bodyText);
         result = await createHtmlTemplateRecord(formData);
       }
 

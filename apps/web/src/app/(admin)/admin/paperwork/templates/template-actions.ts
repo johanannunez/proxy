@@ -10,6 +10,7 @@ import {
   renameDocuSealTemplate,
   getDocuSealTemplateName,
 } from "@/lib/signing/docuseal";
+import { textToHtml } from "./text-to-html";
 import {
   createDocumentTemplateRecord,
   updateDocumentTemplateRecord,
@@ -113,23 +114,6 @@ export async function uploadAndCreateTemplate(
   }
 
   return { ok: true, template: record };
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-/** Turn pasted plain text into simple, safe document HTML: blank lines become
- *  paragraph breaks, single newlines become line breaks. */
-function textToHtml(title: string, body: string): string {
-  const paragraphs = body
-    .split(/\n{2,}/)
-    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
-    .join("");
-  return `<h1>${escapeHtml(title)}</h1>${paragraphs}`;
 }
 
 /**
