@@ -26,8 +26,13 @@ export const OlEl = (p: ElProps) => <PlateElement as="ol" {...p} />;
  */
 export function LiEl(p: ElProps) {
   const editor = useEditorRef();
-  const checked = (p.element as { checked?: boolean }).checked;
-  if (typeof checked !== "boolean") return <PlateElement as="li" {...p} />;
+  const el = p.element as { checked?: boolean; listStyleType?: string };
+  // A task item either tracks a boolean `checked` or carries the `todo` list
+  // style. Gate on both so a freshly-toggled item (whose `checked` may not be
+  // initialized yet) still renders a checkbox. The gate is additive, so a plain
+  // list item (neither marker) is unaffected.
+  const isTask = el.listStyleType === "todo" || typeof el.checked === "boolean";
+  if (!isTask) return <PlateElement as="li" {...p} />;
   return (
     <PlateElement as="li" {...p}>
       <span
@@ -37,7 +42,7 @@ export function LiEl(p: ElProps) {
       >
         <input
           type="checkbox"
-          checked={checked}
+          checked={Boolean(el.checked)}
           onChange={(e) => {
             const path = editor.api.findPath(p.element);
             if (path) {
