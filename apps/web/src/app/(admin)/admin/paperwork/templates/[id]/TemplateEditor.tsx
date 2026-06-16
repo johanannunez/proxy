@@ -310,7 +310,13 @@ function TemplateEditorInner({
       <Plate
         editor={editor}
         onChange={() => {
-          if (trackEdits.current) setDirty(true);
+          if (!trackEdits.current) return;
+          // onChange also fires on pure cursor moves (set_selection ops). Only a
+          // real content change should mark the document dirty, otherwise a
+          // single click would arm the unsaved-changes prompt.
+          if (editor.operations.some((op) => op.type !== "set_selection")) {
+            setDirty(true);
+          }
         }}
       >
         <EditorToolbar editor={editor} dirty={dirty} saving={saving} onSave={handleSave} />
