@@ -89,6 +89,55 @@
   gap: 10px;
 }
 
+.previewToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--color-navy) 12%, transparent);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.16s var(--ease-spring),
+    color 0.16s var(--ease-spring);
+}
+
+.previewToggle:hover {
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-primary);
+}
+
+.previewToggle:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.previewToggleOn,
+.previewToggleOn:hover {
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  color: var(--color-brand);
+  border-color: transparent;
+}
+
+/* Preview mode: pages rail + paginated preview fill the editor body. */
+.previewLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .previewToggle {
+    transition: none;
+  }
+}
+
 .saveStatus {
   display: inline-flex;
   align-items: center;

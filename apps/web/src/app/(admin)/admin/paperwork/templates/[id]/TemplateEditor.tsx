@@ -35,6 +35,9 @@ import { uploadDocumentAsset } from "../image-actions";
 import { useAutosave, type SaveState } from "./editor/useAutosave";
 import { EDITOR_PLUGINS } from "./editor/editor-plugins";
 import { EditorToolbar } from "./editor/Toolbar";
+import { DocumentPreview, type DocumentPreviewHandle } from "./editor/DocumentPreview";
+import { PagesRail } from "./editor/PagesRail";
+import { Eye, PencilSimpleLine } from "@phosphor-icons/react";
 import styles from "./TemplateEditor.module.css";
 
 const EMPTY_VALUE: Value = [{ type: "p", children: [{ text: "" }] }];
@@ -146,6 +149,22 @@ function TemplateEditorInner({
     [editor],
   );
 
+  // Preview mode: a read-only Paged.js render of the current draft, paginated
+  // into letter pages, with a Pages rail. The editor stays mounted (hidden) so
+  // its state survives the toggle.
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewFragment, setPreviewFragment] = useState("");
+  const [pageCount, setPageCount] = useState(0);
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  const previewRef = useRef<DocumentPreviewHandle>(null);
+
+  function togglePreview() {
+    setPreviewMode((on) => {
+      if (!on) setPreviewFragment(serialize());
+      return !on;
+    });
+  }
+
   const autosave = useAutosave({
     serialize,
     save: (html) => saveTemplateDraftAction(templateId, html),
@@ -235,6 +254,23 @@ function TemplateEditorInner({
           onImageUpload={handleImageUpload}
           rightSlot={
             <div className={styles.saveArea}>
+              <button
+                type="button"
+                className={`${styles.previewToggle} ${previewMode ? styles.previewToggleOn : ""}`}
+                onClick={togglePreview}
+                aria-pressed={previewMode}
+                title={previewMode ? "Back to editing" : "Preview the paginated document"}
+              >
+                {previewMode ? (
+                  <>
+                    <PencilSimpleLine size={14} weight="bold" /> Edit
+                  </>
+                ) : (
+                  <>
+                    <Eye size={14} weight="bold" /> Preview
+                  </>
+                )}
+              </button>
               <SaveStatus state={autosave.state} />
               <button
                 type="button"
@@ -266,7 +302,12 @@ function TemplateEditorInner({
           </div>
         )}
 
-        <div className={styles.canvas}>
+        {/* Keep the editor canvas mounted (hidden in preview) so Plate state
+            survives the toggle. */}
+        <div
+          className={styles.canvas}
+          style={previewMode ? { display: "none" } : undefined}
+        >
           <div className={styles.page}>
             <PlateContent
               className={styles.editable}
@@ -275,6 +316,22 @@ function TemplateEditorInner({
             />
           </div>
         </div>
+
+        {previewMode && (
+          <div className={styles.previewLayout}>
+            <PagesRail
+              pageCount={pageCount}
+              onJump={(i) => previewRef.current?.scrollToPage(i)}
+              collapsed={railCollapsed}
+              onToggleCollapsed={() => setRailCollapsed((v) => !v)}
+            />
+            <DocumentPreview
+              ref={previewRef}
+              fragment={previewFragment}
+              onPageCount={setPageCount}
+            />
+          </div>
+        )}
       </Plate>
     </div>
   );
