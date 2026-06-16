@@ -28,6 +28,7 @@ import {
   ListNumbers,
   CheckSquare,
   LinkSimple,
+  ImageSquare,
   Minus,
   FileDashed,
   ArrowsOutLineVertical,
@@ -185,10 +186,25 @@ function LinkPopoverInner({
 export function EditorToolbar({
   editor,
   rightSlot,
+  onImageUpload,
 }: {
   editor: EditorHandle;
   rightSlot?: React.ReactNode;
+  /** Uploads the picked file and resolves to its public URL (or null on error,
+   *  which the caller surfaces). */
+  onImageUpload?: (file: File) => Promise<string | null>;
 }) {
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onImageUpload) return;
+    const url = await onImageUpload(file);
+    if (url) {
+      editor.tf.insertNodes({ type: "img", url, children: [{ text: "" }] });
+    }
+  }
+
   // Mark active states
   const isBold = useEditorSelector(
     (ed) => Boolean(ed.api.marks()?.bold),
@@ -496,6 +512,25 @@ export function EditorToolbar({
         >
           <Minus size={15} weight="bold" />
         </Btn>
+
+        {/* Image — opens a file picker, uploads, inserts */}
+        {onImageUpload ? (
+          <>
+            <Btn
+              label="Insert image"
+              onAction={() => imageInputRef.current?.click()}
+            >
+              <ImageSquare size={15} weight="bold" />
+            </Btn>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              hidden
+              onChange={handleImagePick}
+            />
+          </>
+        ) : null}
 
         {/* Page break */}
         <Btn

@@ -31,6 +31,7 @@ import { Plate, PlateContent, usePlateEditor } from "platejs/react";
 import { CloudCheck, ArrowsClockwise, Warning, SpinnerGap } from "@phosphor-icons/react";
 import { valueToHtml, type SerializableNode } from "./html-serialize";
 import { saveTemplateDraftAction, publishTemplateAction } from "../draft-actions";
+import { uploadDocumentAsset } from "../image-actions";
 import { useAutosave, type SaveState } from "./editor/useAutosave";
 import { EDITOR_PLUGINS } from "./editor/editor-plugins";
 import { EditorToolbar } from "./editor/Toolbar";
@@ -102,6 +103,22 @@ function TemplateEditorInner({
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  const handleImageUpload = useCallback(
+    async (file: File): Promise<string | null> => {
+      const fd = new FormData();
+      fd.set("file", file);
+      const result = await uploadDocumentAsset(templateId, fd);
+      if ("error" in result) {
+        setImageError(result.error);
+        return null;
+      }
+      setImageError(null);
+      return result.url;
+    },
+    [templateId],
+  );
 
   // Bound the editor to the viewport so the toolbar and all chrome above it stay
   // pinned and only the document canvas scrolls. Measuring the wrap's own top
@@ -215,6 +232,7 @@ function TemplateEditorInner({
       >
         <EditorToolbar
           editor={editor}
+          onImageUpload={handleImageUpload}
           rightSlot={
             <div className={styles.saveArea}>
               <SaveStatus state={autosave.state} />
@@ -239,11 +257,11 @@ function TemplateEditorInner({
           }
         />
 
-        {publishError && (
+        {(publishError || imageError) && (
           <div className={styles.notices}>
             <div className={styles.error} role="alert">
               <Warning size={15} weight="fill" />
-              <span>{publishError}</span>
+              <span>{publishError ?? imageError}</span>
             </div>
           </div>
         )}
