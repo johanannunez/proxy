@@ -263,37 +263,84 @@ export function SignaturesHub({
             </div>
           ) : (
             <div className={styles.libList}>
-              {sigTemplates.map((t) => (
-                <div key={t.id} className={styles.libRow}>
-                  <span className={styles.libRowGlyph}>
-                    <PenNib size={15} weight="duotone" />
-                  </span>
-                  <span className={styles.libRowName}>{t.name}</span>
-                  <span className={styles.libRowMeta}>
-                    {t.sentCount > 0 ? `${t.sentCount} sent` : "Not sent yet"}
-                  </span>
-                  {!t.isReady && (
-                    <span className={styles.libRowBadge}>Draft</span>
-                  )}
-                  <div className={styles.libRowActions}>
-                    <button
-                      type="button"
-                      className={styles.libRowOpen}
-                      onClick={() => router.push(`/admin/paperwork/templates/${t.id}`)}
+              <div className={styles.libHeaderRow} aria-hidden>
+                <span />
+                <span className={styles.libHeaderCell}>Document</span>
+                <span className={styles.libHeaderCell}>Status</span>
+                <span className={styles.libHeaderCell}>Sent</span>
+                <span className={styles.libHeaderCell}>Signers</span>
+                <span />
+              </div>
+              {sigTemplates.map((t) => {
+                const detailHref = `/admin/paperwork/templates/${t.id}`;
+                return (
+                  <div
+                    key={t.id}
+                    className={styles.libRow}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(detailHref)}
+                    onKeyDown={(e) => e.key === "Enter" && router.push(detailHref)}
+                  >
+                    <span className={styles.libRowGlyph}>
+                      <PenNib size={16} weight="duotone" />
+                    </span>
+                    <span className={styles.libRowNameCell}>
+                      <span className={styles.libRowName} title={t.name}>
+                        {t.name}
+                      </span>
+                      {t.description && (
+                        <span className={styles.libRowSub} title={t.description}>
+                          {t.description}
+                        </span>
+                      )}
+                    </span>
+                    <span className={styles.libRowStatusCell}>
+                      <span
+                        className={`${styles.libStatusPill} ${t.isReady ? styles.libStatusReady : styles.libStatusDraft}`}
+                      >
+                        <span className={styles.libStatusDot} />
+                        {t.isReady ? "Ready" : "Draft"}
+                      </span>
+                    </span>
+                    <span className={styles.libRowSent}>
+                      {t.sentCount > 0 ? `${t.sentCount} sent` : "Not sent"}
+                    </span>
+                    <span className={styles.libRowSigners}>
+                      {t.signerRoles.length > 0 ? (
+                        t.signerRoles.map((role) => (
+                          <span key={role} className={styles.libSignerChip}>
+                            {role}
+                          </span>
+                        ))
+                      ) : (
+                        <span className={styles.libRowMuted}>—</span>
+                      )}
+                    </span>
+                    <span
+                      className={styles.libRowActions}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
                     >
-                      Open
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.sendBtn}
-                      onClick={() => setSendTarget(t)}
-                    >
-                      <PaperPlaneTilt size={13} weight="bold" />
-                      Request a signature
-                    </button>
+                      <button
+                        type="button"
+                        className={styles.libRowOpen}
+                        onClick={() => router.push(detailHref)}
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.sendBtn}
+                        onClick={() => setSendTarget(t)}
+                      >
+                        <PaperPlaneTilt size={13} weight="bold" />
+                        Request a signature
+                      </button>
+                    </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

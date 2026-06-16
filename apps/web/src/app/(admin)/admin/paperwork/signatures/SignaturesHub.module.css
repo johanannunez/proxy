@@ -23,19 +23,42 @@
 .libList {
   display: flex;
   flex-direction: column;
-  gap: 0;
   border-radius: var(--radius-md, 12px);
   border: 1px solid var(--dash-border, #e5e7eb);
   overflow: hidden;
 }
 
+/* Header + rows share one fixed grid so the columns line up (content-sized
+   columns would drift between the two). */
+.libHeaderRow,
 .libRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 36px minmax(180px, 2fr) 104px 92px minmax(120px, 1fr) 232px;
   align-items: center;
-  gap: 10px;
-  padding: 11px 14px;
+  gap: 14px;
+}
+
+.libHeaderRow {
+  padding: 10px 16px;
+  background: var(--color-warm-gray-50, #f8f7f6);
+  border-bottom: 1px solid var(--dash-border, #e5e7eb);
+}
+
+.libHeaderCell {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9aa1ab);
+  white-space: nowrap;
+}
+
+.libRow {
+  padding: 12px 16px;
   background: var(--surface-base, #ffffff);
   border-bottom: 1px solid var(--dash-border, #e5e7eb);
+  cursor: pointer;
   transition: background-color 0.14s ease;
 }
 
@@ -45,6 +68,11 @@
 
 .libRow:hover {
   background: var(--dash-card-alt, #f8f7f6);
+}
+
+.libRow:focus-visible {
+  outline: 2px solid var(--color-brand, #1b77be);
+  outline-offset: -2px;
 }
 
 .libRowGlyph {
@@ -59,38 +87,109 @@
   flex-shrink: 0;
 }
 
+.libRowNameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .libRowName {
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-primary, #1a1a1a);
-  flex: 1;
-  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.libRowMeta {
+.libRowSub {
   font-size: 12px;
+  color: var(--text-tertiary, #9aa1ab);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.libRowStatusCell {
+  min-width: 0;
+}
+
+.libStatusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.libStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.libStatusReady {
+  color: #15803d;
+  background: rgba(22, 163, 74, 0.12);
+}
+
+.libStatusDraft {
+  color: var(--text-secondary, #6b7280);
+  background: rgba(107, 114, 128, 0.12);
+}
+
+.libRowSent {
+  font-size: 12.5px;
   color: var(--text-secondary, #6b7280);
   white-space: nowrap;
 }
 
-.libRowBadge {
+.libRowSigners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.libSignerChip {
   font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, #f59e0b 14%, transparent);
-  color: #b27908;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--dash-card-alt, #f1f0ed);
+  color: var(--text-secondary, #6b7280);
   white-space: nowrap;
+}
+
+.libRowMuted {
+  color: var(--text-tertiary, #9aa1ab);
 }
 
 .libRowActions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
-  flex-shrink: 0;
+}
+
+/* Collapse Sent + Signers on narrow screens to avoid horizontal scroll. */
+@media (max-width: 1040px) {
+  .libHeaderRow,
+  .libRow {
+    grid-template-columns: 36px minmax(160px, 2fr) 104px 232px;
+    gap: 12px;
+  }
+  .libHeaderRow > :nth-child(4),
+  .libHeaderRow > :nth-child(5),
+  .libRow > :nth-child(4),
+  .libRow > :nth-child(5) {
+    display: none;
+  }
 }
 
 .libRowOpen {
@@ -156,6 +255,7 @@
   color: #fff;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition: opacity 0.14s ease, transform 0.14s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
 }
