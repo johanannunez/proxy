@@ -128,20 +128,66 @@ export async function listTemplateSendCounts(): Promise<Record<string, number>> 
 }
 
 /**
- * True if at least one signature document has already been sent under this
- * document key. Once that happens the key and signer roles are locked: changing
- * them would orphan documents already out for signature.
+ * Whether any send EVIDENCE exists for a document key. Returned as 0 or 1 — the
+ * only consumers check `> 0` — via two BOUNDED existence checks (each .limit(1)),
+ * so a popular key never materializes its rows. This runs on every template
+ * detail render through templateHasBeenSent, so it must stay an existence probe,
+ * not a full fetch. Two MONOTONIC signals (each only moves forward, so a future
+ * status can never make this under-count, the dangerous direction):
+ *   (A) a documents row under this key with source='signed_document' OR sent_at set
+ *   (B) a document_signers row whose parent document carries this key — catches a
+ *       live signature whose documents row was never updated (the partial
+ *       persistSubmission hole; see TODOS.md)
+ * A bare spine stub (source='manual', sent_at null, no signers) matches neither,
+ * so a never-sent template stays deletable. Reads fail SAFE: a DB error returns 1
+ * (blocks the delete) rather than 0.
+ *
+ *   documents(key=K) where signed|sent ──limit 1──► COUNTED
+ *   document_signers ⋈ documents(key=K) ──limit 1──► COUNTED (partial-failure)
+ *   else ─► 0 (deletable)
+ */
+export async function countTemplateSendEvidence(documentKey: string): Promise<number> {
+  if (!documentKey) return 0;
+  const client = db();
+
+  // (A) any document under this key already signed or sent.
+  const { data: sentDocs, error: aErr } = await client
+    .from("documents")
+    .select("id")
+    .eq("document_key", documentKey)
+    .or("source.eq.signed_document,sent_at.not.is.null")
+    .limit(1);
+  if (aErr) {
+    console.error("[document-templates] send evidence (documents):", aErr.message);
+    return 1; // fail safe: never hard-delete on a read error
+  }
+  if ((sentDocs ?? []).length > 0) return 1;
+
+  // (B) any signer attached to a document under this key (inner join on the FK).
+  const { data: signers, error: bErr } = await client
+    .from("document_signers")
+    .select("id, documents!inner(document_key)")
+    .eq("documents.document_key", documentKey)
+    .limit(1);
+  if (bErr) {
+    console.error("[document-templates] send evidence (signers):", bErr.message);
+    return 1; // fail safe
+  }
+  return (signers ?? []).length > 0 ? 1 : 0;
+}
+
+/**
+ * True if at least one signature document has been sent under this document key.
+ * Derived from countTemplateSendEvidence so the edit-lock and the hard-delete
+ * gate share ONE definition of "used"; the lock thereby inherits the stronger
+ * guard (it previously checked only source='signed_document' and could miss a
+ * live signature left by a partial persistSubmission failure — see TODOS.md).
+ * Once true, the key and signer roles are locked: changing them would orphan
+ * documents already out for signature.
  */
 export async function templateHasBeenSent(documentKey: string): Promise<boolean> {
   if (!documentKey) return false;
-  const { data } = await db()
-    .from("documents")
-    .select("id")
-    .eq("source", "signed_document")
-    .eq("document_key", documentKey)
-    .limit(1)
-    .maybeSingle();
-  return data !== null;
+  return (await countTemplateSendEvidence(documentKey)) > 0;
 }
 
 export async function getDocumentTemplate(id: string): Promise<DocumentTemplate | null> {
@@ -200,4 +246,39 @@ export async function updateDocumentTemplateRecord(
     return false;
   }
   return true;
+}
+
+/**
+ * Hard-delete a template row, freeing its document_key. Service-role only (RLS).
+ * The deletability gate lives in the caller (deleteTemplate); this just executes.
+ * No incoming FKs reference document_templates, so the DELETE never cascades.
+ */
+export async function deleteDocumentTemplateRecord(id: string): Promise<boolean> {
+  const { error } = await db().from("document_templates").delete().eq("id", id);
+  if (error) {
+    console.error("[document-templates] delete:", error.message);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Remove the reminder cadence keyed to this (org, document_key) so a later
+ * template reusing the key does not inherit stale cadence. No-op for system
+ * templates: document_reminder_config.org_id is NOT NULL, so org_id=null rows
+ * have no config to clear.
+ */
+export async function deleteReminderConfigForKey(
+  orgId: string | null,
+  documentKey: string,
+): Promise<void> {
+  if (!orgId || !documentKey) return;
+  const { error } = await db()
+    .from("document_reminder_config")
+    .delete()
+    .eq("org_id", orgId)
+    .eq("document_key", documentKey);
+  if (error) {
+    console.error("[document-templates] delete reminder config:", error.message);
+  }
 }
