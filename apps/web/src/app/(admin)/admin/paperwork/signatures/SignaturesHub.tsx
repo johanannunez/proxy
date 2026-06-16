@@ -34,7 +34,6 @@ import {
   ViewToggle,
   HubGroupLabel,
   type HubTab,
-  type HubView,
 } from "@/components/admin/paperwork/HubChrome";
 import {
   TemplateCard,
@@ -45,6 +44,7 @@ import {
   type ActivityRow,
 } from "@/components/admin/paperwork/ActivityTable";
 import { ActivityFilters } from "@/components/admin/paperwork/ActivityFilters";
+import { useStickyView } from "@/lib/admin/use-sticky-view";
 import styles from "./SignaturesHub.module.css";
 
 /** True e-sign instruments (DocuSeal-backed). */
@@ -76,7 +76,7 @@ export function SignaturesHub({
 
   /* ── Tab + view state ── */
   const [tab, setTab] = useState<HubTab>("library");
-  const [view, setView] = useState<HubView>("cards");
+  const [view, setView] = useStickyView("signatures", "cards");
 
   /* ── Send sheet (Library tab) ── */
   const [sendTarget, setSendTarget] = useState<UnifiedTemplate | null>(null);

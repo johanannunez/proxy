@@ -48,7 +48,6 @@ import {
   ViewToggle,
   HubGroupLabel,
   type HubTab,
-  type HubView,
 } from "@/components/admin/paperwork/HubChrome";
 import {
   TemplateCard,
@@ -62,6 +61,7 @@ import {
   type ActivityRow,
 } from "@/components/admin/paperwork/ActivityTable";
 import { ActivityFilters } from "@/components/admin/paperwork/ActivityFilters";
+import { useStickyView } from "@/lib/admin/use-sticky-view";
 import styles from "./FormsTab.module.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -406,7 +406,7 @@ export function FormsTab({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<HubTab>("library");
-  const [view, setView] = useState<HubView>("cards");
+  const [view, setView] = useStickyView("forms", "cards");
   const [showArchived, setShowArchived] = useState(false);
   const [sendTarget, setSendTarget] = useState<UnifiedTemplate | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FormListItem | null>(null);
