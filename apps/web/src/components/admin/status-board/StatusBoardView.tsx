@@ -1098,6 +1098,21 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
     }))
     .filter((kg) => kg.reqKeys.length > 0);
 
+  /* Per-kind column width. Columns are 64px by default, but when a kind has only
+     one visible column that column (and its band) grows to fit the band label so
+     "SIGNATURES" / "FORMS" never clips. With two+ columns the natural width
+     already exceeds the label, so it stays 64px. Band, headers and cells all read
+     this so the three stay aligned. */
+  const COL_W = 64;
+  const colWidthByKind = new Map<RequirementKind, number>(
+    visibleKindGroups.map((kg) => {
+      const count = kg.reqKeys.length;
+      const labelMin = Math.max(COL_W, kg.label.length * 8 + 30);
+      return [kg.kind, Math.max(COL_W, Math.ceil(labelMin / count))] as const;
+    }),
+  );
+  const colWidth = (kind: RequirementKind) => colWidthByKind.get(kind) ?? COL_W;
+
   /* Workspaces after search + status filter. Search and status are separate
      predicates so the Status menu can show per-status counts within the current
      search context. */
@@ -1358,7 +1373,10 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                   key={kg.kind}
                   className={`${styles.matrixGroupBand} ${styles[`matrixGroupBand_${kg.kind}` as keyof typeof styles]}`}
                   role="columnheader"
-                  style={{ width: `${kg.reqKeys.length * 64}px`, minWidth: `${kg.reqKeys.length * 64}px` }}
+                  style={{
+                    width: `${kg.reqKeys.length * colWidth(kg.kind)}px`,
+                    minWidth: `${kg.reqKeys.length * colWidth(kg.kind)}px`,
+                  }}
                 >
                   {kg.label}
                 </div>
@@ -1379,7 +1397,11 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                   <div
                     key={col.reqKey}
                     role="columnheader"
-                    style={{ ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0 }}
+                    style={{
+                      ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0,
+                      width: colWidth(col.kind),
+                      minWidth: colWidth(col.kind),
+                    }}
                     className={`${styles.matrixItemHeader} ${styles[`matrixItemHeader_${col.kind}` as keyof typeof styles]} ${isPinned ? styles.matrixItemHeaderPinned : ""} ${isHdrGroupEnd ? styles.matrixItemHeaderGroupEnd : ""}`}
                   >
                     <button
@@ -1443,7 +1465,11 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                     <div
                       key={col.reqKey}
                       role="gridcell"
-                      style={{ ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0 }}
+                      style={{
+                        ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0,
+                        width: colWidth(col.kind),
+                        minWidth: colWidth(col.kind),
+                      }}
                       className={`${styles.matrixCell} ${styles[`matrixCell_${col.kind}` as keyof typeof styles]} ${
                         isLastInKind && isNotLastColumn ? styles.matrixCellGroupEnd : ""
                       }`}
