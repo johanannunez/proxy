@@ -28,6 +28,37 @@
 
 ---
 
+## v53 CORRECTION (supersedes the Plate specifics in Tasks 3-5 below)
+
+This plan was authored against `@udecode/plate@49` + `@udecode/plate-html@40`.
+The live Plate is **v53**, rebranded to `platejs`, with a different package
+layout and a reorganized HTML API. The verified-against-source corrections:
+
+- **Packages (Task 3):** install `platejs`, `@platejs/basic-nodes`,
+  `@platejs/list-classic` (semantic `<ul>/<ol>/<li>`, NOT the indent-based
+  `@platejs/list`), `@platejs/table`. Do **not** install `@udecode/plate-html`.
+- **Editor (Task 5):** `usePlateEditor`/`Plate`/`PlateContent` from
+  `platejs/react`; `BoldPlugin`/`ItalicPlugin`/`UnderlinePlugin`/`H1Plugin`/
+  `H2Plugin`/`H3Plugin` from `@platejs/basic-nodes/react`; list plugins from
+  `@platejs/list-classic/react`; table plugins from `@platejs/table/react`.
+  Toolbar transforms are `editor.tf.bold.toggle()`, `editor.tf.h1.toggle()`, etc.
+- **Serialization (Task 4/5):** `serializeHtml` moved to `platejs/static`, is
+  async, and needs a full static node-component kit. We do **not** use it.
+  Instead a dependency-free `valueToHtml(editor.children)` in
+  `templates/[id]/html-serialize.ts` emits clean semantic HTML. Node-type
+  strings and the raw-vs-normalized shapes (`li>text` vs `li>lic>text`,
+  `td>text` vs `td>p>text`) are verified by `__tests__/html-serialize.test.ts`,
+  which also proves round-trip stability. **DONE + committed (9b0e6e96).**
+- **Load (Task 5):** rehydrate existing `source_html` via
+  `editor.api.html.deserialize({ element })`. Must be done without polluting the
+  undo stack (initialize at editor creation or use a history-free set), or the
+  user's first Ctrl+Z wipes the loaded document.
+
+Tasks 1, 2, 6, 7 are unaffected by the version change. Tasks 1-3 and the
+serializer are already implemented and committed.
+
+---
+
 ## Task 1: DB migration
 
 **Files:**
