@@ -46,6 +46,7 @@ import { setRequirementNotNeeded } from "@/lib/admin/status-board-actions";
 import { StatusBoardToolbar } from "./StatusBoardToolbar";
 import { FileCardTile } from "./FileCardTile";
 import { getReqKeyIconConfig } from "./status-board-icons";
+import { shadeStepForColumns } from "./column-shade";
 import styles from "./StatusBoard.module.css";
 
 /* ─────────────────────────────────────────────────────────────
@@ -1073,6 +1074,13 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
     ? board.columns.filter((col) => focusedKeys.has(col.reqKey))
     : board.columns.filter((col) => kindFilter === "all" || col.kind === kindFilter);
 
+  /* Alternating shade step per column, computed over the *visible* set so the
+     light/dark-within-kind pattern recomputes whenever columns are pinned or a
+     kind filter narrows them. Read as a `--shade` CSS var by header + cells. */
+  const shadeByReqKey = new Map(
+    visibleColumns.map((col) => [col.reqKey, shadeStepForColumns(visibleColumns, col.reqKey)]),
+  );
+
   /* Re-measure edge-fade when the visible column set changes (pin/unpin changes content width
      but not the container element size, so the ResizeObserver alone won't catch it). */
   useEffect(() => {
@@ -1410,6 +1418,7 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                   <div
                     key={col.reqKey}
                     role="columnheader"
+                    style={{ ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0 }}
                     className={`${styles.matrixItemHeader} ${styles[`matrixItemHeader_${col.kind}` as keyof typeof styles]} ${isPinned ? styles.matrixItemHeaderPinned : ""}`}
                   >
                     <button
@@ -1473,6 +1482,7 @@ export function StatusBoardView({ board }: StatusBoardViewProps) {
                     <div
                       key={col.reqKey}
                       role="gridcell"
+                      style={{ ["--shade" as string]: shadeByReqKey.get(col.reqKey) ?? 0 }}
                       className={`${styles.matrixCell} ${styles[`matrixCell_${col.kind}` as keyof typeof styles]} ${
                         isLastInKind && isNotLastColumn ? styles.matrixCellGroupEnd : ""
                       }`}

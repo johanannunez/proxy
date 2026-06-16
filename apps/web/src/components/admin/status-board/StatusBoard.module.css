@@ -438,31 +438,48 @@
  * signature mixes run a touch stronger than the form ones so the brand blue
  * does not read as faint teal next to the violet. */
 .matrixGroupBand_signature {
-  background: color-mix(in srgb, var(--color-brand, #1b77be) 12%, var(--dash-card-alt, #f3f2f0));
-  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-brand, #1b77be) 58%, transparent);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 82%, var(--dash-card-alt, #f3f2f0));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-brand, #1b77be) 92%, #000 8%);
+  color: #fff;
 }
 
 .matrixGroupBand_form {
-  background: color-mix(in srgb, #7c3aed 8%, var(--dash-card-alt, #f3f2f0));
-  box-shadow: inset 0 -2px 0 color-mix(in srgb, #7c3aed 48%, transparent);
+  background: color-mix(in srgb, #7c3aed 78%, var(--dash-card-alt, #f3f2f0));
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, #7c3aed 92%, #000 8%);
+  color: #fff;
 }
 
 /* Column-header wash per kind (sits under the FileCardTile + label). The
  * pinned state (brand 5%) intentionally overrides these. */
+/* `--shade` (0 or 1, set per column in StatusBoardView) deepens every other
+ * column within a kind so each hue reads as a light/dark family, recomputed as
+ * columns are pinned/filtered. Step values kept subtle so it never stripes. */
 .matrixItemHeader_signature {
-  background: color-mix(in srgb, var(--color-brand, #1b77be) 8%, var(--dash-card-alt, #f3f2f0));
+  background: color-mix(
+    in srgb,
+    var(--color-brand, #1b77be) calc(8% + var(--shade, 0) * 9%),
+    var(--dash-card-alt, #f3f2f0)
+  );
 }
 .matrixItemHeader_form {
-  background: color-mix(in srgb, #7c3aed 5%, var(--dash-card-alt, #f3f2f0));
+  background: color-mix(
+    in srgb,
+    #7c3aed calc(5% + var(--shade, 0) * 9%),
+    var(--dash-card-alt, #f3f2f0)
+  );
 }
 
 /* Body-cell wash per kind — overlays the row surface so the hue survives row
  * hover. Kept faint enough not to fight the completion rings. */
 .matrixCell_signature {
-  background-color: color-mix(in srgb, var(--color-brand, #1b77be) 6%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--color-brand, #1b77be) calc(6% + var(--shade, 0) * 7%),
+    transparent
+  );
 }
 .matrixCell_form {
-  background-color: color-mix(in srgb, #7c3aed 4%, transparent);
+  background-color: color-mix(in srgb, #7c3aed calc(4% + var(--shade, 0) * 7%), transparent);
 }
 
 /* ─── Item header row ─── */
