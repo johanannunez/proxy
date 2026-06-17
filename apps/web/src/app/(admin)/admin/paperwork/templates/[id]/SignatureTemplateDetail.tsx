@@ -27,6 +27,7 @@ import { publishTemplateAction } from "../draft-actions";
 import {
   activateTemplate,
   deactivateTemplate,
+  deleteTemplate,
   updateTemplateTracking,
   updateTemplateMeta,
 } from "../template-actions";
@@ -384,6 +385,10 @@ function SignatureSettings({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  // Remove and Delete share one transition, so disable both while either runs
+  // (prevents double-submit), but key the spinner LABEL on which one is busy.
+  const [busy, setBusy] = useState<"remove" | "delete" | null>(null);
 
   // When coverage is known and a signer still lacks a field, the template can't
   // be sent regardless of is_active. Surface that first and route to Fields.
@@ -396,10 +401,31 @@ function SignatureSettings({
   function handleDeactivate() {
     setConfirmRemove(false);
     setError(null);
+    setBusy("remove");
     startTransition(async () => {
       const res = await deactivateTemplate(template.id);
       if (!res.ok) {
         setError(res.error ?? "Could not remove the template.");
+        setBusy(null);
+        return;
+      }
+      router.push("/admin/paperwork/signatures");
+      router.refresh();
+    });
+  }
+
+  // Hard delete frees the document key. The server action is the authority: the
+  // UI offers it only when local state says never-sent (hasBeenSent), and the
+  // action re-checks (incl. a fail-closed DocuSeal submissions check).
+  function handleDelete() {
+    setConfirmDelete(false);
+    setError(null);
+    setBusy("delete");
+    startTransition(async () => {
+      const res = await deleteTemplate(template.id);
+      if (!res.ok) {
+        setError(res.error ?? "Could not delete the template.");
+        setBusy(null);
         return;
       }
       router.push("/admin/paperwork/signatures");
@@ -523,9 +549,45 @@ function SignatureSettings({
               onClick={() => setConfirmRemove(true)}
               disabled={pending}
             >
-              {pending ? "Removing…" : "Remove"}
+              {busy === "remove" ? "Removing…" : "Remove"}
             </button>
           </div>
+          {hasBeenSent ? (
+            <div className={styles.settingRow}>
+              <div className={styles.settingMeta}>
+                <span className={styles.settingLabel}>Delete unavailable</span>
+                <span className={styles.settingDesc}>
+                  Documents have been sent under this signature, so it can&apos;t be
+                  deleted. Remove it instead to stop new sends.
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`${styles.toggleBtn} ${styles.toggleBtnDanger}`}
+                disabled
+              >
+                Delete
+              </button>
+            </div>
+          ) : (
+            <div className={styles.settingRow}>
+              <div className={styles.settingMeta}>
+                <span className={styles.settingLabel}>Delete completely</span>
+                <span className={styles.settingDesc}>
+                  Permanently deletes this template and frees its document key.
+                  Available only because it has never been sent.
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`${styles.toggleBtn} ${styles.toggleBtnDanger}`}
+                onClick={() => setConfirmDelete(true)}
+                disabled={pending}
+              >
+                {busy === "delete" ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -541,9 +603,21 @@ function SignatureSettings({
         title="Remove this template?"
         description={`"${template.display_name}" will no longer be sendable. Documents already out for signature keep working.`}
         confirmLabel="Remove"
+        cancelLabel="Keep template"
         variant="danger"
         onConfirm={handleDeactivate}
         onCancel={() => setConfirmRemove(false)}
+      />
+
+      <ConfirmModal
+        open={confirmDelete}
+        title="Delete this template permanently?"
+        description={`"${template.display_name}" and its document key will be permanently deleted. This cannot be undone. It has never been sent, so no signed documents are affected.`}
+        confirmLabel="Delete completely"
+        cancelLabel="Keep template"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
       />
     </div>
   );

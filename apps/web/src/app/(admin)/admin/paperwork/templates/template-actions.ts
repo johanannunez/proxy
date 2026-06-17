@@ -9,6 +9,8 @@ import {
   getTemplateFields,
   renameDocuSealTemplate,
   getDocuSealTemplateName,
+  archiveDocuSealTemplate,
+  docuSealTemplateHasSubmissions,
 } from "@/lib/signing/docuseal";
 import { textToHtml } from "./text-to-html";
 import {
@@ -17,7 +19,11 @@ import {
   getDocumentTemplate,
   documentKeyExists,
   templateHasBeenSent,
+  countTemplateSendEvidence,
+  deleteDocumentTemplateRecord,
+  deleteReminderConfigForKey,
 } from "@/lib/admin/document-templates";
+import { evaluateDeletability } from "@/lib/admin/template-deletability";
 import type {
   DocumentTemplate,
   TemplateSettings,
@@ -429,7 +435,8 @@ export async function forkSystemTemplate(
   return { ok: true, template: record };
 }
 
-/** Soft-delete a tenant template. System templates cannot be deleted. */
+/** Soft-delete (archive) a tenant template. System templates cannot be deleted.
+    The key/slug stays reserved; use deleteTemplate to free a never-sent key. */
 export async function deactivateTemplate(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
@@ -441,4 +448,73 @@ export async function deactivateTemplate(
   if (template.is_system) return { ok: false, error: "System templates cannot be deleted." };
   const ok = await updateDocumentTemplateRecord(id, { is_active: false });
   return ok ? { ok: true } : { ok: false, error: "Could not deactivate the template." };
+}
+
+/**
+ * Hard-delete a never-sent tenant signature template, freeing its document_key.
+ * Gate (see evaluateDeletability + countTemplateSendEvidence):
+ *   is_system            → refused (shared infrastructure)
+ *   local send evidence  → refused (archive via deactivateTemplate instead)
+ *   looks never-sent but DocuSeal has a submission → refused; the DocuSeal check
+ *     is FAIL-CLOSED (a verification error blocks the delete) so a live remote
+ *     signature with no local trace can never be deleted.
+ * On success also clears the orphaned reminder cadence and best-effort archives
+ * the remote DocuSeal template (a DocuSeal outage never fails the local delete).
+ *
+ *   requireAdmin → load → is_system? → countTemplateSendEvidence
+ *      → (clean & has remote id?) DocuSeal submissions check [fail-closed]
+ *      → evaluateDeletability → reminder-config cleanup → DELETE row
+ *      → best-effort DocuSeal archive → revalidate
+ */
+export async function deleteTemplate(
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, error: authError };
+
+  const template = await getDocumentTemplate(id);
+  if (!template) return { ok: false, error: "Template not found." };
+  if (template.is_system) {
+    return { ok: false, error: "System templates cannot be deleted." };
+  }
+
+  const sendEvidenceCount = await countTemplateSendEvidence(template.document_key);
+
+  // Only pay the DocuSeal round-trip when local state looks clean; it closes the
+  // no-local-evidence hole. Fail closed: a verification error blocks the delete.
+  let hasRemoteSubmissions = false;
+  if (sendEvidenceCount === 0 && template.docuseal_template_id) {
+    try {
+      hasRemoteSubmissions = await docuSealTemplateHasSubmissions(template.docuseal_template_id);
+    } catch {
+      return {
+        ok: false,
+        error: "Couldn't verify with the signing provider. Try again in a moment.",
+      };
+    }
+  }
+
+  const verdict = evaluateDeletability({
+    isSystem: template.is_system,
+    sendEvidenceCount,
+    hasRemoteSubmissions,
+  });
+  if (!verdict.canDelete) {
+    return { ok: false, error: verdict.reason ?? "This template cannot be deleted." };
+  }
+
+  const ok = await deleteDocumentTemplateRecord(id);
+  if (!ok) return { ok: false, error: "Could not delete the template." };
+
+  // Clean up dependent state only AFTER the row is actually gone, so a failed
+  // row delete never orphans the reminder cadence. Both are best-effort; a
+  // DocuSeal outage must not fail an already-committed local delete.
+  await deleteReminderConfigForKey(template.org_id, template.document_key);
+  if (template.docuseal_template_id) {
+    await archiveDocuSealTemplate(template.docuseal_template_id);
+  }
+
+  revalidatePath("/admin/paperwork/signatures");
+  revalidatePath("/admin/paperwork");
+  return { ok: true };
 }
