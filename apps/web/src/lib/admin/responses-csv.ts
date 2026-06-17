@@ -12,6 +12,8 @@ export type UnifiedFormResponse = {
   respondent_email: string | null;
   property_id: string | null;
   property_name: string | null;
+  workspace_id: string | null;
+  workspace_name: string | null;
   submitted_at: string;
   completed_at: string | null;
   data: Record<string, unknown>;
@@ -20,6 +22,7 @@ export type UnifiedFormResponse = {
 export type ResponseFilters = {
   formId?: string;
   propertyId?: string;
+  workspaceId?: string;
   /** Inclusive, YYYY-MM-DD. */
   dateFrom?: string;
   /** Inclusive, YYYY-MM-DD. */
@@ -42,6 +45,7 @@ export function filterResponses(
   return rows.filter((row) => {
     if (filters.formId && row.form_id !== filters.formId) return false;
     if (filters.propertyId && row.property_id !== filters.propertyId) return false;
+    if (filters.workspaceId && row.workspace_id !== filters.workspaceId) return false;
     if (filters.dateFrom || filters.dateTo) {
       const day = row.submitted_at.slice(0, 10);
       if (filters.dateFrom && day < filters.dateFrom) return false;

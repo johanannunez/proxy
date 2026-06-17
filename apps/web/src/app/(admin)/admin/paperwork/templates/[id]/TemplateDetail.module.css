@@ -1,4 +1,4 @@
-/* ─── Template detail — Build/Fields | Responses | Settings tabs ─── */
+/* Template detail: Build/Fields | Responses | Settings tabs */
 
 .root {
   display: flex;
@@ -7,7 +7,7 @@
   flex: 1;
 }
 
-/* ─── Identity header (above tabs) ─── */
+/* Identity header, above tabs */
 
 .identityHeader {
   display: flex;
@@ -370,7 +370,7 @@
   /* Two explicit columns so each card stays whole (CSS multi-column would split
      a tall card across the boundary). Fills the width and shortens the page. */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(340px, 0.84fr) minmax(560px, 1.16fr);
   gap: 18px;
   align-items: start;
 }
@@ -608,7 +608,7 @@
   margin: 0;
 }
 
-/* ─── Inline-editable About rows ─── */
+/* Inline editable About rows */
 
 .fieldValueWrap {
   display: flex;
@@ -757,7 +757,7 @@
   color: var(--text-tertiary, #9aa1ab);
 }
 
-/* ─── Inline signer editor ─── */
+/* Inline signer editor */
 
 .signerList {
   display: flex;

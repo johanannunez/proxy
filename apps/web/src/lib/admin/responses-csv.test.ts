@@ -14,6 +14,8 @@ function row(overrides: Partial<UnifiedFormResponse> = {}): UnifiedFormResponse 
     respondent_email: "ada@example.com",
     property_id: "p1",
     property_name: "Jadwin Ave",
+    workspace_id: "w1",
+    workspace_name: "Jadwin Portfolio",
     submitted_at: "2026-06-01T12:00:00Z",
     completed_at: "2026-06-01T12:05:00Z",
     data: { favorite_color: "blue" },

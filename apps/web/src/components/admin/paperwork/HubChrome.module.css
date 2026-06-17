@@ -21,6 +21,7 @@
 
 .subTabs {
   display: inline-flex;
+  flex: 0 0 auto;
   gap: 2px;
   padding: 3px;
   border: 1px solid rgba(15, 23, 42, 0.05);
@@ -90,9 +91,11 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   margin-left: auto;
+  min-width: 0;
 }
 
 .viewToggle {
@@ -180,6 +183,7 @@
   }
 
   .subRight {
+    flex-wrap: wrap;
     justify-content: space-between;
     margin-left: 0;
   }

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * FormTemplateDetail — a form template's whole life on one page:
+ * FormTemplateDetail: a form template's whole life on one page:
  * Build (the drag-and-drop builder, incl. the conditional logic editor),
  * Responses (everything clients submitted), and Settings (publish state,
  * public link, sharing). Per the paperwork unification design, a form's
@@ -32,6 +32,7 @@ import {
 } from "../form-actions";
 import { CoverageSettingsCard } from "./CoverageSettingsCard";
 import { FormAppearancePicker } from "../../forms/FormAppearancePicker";
+import { FormCoverEditor } from "../../forms/FormCoverEditor";
 import {
   resolveFormAppearance,
   FormGlyph,
@@ -48,7 +49,13 @@ function fmtDate(iso: string): string {
 
 type TabKey = "build" | "responses" | "settings";
 
-function FormSettings({ form }: { form: Form }) {
+function FormSettings({
+  form,
+  responseCount,
+}: {
+  form: Form;
+  responseCount: number;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -80,108 +87,113 @@ function FormSettings({ form }: { form: Form }) {
 
   return (
     <div className={styles.settingsWrap}>
-      <div className={styles.settingsCard}>
-        <h3 className={styles.settingsTitle}>Publishing</h3>
-        <div className={styles.settingRow}>
-          <div className={styles.settingMeta}>
-            <span className={styles.settingLabel}>
-              Status{" "}
-              <span
-                className={`${styles.statusPill} ${form.is_active ? styles.statusLive : styles.statusDraft}`}
-              >
-                {form.is_active ? "Live and collecting responses" : "Draft"}
-              </span>
-            </span>
-            <span className={styles.settingDesc}>
-              {form.is_active
-                ? "Anyone with the link can open this form."
-                : "Publishing creates the share link and starts accepting responses."}
-            </span>
-          </div>
-          <button
-            type="button"
-            className={`${styles.toggleBtn} ${form.is_active ? "" : styles.toggleBtnPrimary}`}
-            onClick={() =>
-              run(() => (form.is_active ? unpublishFormAction(form.id) : publishFormAction(form.id)))
-            }
-            disabled={pending}
-          >
-            {pending ? "Saving…" : form.is_active ? "Unpublish" : "Publish"}
-          </button>
-        </div>
-
-        <div className={styles.settingRow}>
-          <div className={styles.settingMeta}>
-            <span className={styles.settingLabel}>
-              {form.is_public ? (
-                <>
-                  <Globe size={12} weight="bold" style={{ verticalAlign: -1 }} /> Public access
-                </>
-              ) : (
-                <>
-                  <Lock size={12} weight="bold" style={{ verticalAlign: -1 }} /> Private
-                </>
-              )}
-            </span>
-            <span className={styles.settingDesc}>
-              {form.is_public
-                ? "The link works without signing in."
-                : "Respondents must sign in before filling this out."}
-            </span>
-          </div>
-          <button
-            type="button"
-            className={styles.toggleBtn}
-            onClick={() => run(() => toggleFormPublicAction(form.id, !form.is_public))}
-            disabled={pending}
-          >
-            {form.is_public ? "Make private" : "Make public"}
-          </button>
-        </div>
-      </div>
-
-      <FormAppearancePicker
-        formId={form.id}
-        icon={form.icon}
-        iconColor={form.icon_color}
-      />
-
-      <CoverageSettingsCard
-        tracked={form.tracked}
-        category={form.category}
-        onSave={async (updates) => {
-          const res = await updateFormMetaAction(form.id, updates);
-          return res.ok ? { ok: true } : { ok: false, error: res.error };
-        }}
-      />
-
-      {form.is_active && publicUrl && (
+      <div className={styles.settingsCol}>
         <div className={styles.settingsCard}>
-          <h3 className={styles.settingsTitle}>Share link</h3>
-          <div className={styles.linkRow}>
-            <span className={styles.linkText}>{publicUrl}</span>
+          <h3 className={styles.settingsTitle}>Publish and share</h3>
+          <div className={styles.settingRow}>
+            <div className={styles.settingMeta}>
+              <span className={styles.settingLabel}>
+                Status{" "}
+                <span
+                  className={`${styles.statusPill} ${form.is_active ? styles.statusLive : styles.statusDraft}`}
+                >
+                  {form.is_active ? "Live and collecting responses" : "Draft"}
+                </span>
+              </span>
+              <span className={styles.settingDesc}>
+                {form.is_active
+                  ? "Anyone with the link can open this form."
+                  : "Publishing creates the share link and starts accepting responses."}
+              </span>
+            </div>
             <button
               type="button"
-              className={`${styles.linkActionBtn} ${copied ? styles.linkActionCopied : ""}`}
-              onClick={handleCopy}
+              className={`${styles.toggleBtn} ${form.is_active ? "" : styles.toggleBtnPrimary}`}
+              onClick={() =>
+                run(() => (form.is_active ? unpublishFormAction(form.id) : publishFormAction(form.id)))
+              }
+              disabled={pending}
             >
-              {copied ? <Check size={12} weight="bold" /> : <LinkSimple size={12} weight="bold" />}
-              {copied ? "Copied" : "Copy"}
+              {pending ? "Saving..." : form.is_active ? "Unpublish" : "Publish"}
             </button>
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.linkActionBtn}
+          </div>
+
+          <div className={styles.settingRow}>
+            <div className={styles.settingMeta}>
+              <span className={styles.settingLabel}>
+                {form.is_public ? (
+                  <>
+                    <Globe size={12} weight="bold" style={{ verticalAlign: -1 }} /> Public access
+                  </>
+                ) : (
+                  <>
+                    <Lock size={12} weight="bold" style={{ verticalAlign: -1 }} /> Private
+                  </>
+                )}
+              </span>
+              <span className={styles.settingDesc}>
+                {form.is_public
+                  ? "The link works without signing in."
+                  : "Respondents must sign in before filling this out."}
+              </span>
+            </div>
+            <button
+              type="button"
+              className={styles.toggleBtn}
+              onClick={() => run(() => toggleFormPublicAction(form.id, !form.is_public))}
+              disabled={pending}
             >
-              <ArrowSquareOut size={12} weight="bold" />
-              Open
-            </a>
+              {form.is_public ? "Make private" : "Make public"}
+            </button>
           </div>
         </div>
-      )}
 
-      {error && <p className={styles.errorNote}>{error}</p>}
+        {form.is_active && publicUrl && (
+          <div className={styles.settingsCard}>
+            <h3 className={styles.settingsTitle}>Share link</h3>
+            <div className={styles.linkRow}>
+              <span className={styles.linkText}>{publicUrl}</span>
+              <button
+                type="button"
+                className={`${styles.linkActionBtn} ${copied ? styles.linkActionCopied : ""}`}
+                onClick={handleCopy}
+              >
+                {copied ? <Check size={12} weight="bold" /> : <LinkSimple size={12} weight="bold" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.linkActionBtn}
+              >
+                <ArrowSquareOut size={12} weight="bold" />
+                Open
+              </a>
+            </div>
+          </div>
+        )}
+
+        <CoverageSettingsCard
+          tracked={form.tracked}
+          category={form.category}
+          onSave={async (updates) => {
+            const res = await updateFormMetaAction(form.id, updates);
+            return res.ok ? { ok: true } : { ok: false, error: res.error };
+          }}
+        />
+
+        {error && <p className={styles.errorNote}>{error}</p>}
+      </div>
+
+      <div className={styles.settingsCol}>
+        <FormCoverEditor form={form} responseCount={responseCount} />
+        <FormAppearancePicker
+          formId={form.id}
+          icon={form.icon}
+          iconColor={form.icon_color}
+        />
+      </div>
     </div>
   );
 }
@@ -202,7 +214,7 @@ export function FormTemplateDetail({
   const tabs: Array<{ key: TabKey; label: string; count?: number }> = [
     { key: "build", label: "Build" },
     { key: "responses", label: "Responses", count: responses.length },
-    { key: "settings", label: "Publish & Share" },
+    { key: "settings", label: "Settings" },
   ];
 
   const appearance = resolveFormAppearance({
@@ -216,7 +228,7 @@ export function FormTemplateDetail({
 
   return (
     <div className={styles.root}>
-      {/* Identity header — visible above all tabs */}
+      {/* Identity header, visible above all tabs */}
       <div className={styles.identityHeader}>
         <span
           className={styles.identityIconTile}
@@ -292,7 +304,7 @@ export function FormTemplateDetail({
         {tab === "responses" && (
           <ResponsesHub form={form} responses={responses} viewCount={viewCount} />
         )}
-        {tab === "settings" && <FormSettings form={form} />}
+        {tab === "settings" && <FormSettings form={form} responseCount={responseCount} />}
       </div>
     </div>
   );

@@ -72,6 +72,21 @@ export type FormCompletion = {
   customUrl?: string;
 };
 
+export type FormCoverMode = "smart" | "stock" | "upload" | "color";
+export type FormCoverBackground = "wash" | "mesh" | "paper" | "minimal";
+
+export type FormCoverSettings = {
+  mode: FormCoverMode;
+  stockId?: string | null;
+  imageUrl?: string | null;
+  imagePath?: string | null;
+  alt?: string | null;
+  color?: string | null;
+  blur?: boolean;
+  showIcon?: boolean;
+  background?: FormCoverBackground | null;
+};
+
 export type FormSchema = {
   version: 1;
   fields: FormField[];
@@ -82,6 +97,13 @@ export type FormSchema = {
     /** @deprecated Use completion instead. Kept for back-compat reads. */
     redirectUrl?: string;
     completion?: FormCompletion;
+    cover?: FormCoverSettings;
+    /** @deprecated Use cover instead. Kept for back-compat reads. */
+    coverImageUrl?: string | null;
+    /** @deprecated Use cover instead. Kept for back-compat reads. */
+    coverImagePath?: string | null;
+    /** @deprecated Use cover instead. Kept for back-compat reads. */
+    coverImageAlt?: string | null;
   };
 };
 

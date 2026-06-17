@@ -133,7 +133,7 @@
   background: rgba(27, 119, 190, 0.1);
 }
 
-/* ─── Table ─── */
+/* Table */
 
 .tableWrap {
   display: flex;
@@ -247,7 +247,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── Status pill ─── */
+/* Status pill */
 
 .statusCell {
   min-width: 0;
@@ -383,7 +383,7 @@
   }
 }
 
-/* ─── Error banner ─── */
+/* Error banner */
 
 .errorBanner {
   display: flex;
@@ -397,7 +397,7 @@
   border-radius: 10px;
 }
 
-/* ─── Empty state + Proxy library ─── */
+/* Empty state + Proxy library */
 
 .emptyState {
   display: flex;
@@ -565,7 +565,7 @@
   }
 }
 
-/* ─── Cards grid (Library, cards view) ─── */
+/* Cards grid: Library, cards view */
 
 .libGrid {
   display: grid;
@@ -624,7 +624,8 @@
 .formCardPreview {
   position: relative;
   display: flex;
-  height: 134px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -633,9 +634,44 @@
     linear-gradient(135deg, color-mix(in srgb, var(--form-tone, #1b77be) 10%, #fff), var(--form-surface, #f4f7fb));
 }
 
+.formCardPreviewPhoto {
+  background: #0f172a;
+}
+
+.formCardPreviewGenerated {
+  background:
+    radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--form-tone, #1b77be) 18%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--form-tone, #1b77be) 10%, #fff), var(--form-surface, #f4f7fb));
+}
+
+.formCardPreviewPaper {
+  background:
+    radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--form-tone, #1b77be) 18%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--form-tone, #1b77be) 10%, #fff), var(--form-surface, #f4f7fb));
+}
+
+.formCardPreviewMesh {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--form-cover-color, #1b77be) 70%, #fff), color-mix(in srgb, var(--form-cover-color, #1b77be) 22%, #fff)),
+    linear-gradient(28deg, #fff, color-mix(in srgb, var(--form-cover-color, #1b77be) 46%, #f8fafc));
+}
+
+.formCardPreviewWash {
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--form-cover-color, #1b77be) 44%, #fff), transparent 38%),
+    radial-gradient(circle at 82% 72%, color-mix(in srgb, var(--form-tone, #1b77be) 18%, #fff), transparent 42%),
+    linear-gradient(135deg, #fff, color-mix(in srgb, var(--form-cover-color, #1b77be) 18%, #f8fafc));
+}
+
+.formCardPreviewMinimal {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--form-cover-color, #1b77be) 13%, #fff), #fff 72%);
+}
+
 .formCardPreview::after {
   position: absolute;
   inset: 0;
+  z-index: 2;
   content: "";
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 42%),
@@ -643,11 +679,17 @@
   pointer-events: none;
 }
 
+.formCardPreviewPhoto::after {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.36), transparent 48%),
+    linear-gradient(0deg, rgba(15, 23, 42, 0.24), transparent 56%);
+}
+
 .formCardStatus {
   position: absolute;
   top: 9px;
   right: 9px;
-  z-index: 1;
+  z-index: 5;
   display: inline-flex;
   align-items: center;
   min-height: 21px;
@@ -660,6 +702,47 @@
   letter-spacing: 0;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(6px);
+}
+
+.formCardCoverImage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.formCardCoverGlyph {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 15px;
+  box-shadow:
+    0 18px 30px -18px rgba(15, 23, 42, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(9px);
+}
+
+.formCardColorCover {
+  position: absolute;
+  inset: -18px;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 24% 22%, color-mix(in srgb, var(--form-cover-color, #1b77be) 78%, #fff), transparent 38%),
+    radial-gradient(circle at 76% 70%, color-mix(in srgb, var(--form-cover-color, #1b77be) 42%, #111827), transparent 42%),
+    linear-gradient(135deg, color-mix(in srgb, var(--form-cover-color, #1b77be) 44%, #fff), #fff);
+  opacity: 0.82;
+  filter: blur(15px);
+  transform: scale(1.06);
 }
 
 .formCardStatusLive {
@@ -681,13 +764,15 @@
 
 .formCardPreviewSheet {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: flex;
-  width: 74%;
+  width: 78%;
   max-width: 164px;
-  height: 88px;
-  align-items: center;
-  justify-content: center;
+  height: 92px;
+  flex-direction: column;
+  gap: 5px;
+  justify-content: flex-start;
+  padding: 9px;
   border: 1px solid color-mix(in srgb, var(--form-tone, #1b77be) 18%, rgba(255, 255, 255, 0.78));
   border-radius: 14px;
   background:
@@ -698,85 +783,82 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
+.formCardPreviewNoIcon .formCardPreviewSheet {
+  height: 86px;
+}
+
 .formCardPreviewSheet::after {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  left: 10px;
-  height: 1px;
-  content: "";
-  background: color-mix(in srgb, var(--form-tone, #1b77be) 24%, transparent);
+  content: none;
 }
 
-.formCardPreviewHeader {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  left: 12px;
+.formCardMockupHeader {
   display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.formCardPreviewHeader span {
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--form-tone, #1b77be) 22%, transparent);
-}
-
-.formCardPreviewHeader span:first-child {
-  width: 22px;
-}
-
-.formCardPreviewHeader span:nth-child(2) {
-  width: 44px;
-}
-
-.formCardPreviewHeader span:last-child {
-  width: 24px;
-  margin-left: auto;
-}
-
-.formCardIcon {
-  position: absolute;
-  top: 27px;
-  left: 50%;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 15px;
-  transform: translateX(-50%);
-  box-shadow:
-    0 10px 18px -10px color-mix(in srgb, var(--form-tone, #1b77be) 72%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
-}
-
-.formCardLines {
-  position: absolute;
-  right: 18px;
-  bottom: 16px;
-  left: 18px;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
   align-items: center;
   gap: 6px;
 }
 
-.formCardLines span {
-  height: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--form-tone, #1b77be) 28%, transparent);
+.formCardIcon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  box-shadow:
+    0 8px 14px -10px color-mix(in srgb, var(--form-tone, #1b77be) 72%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
-.formCardLines span:first-child {
-  width: 72%;
+.formCardMockupHeader strong {
+  display: block;
+  overflow: hidden;
+  min-width: 0;
+  color: var(--text-primary, #1a1a1a);
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.formCardLines span:last-child {
-  width: 52%;
+.formCardMockupFields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.formCardMockupFields span {
+  display: block;
+  overflow: hidden;
+  min-height: 12px;
+  padding: 3px 5px;
+  color: color-mix(in srgb, var(--text-secondary, #6b7280) 80%, var(--form-tone, #1b77be));
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid color-mix(in srgb, var(--form-tone, #1b77be) 12%, rgba(255, 255, 255, 0.72));
+  border-radius: 5px;
+  font-size: 7.5px;
+  font-weight: 720;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formCardMockupSubmit {
+  display: inline-flex;
+  min-height: 14px;
+  align-items: center;
+  align-self: flex-start;
+  justify-content: center;
+  margin-top: auto;
+  padding: 0 7px;
+  color: #fff;
+  background: var(--form-tone, #1b77be);
+  border-radius: 5px;
+  font-size: 7.5px;
+  font-weight: 800;
 }
 
 .formCardContent {
@@ -791,20 +873,9 @@
 .formCardHeader {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
+  gap: 0;
   min-height: 34px;
   min-width: 0;
-}
-
-.formCardTitleGlyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 23px;
-  height: 23px;
-  flex: 0 0 23px;
-  margin-top: 1px;
-  border-radius: 7px;
 }
 
 .formCardName {
