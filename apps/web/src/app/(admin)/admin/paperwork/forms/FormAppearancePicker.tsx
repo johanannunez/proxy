@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * FormAppearancePicker — lets an admin give a form a custom icon (emoji or a
+ * FormAppearancePicker lets an admin give a form a custom icon (emoji or a
  * searchable Phosphor glyph) and accent color via the Notion-style IconPicker.
  * Lives on the form's Settings tab. Optimistic: the trigger updates instantly,
  * the server action persists, and a refresh reconciles. Legacy FormIconKeys
@@ -18,7 +18,7 @@ import styles from "./FormAppearancePicker.module.css";
 function storedToValue(icon: string | null, emoji: string | null): IconValue | null {
   if (emoji) return { kind: "emoji", value: emoji };
   if (icon?.startsWith("ph:")) return { kind: "icon", value: icon.slice(3) };
-  return null; // legacy FormIconKey — trigger shows it via the resolved glyph
+  return null; // legacy FormIconKey. Trigger shows it via the resolved glyph.
 }
 
 export function FormAppearancePicker({
@@ -71,10 +71,10 @@ export function FormAppearancePicker({
     <div className={styles.card}>
       <div className={styles.head}>
         <div>
-          <h3 className={styles.title}>Appearance</h3>
+          <h3 className={styles.title}>Brand Studio</h3>
           <p className={styles.sub}>
-            Give this form an icon or emoji and an accent color so it stands out
-            in your library.
+            Choose the form symbol and accent color used across the card and
+            respondent experience.
           </p>
         </div>
         <IconPicker

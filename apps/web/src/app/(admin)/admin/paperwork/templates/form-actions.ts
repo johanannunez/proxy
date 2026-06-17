@@ -3,6 +3,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   createForm,
   updateForm,
@@ -18,7 +19,17 @@ import {
   stripHiddenValues,
   type RespondentFormEntry,
 } from "@/lib/admin/forms";
-import type { FormField, FormSchema } from "@/lib/admin/forms-types";
+import { withFormCover } from "@/lib/admin/form-cover";
+import type {
+  FormCoverMode,
+  FormCoverSettings,
+  FormField,
+  FormSchema,
+} from "@/lib/admin/forms-types";
+
+const FORM_COVER_BUCKET = "form-covers";
+const FORM_COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const FORM_COVER_MAX_BYTES = 6 * 1024 * 1024;
 
 async function requireAdmin(): Promise<{ userId: string | null; error: string | null }> {
   const supabase = await createClient();
@@ -131,6 +142,136 @@ export async function updateFormAppearanceAction(
   if (!result) return { ok: false, error: "Failed to update appearance." };
   revalidatePath("/admin/paperwork/forms");
   revalidatePath("/admin/paperwork/forms");
+  return { ok: true, data: undefined };
+}
+
+function revalidateFormSurfaces(formId: string, slug?: string | null) {
+  revalidatePath("/admin/paperwork/forms");
+  revalidatePath(`/admin/paperwork/templates/${formId}`);
+  if (slug) revalidatePath(`/f/${slug}`);
+}
+
+async function removeStoredCover(path: string | null | undefined) {
+  if (!path) return;
+  const service = createServiceClient();
+  await service.storage.from(FORM_COVER_BUCKET).remove([path]);
+}
+
+function coverFileExt(type: string): "jpg" | "png" | "webp" {
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  return "jpg";
+}
+
+export async function updateFormCoverAction(
+  id: string,
+  cover: FormCoverSettings & { mode: FormCoverMode },
+): Promise<FormActionResult> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false, error };
+
+  const form = await getForm(id);
+  if (!form) return { ok: false, error: "Form not found." };
+
+  const previousPath = form.schema.settings.cover?.imagePath ?? null;
+  const nextSchema = withFormCover(form.schema, cover);
+  const result = await updateForm(id, { schema: nextSchema });
+  if (!result) return { ok: false, error: "Failed to update cover." };
+
+  const nextPath = nextSchema.settings.cover?.imagePath ?? null;
+  if (previousPath && previousPath !== nextPath) {
+    await removeStoredCover(previousPath);
+  }
+
+  revalidateFormSurfaces(id, form.slug);
+  return { ok: true, data: undefined };
+}
+
+export async function uploadFormCoverAction(
+  id: string,
+  formData: FormData,
+): Promise<FormActionResult> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false, error };
+
+  const form = await getForm(id);
+  if (!form) return { ok: false, error: "Form not found." };
+
+  const fileValue = formData.get("cover");
+  if (!(fileValue instanceof File)) {
+    return { ok: false, error: "Choose an image to upload." };
+  }
+  if (!FORM_COVER_TYPES.has(fileValue.type)) {
+    return { ok: false, error: "Use a JPEG, PNG, or WebP image." };
+  }
+  if (fileValue.size > FORM_COVER_MAX_BYTES) {
+    return { ok: false, error: "Choose an image under 6MB." };
+  }
+
+  const previousPath = form.schema.settings.cover?.imagePath ?? null;
+  const ext = coverFileExt(fileValue.type);
+  const path = `${form.org_id}/${form.id}/${crypto.randomUUID()}.${ext}`;
+  const bytes = Buffer.from(await fileValue.arrayBuffer());
+  const service = createServiceClient();
+
+  const { error: uploadError } = await service.storage
+    .from(FORM_COVER_BUCKET)
+    .upload(path, bytes, {
+      cacheControl: "31536000",
+      contentType: fileValue.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    if (
+      uploadError.message.includes("Bucket") ||
+      uploadError.message.includes("not found")
+    ) {
+      return {
+        ok: false,
+        error: "Cover storage is not configured yet. Create the form-covers bucket.",
+      };
+    }
+    return { ok: false, error: "Cover image could not be uploaded." };
+  }
+
+  const { data: urlData } = service.storage.from(FORM_COVER_BUCKET).getPublicUrl(path);
+  const imageUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+  const nextSchema = withFormCover(form.schema, {
+    mode: "upload",
+    imageUrl,
+    imagePath: path,
+    alt: `${form.name} cover image`,
+  });
+  const result = await updateForm(id, { schema: nextSchema });
+  if (!result) {
+    await removeStoredCover(path);
+    return { ok: false, error: "Failed to save cover." };
+  }
+
+  if (previousPath && previousPath !== path) {
+    await removeStoredCover(previousPath);
+  }
+
+  revalidateFormSurfaces(id, form.slug);
+  return { ok: true, data: undefined };
+}
+
+export async function removeFormCoverAction(id: string): Promise<FormActionResult> {
+  const { error } = await requireAdmin();
+  if (error) return { ok: false, error };
+
+  const form = await getForm(id);
+  if (!form) return { ok: false, error: "Form not found." };
+
+  const previousPath = form.schema.settings.cover?.imagePath ?? null;
+  const nextSchema = withFormCover(form.schema, { mode: "smart" });
+  const result = await updateForm(id, { schema: nextSchema });
+  if (!result) return { ok: false, error: "Failed to remove cover." };
+
+  if (previousPath) await removeStoredCover(previousPath);
+
+  revalidateFormSurfaces(id, form.slug);
   return { ok: true, data: undefined };
 }
 

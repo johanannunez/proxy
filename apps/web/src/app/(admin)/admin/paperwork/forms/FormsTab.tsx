@@ -26,17 +26,25 @@ import {
   FileDashed,
   CaretDown,
   PencilSimple,
-  GearSix,
   ArrowSquareOut,
   Sparkle,
   X,
 } from "@phosphor-icons/react";
 import { resolveFormAppearance, FormGlyph } from "./form-icon";
-import type { Form } from "@/lib/admin/forms-types";
+import type { Form, FormCoverBackground } from "@/lib/admin/forms-types";
 import {
   fmtShortDate,
   avatarColor,
 } from "@/lib/admin/documents-hub-shared";
+import {
+  FORM_CARD_TITLE_MAX,
+  buildFormCoverMockup,
+  formCardQuestionLabel,
+  formCardResponseLabel,
+  formCardSummary,
+  limitFormCardText,
+  resolveFormCover,
+} from "@/lib/admin/form-cover";
 import type { UnifiedFormResponse } from "@/lib/admin/responses-csv";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import { SendSheet } from "../templates/SendSheet";
@@ -64,9 +72,16 @@ import { ActivityFilters } from "@/components/admin/paperwork/ActivityFilters";
 import { useStickyView } from "@/lib/admin/use-sticky-view";
 import styles from "./FormsTab.module.css";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// Types
 
 type FormListItem = Form & { response_count: number };
+
+function formCoverBackgroundClass(background: FormCoverBackground): string {
+  if (background === "mesh") return styles.formCardPreviewMesh;
+  if (background === "wash") return styles.formCardPreviewWash;
+  if (background === "minimal") return styles.formCardPreviewMinimal;
+  return styles.formCardPreviewPaper;
+}
 type FormCollectionMode = "active" | "archive";
 type FormStatusFilter = "all" | "live" | "draft";
 type LastUpdatedFilter = "all" | "7d" | "30d" | "older";
@@ -80,7 +95,7 @@ type LibraryTemplate = {
 
 type FormActivityRow = UnifiedFormResponse;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 
 const RESPONSE_STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
@@ -100,15 +115,6 @@ const LAST_UPDATED_OPTIONS: FilterOption<LastUpdatedFilter>[] = [
   { value: "30d", label: "Last 30 days" },
   { value: "older", label: "Older than 30 days" },
 ];
-
-const SUMMARY_SKIP_FIELD_TYPES = new Set<string>([
-  "section_header",
-  "description",
-  "divider",
-  "page_break",
-]);
-const FORM_CARD_TITLE_MAX = 46;
-const FORM_CARD_SUMMARY_MAX = 76;
 
 function publicFormUrl(slug: string): string {
   const base =
@@ -139,50 +145,6 @@ function toUnifiedTemplate(form: FormListItem): UnifiedTemplate {
     slug: form.slug,
     isPublic: form.is_public,
   };
-}
-
-function responseLabel(count: number): string {
-  if (count === 0) return "No responses";
-  return `${count} ${count === 1 ? "response" : "responses"}`;
-}
-
-function questionLabel(count: number): string {
-  return `${count} ${count === 1 ? "question" : "questions"}`;
-}
-
-function limitCardText(value: string, maxLength: number): string {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length <= maxLength) return normalized;
-  const clipped = normalized.slice(0, maxLength + 1);
-  const lastSpace = clipped.lastIndexOf(" ");
-  const safeClip = lastSpace > maxLength * 0.65 ? clipped.slice(0, lastSpace) : clipped.slice(0, maxLength);
-  return `${safeClip.trim()}...`;
-}
-
-function sentenceList(labels: string[]): string {
-  if (labels.length === 1) return labels[0];
-  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
-  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
-}
-
-function formCardSummary(form: FormListItem): string {
-  const manual = form.description?.trim();
-  if (manual) return limitCardText(manual, FORM_CARD_SUMMARY_MAX);
-
-  const fields = (form.schema?.fields ?? []).filter(
-    (field) => field.label.trim() && !SUMMARY_SKIP_FIELD_TYPES.has(field.type),
-  );
-  if (fields.length === 0) {
-    return "Add questions before sharing this form.";
-  }
-
-  const labels = fields.slice(0, 2).map((field) => field.label.trim());
-  const extraCount = fields.length - labels.length;
-  const extraText =
-    extraCount > 0
-      ? `, plus ${extraCount} more ${extraCount === 1 ? "question" : "questions"}`
-      : "";
-  return limitCardText(`Collects ${sentenceList(labels)}${extraText}.`, FORM_CARD_SUMMARY_MAX);
 }
 
 function canDeleteForm(form: FormListItem): boolean {
@@ -639,7 +601,7 @@ function FilterMenu<T extends string>({
   );
 }
 
-// ── FormRow (list view) ───────────────────────────────────────────────────────
+// FormRow, list view
 
 function FormRow({
   form,
@@ -681,9 +643,9 @@ function FormRow({
     });
   }
   menuItems.push({
-    label: "Summary settings",
-    icon: <GearSix size={15} weight="bold" />,
-    onSelect: () => router.push(`${detailHref}?tab=settings`),
+    label: "Customize cover",
+    icon: <Sparkle size={15} weight="bold" />,
+    onSelect: () => router.push(`${detailHref}?tab=settings#cover`),
   });
   menuItems.push({
     label: "Duplicate",
@@ -761,7 +723,7 @@ function FormRow({
       </span>
 
       <span className={`${styles.metaCell} ${styles.responseCell}`}>
-        {responseLabel(form.response_count)}
+        {formCardResponseLabel(form.response_count)}
       </span>
       <span className={`${styles.metaCell} ${styles.dateCell}`}>
         {fmtShortDate(primaryDate)}
@@ -815,7 +777,7 @@ function FormRow({
   );
 }
 
-// ── FormCardItem (cards view) ─────────────────────────────────────────────────
+// FormCardItem, cards view
 
 function FormCardItem({
   form,
@@ -845,10 +807,15 @@ function FormCardItem({
   });
   const deleteAllowed = canDeleteForm(form);
   const qCount = form.schema?.fields?.length ?? 0;
-  const displayName = limitCardText(form.name, FORM_CARD_TITLE_MAX);
+  const displayName = limitFormCardText(form.name, FORM_CARD_TITLE_MAX);
   const summary = formCardSummary(form);
-  const responseText = responseLabel(form.response_count);
+  const responseText = formCardResponseLabel(form.response_count);
   const noResponses = form.response_count === 0;
+  const cover = resolveFormCover(form);
+  const mockup = buildFormCoverMockup(form);
+  const hasImageCover = Boolean(cover.imageUrl);
+  const generatedCoverClass = formCoverBackgroundClass(cover.background);
+  const showCoverIcon = cover.showIcon;
   const statusLabel = archived ? "Archived" : form.is_active ? "Live" : "Draft";
   const statusClass = archived
     ? styles.formCardStatusArchived
@@ -874,9 +841,9 @@ function FormCardItem({
     });
   }
   menuItems.push({
-    label: "Summary settings",
-    icon: <GearSix size={15} weight="bold" />,
-    onSelect: () => router.push(`${detailHref}?tab=settings`),
+    label: "Customize cover",
+    icon: <Sparkle size={15} weight="bold" />,
+    onSelect: () => router.push(`${detailHref}?tab=settings#cover`),
   });
   menuItems.push({
     label: "Duplicate",
@@ -981,6 +948,7 @@ function FormCardItem({
       style={{
         ["--form-tone" as string]: appearance.fg,
         ["--form-surface" as string]: appearance.bg,
+        ["--form-cover-color" as string]: cover.color ?? appearance.fg,
       }}
     >
       <button
@@ -989,36 +957,58 @@ function FormCardItem({
         onClick={() => router.push(detailHref)}
         aria-label={`Open ${form.name}`}
       >
-        <span className={styles.formCardPreview}>
+        <span
+          className={`${styles.formCardPreview} ${
+            hasImageCover
+              ? styles.formCardPreviewPhoto
+              : `${styles.formCardPreviewGenerated} ${generatedCoverClass} ${
+                  showCoverIcon ? "" : styles.formCardPreviewNoIcon
+                }`
+          }`}
+        >
           <span className={`${styles.formCardStatus} ${statusClass}`}>
             {statusLabel}
           </span>
-          <span className={styles.formCardPreviewSheet} aria-hidden>
-            <span className={styles.formCardPreviewHeader}>
-              <span />
-              <span />
-              <span />
-            </span>
-            <span
-              className={styles.formCardIcon}
-              style={{ background: appearance.fg, color: "#fff" }}
-            >
-              <FormGlyph appearance={appearance} size={24} />
-            </span>
-            <span className={styles.formCardLines}>
-              <span />
-              <span />
-            </span>
-          </span>
+          {hasImageCover ? (
+            <>
+              <img src={cover.imageUrl ?? ""} alt="" className={styles.formCardCoverImage} />
+              {showCoverIcon && (
+                <span className={styles.formCardCoverGlyph} aria-hidden>
+                  <FormGlyph appearance={appearance} size={22} />
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              {cover.blur && (
+                <span className={styles.formCardColorCover} aria-hidden />
+              )}
+              <span className={styles.formCardPreviewSheet} aria-hidden>
+                <span className={styles.formCardMockupHeader}>
+                  {showCoverIcon && (
+                    <span
+                      className={styles.formCardIcon}
+                      style={{ background: appearance.fg, color: "#fff" }}
+                    >
+                      <FormGlyph appearance={appearance} size={16} />
+                    </span>
+                  )}
+                  <strong>{mockup.title}</strong>
+                </span>
+                <span className={styles.formCardMockupFields}>
+                  {mockup.fields.slice(0, 2).map((field, index) => (
+                    <span key={`${field}-${index}`}>{field}</span>
+                  ))}
+                </span>
+                <span className={styles.formCardMockupSubmit}>
+                  {mockup.buttonText}
+                </span>
+              </span>
+            </>
+          )}
         </span>
         <span className={styles.formCardContent}>
           <span className={styles.formCardHeader}>
-            <span
-              className={styles.formCardTitleGlyph}
-              style={{ background: appearance.bg, color: appearance.fg }}
-            >
-              <FormGlyph appearance={appearance} size={13} />
-            </span>
             <span className={styles.formCardName} title={form.name}>
               {displayName}
             </span>
@@ -1028,7 +1018,7 @@ function FormCardItem({
           </span>
           <span className={styles.formCardMetrics}>
             <span className={styles.formCardStatsLine}>
-              <span className={styles.formCardMetric}>{questionLabel(qCount)}</span>
+              <span className={styles.formCardMetric}>{formCardQuestionLabel(qCount)}</span>
               <span
                 className={`${styles.formCardMetric} ${noResponses ? styles.formCardMetricEmpty : ""}`}
               >
@@ -1044,7 +1034,7 @@ function FormCardItem({
   );
 }
 
-// ── FormsTab ──────────────────────────────────────────────────────────────────
+// FormsTab
 
 export function FormsTab({
   forms,
@@ -1501,7 +1491,7 @@ export function FormsTab({
       {tab === "library" && renderFormCollection(filteredActive, "active")}
       {tab === "archive" && renderFormCollection(filteredArchived, "archive")}
 
-      {/* ── Activity tab ─────────────────────────────────────────── */}
+      {/* Activity tab */}
       {tab === "activity" && (
         <ActivityTable
           rows={activityRows}
@@ -1536,7 +1526,7 @@ export function FormsTab({
         ) : null}
       </AnimatePresence>
 
-      {/* ── SendSheet ─────────────────────────────────────────────── */}
+      {/* SendSheet */}
       <AnimatePresence>
         {sendTarget && (
           <SendSheet
