@@ -1,4 +1,4 @@
-/* ─── Forms tab — Hubflo-style form-master list ─── */
+/* Forms tab: Hubflo-style form-master list. */
 
 .root {
   padding: 18px 24px 32px;
@@ -130,6 +130,11 @@
   border-radius: 10px;
   background: rgba(27, 119, 190, 0.1);
   color: var(--color-brand, #1b77be);
+}
+
+.rowEmoji {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .nameCell {

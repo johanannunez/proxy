@@ -75,7 +75,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const [rightPanelTab, setRightPanelTab] = useState<"preview" | "settings">("preview");
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Undo/redo stacks — refs avoid triggering re-renders for the stacks themselves
+  // Undo/redo stacks use refs to avoid triggering rerenders for the stacks.
   const historyRef = useRef<FormSchema[]>([]);
   const futureRef = useRef<FormSchema[]>([]);
 
@@ -321,6 +321,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
       <div className={styles.canvasWrap}>
         <div className={styles.canvas}>
           <DndContext
+            id={`form-builder-${initialForm.id}`}
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}

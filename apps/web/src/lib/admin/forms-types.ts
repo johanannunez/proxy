@@ -87,15 +87,14 @@ export type Form = {
   slug: string | null;
   is_active: boolean;
   created_by: string | null;
-  /** Coverage tracking + archive (migration 20260612090000_template_tracking).
+  /** Status board tracking + archive (migration 20260612090000_template_tracking).
       Rows read before the migration runs lack these columns; the forms helpers
-      normalize to false/null. */
+      normalize to product defaults. */
   tracked: boolean;
   category: string | null;
   archived_at: string | null;
-  /** Custom appearance (migration 20260612120000_form_appearance). icon is a
-      key into FORM_ICONS; icon_color is a key into FORM_TINTS. Null = fall
-      back to a deterministic tint + default glyph. */
+  /** Custom appearance. icon is a symbol key. icon_color is a preset key or
+      hex color. Null falls back to a deterministic tint and default glyph. */
   icon: string | null;
   icon_color: string | null;
   created_at: string;

@@ -46,7 +46,7 @@ export async function listDocumentTemplates(orgId?: string): Promise<DocumentTem
 function normalizeTemplate(row: DocumentTemplate): DocumentTemplate {
   return {
     ...row,
-    tracked: row.tracked ?? false,
+    tracked: row.tracked ?? true,
     category: row.category ?? null,
     title: row.title ?? null,
     settings: row.settings ?? {},
@@ -182,6 +182,7 @@ export async function createDocumentTemplateRecord(
       gate_step: input.gate_step ?? null,
       is_system: false,
       is_active: false,
+      tracked: true,
       source_html: input.source_html ?? null,
     })
     .select("*")

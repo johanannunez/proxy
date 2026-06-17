@@ -33,12 +33,12 @@ function generateSlug(): string {
 
 export type FormWithCount = Form & { response_count: number };
 
-/** Tracking/archive columns ship in migration 20260612090000; rows read
-    before it is applied lack them, so normalize to safe defaults. */
+/** Tracking/archive columns ship in migration 20260612090000. Rows read before
+    it is applied lack them, so normalize to the product defaults. */
 function normalizeForm<T extends Form>(row: T): T {
   return {
     ...row,
-    tracked: row.tracked ?? false,
+    tracked: row.tracked ?? true,
     category: row.category ?? null,
     archived_at: row.archived_at ?? null,
     icon: row.icon ?? null,
@@ -88,6 +88,7 @@ export async function createForm(input: CreateFormInput): Promise<Form | null> {
       schema,
       is_public: input.is_public ?? false,
       is_active: false,
+      tracked: true,
       created_by: input.created_by ?? null,
     })
     .select("*")
@@ -126,6 +127,8 @@ export async function duplicateForm(id: string, createdBy?: string): Promise<For
       schema: source.schema,
       is_public: source.is_public,
       is_active: false,
+      tracked: source.tracked,
+      category: source.category,
       created_by: createdBy ?? null,
     })
     .select("*")

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * FormsTab — Hubflo-style form-master library (2026-06-12 IA amendment).
+ * FormsTab: Hubflo-style form-master library (2026-06-12 IA amendment).
  * A clean list: icon + name, response count, created, updated, row actions
  * (Send, Share link, Duplicate, Archive). Archived forms collapse behind a
  * count link at the top right. Row click opens the existing Build |
@@ -125,7 +125,11 @@ function FormRow({
         className={styles.rowIcon}
         style={{ background: appearance.bg, color: appearance.fg }}
       >
-        <appearance.Icon size={17} weight="duotone" />
+        {appearance.kind === "emoji" && appearance.emoji ? (
+          <span className={styles.rowEmoji}>{appearance.emoji}</span>
+        ) : (
+          <appearance.Icon size={17} weight="duotone" />
+        )}
       </span>
 
       <span className={styles.nameCell}>
