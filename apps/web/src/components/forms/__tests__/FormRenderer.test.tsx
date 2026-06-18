@@ -13,6 +13,19 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { FormRenderer } from "../FormRenderer";
 import type { Form, FormField } from "@/lib/admin/forms-types";
 
+// FormRenderer calls useRouter() for the post-submit redirect; stub it so the
+// component renders without an App Router context under jsdom.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+  }),
+}));
+
 function buildForm(fields: FormField[]): Form {
   return {
     id: "form-1",
