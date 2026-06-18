@@ -89,8 +89,8 @@ export async function createFormWithFieldsAction(
     name,
     created_by: userId,
     schema,
-    icon: appearance?.icon ?? null,
-    icon_color: appearance?.iconColor ?? null,
+    icon: normalizeAppearanceIcon(appearance?.icon ?? null),
+    icon_color: normalizeAppearanceColor(appearance?.iconColor ?? null),
   });
   if (!form) return { ok: false, error: "Failed to create form." };
 
@@ -131,6 +131,31 @@ export async function updateFormMetaAction(
   return { ok: true, data: undefined };
 }
 
+// Server-side trust boundary for form appearance. The canonical resolver
+// (form-symbols.tsx) is a client module and cannot be imported here, so we
+// validate by charset instead: accept hex / tint-slug colors and the
+// namespaced (icon:/emoji:), legacy bare-key, and legacy `ph:` icon forms that
+// may already be stored, while rejecting anything that could break out of an
+// attribute or inline style (quotes, spaces, angle brackets, parens, url(...),
+// semicolons). Unknown-but-safe values render as a graceful fallback.
+const HEX_RE = /^#?[0-9a-fA-F]{6}$/;
+const TINT_SLUG_RE = /^[a-zA-Z0-9-]{2,24}$/;
+const ICON_VALUE_RE = /^[a-zA-Z0-9:_-]{1,64}$/;
+
+function normalizeAppearanceColor(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (HEX_RE.test(trimmed)) return `#${trimmed.slice(-6).toLowerCase()}`;
+  if (TINT_SLUG_RE.test(trimmed)) return trimmed;
+  return null;
+}
+
+function normalizeAppearanceIcon(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return ICON_VALUE_RE.test(trimmed) ? trimmed : null;
+}
+
 export async function updateFormAppearanceAction(
   id: string,
   appearance: { icon: string | null; icon_color: string | null },
@@ -138,9 +163,17 @@ export async function updateFormAppearanceAction(
   const { error } = await requireAdmin();
   if (error) return { ok: false, error };
 
-  const result = await updateForm(id, appearance);
+  const icon = normalizeAppearanceIcon(appearance.icon);
+  const icon_color = normalizeAppearanceColor(appearance.icon_color);
+  if (appearance.icon != null && icon == null) {
+    return { ok: false, error: "That icon is not valid." };
+  }
+  if (appearance.icon_color != null && icon_color == null) {
+    return { ok: false, error: "That color is not valid." };
+  }
+
+  const result = await updateForm(id, { icon, icon_color });
   if (!result) return { ok: false, error: "Failed to update appearance." };
-  revalidatePath("/admin/paperwork/forms");
   revalidatePath("/admin/paperwork/forms");
   return { ok: true, data: undefined };
 }
@@ -348,11 +381,13 @@ export async function deleteFormAction(id: string): Promise<FormActionResult> {
 export async function toggleFormPublicAction(
   id: string,
   isPublic: boolean,
-): Promise<void> {
+): Promise<FormActionResult> {
   const { error } = await requireAdmin();
-  if (error) return;
-  await updateForm(id, { is_public: isPublic });
+  if (error) return { ok: false, error };
+  const result = await updateForm(id, { is_public: isPublic });
+  if (!result) return { ok: false, error: "Failed to update access." };
   revalidatePath("/admin/paperwork/forms");
+  return { ok: true, data: undefined };
 }
 
 export async function updateFormSlugAction(
