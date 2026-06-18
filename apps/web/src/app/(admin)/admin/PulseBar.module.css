@@ -1,0 +1,39 @@
+.bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--color-white);
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.greeting {
+  font-family: var(--font-sora);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+.atoms { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; }
+.atom {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-warm-gray-50);
+  text-decoration: none;
+  transition: transform 160ms var(--ease-spring), background-color 160ms var(--ease-spring);
+}
+.atom:hover { transform: translateY(-1px); }
+.atom:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.value { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-text-primary); }
+.label { font-size: 13px; color: var(--color-text-secondary); }
+.red .dot { background: var(--color-error); }
+.amber .dot { background: #f59e0b; }
+.neutral .dot { background: var(--color-text-secondary); }
+.brand .dot { background: var(--color-brand); }
+.allClear { margin-left: auto; font-size: 13px; color: var(--color-text-secondary); }

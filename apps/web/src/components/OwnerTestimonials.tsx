@@ -8,7 +8,7 @@ const OWNER_TESTIMONIALS = [
   {
     id: "owner-1",
     quote:
-      "Since partnering with The Parcel Company, our occupancy rate jumped from 45% to 78%. They handle everything — I just watch the deposits come in.",
+      "Since partnering with Proxy, our occupancy rate jumped from 45% to 78%. They handle everything — I just watch the deposits come in.",
     name: "David R.",
     propertyType: "3BR lakeside cabin",
     metric: "78% occupancy",
@@ -17,7 +17,7 @@ const OWNER_TESTIMONIALS = [
   {
     id: "owner-2",
     quote:
-      "I was managing my rental myself and burning out. The Parcel Company took over and my revenue actually increased by 40% in the first quarter while I did nothing.",
+      "I was managing my rental myself and burning out. Proxy took over and my revenue actually increased by 40% in the first quarter while I did nothing.",
     name: "Lisa M.",
     propertyType: "2BR downtown condo",
     metric: "+40% revenue",

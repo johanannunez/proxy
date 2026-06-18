@@ -9,7 +9,6 @@ import {
   DoorOpen,
   ChatsCircle,
   ListChecks,
-  BookOpenText,
   FolderOpen,
   Files,
   ShareNetwork,
@@ -23,6 +22,7 @@ import {
   CalendarDots,
   Receipt,
   Pulse,
+  Buildings,
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { AdminSidebarFooter } from "@/components/admin/AdminSidebarFooter";
@@ -51,62 +51,76 @@ type NavSubItem = {
   matchPrefix?: string;
 };
 
+type NavSubGroup = {
+  kind: "subgroup";
+  label: string;
+  icon: ReactNode;
+  storageKey: string;
+  matchPrefix: string;
+  items: NavSubItem[];
+};
+
 type NavGroup = {
   kind: "group";
   label: string;
   icon: ReactNode;
   storageKey: string;
-  items: NavSubItem[];
+  items: (NavSubItem | NavSubGroup)[];
 };
 
-type NavEntry = NavItem | NavGroup;
+type NavEntry = NavItem | NavGroup | NavSubGroup;
 
 /* ─── Nav data ─── */
 
 const navEntries: NavEntry[] = [
-  { kind: "item", href: "/admin", label: "Dashboard", icon: <Gauge size={18} weight="duotone" /> },
-  { kind: "item", href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={18} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
+  { kind: "item", href: "/admin", label: "Today", icon: <Gauge size={18} weight="duotone" /> },
   { kind: "item", href: "/admin/inbox", label: "Inbox", icon: <ChatsCircle size={18} weight="duotone" />, matchPrefix: "/admin/inbox" },
   { kind: "item", href: "/admin/tasks", label: "Tasks", icon: <ListChecks size={18} weight="duotone" />, matchPrefix: "/admin/tasks" },
   { kind: "item", href: "/admin/meetings", label: "Meetings", icon: <CalendarDots size={18} weight="duotone" />, matchPrefix: "/admin/meetings" },
+  { kind: "item", href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={18} weight="duotone" />, matchPrefix: "/admin/workspaces" },
+  {
+    kind: "group",
+    label: "Operations",
+    icon: <Buildings size={18} weight="duotone" />,
+    storageKey: "nav-operations-expanded",
+    items: [
+      { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={16} weight="duotone" />, matchPrefix: "/admin/properties" },
+      { href: "/admin/paperwork", label: "Paperwork", icon: <Files size={16} weight="duotone" />, matchPrefix: "/admin/paperwork" },
+      { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={16} weight="duotone" />, matchPrefix: "/admin/projects" },
+      { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={16} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
+    ],
+  },
   {
     kind: "group",
     label: "Relationships",
     icon: <ShareNetwork size={18} weight="duotone" />,
     storageKey: "nav-people-expanded",
     items: [
-      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={16} weight="duotone" />, matchPrefix: "/admin/prospects" },
-      { href: "/admin/workspaces?view=active-owners", label: "Workspaces", icon: <Stack size={16} weight="duotone" />, matchPrefix: "/admin/workspaces" },
       { href: "/admin/people?mode=compact", label: "People", icon: <UserList size={16} weight="duotone" />, matchPrefix: "/admin/people" },
       { href: "/admin/vendors", label: "Vendors", icon: <Handshake size={16} weight="duotone" />, matchPrefix: "/admin/vendors" },
+      { href: "/admin/prospects", label: "Prospects", icon: <Funnel size={16} weight="duotone" />, matchPrefix: "/admin/prospects" },
     ],
   },
-  { kind: "item", href: "/admin/properties", label: "Properties", icon: <DoorOpen size={18} weight="duotone" />, matchPrefix: "/admin/properties" },
-  { kind: "item", href: "/admin/documents", label: "Documents", icon: <Files size={18} weight="duotone" />, matchPrefix: "/admin/documents" },
-  { kind: "item", href: "/admin/projects", label: "Projects", icon: <FolderOpen size={18} weight="duotone" />, matchPrefix: "/admin/projects" },
-  { kind: "item", href: "/admin/billing", label: "Billing", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/billing" },
-  { kind: "item", href: "/admin/help", label: "Help Center", icon: <BookOpenText size={18} weight="duotone" />, matchPrefix: "/admin/help" },
+  { kind: "item", href: "/admin/finances", label: "Finances", icon: <Receipt size={18} weight="duotone" />, matchPrefix: "/admin/finances" },
 ];
 
 /* ─── Token constants ─── */
 
 const T = {
   brand: "#02AAEB",
-  brandLight: "var(--color-brand-light, #4cc9f0)",
-  activeTextColor: "#ffffff",
-  inactiveTextColor: "rgba(255,255,255,0.66)",
-  activeIconColor: "var(--color-brand-light, #4cc9f0)",
-  inactiveIconColor: "rgba(255,255,255,0.44)",
-  activeBg: "rgba(2, 170, 235, 0.09)",
-  hoverBg: "rgba(255, 255, 255, 0.045)",
+  activeTextColor: "rgba(255,255,255,0.97)",
+  inactiveTextColor: "rgba(255,255,255,0.55)",
+  activeIconColor: "#02AAEB",
+  inactiveIconColor: "rgba(255,255,255,0.35)",
+  activeBg: "rgba(255,255,255,0.1)",
+  hoverBg: "rgba(255,255,255,0.05)",
+  groupActiveLabelColor: "rgba(2,170,235,0.85)",
   badgeBg: "#f59e0b",
   badgeText: "#1a1a1a",
-  indicatorGlow: "0 0 10px 1px rgba(2, 170, 235, 0.55), 0 0 3px rgba(255,255,255,0.18)",
 } as const;
 
 /* ─── Spring configs ─── */
 
-const springSnap = { type: "spring" as const, stiffness: 420, damping: 32, mass: 0.8 };
 const springIcon = { type: "spring" as const, stiffness: 520, damping: 28 };
 const easeFade = { duration: 0.12 };
 const springCollapse = { type: "spring" as const, stiffness: 380, damping: 36, mass: 0.7 };
@@ -176,26 +190,6 @@ function NavItemRow({
               backgroundColor: T.hoverBg,
               pointerEvents: "none",
             }}
-          />
-        )}
-
-        {/* Active indicator pill */}
-        {active && (
-          <motion.span
-            layoutId="admin-nav-pill"
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: 0,
-              top: "50%",
-              width: "3px",
-              height: sub ? "12px" : "16px",
-              borderRadius: "999px",
-              backgroundColor: T.brandLight,
-              boxShadow: T.indicatorGlow,
-              translateY: "-50%",
-            }}
-            transition={springSnap}
           />
         )}
 
@@ -277,11 +271,14 @@ function NavGroupRow({
     });
   };
 
-  const isAnySubActive = group.items.some((item) =>
-    item.matchPrefix
+  const isAnySubActive = group.items.some((item) => {
+    if ("kind" in item && item.kind === "subgroup") {
+      return pathname?.startsWith(item.matchPrefix) ?? false;
+    }
+    return item.matchPrefix
       ? pathname?.startsWith(item.matchPrefix)
-      : pathname === item.href
-  );
+      : pathname === (item as NavSubItem).href;
+  });
 
   return (
     <li style={{ listStyle: "none" }}>
@@ -308,7 +305,7 @@ function NavGroupRow({
           fontWeight: 500,
           letterSpacing: "0.01em",
           lineHeight: 1.2,
-          color: isAnySubActive ? T.activeTextColor : T.inactiveTextColor,
+          color: isAnySubActive ? T.groupActiveLabelColor : T.inactiveTextColor,
           cursor: "pointer",
           fontFamily: "inherit",
         }}
@@ -356,7 +353,7 @@ function NavGroupRow({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "rgba(255,255,255,0.28)",
+            color: isAnySubActive ? "rgba(2,170,235,0.45)" : "rgba(255,255,255,0.22)",
           }}
         >
           <CaretDown size={12} weight="bold" />
@@ -397,6 +394,166 @@ function NavGroupRow({
               }}
             />
             {group.items.map((item) => {
+              if ("kind" in item && item.kind === "subgroup") {
+                return (
+                  <NavSubGroupRow
+                    key={item.label}
+                    entry={item}
+                    pathname={pathname}
+                  />
+                );
+              }
+
+              const subItem = item as NavSubItem;
+              const active = subItem.matchPrefix
+                ? !!pathname?.startsWith(subItem.matchPrefix)
+                : pathname === subItem.href;
+
+              return (
+                <NavItemRow
+                  key={subItem.href}
+                  href={subItem.href}
+                  label={subItem.label}
+                  icon={subItem.icon}
+                  active={active}
+                  sub
+                />
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </li>
+  );
+}
+
+/* ─── NavSubGroupRow ─── */
+
+function NavSubGroupRow({
+  entry,
+  pathname,
+}: {
+  entry: NavSubGroup;
+  pathname: string | null;
+}) {
+  const [expanded, setExpanded] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = localStorage.getItem(entry.storageKey);
+    return stored === null ? true : stored === "true";
+  });
+
+  const toggle = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      localStorage.setItem(entry.storageKey, String(next));
+      return next;
+    });
+  };
+
+  const isAnySubActive = entry.items.some((item) =>
+    item.matchPrefix
+      ? pathname?.startsWith(item.matchPrefix)
+      : pathname === item.href
+  );
+
+  return (
+    <li style={{ listStyle: "none" }}>
+      <motion.button
+        type="button"
+        onClick={toggle}
+        initial="idle"
+        whileHover="hovered"
+        animate="idle"
+        className={css.navLink}
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "6px 12px 6px 36px",
+          width: "100%",
+          borderRadius: "9px",
+          background: "transparent",
+          border: "none",
+          fontSize: "13px",
+          fontWeight: 500,
+          letterSpacing: "0.01em",
+          lineHeight: 1.2,
+          color: isAnySubActive ? T.groupActiveLabelColor : T.inactiveTextColor,
+          cursor: "pointer",
+          fontFamily: "inherit",
+        }}
+      >
+        {/* Hover overlay */}
+        <motion.span
+          aria-hidden
+          variants={{ idle: { opacity: 0 }, hovered: { opacity: 1 } }}
+          transition={easeFade}
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "9px",
+            backgroundColor: T.hoverBg,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Icon */}
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            width: "16px",
+            height: "16px",
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            color: isAnySubActive ? T.activeIconColor : T.inactiveIconColor,
+            transition: "color 0.15s ease",
+          }}
+        >
+          {entry.icon}
+        </span>
+
+        {/* Label */}
+        <span style={{ flex: 1, textAlign: "left" }}>{entry.label}</span>
+
+        {/* Chevron */}
+        <motion.span
+          aria-hidden
+          animate={{ rotate: expanded ? 0 : -90 }}
+          transition={springCollapse}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: isAnySubActive ? "rgba(2,170,235,0.45)" : "rgba(255,255,255,0.22)",
+          }}
+        >
+          <CaretDown size={10} weight="bold" />
+        </motion.span>
+      </motion.button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.ul
+            role="list"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={springCollapse}
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              listStyle: "none",
+              margin: "1px 0 0",
+              padding: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: "1px",
+            }}
+          >
+            {entry.items.map((item) => {
               const active = item.matchPrefix
                 ? !!pathname?.startsWith(item.matchPrefix)
                 : pathname === item.href;
@@ -475,8 +632,8 @@ export function AdminSidebar({
           }}
         >
           <Image
-            src="/brand/logo-mark-white.png"
-            alt="Parcel"
+            src="/brand/logo-mark-white-v2.png"
+            alt="Proxy"
             width={48}
             height={48}
             style={{ width: "48px", height: "auto", flexShrink: 0 }}
@@ -540,6 +697,16 @@ export function AdminSidebar({
                 );
               }
 
+              if (entry.kind === "subgroup") {
+                return (
+                  <NavSubGroupRow
+                    key={entry.label}
+                    entry={entry}
+                    pathname={pathname}
+                  />
+                );
+              }
+
               const active = entry.matchPrefix
                 ? !!pathname?.startsWith(entry.matchPrefix)
                 : pathname === entry.href;
@@ -590,13 +757,13 @@ export function AdminTopBar({
     if (pathname.startsWith("/admin/inbox")) return "Inbox";
     if (pathname.startsWith("/admin/tasks")) return "Tasks";
     if (pathname.startsWith("/admin/projects")) return "Projects";
-    if (pathname.startsWith("/admin/documents")) return "Documents";
+    if (pathname.startsWith("/admin/paperwork")) return "Paperwork";
     if (pathname.startsWith("/admin/map")) return "Map";
     if (pathname.startsWith("/admin/help")) return "Help Center";
     if (pathname.startsWith("/admin/treasury")) return "Treasury";
     if (pathname.startsWith("/admin/calendar")) return "Calendar";
     if (pathname.startsWith("/admin/meetings")) return "Meetings";
-    if (pathname.startsWith("/admin/billing")) return "Billing";
+    if (pathname.startsWith("/admin/finances")) return "Finances";
     if (pathname.startsWith("/admin/timeline")) return "Timeline";
     if (pathname.startsWith("/admin/guest-pulse")) return "Guest Pulse";
     return "";
@@ -624,8 +791,8 @@ export function AdminTopBar({
         }}
       >
         <Image
-          src="/brand/logo-mark-white.png"
-          alt="Parcel"
+          src="/brand/logo-mark-white-v2.png"
+          alt="Proxy"
           width={26}
           height={26}
           style={{ width: "26px", height: "auto", flexShrink: 0 }}
@@ -692,22 +859,24 @@ const adminRailItems: Array<{
   matchPrefix?: string;
   matchPrefixes?: string[];
 }> = [
-  { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Dashboard" },
-  { href: "/admin/guest-pulse", icon: <Pulse size={20} weight="duotone" />, label: "Pulse", matchPrefix: "/admin/guest-pulse" },
+  { href: "/admin", icon: <Gauge size={20} weight="duotone" />, label: "Today" },
   { href: "/admin/inbox", icon: <ChatsCircle size={20} weight="duotone" />, label: "Inbox", matchPrefix: "/admin/inbox" },
   { href: "/admin/tasks", icon: <ListChecks size={20} weight="duotone" />, label: "Tasks", matchPrefix: "/admin/tasks" },
   { href: "/admin/meetings", icon: <CalendarDots size={20} weight="duotone" />, label: "Meetings", matchPrefix: "/admin/meetings" },
+  { href: "/admin/workspaces?view=active-owners", icon: <Stack size={20} weight="duotone" />, label: "Workspaces", matchPrefix: "/admin/workspaces" },
   {
-    href: "/admin/workspaces?view=active-owners",
+    href: "/admin/people?mode=compact",
     icon: <ShareNetwork size={20} weight="duotone" />,
     label: "Relationships",
-    matchPrefixes: ["/admin/workspaces", "/admin/prospects", "/admin/people", "/admin/vendors"],
+    matchPrefixes: ["/admin/prospects", "/admin/people", "/admin/vendors"],
   },
-  { href: "/admin/properties", icon: <DoorOpen size={20} weight="duotone" />, label: "Properties", matchPrefix: "/admin/properties" },
-  { href: "/admin/documents", icon: <Files size={20} weight="duotone" />, label: "Documents", matchPrefix: "/admin/documents" },
-  { href: "/admin/projects", icon: <FolderOpen size={20} weight="duotone" />, label: "Projects", matchPrefix: "/admin/projects" },
-  { href: "/admin/billing", icon: <Receipt size={20} weight="duotone" />, label: "Billing", matchPrefix: "/admin/billing" },
-  { href: "/admin/help", icon: <BookOpenText size={20} weight="duotone" />, label: "Help Center", matchPrefix: "/admin/help" },
+  {
+    href: "/admin/properties",
+    icon: <Buildings size={20} weight="duotone" />,
+    label: "Operations",
+    matchPrefixes: ["/admin/properties", "/admin/paperwork", "/admin/projects", "/admin/guest-pulse"],
+  },
+  { href: "/admin/finances", icon: <Receipt size={20} weight="duotone" />, label: "Finances", matchPrefix: "/admin/finances" },
 ];
 
 export function AdminIconRail() {
@@ -731,7 +900,7 @@ export function AdminIconRail() {
       {/* Logo */}
       <Link
         href="/admin"
-        aria-label="Parcel Admin Home"
+        aria-label="Proxy Admin Home"
         className={css.railLink}
         style={{
           display: "flex",
@@ -744,8 +913,8 @@ export function AdminIconRail() {
         }}
       >
         <Image
-          src="/brand/logo-mark-white.png"
-          alt="Parcel"
+          src="/brand/logo-mark-white-v2.png"
+          alt="Proxy"
           width={24}
           height={24}
           style={{ width: "24px", height: "auto" }}
@@ -811,7 +980,7 @@ export function AdminIconRail() {
                   borderRadius: "8px",
                   textDecoration: "none",
                   color: active ? T.activeIconColor : T.inactiveIconColor,
-                  backgroundColor: active ? "rgba(255,255,255,0.08)" : "transparent",
+                  backgroundColor: active ? T.activeBg : "transparent",
                 }}
               >
                 {/* Hover overlay */}
@@ -826,23 +995,6 @@ export function AdminIconRail() {
                       borderRadius: "8px",
                       backgroundColor: T.hoverBg,
                       pointerEvents: "none",
-                    }}
-                  />
-                )}
-                {/* Active left indicator */}
-                {active && (
-                  <span
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      top: "50%",
-                      width: "3px",
-                      height: "14px",
-                      borderRadius: "999px",
-                      backgroundColor: T.brandLight,
-                      boxShadow: T.indicatorGlow,
-                      transform: "translateY(-50%)",
                     }}
                   />
                 )}

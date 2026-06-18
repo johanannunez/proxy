@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
-const SYSTEM_PROMPT = `You are a helpful assistant for The Parcel Company, a property management platform for rental property owners. Answer questions using ONLY the provided help articles. Be concise and helpful. If the articles do not cover the question, say so and suggest contacting hello@theparcelco.com. Never make up information.`;
+const SYSTEM_PROMPT = `You are a helpful assistant for Proxy, a property management platform for rental property owners. Answer questions using ONLY the provided help articles. Be concise and helpful. If the articles do not cover the question, say so and suggest contacting hello@myproxyhost.com. Never make up information.`;
 
 export async function POST(request: NextRequest) {
   let body: { message?: string };
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (relevantArticles.length === 0) {
       return NextResponse.json({
         response:
-          "I could not find any articles matching your question. Please contact us at hello@theparcelco.com for further assistance.",
+          "I could not find any articles matching your question. Please contact us at hello@myproxyhost.com for further assistance.",
         articles: [],
       });
     }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       .join("\n");
 
     return NextResponse.json({
-      response: `Here are some articles that may help:\n\n${articleList}\n\nIf none of these answer your question, reach out to hello@theparcelco.com.`,
+      response: `Here are some articles that may help:\n\n${articleList}\n\nIf none of these answer your question, reach out to hello@myproxyhost.com.`,
       articles: relevantArticles.map((a) => ({
         id: a.id,
         title: a.title,

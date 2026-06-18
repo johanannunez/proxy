@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
+import { fetchCommunicationsDashboard } from "@/lib/admin/fetch-communications";
 import { AdminMessagesShell } from "./AdminMessagesShell";
 
 export const metadata: Metadata = {
@@ -10,10 +11,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminMessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ owner?: string; filter?: string }>;
+  searchParams: Promise<{ owner?: string; filter?: string; conversation?: string }>;
 }) {
   const params = await searchParams;
   const svc = createServiceClient();
+  const communicationsDashboardPromise = fetchCommunicationsDashboard().catch(() => ({
+    recentActionItems: [],
+    unresolvedCallers: [],
+  }));
 
   // Fetch all conversations
   const { data: conversations } = await svc
@@ -28,13 +33,13 @@ export default async function AdminMessagesPage({
   ] as string[];
 
   const { data: owners } = ownerIds.length
-    ? await svc.from("profiles").select("id, full_name, email").in("id", ownerIds)
+    ? await svc.from("profiles").select("id, full_name, email, phone").in("id", ownerIds)
     : { data: [] };
 
   const ownerMap = new Map(
     (owners ?? []).map((o) => [
       o.id,
-      { name: o.full_name?.trim() || o.email, email: o.email },
+      { name: o.full_name?.trim() || o.email, email: o.email, phone: o.phone },
     ]),
   );
 
@@ -44,7 +49,7 @@ export default async function AdminMessagesPage({
     ? await svc
         .from("messages")
         .select(
-          "id, conversation_id, sender_id, body, delivery_method, created_at",
+          "id, conversation_id, sender_id, body, delivery_method, metadata, created_at",
         )
         .in("conversation_id", convIds)
         .order("created_at", { ascending: false })
@@ -55,17 +60,29 @@ export default async function AdminMessagesPage({
     {
       body: string;
       senderId: string;
+      senderRole: string | null;
       createdAt: string;
       deliveryMethod: string;
+      metadata: Record<string, unknown>;
     }
   >();
+  const lastSenderIds = [
+    ...new Set((allMessages ?? []).map((m) => m.sender_id).filter(Boolean)),
+  ] as string[];
+  const { data: lastSenders } = lastSenderIds.length
+    ? await svc.from("profiles").select("id, role").in("id", lastSenderIds)
+    : { data: [] };
+  const lastSenderRoleMap = new Map((lastSenders ?? []).map((sender) => [sender.id, sender.role]));
+
   for (const m of allMessages ?? []) {
     if (!lastMessageMap.has(m.conversation_id)) {
       lastMessageMap.set(m.conversation_id, {
         body: m.body,
         senderId: m.sender_id,
+        senderRole: lastSenderRoleMap.get(m.sender_id) ?? null,
         createdAt: m.created_at,
         deliveryMethod: m.delivery_method,
+        metadata: isRecord(m.metadata) ? m.metadata : {},
       });
     }
   }
@@ -73,9 +90,11 @@ export default async function AdminMessagesPage({
   // Fetch all owners for the compose owner picker
   const { data: allOwners } = await svc
     .from("profiles")
-    .select("id, full_name, email")
+    .select("id, full_name, email, phone")
     .eq("role", "owner")
     .order("full_name");
+
+  const communicationsDashboard = await communicationsDashboardPromise;
 
   const enriched = (conversations ?? []).map((c) => ({
     id: c.id,
@@ -89,6 +108,9 @@ export default async function AdminMessagesPage({
     ownerEmail: c.owner_id
       ? (ownerMap.get(c.owner_id)?.email ?? "")
       : null,
+    ownerPhone: c.owner_id
+      ? (ownerMap.get(c.owner_id)?.phone ?? null)
+      : null,
     lastMessage: lastMessageMap.get(c.id) ?? null,
   }));
 
@@ -100,10 +122,17 @@ export default async function AdminMessagesPage({
           id: o.id,
           name: o.full_name?.trim() || o.email,
           email: o.email,
+          phone: o.phone,
         }))}
         selectedOwnerId={params.owner ?? null}
+        selectedConversationId={params.conversation ?? null}
         initialFilter={params.filter ?? "all"}
+        communicationsDashboard={communicationsDashboard}
       />
     </div>
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

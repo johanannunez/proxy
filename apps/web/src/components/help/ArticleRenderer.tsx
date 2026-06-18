@@ -36,7 +36,7 @@ export function ArticleRenderer({ content }: { content: string }) {
           [&_table]:w-full [&_table]:text-sm [&_table]:border-collapse
           [&_th]:border [&_th]:border-[var(--color-warm-gray-200)] [&_th]:bg-[var(--color-warm-gray-50)] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-[var(--color-text-tertiary)]
           [&_td]:border [&_td]:border-[var(--color-warm-gray-200)] [&_td]:px-4 [&_td]:py-2 [&_td]:text-[13px] [&_td]:text-[var(--color-text-secondary)]"
-        dangerouslySetInnerHTML={{ __html: trimmed }}
+        dangerouslySetInnerHTML={{ __html: clean }}
       />
     );
   }

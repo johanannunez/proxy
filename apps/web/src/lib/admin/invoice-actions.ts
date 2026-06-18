@@ -61,7 +61,7 @@ export async function createInvoiceForOwnerAction(
       ...parsed.data,
       createdBy: user.id,
     });
-    revalidatePath("/admin/billing");
+    revalidatePath("/admin/finances");
     revalidatePath("/admin/workspaces");
     return {
       ok: true,

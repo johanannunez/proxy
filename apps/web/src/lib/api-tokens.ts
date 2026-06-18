@@ -1,5 +1,7 @@
 // Edge-compatible. Uses Web Crypto API only -- no Node.js deps.
 
+import { untypedDatabase } from '@/lib/supabase/untyped';
+
 export async function hashToken(token: string): Promise<string> {
   const data = new TextEncoder().encode(token);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -27,15 +29,16 @@ export async function verifyApiToken(
   supabaseClient: MinimalSupabaseClient,
 ): Promise<{ profileId: string; tokenId: string } | null> {
   const hash = await hashToken(providedToken);
-  const { data } = await (supabaseClient as any)
-    .from('api_tokens')
+  const db = untypedDatabase(supabaseClient);
+  const { data } = await db
+    .from<{ id: string; profile_id: string }>('api_tokens')
     .select('id, profile_id')
     .eq('token_hash', hash)
     .single();
   if (!data) return null;
 
   // Fire-and-forget last_used_at update -- non-critical, background
-  void (supabaseClient as any)
+  void db
     .from('api_tokens')
     .update({ last_used_at: new Date().toISOString() })
     .eq('id', data.id);

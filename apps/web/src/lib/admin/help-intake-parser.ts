@@ -9,7 +9,7 @@ export type ParsedDraft = {
   readTimeMinutes: number;
   contentType: ContentType;
   suggestedSlug: string;
-  suggestedPortalPath: string | null;
+  suggestedWorkspacePath: string | null;
   needsVisual: boolean;
 };
 
@@ -74,7 +74,7 @@ export function parseAlcoveDraft(raw: string): ParsedDraft | null {
   const readTimeMatch = text.match(/^READ\s*TIME:\s*(\d+)/im);
   const contentTypeMatch = text.match(/^CONTENT_TYPE:\s*(.+)$/m);
   const slugMatch = text.match(/^SLUG:\s*(.+)$/m);
-  const portalPathMatch = text.match(/^PORTAL_PATH:\s*(.+)$/m);
+  const workspacePathMatch = text.match(/^PORTAL_PATH:\s*(.+)$/m);
   const needsVisualMatch = text.match(/^NEEDS_VISUAL:\s*(true|false)/im);
 
   if (!titleMatch || !summaryMatch) return null;
@@ -98,9 +98,9 @@ export function parseAlcoveDraft(raw: string): ParsedDraft | null {
 
   const suggestedSlug = slugMatch ? slugMatch[1].trim() : "";
 
-  const rawPortalPath = portalPathMatch ? portalPathMatch[1].trim() : "";
-  const suggestedPortalPath =
-    rawPortalPath && rawPortalPath.toLowerCase() !== "none" ? rawPortalPath : null;
+  const rawWorkspacePath = workspacePathMatch ? workspacePathMatch[1].trim() : "";
+  const suggestedWorkspacePath =
+    rawWorkspacePath && rawWorkspacePath.toLowerCase() !== "none" ? rawWorkspacePath : null;
 
   const needsVisual = needsVisualMatch
     ? needsVisualMatch[1].toLowerCase() === "true"
@@ -117,7 +117,7 @@ export function parseAlcoveDraft(raw: string): ParsedDraft | null {
     readTimeMinutes: readTimeMatch ? parseInt(readTimeMatch[1], 10) : 5,
     contentType,
     suggestedSlug,
-    suggestedPortalPath,
+    suggestedWorkspacePath,
     needsVisual,
   };
 }

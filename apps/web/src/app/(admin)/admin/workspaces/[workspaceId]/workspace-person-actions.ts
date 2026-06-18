@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/supabase";
+import type {
+  WorkspacePersonRelationshipRole,
+  WorkspacePersonResponsibilityRole,
+} from "@/lib/admin/workspace-gallery";
 import type { AddressComponents, SocialLinks } from "@/lib/admin/workspace-contact-detail";
 
 type ContactUpdate = Database["public"]["Tables"]["contacts"]["Update"];
@@ -25,6 +29,75 @@ type UntypedDatabaseClient = {
 
 function untypedDatabase(client: unknown): UntypedDatabaseClient {
   return client as UntypedDatabaseClient;
+}
+
+type ContactMetadataRow = {
+  id: string;
+  profile_id: string | null;
+  metadata: unknown;
+};
+
+type WorkspaceRelationshipMetadata = "primary_owner" | "co_owner" | "spouse" | "accountant" | "manager" | "other";
+type WorkspaceResponsibilityMetadata = "day_to_day" | "finance" | "decision_maker" | "property_setup";
+
+type RelationshipUpdate = {
+  workspaceRole: WorkspaceRelationshipMetadata;
+};
+
+type ResponsibilityUpdate = {
+  responsibilities: WorkspaceResponsibilityMetadata[];
+  profileResponsibility: string;
+};
+
+type ContactOwnershipUpdate = number | null;
+
+const RELATIONSHIP_UPDATES: Record<WorkspacePersonRelationshipRole, RelationshipUpdate> = {
+  owner: { workspaceRole: "primary_owner" },
+  husband: { workspaceRole: "spouse" },
+  wife: { workspaceRole: "spouse" },
+  family: { workspaceRole: "other" },
+  partner: { workspaceRole: "co_owner" },
+  advisor: { workspaceRole: "other" },
+  collaborator: { workspaceRole: "co_owner" },
+};
+
+const RESPONSIBILITY_UPDATES: Record<WorkspacePersonResponsibilityRole, ResponsibilityUpdate> = {
+  primary: {
+    responsibilities: ["decision_maker"],
+    profileResponsibility: "primary",
+  },
+  day_to_day: {
+    responsibilities: ["day_to_day"],
+    profileResponsibility: "day_to_day",
+  },
+  finance: {
+    responsibilities: ["finance"],
+    profileResponsibility: "finance",
+  },
+  accounting: {
+    responsibilities: ["finance"],
+    profileResponsibility: "accounting",
+  },
+  operations: {
+    responsibilities: ["property_setup"],
+    profileResponsibility: "operations",
+  },
+  legal: {
+    responsibilities: [],
+    profileResponsibility: "legal",
+  },
+  notices: {
+    responsibilities: [],
+    profileResponsibility: "notices",
+  },
+  none: {
+    responsibilities: [],
+    profileResponsibility: "none",
+  },
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -151,6 +224,123 @@ export async function updateWorkspaceContactFields(
   return { ok: true, message: "Saved" };
 }
 
+export async function updateWorkspacePersonQuickLabels(args: {
+  workspaceId: string;
+  profileId?: string | null;
+  contactId?: string | null;
+  relationshipRole?: WorkspacePersonRelationshipRole;
+  responsibilityRole?: WorkspacePersonResponsibilityRole;
+  ownershipPercentage?: ContactOwnershipUpdate;
+}): Promise<{ ok: boolean; message: string }> {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { ok: false, message: authError };
+
+  const relationshipUpdate = args.relationshipRole ? RELATIONSHIP_UPDATES[args.relationshipRole] : null;
+  const responsibilityUpdate = args.responsibilityRole ? RESPONSIBILITY_UPDATES[args.responsibilityRole] : null;
+  if (
+    args.ownershipPercentage === undefined &&
+    !relationshipUpdate &&
+    !responsibilityUpdate
+  ) {
+    return { ok: false, message: "Choose a valid people context." };
+  }
+
+  if (args.ownershipPercentage !== undefined) {
+    if (args.ownershipPercentage !== null && !Number.isFinite(args.ownershipPercentage)) {
+      return { ok: false, message: "Ownership share must be a number." };
+    }
+
+    if (args.ownershipPercentage !== null && (args.ownershipPercentage < 0 || args.ownershipPercentage > 100)) {
+      return { ok: false, message: "Ownership share must be between 0 and 100." };
+    }
+  }
+
+  const serviceClient = createServiceClient();
+  const db = untypedDatabase(serviceClient);
+  let contact: ContactMetadataRow | null = null;
+
+  if (args.contactId) {
+    const { data, error } = await db
+      .from<ContactMetadataRow>("contacts")
+      .select("id, profile_id, metadata")
+      .eq("id", args.contactId)
+      .eq("workspace_id", args.workspaceId)
+      .maybeSingle();
+
+    if (error) return { ok: false, message: error.message };
+    contact = data;
+  }
+
+  if (!contact && args.profileId) {
+    const { data, error } = await db
+      .from<ContactMetadataRow>("contacts")
+      .select("id, profile_id, metadata")
+      .eq("profile_id", args.profileId)
+      .eq("workspace_id", args.workspaceId)
+      .maybeSingle();
+
+    if (error) return { ok: false, message: error.message };
+    contact = data;
+  }
+
+  const profileId = args.profileId ?? contact?.profile_id ?? null;
+  if (!profileId && !contact) return { ok: false, message: "This person is not connected to the Workspace." };
+
+    if (contact) {
+    const currentMetadata = isRecord(contact.metadata) ? contact.metadata : {};
+    const nextMetadata = {
+      ...currentMetadata,
+      ...(args.relationshipRole && relationshipUpdate
+        ? {
+            workspace_relationship: args.relationshipRole,
+            workspace_relationship_source: "quick_settings",
+            workspace_role: relationshipUpdate.workspaceRole,
+          }
+          : {}),
+        ...(args.ownershipPercentage !== undefined
+          ? {
+              workspace_ownership_percentage: args.ownershipPercentage,
+              workspace_ownership_percentage_source: "quick_settings",
+            }
+          : {}),
+        ...(args.responsibilityRole && responsibilityUpdate
+        ? {
+            workspace_responsibility: args.responsibilityRole,
+            workspace_responsibility_source: "quick_settings",
+            responsibilities: responsibilityUpdate.responsibilities,
+          }
+        : {}),
+    };
+
+      const { error } = await db
+      .from("contacts")
+      .update({
+        metadata: nextMetadata,
+        ...(args.ownershipPercentage !== undefined
+          ? { ownership_percentage: args.ownershipPercentage }
+          : {}),
+      })
+      .eq("id", contact.id)
+      .eq("workspace_id", args.workspaceId);
+
+    if (error) return { ok: false, message: error.message };
+  }
+
+  if (profileId && responsibilityUpdate) {
+    const { error } = await db
+      .from("profiles")
+      .update({ responsibility: responsibilityUpdate.profileResponsibility })
+      .eq("id", profileId)
+      .eq("workspace_id", args.workspaceId);
+
+    if (error) return { ok: false, message: error.message };
+  }
+
+  revalidatePath("/admin/workspaces");
+  revalidatePath(`/admin/workspaces/${args.workspaceId}`);
+  return { ok: true, message: "Saved" };
+}
+
 // ---------------------------------------------------------------------------
 // Admin profiles (for assignee picker)
 // ---------------------------------------------------------------------------
@@ -179,9 +369,9 @@ export async function fetchAdminProfiles(): Promise<AdminProfile[]> {
 // Email change with portal verification
 // ---------------------------------------------------------------------------
 
-const BRAND_FROM = '"The Parcel Company" <hello@theparcelco.com>';
+const BRAND_FROM = '"Proxy" <hello@myproxyhost.com>';
 
-const LOGO_URL = "https://www.theparcelco.com/brand/logo-full-color.png";
+const LOGO_URL = "https://www.myproxyhost.com/brand/logo-full-color.png";
 
 function buildEmailChangeHtml(magicLink: string, newEmail: string): string {
   return `<!DOCTYPE html>
@@ -189,27 +379,27 @@ function buildEmailChangeHtml(magicLink: string, newEmail: string): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9F7F4;padding:40px 16px;"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(28,26,23,0.06);">
 <tr><td align="center" style="padding:32px 32px 8px 32px;background:#F9F7F4;">
-<img src="${LOGO_URL}" alt="The Parcel Company" width="180" style="display:block;border:0;outline:none;max-width:180px;height:auto;">
+<img src="${LOGO_URL}" alt="Proxy" width="180" style="display:block;border:0;outline:none;max-width:180px;height:auto;">
 </td></tr>
 <tr><td style="padding:32px 40px 8px 40px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;color:#1C1A17;font-weight:500;">Your account email has been updated</h1>
-<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#4a4641;">Your Parcel owner portal account email has been changed to:</p>
+<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#4a4641;">Your Proxy owner workspace account email has been changed to:</p>
 <div style="background:#F9F7F4;border-radius:8px;padding:12px 16px;margin:0 0 20px 0;font-size:15px;font-weight:600;color:#1C1A17;">${newEmail}</div>
-<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#4a4641;">Click the button below to verify this address and sign in to your owner portal.</p>
+<p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#4a4641;">Click the button below to verify this address and sign in to your owner workspace.</p>
 <a href="${magicLink}" style="display:inline-block;background:#1b77be;color:#FFFFFF;font-size:14px;font-weight:600;padding:13px 28px;border-radius:8px;text-decoration:none;letter-spacing:0.01em;">
   Verify email
 </a>
 </td></tr>
 <tr><td style="padding:24px 40px 32px 40px;border-top:1px solid #eee8df;">
-<p style="margin:0 0 6px 0;font-size:13px;line-height:1.6;color:#8a8680;">The Parcel Company &middot; Rentals Made Easy</p>
-<p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;color:#8a8680;">Questions? Just reply to this email or write us at <a href="mailto:hello@theparcelco.com" style="color:#3D6B61;text-decoration:none;">hello@theparcelco.com</a>.</p>
+<p style="margin:0 0 6px 0;font-size:13px;line-height:1.6;color:#8a8680;">Proxy &middot; Rentals Made Easy</p>
+<p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;color:#8a8680;">Questions? Just reply to this email or write us at <a href="mailto:hello@myproxyhost.com" style="color:#3D6B61;text-decoration:none;">hello@myproxyhost.com</a>.</p>
 <p style="margin:0;font-size:12px;line-height:1.5;color:#b3ada4;">If you did not expect this change, contact your property manager immediately.</p>
 </td></tr>
 </table></td></tr></table>
 </body></html>`;
 }
 
-export async function updateEmailWithPortalSync(
+export async function updateEmailWithWorkspaceSync(
   contactId: string,
   newEmail: string,
 ): Promise<{ ok: boolean; message: string }> {
@@ -268,14 +458,14 @@ export async function updateEmailWithPortalSync(
             body: JSON.stringify({
               from: BRAND_FROM,
               to: newEmail,
-              subject: "Your Parcel account email has been updated",
+              subject: "Your Proxy account email has been updated",
               html: buildEmailChangeHtml(magicLink, newEmail),
             }),
           });
         }
       }
     } catch (err) {
-      console.error("[updateEmailWithPortalSync] auth/email step failed:", err);
+      console.error("[updateEmailWithWorkspaceSync] auth/email step failed:", err);
       // contacts.email was already updated; auth failure is non-fatal
     }
   }

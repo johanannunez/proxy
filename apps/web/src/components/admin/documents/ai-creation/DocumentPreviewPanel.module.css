@@ -1,0 +1,107 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.refinementWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.refinementWrap:focus-within {
+  border-color: rgba(2, 170, 235, 0.38);
+  box-shadow: 0 0 0 3px rgba(2, 170, 235, 0.08);
+}
+
+.refinementInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.82);
+  font-family: var(--font-sans);
+  min-height: 28px;
+}
+
+.refinementInput::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.refinementBtn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 7px;
+  background: rgba(2, 170, 235, 0.18);
+  border: 1px solid rgba(2, 170, 235, 0.3);
+  color: var(--color-brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.refinementBtn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.refinementBtn:not(:disabled):hover {
+  background: rgba(2, 170, 235, 0.28);
+}
+
+.documentWrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.secondaryActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.secondaryBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12.5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  min-height: 32px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.secondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: var(--font-sans);
+}

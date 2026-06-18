@@ -40,7 +40,7 @@ export default async function PeopleLayout({ children }: { children: ReactNode }
         <div className={styles.shell}>
           <PageTitle
             title="People"
-            subtitle="Global directory for owners, vendors, and Parcel team members"
+            subtitle="Global directory for owners, vendors, and Proxy team members"
           />
           <ContactsViewSwitcher />
           <div className={styles.boardNav}>

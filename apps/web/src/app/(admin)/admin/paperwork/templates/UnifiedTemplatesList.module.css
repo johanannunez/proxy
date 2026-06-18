@@ -1,0 +1,328 @@
+/* ─── Templates tab — visual library of master cards ─── */
+
+.root {
+  padding: 18px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.countLabel {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary, var(--color-text-secondary));
+}
+
+/* ─── Grid ─── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+/* ─── Card ─── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated, #fff);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.04));
+  transition: transform 0.16s var(--ease-spring, ease), box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(27, 119, 190, 0.4);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1), 0 2px 6px rgba(2, 170, 235, 0.08);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* ─── Preview hero ─── */
+
+.preview {
+  position: relative;
+  aspect-ratio: 5 / 4;
+  background: var(--color-warm-gray-50, #f8f7f6);
+  border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.06));
+  overflow: hidden;
+}
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.previewPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(2, 170, 235, 0.08), transparent 60%),
+    var(--color-warm-gray-50, #f8f7f6);
+}
+
+/* A faux document so empty previews still read as "a template": a paper sheet
+   with a brand header, a few text lines, and a signature mark. */
+.placeholderSheet {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 92px;
+  height: 116px;
+  padding: 12px 11px;
+  border-radius: 7px;
+  background: #fff;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-brand, #1b77be);
+  margin-bottom: 1px;
+}
+
+.sheetHeaderLine {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(27, 119, 190, 0.35);
+}
+
+.sheetLine {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.sheetLineShort {
+  width: 60%;
+}
+
+.sheetSign {
+  margin-top: auto;
+  width: 44px;
+  height: 12px;
+  border-radius: 3px;
+  background: rgba(27, 119, 190, 0.16);
+}
+
+.badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.libraryBadge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-brand, #1b77be);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 3px 8px 3px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.statusReady {
+  color: #15803d;
+}
+
+.statusDraft {
+  color: var(--text-secondary, #6b7280);
+}
+
+/* ─── Hover actions over the preview ─── */
+
+.hoverActions {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.16s ease, transform 0.16s var(--ease-spring, ease);
+}
+
+.card:hover .hoverActions,
+.card:focus-within .hoverActions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .hoverActions {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sendBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #fff;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 170, 235, 0.3);
+  transition: opacity 0.12s ease;
+}
+
+.sendBtn:hover {
+  opacity: 0.94;
+}
+
+.sendBtn:focus-visible,
+.editBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.editBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-primary, var(--color-text-primary));
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.editBtn:hover {
+  color: var(--color-brand, #1b77be);
+  border-color: var(--color-brand, #1b77be);
+}
+
+/* ─── Card body ─── */
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 15px 15px;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text-primary, var(--color-text-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--text-secondary, var(--color-text-secondary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Empty state ─── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-secondary, var(--color-text-secondary));
+  background: var(--surface-elevated, #fff);
+  border: 1px dashed var(--border-default, rgba(0, 0, 0, 0.1));
+  border-radius: var(--radius-md, 12px);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+.emptyBody {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  max-width: 420px;
+}
+
+@media (max-width: 600px) {
+  .root {
+    padding: 14px 16px 28px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+}

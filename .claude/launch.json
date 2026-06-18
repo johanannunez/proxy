@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web (Next.js dev)",
+      "runtimeExecutable": "doppler",
+      "runtimeArgs": ["run", "--", "pnpm", "exec", "next", "dev", "-p", "4000"],
+      "port": 4000,
+      "autoPort": false,
+      "cwd": "apps/web"
+    }
+  ]
+}

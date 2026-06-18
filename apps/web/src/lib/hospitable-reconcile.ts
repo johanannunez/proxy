@@ -8,18 +8,18 @@ import {
 } from "@/lib/labels";
 
 /**
- * One mismatched field between the Parcel row (source of truth) and the
+ * One mismatched field between the Proxy row (source of truth) and the
  * Hospitable listing. The UI renders a row per mismatch in the drift
  * panel on the property detail page.
  */
 export type PropertyFieldDiff = {
   field: "home_type" | "bedrooms" | "bathrooms" | "guest_capacity";
   label: string;
-  parcelValue: string;
+  proxyValue: string;
   hospitableValue: string;
   /**
    * "unmappable" means Hospitable's taxonomy has no direct equivalent for
-   * Parcel's value (e.g. Parcel "duplex" -> Hospitable has no duplex).
+   * Proxy's value (e.g. Proxy "duplex" -> Hospitable has no duplex).
    * "mismatch" means both sides have defined values that disagree.
    */
   kind: "mismatch" | "unmappable";
@@ -39,7 +39,7 @@ export type HospitableReconcileResult = {
   error: string | null;
 };
 
-type ParcelPropertyLike = {
+type ProxyPropertyLike = {
   hospitable_property_id: string | null;
   home_type: string | null;
   bedrooms: number | null;
@@ -48,20 +48,20 @@ type ParcelPropertyLike = {
 };
 
 /**
- * Compare a Parcel property row against its linked Hospitable listing and
- * return a list of fields that drift. Parcel is the source of truth; the
- * caller surfaces the drift so the user can fix either Parcel's record or
+ * Compare a Proxy property row against its linked Hospitable listing and
+ * return a list of fields that drift. Proxy is the source of truth; the
+ * caller surfaces the drift so the user can fix either Proxy's record or
  * the OTA listing itself.
  *
  * Square footage is intentionally NOT compared because Hospitable doesn't
  * track it (their API returns no area / sqft / size field anywhere on the
- * property object). That stays a Parcel-owned field forever.
+ * property object). That stays a Proxy-owned field forever.
  *
  * Bathrooms come out of Postgres as a numeric string like "2.0" so we
  * coerce both sides to numbers before comparing.
  */
 export async function reconcilePropertyWithHospitable(
-  property: ParcelPropertyLike,
+  property: ProxyPropertyLike,
 ): Promise<HospitableReconcileResult> {
   if (!property.hospitable_property_id) {
     return {
@@ -95,14 +95,14 @@ export async function reconcilePropertyWithHospitable(
 
   const diffs: PropertyFieldDiff[] = [];
 
-  // home_type: map Hospitable's raw property_type onto Parcel's enum.
+  // home_type: map Hospitable's raw property_type onto Proxy's enum.
   if (property.home_type && hospitable.property_type) {
     const mapped = HOSPITABLE_TYPE_TO_HOME_TYPE[hospitable.property_type];
     if (!mapped) {
       diffs.push({
         field: "home_type",
         label: "Home type",
-        parcelValue:
+        proxyValue:
           homeTypeLabels[property.home_type] ?? property.home_type,
         hospitableValue: prettifyHospitableType(hospitable.property_type),
         kind: "unmappable",
@@ -111,7 +111,7 @@ export async function reconcilePropertyWithHospitable(
       diffs.push({
         field: "home_type",
         label: "Home type",
-        parcelValue:
+        proxyValue:
           homeTypeLabels[property.home_type] ?? property.home_type,
         hospitableValue:
           homeTypeLabels[mapped] ?? prettifyHospitableType(hospitable.property_type),
@@ -130,7 +130,7 @@ export async function reconcilePropertyWithHospitable(
     diffs.push({
       field: "bedrooms",
       label: "Bedrooms",
-      parcelValue: String(property.bedrooms),
+      proxyValue: String(property.bedrooms),
       hospitableValue: String(hospBedrooms),
       kind: "mismatch",
     });
@@ -138,18 +138,18 @@ export async function reconcilePropertyWithHospitable(
 
   // bathrooms: coerce both sides to Number since Postgres numeric comes
   // back as a string.
-  const parcelBathrooms =
+  const proxyBathrooms =
     property.bathrooms != null ? Number(property.bathrooms) : null;
   const hospBathrooms = hospitable.capacity?.bathrooms ?? null;
   if (
-    parcelBathrooms != null &&
+    proxyBathrooms != null &&
     hospBathrooms != null &&
-    parcelBathrooms !== hospBathrooms
+    proxyBathrooms !== hospBathrooms
   ) {
     diffs.push({
       field: "bathrooms",
       label: "Bathrooms",
-      parcelValue: String(parcelBathrooms),
+      proxyValue: String(proxyBathrooms),
       hospitableValue: String(hospBathrooms),
       kind: "mismatch",
     });
@@ -165,7 +165,7 @@ export async function reconcilePropertyWithHospitable(
     diffs.push({
       field: "guest_capacity",
       label: "Sleeps",
-      parcelValue: String(property.guest_capacity),
+      proxyValue: String(property.guest_capacity),
       hospitableValue: String(hospMaxGuests),
       kind: "mismatch",
     });

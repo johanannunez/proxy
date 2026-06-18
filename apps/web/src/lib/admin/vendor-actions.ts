@@ -2,6 +2,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { untypedDatabase } from '@/lib/supabase/untyped';
 
 export type CreateVendorInput = {
   fullName: string;
@@ -21,8 +22,9 @@ export async function createVendor(input: CreateVendorInput): Promise<{ id: stri
     .maybeSingle();
   if (!profile) throw new Error('No admin profile');
 
-  const { data, error } = await (supabase as any)
-    .from('vendors')
+  // vendors not yet in generated types; use the untyped helper.
+  const { data, error } = await untypedDatabase(supabase)
+    .from<{ id: string }>('vendors')
     .insert({
       profile_id: profile.id,
       full_name: input.fullName,
@@ -35,6 +37,7 @@ export async function createVendor(input: CreateVendorInput): Promise<{ id: stri
     .select('id')
     .single();
   if (error) throw new Error(error.message);
+  if (!data) throw new Error('Vendor insert returned no row');
   revalidatePath('/admin/vendors');
   return { id: data.id };
 }

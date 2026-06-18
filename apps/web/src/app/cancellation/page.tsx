@@ -2,8 +2,8 @@ import StaticPage from "@/components/StaticPage";
 
 export const metadata = {
   title: "Cancellation Policy",
-  description: "Flexible cancellation options for vacation rental and corporate housing bookings at The Parcel Company.",
-  alternates: { canonical: "https://theparcelco.com/cancellation" },
+  description: "Flexible cancellation options for vacation rental and corporate housing bookings at Proxy.",
+  alternates: { canonical: "https://www.myproxyhost.com/cancellation" },
 };
 
 export default function CancellationPage() {
@@ -14,7 +14,7 @@ export default function CancellationPage() {
       </p>
       <p>
         We understand plans change. Here is how cancellations work at The
-        Parcel Company.
+        Proxy Company.
       </p>
       <h2 className="mt-6 text-xl font-bold text-text-primary">
         Standard Policy
@@ -38,10 +38,10 @@ export default function CancellationPage() {
       <p>
         Contact us at{" "}
         <a
-          href="mailto:hello@theparcelco.com"
+          href="mailto:hello@myproxyhost.com"
           className="text-brand hover:underline"
         >
-          hello@theparcelco.com
+          hello@myproxyhost.com
         </a>{" "}
         for help with a specific booking.
       </p>

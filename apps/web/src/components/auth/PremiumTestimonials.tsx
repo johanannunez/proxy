@@ -1,77 +1,94 @@
-const review = {
-  quote:
-    "Three units on Airbnb and VRBO, and I used to constantly feel behind. Parcel changed that. Every reservation, guest review, and revenue number in one place. My ratings have never been higher because I finally have time to focus on what actually matters.",
-  name: "James R.",
-  meta: "Tri-Cities, WA · 3 units",
-};
+import type { CSSProperties, ReactNode } from "react";
+
+const documents = ["Agreement", "W-9", "House guide"];
+
+function PreviewIcon({ children, color }: { children: ReactNode; color: string }) {
+  return (
+    <span className="auth-preview-icon" style={{ "--preview-icon-color": color } as CSSProperties}>
+      <svg
+        viewBox="0 0 24 24"
+        width="15"
+        height="15"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {children}
+      </svg>
+    </span>
+  );
+}
 
 export function PremiumTestimonials() {
   return (
-    <div style={{ position: "relative" }}>
-      {/* Accent blob — bottom right, behind card */}
-      <div
-        style={{
-          position: "absolute",
-          width: "190px",
-          height: "110px",
-          background:
-            "linear-gradient(135deg, rgba(2,170,235,0.28) 0%, rgba(27,119,190,0.4) 100%)",
-          borderRadius: "62% 38% 55% 45% / 48% 28% 72% 52%",
-          bottom: "0px",
-          right: "-4px",
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
+    <div className="auth-workspace-preview">
+      <div className="auth-workspace-preview-accent" aria-hidden="true" />
+      <div className="auth-workspace-preview-glow" aria-hidden="true" />
 
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          background: "rgba(255,255,255,0.62)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          border: "1px solid rgba(255,255,255,0.88)",
-          borderRadius: "16px",
-          padding: "18px 22px 16px",
-          boxShadow: "0 2px 14px rgba(27,119,190,0.08)",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-lora), Georgia, serif",
-            fontSize: "44px",
-            lineHeight: "0.52",
-            color: "var(--color-brand)",
-            display: "block",
-            marginBottom: "10px",
-            opacity: 0.8,
-          }}
-        >
-          &ldquo;
-        </span>
+      <div className="auth-workspace-preview-card">
+        <p className="auth-workspace-preview-kicker">Preview your workspace</p>
 
-        <p
-          style={{
-            fontSize: "13px",
-            color: "#374151",
-            lineHeight: "1.65",
-            marginBottom: "13px",
-            fontWeight: 400,
-          }}
-        >
-          {review.quote}
-        </p>
+        <div className="auth-workspace-portal">
+          <div className="auth-workspace-portal-header">
+            <div className="auth-workspace-portal-title">
+              <PreviewIcon color="#0f9f8f">
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V21h14V9.5" />
+                <path d="M9 21v-6h6v6" />
+              </PreviewIcon>
+              <div className="auth-workspace-copy">
+                <span className="auth-workspace-name">The Whitmore Family</span>
+                <span className="auth-workspace-meta">Workspace</span>
+              </div>
+            </div>
+            <span className="auth-workspace-status">In good hands</span>
+          </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-          <span style={{ color: "#f59e0b", fontSize: "11px", letterSpacing: "1px" }}>
-            ★★★★★
-          </span>
-          <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#1a1a1a" }}>
-            {review.name}
-          </span>
-          <span style={{ fontSize: "11px", color: "#9ca3af" }}>·</span>
-          <span style={{ fontSize: "11px", color: "#9ca3af" }}>{review.meta}</span>
+          <div className="auth-workspace-module-grid">
+            <div className="auth-workspace-module auth-workspace-module-meeting">
+              <PreviewIcon color="#1b77be">
+                <rect x="3" y="4" width="18" height="17" rx="3" />
+                <path d="M8 2v4M16 2v4M3 9h18" />
+                <path d="M8 14h.01M12 14h.01M16 14h.01" />
+              </PreviewIcon>
+              <div className="auth-workspace-copy">
+                <span className="auth-workspace-label">Upcoming meeting</span>
+                <span className="auth-workspace-value">Launch call</span>
+                <span className="auth-workspace-detail">Tomorrow at 10:00 AM</span>
+              </div>
+            </div>
+
+            <div className="auth-workspace-module auth-workspace-module-property">
+              <PreviewIcon color="#0f9f8f">
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V21h14V9.5" />
+                <path d="M9 21v-6h6v6" />
+              </PreviewIcon>
+              <div className="auth-workspace-copy">
+                <span className="auth-workspace-label">Property</span>
+                <span className="auth-workspace-value">Biltmore Estate</span>
+                <span className="auth-workspace-detail">Asheville, NC</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-workspace-documents">
+            <PreviewIcon color="#155fa0">
+              <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+              <path d="M14 3v6h6M8 13h8M8 17h5" />
+            </PreviewIcon>
+            <span className="auth-workspace-documents-title">Documents ready</span>
+            <span className="auth-workspace-document-list">
+              {documents.map((documentName) => (
+                <span className="auth-workspace-document-pill" key={documentName}>
+                  {documentName}
+                </span>
+              ))}
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 export const metadata: Metadata = {
   title: "Reset password",
-  description: "Reset your Parcel owner portal password.",
+  description: "Reset your Proxy owner workspace password.",
 };
 
 type SP = Promise<{ expired?: string }>;

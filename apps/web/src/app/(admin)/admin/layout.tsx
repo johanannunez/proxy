@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminSidebar, AdminIconRail, AdminTopBar as AdminTopBarLegacy } from "@/components/admin/AdminSidebar";
 import { AdminBottomNav } from "@/components/admin/AdminBottomNav";
 import { AdminSignOutButton } from "@/components/admin/AdminSignOutButton";
-import { PullToRefresh } from "@/components/portal/PullToRefresh";
+import { PullToRefresh } from "@/components/workspace/PullToRefresh";
 import { AdminTopBar as AdminTopBarNew } from "@/components/admin/chrome/AdminTopBar";
 import { CreateScopeProvider } from "@/components/admin/chrome/CreateScopeContext";
 import { CreateModal } from "@/components/admin/chrome/CreateModal";
@@ -13,6 +13,7 @@ import { CommandPalette } from "@/components/admin/chrome/CommandPalette";
 import { QuickCapture } from "@/components/admin/chrome/QuickCapture";
 import { SidebarDrawer } from "@/components/admin/chrome/SidebarDrawer";
 import { NotificationPopover } from "@/components/admin/chrome/NotificationPopover";
+import { ActionCenterDrawer } from "@/components/admin/chrome/ActionCenterDrawer";
 import { HelpSupportModal } from "@/components/admin/HelpSupportModal";
 import { AdminAIChatTrigger } from "@/components/admin/AdminAIChatTrigger";
 
@@ -43,7 +44,7 @@ export default async function AdminLayout({
     .single();
 
   if (profile?.role !== "admin") {
-    redirect("/portal/dashboard");
+    redirect("/workspace/home");
   }
 
   const { count: pendingBlockCount } = await supabase
@@ -114,6 +115,7 @@ export default async function AdminLayout({
         <CommandPalette />
         <QuickCapture />
         <NotificationPopover />
+        <ActionCenterDrawer />
         <HelpSupportModal />
         <AdminAIChatTrigger />
         <SidebarDrawer

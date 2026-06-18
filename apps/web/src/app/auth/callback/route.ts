@@ -6,7 +6,7 @@ import { recordSessionLogin } from "@/lib/session-log";
 const ADMIN_USER_ID = "9b7a5e7d-b799-40fa-b8f6-b68a3f4a00ee";
 
 const WELCOME_MESSAGE_BODY =
-  "Welcome to Parcel! We are so excited to have you on board. We are setting up a few things on the backend and will have everything ready for you shortly. In the meantime, feel free to send us a message here if you have any questions.";
+  "Welcome to Proxy! We are so excited to have you on board. We are setting up a few things on the backend and will have everything ready for you shortly. In the meantime, feel free to send us a message here if you have any questions.";
 
 /**
  * Send a welcome message to new users on their first login.
@@ -44,7 +44,7 @@ async function sendWelcomeMessageIfNew(userId: string) {
       conversation_id: conv.id,
       sender_id: ADMIN_USER_ID,
       body: WELCOME_MESSAGE_BODY,
-      delivery_method: "portal",
+      delivery_method: "workspace",
     });
   } catch {
     // Silently fail; welcome message is non-critical
@@ -65,7 +65,7 @@ async function sendWelcomeMessageIfNew(userId: string) {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/portal/dashboard";
+  const next = searchParams.get("next") ?? "/workspace/home";
 
   if (code) {
     const supabase = await createClient();
@@ -84,7 +84,11 @@ export async function GET(request: NextRequest) {
         await sendWelcomeMessageIfNew(user.id);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // After login, always land on app. in production.
+      const redirectOrigin = origin.includes("myproxyhost.com")
+        ? "https://app.myproxyhost.com"
+        : origin;
+      return NextResponse.redirect(`${redirectOrigin}${next}`);
     }
   }
 

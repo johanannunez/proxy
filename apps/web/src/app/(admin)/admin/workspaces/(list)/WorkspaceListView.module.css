@@ -1,0 +1,821 @@
+.tableShell {
+  overflow: visible;
+  border: 1px solid rgba(23, 48, 78, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 44px rgba(15, 35, 58, 0.08);
+}
+
+.headerRow,
+.row {
+  display: grid;
+  grid-template-columns:
+    minmax(248px, 0.9fr)
+    minmax(276px, 0.88fr)
+    minmax(420px, 1.32fr)
+    minmax(142px, 0.44fr);
+  align-items: center;
+  column-gap: 22px;
+}
+
+.headerRow {
+  min-height: 42px;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(21, 42, 68, 0.08);
+  background: rgba(248, 250, 252, 0.88);
+  color: #748397;
+  font-family: var(--font-ibm-plex-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.row {
+  position: relative;
+  min-height: 84px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(21, 42, 68, 0.08);
+  background: #ffffff;
+  transition: background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row::before {
+  content: '';
+  position: absolute;
+  inset: 10px auto 10px 0;
+  width: 3px;
+  border-radius: 0 99px 99px 0;
+  opacity: 0.78;
+}
+
+.row[data-health='healthy']::before {
+  background: #16a34a;
+}
+
+.row[data-health='attention']::before {
+  background: #f59e0b;
+}
+
+.row[data-health='risk']::before {
+  background: #dc2626;
+}
+
+.row:hover {
+  z-index: 1;
+  background:
+    radial-gradient(circle at 0% 50%, rgba(2, 170, 235, 0.07), transparent 28%),
+    linear-gradient(180deg, #ffffff, #f8fbfd);
+  box-shadow: inset 0 0 0 1px rgba(27, 119, 190, 0.14);
+  transform: translateY(-1px);
+}
+
+.workspaceCell,
+.ownersCell,
+.propertiesCell,
+.statusCell {
+  min-width: 0;
+}
+
+.workspaceCell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.avatarWrap,
+.avatarImage,
+.avatarFallback,
+.ownerAvatarImage,
+.ownerAvatarFallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.avatarWrap {
+  padding: 2px;
+  background:
+    linear-gradient(135deg, rgba(2, 170, 235, 0.36), rgba(27, 119, 190, 0.78)),
+    #eaf5fb;
+  box-shadow: 0 5px 14px rgba(15, 59, 107, 0.14);
+}
+
+.avatarImage,
+.ownerAvatarImage {
+  display: block;
+  background-position: center;
+  background-size: cover;
+}
+
+.avatarFallback,
+.ownerAvatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #02aaeb, #1b77be);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: 0.02em;
+}
+
+.ownerAvatarImage,
+.ownerAvatarFallback {
+  width: 30px;
+  height: 30px;
+  font-size: 10px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+}
+
+.identity,
+.propertiesCell,
+.statusCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.healthWrap {
+  position: relative;
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 3px;
+}
+
+.healthBadge {
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 780;
+  line-height: 1.2;
+  cursor: help;
+}
+
+.healthBadge:focus-visible {
+  outline: 2px solid rgba(27, 119, 190, 0.65);
+  outline-offset: 2px;
+}
+
+.healthBadge[data-health='healthy'] {
+  border-color: rgba(22, 163, 74, 0.22);
+  background: rgba(22, 163, 74, 0.08);
+  color: #047857;
+}
+
+.healthBadge[data-health='attention'] {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: rgba(245, 158, 11, 0.1);
+  color: #a16207;
+}
+
+.healthBadge[data-health='risk'] {
+  border-color: rgba(220, 38, 38, 0.22);
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+.healthTooltip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 8;
+  width: max-content;
+  max-width: 230px;
+  border: 1px solid rgba(15, 59, 107, 0.18);
+  border-radius: 8px;
+  padding: 8px 9px;
+  background: rgba(12, 25, 43, 0.96);
+  color: #ffffff;
+  font-size: 11.3px;
+  font-weight: 620;
+  line-height: 1.3;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(3px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.healthTooltip::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 100%;
+  border: 6px solid transparent;
+  border-top-color: rgba(12, 25, 43, 0.96);
+}
+
+.healthWrap:hover .healthTooltip,
+.healthWrap:focus-within .healthTooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.workspaceNameLink {
+  color: #0f3b6b;
+  font-size: 14px;
+  font-weight: 780;
+  line-height: 1.25;
+  text-decoration: none;
+  transition: color 140ms ease, text-shadow 140ms ease;
+}
+
+.workspaceNameLink:hover {
+  color: #1b77be;
+  text-shadow: 0 1px 14px rgba(2, 170, 235, 0.18);
+}
+
+.workspaceNameLink:focus-visible,
+.propertyLink:focus-visible,
+.ownerContactTrigger:focus-visible,
+.ownerPopoverClose:focus-visible,
+.ownerPopoverField:focus-visible {
+  outline: 2px solid rgba(27, 119, 190, 0.7);
+  outline-offset: 2px;
+}
+
+.company {
+  color: #6b7280;
+  font-size: 11.8px;
+  font-weight: 560;
+  line-height: 1.3;
+}
+
+.ownerCards {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ownerContactShell {
+  position: relative;
+  min-width: 0;
+}
+
+.ownerContactTrigger {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+  border: 0;
+  padding: 1px 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color 140ms ease, transform 140ms ease;
+}
+
+.ownerContactTrigger:hover {
+  color: #1b77be;
+  transform: translateX(1px);
+}
+
+.ownerContactAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ownerContactText {
+  display: block;
+  min-width: 0;
+}
+
+.ownerContactName {
+  color: #0f172a;
+  font-size: 12.8px;
+  font-weight: 740;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ownerPopover {
+  position: absolute;
+  left: -12px;
+  top: calc(100% + 10px);
+  z-index: 12;
+  display: grid;
+  gap: 10px;
+  width: 290px;
+  border: 1px solid rgba(207, 218, 228, 0.9);
+  border-radius: 10px;
+  padding: 12px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(2, 170, 235, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 253, 0.98));
+  box-shadow:
+    0 18px 40px rgba(15, 59, 107, 0.16),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.ownerPopover::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  bottom: 100%;
+  border: 8px solid transparent;
+  border-bottom-color: rgba(207, 218, 228, 0.9);
+}
+
+.ownerPopover::after {
+  content: '';
+  position: absolute;
+  left: 25px;
+  bottom: calc(100% - 1px);
+  border: 7px solid transparent;
+  border-bottom-color: #ffffff;
+}
+
+.ownerPopoverHeader {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.ownerPopoverAvatar {
+  display: inline-flex;
+}
+
+.ownerPopoverIdentity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ownerPopoverName {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 820;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ownerPopoverMeta,
+.ownerPopoverLabel {
+  color: #7b8794;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.ownerPopoverClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(207, 218, 228, 0.88);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.86);
+  color: #7b8794;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.ownerPopoverClose:hover {
+  border-color: rgba(27, 119, 190, 0.35);
+  background: rgba(2, 170, 235, 0.08);
+  color: #0f3b6b;
+}
+
+.ownerPopoverFields {
+  display: grid;
+  gap: 7px;
+}
+
+.ownerPopoverField {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(226, 233, 240, 0.9);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.ownerPopoverField svg {
+  color: #1b77be;
+}
+
+.ownerPopoverField:hover {
+  border-color: rgba(27, 119, 190, 0.28);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 20px rgba(15, 59, 107, 0.08);
+  transform: translateY(-1px);
+}
+
+.ownerPopoverField:disabled {
+  cursor: default;
+}
+
+.ownerPopoverField:disabled:hover {
+  border-color: rgba(226, 233, 240, 0.9);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+  transform: none;
+}
+
+.ownerPopoverField[data-copied='true'] {
+  border-color: rgba(22, 163, 74, 0.38);
+  background:
+    radial-gradient(circle at 100% 50%, rgba(22, 163, 74, 0.12), transparent 44%),
+    rgba(246, 253, 249, 0.98);
+  box-shadow:
+    0 0 0 3px rgba(22, 163, 74, 0.1),
+    0 10px 22px rgba(22, 163, 74, 0.12);
+  animation: ownerCopiedPulse 620ms ease-out;
+}
+
+.ownerPopoverField[data-error='true'] {
+  border-color: rgba(220, 38, 38, 0.22);
+  background: rgba(254, 242, 242, 0.94);
+}
+
+.ownerPopoverField[data-copied='true'] svg {
+  color: #047857;
+}
+
+.ownerPopoverField > span:not(.ownerPopoverCopyIndicator) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ownerPopoverValue {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ownerPopoverCopyIndicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #7b8794;
+  background: rgba(241, 245, 249, 0.82);
+}
+
+.ownerPopoverField:hover .ownerPopoverCopyIndicator {
+  background: rgba(2, 170, 235, 0.1);
+  color: #0f3b6b;
+}
+
+.ownerPopoverField[data-copied='true'] .ownerPopoverCopyIndicator {
+  color: #047857;
+  background: rgba(22, 163, 74, 0.12);
+}
+
+.moreOwners,
+.moreProperties {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 680;
+  line-height: 1.2;
+}
+
+.propertyCount {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.2;
+}
+
+.propertyLinks {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.propertyRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.propertyLink {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  border-radius: 7px;
+  color: #607083;
+  font-size: 11.7px;
+  font-weight: 610;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.propertyLink:hover {
+  color: #0f3b6b;
+  background: rgba(2, 170, 235, 0.06);
+  box-shadow: 0 0 0 3px rgba(2, 170, 235, 0.06);
+}
+
+.propertyThumb,
+.propertyThumbEmpty {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.propertyThumb {
+  display: block;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 8px 18px rgba(15, 35, 58, 0.12);
+}
+
+.propertyThumbEmpty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(135deg, rgba(21, 119, 190, 0.18), rgba(240, 180, 95, 0.18)),
+    #eaf0f6;
+  color: #1b77be;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+}
+
+.propertyCopyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  border: 1px solid rgba(207, 218, 228, 0.9);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #607083;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.propertyCopyButton:hover {
+  border-color: rgba(27, 119, 190, 0.28);
+  background: rgba(255, 255, 255, 0.98);
+  color: #0f3b6b;
+  box-shadow: 0 8px 20px rgba(15, 59, 107, 0.08);
+  transform: translateY(-1px);
+}
+
+.propertyCopyButton:focus-visible {
+  outline: 2px solid rgba(27, 119, 190, 0.7);
+  outline-offset: 2px;
+}
+
+.propertyCopyButton[data-copied='true'] {
+  border-color: rgba(22, 163, 74, 0.38);
+  background:
+    radial-gradient(circle at 100% 50%, rgba(22, 163, 74, 0.12), transparent 44%),
+    rgba(246, 253, 249, 0.98);
+  color: #047857;
+  box-shadow:
+    0 0 0 3px rgba(22, 163, 74, 0.1),
+    0 10px 22px rgba(22, 163, 74, 0.12);
+  animation: ownerCopiedPulse 620ms ease-out;
+}
+
+.propertyCopyButton[data-error='true'] {
+  border-color: rgba(220, 38, 38, 0.22);
+  background: rgba(254, 242, 242, 0.94);
+  color: #b91c1c;
+}
+
+.propertyCopyLabel {
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1;
+}
+
+.propertyLink > span {
+  display: grid;
+  min-width: 0;
+}
+
+.propertyPrimary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.propertyPrimary {
+  color: #334a64;
+  font-weight: 700;
+}
+
+.noProperties {
+  color: #6b7280;
+  font-size: 11.7px;
+  font-weight: 590;
+  line-height: 1.2;
+}
+
+.stagePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  max-width: 122px;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 780;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.stagePill[data-status='active'] {
+  background: rgba(22, 163, 74, 0.1);
+  color: #047857;
+}
+
+.stagePill[data-status='attention'],
+.stagePill[data-status='offboarding'] {
+  background: rgba(245, 158, 11, 0.12);
+  color: #a16207;
+}
+
+.stagePill[data-status='archived'] {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+}
+
+.stagePill[data-status='prospect'],
+.stagePill[data-status='onboarding'] {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+}
+
+.statusMetaLine {
+  color: #6b7280;
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+@keyframes ownerCopiedPulse {
+  0% {
+    transform: scale(0.985);
+  }
+
+  48% {
+    transform: scale(1.018);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 1180px) {
+  .headerRow,
+  .row {
+    grid-template-columns:
+      minmax(220px, 0.88fr)
+      minmax(240px, 0.84fr)
+      minmax(340px, 1.16fr)
+      minmax(128px, 0.42fr);
+    column-gap: 16px;
+  }
+}
+
+@media (max-width: 860px) {
+  .tableShell {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .headerRow {
+    display: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(213, 223, 233, 0.94);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(15, 59, 107, 0.06);
+  }
+
+  .row::before {
+    inset: 14px auto auto 0;
+    height: 44px;
+  }
+
+  .propertiesCell,
+  .ownersCell,
+  .statusCell {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+
+  .propertiesCell::before,
+  .ownersCell::before,
+  .statusCell::before {
+    color: #7b8794;
+    font-family: var(--font-ibm-plex-mono);
+    font-size: 10px;
+    font-weight: 840;
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+    text-transform: uppercase;
+  }
+
+  .ownersCell::before {
+    content: 'Owners';
+  }
+
+  .propertiesCell::before {
+    content: 'Properties';
+  }
+
+  .statusCell::before {
+    content: 'Status';
+  }
+
+  .ownerContactShell,
+  .ownerContactTrigger {
+    width: 100%;
+  }
+
+  .ownerPopover {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .propertyRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .propertyCopyButton {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 520px) {
+  .propertiesCell,
+  .ownersCell,
+  .statusCell {
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .ownerPopover {
+    padding: 11px;
+  }
+}

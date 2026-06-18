@@ -1,6 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 import { buildFollowUpDigestEmail } from "@/lib/email-template";
+
+type ContactRow = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  next_follow_up_at: string;
+  follow_up_notified_at: string | null;
+};
 
 /**
  * Daily cron: sends an admin digest of contacts with due or overdue follow-ups.
@@ -43,11 +52,12 @@ export async function GET(request: NextRequest) {
   }
 
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
-  const { data: contacts, error } = await (svc as any)
-    .from("contacts")
+  const { data: contacts, error } = await db
+    .from<ContactRow[]>("contacts")
     .select("id, full_name, email, next_follow_up_at, follow_up_notified_at")
     .not("next_follow_up_at", "is", null)
     .lte("next_follow_up_at", now.toISOString())
@@ -62,13 +72,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, sent: 0, message: "No follow-ups due today" });
   }
 
-  const payload = (contacts as Array<{
-    id: string;
-    full_name: string;
-    email: string | null;
-    next_follow_up_at: string;
-    follow_up_notified_at: string | null;
-  }>).map((c) => {
+  const payload = contacts.map((c) => {
     const dueDate = new Date(c.next_follow_up_at);
     const msOverdue = now.getTime() - dueDate.getTime();
     const daysOverdue = Math.floor(msOverdue / (1000 * 60 * 60 * 24));
@@ -90,7 +94,7 @@ export async function GET(request: NextRequest) {
       Authorization: `Bearer ${resendKey}`,
     },
     body: JSON.stringify({
-      from: "Parcel <hello@theparcelco.com>",
+      from: "Proxy <hello@myproxyhost.com>",
       to: DIGEST_TO,
       subject,
       html,
@@ -105,7 +109,7 @@ export async function GET(request: NextRequest) {
 
   // Mark all notified contacts so they don't appear again today.
   const ids = payload.map((c) => c.id);
-  await (svc as any)
+  await db
     .from("contacts")
     .update({ follow_up_notified_at: now.toISOString() })
     .in("id", ids);

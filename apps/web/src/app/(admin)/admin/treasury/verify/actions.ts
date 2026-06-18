@@ -36,11 +36,6 @@ export async function verifyTreasuryAccess(
   formData: FormData,
 ): Promise<VerifyState> {
   const password = formData.get("password");
-  const rawRedirect = (formData.get("redirectTo") as string | null) ?? "/admin/treasury";
-  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
-    ? rawRedirect
-    : "/admin/treasury";
-
   if (typeof password !== "string" || !password) {
     return { error: "Password is required.", lockedUntil: null };
   }

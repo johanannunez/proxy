@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { IBM_Plex_Mono, Sora, Plus_Jakarta_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Sora, Plus_Jakarta_Sans, Geist } from "next/font/google";
 import Script from "next/script";
 import ThemeProvider from "@/components/ThemeProvider";
 import PostHogProvider from "@/components/PostHogProvider";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
@@ -50,7 +53,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://theparcelco.com"),
+  metadataBase: new URL("https://www.myproxyhost.com"),
   manifest: "/manifest.json",
   other: {
     "mobile-web-app-capable": "yes",
@@ -58,37 +61,37 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-status-bar-style": "default",
   },
   title: {
-    default: "Parcel Co. | Vacation Rentals & Furnished Residences",
-    template: "Parcel Co. | %s",
+    default: "Proxy | Workspace for Short Term Rental Operators",
+    template: "Proxy | %s",
   },
   description:
-    "Book handpicked vacation homes and furnished corporate residences across the US. Verified properties, flexible cancellation, and responsive management.",
+    "A premium workspace for short term rental operators managing owner relationships, documents, financials, messages, tasks, and property readiness.",
   keywords: [
-    "vacation rentals",
-    "furnished residences",
-    "corporate housing",
-    "short-term rentals",
-    "vacation homes",
-    "furnished apartments",
-    "corporate stays",
-    "property management",
+    "short term rental operations",
+    "owner relationship management",
+    "property operator workspace",
+    "property management software",
+    "vacation rental operations",
+    "operator workspace",
+    "rental documents",
+    "property financials",
   ],
-  authors: [{ name: "The Parcel Company" }],
-  creator: "The Parcel Company",
-  publisher: "The Parcel Company",
+  authors: [{ name: "Proxy" }],
+  creator: "Proxy",
+  publisher: "Proxy",
   openGraph: {
-    title: "Parcel Co. | Vacation Rentals & Furnished Residences",
+    title: "Proxy | Workspace for Short Term Rental Operators",
     description:
-      "Book handpicked vacation homes and furnished corporate residences across the US. Verified properties, flexible cancellation, and responsive management.",
+      "A premium workspace for operators managing owner relationships, documents, financials, messages, tasks, and property readiness.",
     type: "website",
     locale: "en_US",
-    siteName: "Parcel Co.",
+    siteName: "Proxy",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Parcel Co. | Vacation Rentals & Furnished Residences",
+    title: "Proxy | Workspace for Short Term Rental Operators",
     description:
-      "Book handpicked vacation homes and furnished corporate residences across the US.",
+      "Run owner relationships, documents, financials, messages, and property readiness from one premium workspace.",
   },
   robots: {
     index: true,
@@ -102,9 +105,9 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://theparcelco.com",
+    canonical: "https://www.myproxyhost.com",
     types: {
-      "text/plain": "https://theparcelco.com/llms.txt",
+      "text/plain": "https://www.myproxyhost.com/llms.txt",
     },
   },
 };
@@ -117,14 +120,14 @@ export default function RootLayout({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "The Parcel Company",
-    url: "https://theparcelco.com",
-    logo: "https://theparcelco.com/brand/logo-mark.png",
+    name: "Proxy",
+    url: "https://www.myproxyhost.com",
+    logo: "https://www.myproxyhost.com/brand/proxy-wordmark-navy.png",
     description:
-      "Vacation homes and furnished residences, handpicked for people who notice the details.",
+      "A premium workspace for short term rental operators managing owner relationships, documents, financials, messages, tasks, and property readiness.",
     contactPoint: {
       "@type": "ContactPoint",
-      email: "hello@theparcelco.com",
+      email: "hello@myproxyhost.com",
       contactType: "customer service",
     },
     sameAs: [],
@@ -133,33 +136,26 @@ export default function RootLayout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "The Parcel Company",
-    url: "https://theparcelco.com",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: "https://theparcelco.com/properties?q={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
+    name: "Proxy",
+    url: "https://www.myproxyhost.com",
   };
 
-  const serviceSchema = {
+  const applicationSchema = {
     "@context": "https://schema.org",
-    "@type": "Service",
-    serviceType: "Vacation Rental & Corporate Housing",
+    "@type": "SoftwareApplication",
+    name: "Proxy",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
     provider: {
       "@type": "Organization",
-      name: "The Parcel Company",
-    },
-    areaServed: {
-      "@type": "Country",
-      name: "United States",
+      name: "Proxy",
     },
     description:
-      "Handpicked vacation homes and furnished corporate residences across the US. Verified properties, flexible cancellation, and responsive management.",
+      "A workspace for short term rental operators managing owner relationships, documents, financials, messages, tasks, and property readiness.",
   };
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <head>
         {/* Kill-switch for stale service worker caches from older versions.
             Runs synchronously before any Next.js chunks are fetched. */}
@@ -179,14 +175,14 @@ export default function RootLayout({
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: '(function(){try{var o=localStorage.getItem("theme");if(o){localStorage.setItem("parcel-theme",o);localStorage.removeItem("theme")}var t=localStorage.getItem("parcel-theme");var d=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})();',
+            __html: '(function(){try{var o=localStorage.getItem("theme");if(o){localStorage.setItem("proxy-theme",o);localStorage.removeItem("theme")}var t=localStorage.getItem("proxy-theme");var d=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})();',
           }}
         />
         <script
           type="application/ld+json"
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify([organizationSchema, websiteSchema, serviceSchema]),
+            __html: JSON.stringify([organizationSchema, websiteSchema, applicationSchema]),
           }}
         />
         <PostHogProvider>

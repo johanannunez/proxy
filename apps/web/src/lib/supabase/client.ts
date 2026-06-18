@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/types/supabase";
+import { authCookieDomain } from "./cookie-domain";
 
 /**
  * Browser-side Supabase client.
@@ -13,8 +14,14 @@ import type { Database } from "@/types/supabase";
  * `@/lib/supabase/server` instead.
  */
 export function createClient() {
+  const domain =
+    typeof window === "undefined"
+      ? undefined
+      : authCookieDomain(window.location.hostname);
+
   return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    domain ? { cookieOptions: { domain } } : {},
   );
 }

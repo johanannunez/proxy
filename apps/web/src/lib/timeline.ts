@@ -30,49 +30,49 @@ const NOTIFICATION_CONFIG: Record<
   { notify: boolean; email: boolean; link: string }
 > = {
   // Account
-  welcome: { notify: true, email: true, link: "/portal/dashboard" },
-  onboarding_complete: { notify: true, email: false, link: "/portal/dashboard" },
-  profile_updated: { notify: false, email: false, link: "/portal/account" },
-  password_reset: { notify: true, email: false, link: "/portal/account" },
+  welcome: { notify: true, email: true, link: "/workspace/home" },
+  onboarding_complete: { notify: true, email: false, link: "/workspace/home" },
+  profile_updated: { notify: false, email: false, link: "/workspace/account" },
+  password_reset: { notify: true, email: false, link: "/workspace/account" },
 
   // Property
-  property_added: { notify: true, email: false, link: "/portal/properties" },
-  property_updated: { notify: true, email: false, link: "/portal/properties" },
+  property_added: { notify: true, email: false, link: "/workspace/properties" },
+  property_updated: { notify: true, email: false, link: "/workspace/properties" },
   property_deactivated: {
     notify: true,
     email: false,
-    link: "/portal/properties",
+    link: "/workspace/properties",
   },
 
   // Financial
-  payout_issued: { notify: true, email: true, link: "/portal/financials" },
-  payout_paid: { notify: true, email: true, link: "/portal/financials" },
+  payout_issued: { notify: true, email: true, link: "/workspace/finances" },
+  payout_paid: { notify: true, email: true, link: "/workspace/finances" },
 
   // Calendar
-  booking_created: { notify: true, email: true, link: "/portal/reserve" },
-  booking_cancelled: { notify: true, email: false, link: "/portal/reserve" },
+  booking_created: { notify: true, email: true, link: "/workspace/reserve" },
+  booking_cancelled: { notify: true, email: false, link: "/workspace/reserve" },
   block_request_submitted: {
     notify: false,
     email: false,
-    link: "/portal/reserve",
+    link: "/workspace/reserve",
   },
   block_request_approved: {
     notify: true,
     email: false,
-    link: "/portal/reserve",
+    link: "/workspace/reserve",
   },
   block_request_denied: {
     notify: true,
     email: false,
-    link: "/portal/reserve",
+    link: "/workspace/reserve",
   },
 
   // Document
-  document_uploaded: { notify: true, email: false, link: "/portal/documents" },
-  agreement_signed: { notify: true, email: true, link: "/portal/documents" },
+  document_uploaded: { notify: true, email: false, link: "/workspace/documents" },
+  agreement_signed: { notify: true, email: true, link: "/workspace/documents" },
 
   // Communication
-  message_sent: { notify: false, email: false, link: "/portal/messages" },
+  message_sent: { notify: false, email: false, link: "/workspace/inbox" },
 };
 
 export async function logTimelineEvent(

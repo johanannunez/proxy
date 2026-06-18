@@ -1,0 +1,316 @@
+/* Branding settings page (P3.3). */
+
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.kicker {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-brand);
+  margin-bottom: 8px;
+}
+
+.title {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.sub {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  margin-bottom: 32px;
+}
+
+/* Alert */
+
+.alertError {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-error);
+  margin-bottom: 18px;
+}
+
+.alertSuccess {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: rgba(22, 163, 74, 0.06);
+  border: 1px solid rgba(22, 163, 74, 0.18);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-success);
+  margin-bottom: 18px;
+}
+
+/* Cards / sections */
+
+.sectionCard {
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  box-shadow: var(--shadow-card);
+  padding: 24px 28px;
+  margin-bottom: 18px;
+}
+
+.sectionTitle {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.sectionDesc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Form fields */
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.input {
+  height: 40px;
+  border: 1.5px solid var(--color-warm-gray-200);
+  border-radius: 10px;
+  padding: 0 13px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.input:hover {
+  border-color: rgba(27, 119, 190, 0.4);
+}
+
+.input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.12);
+}
+
+/* Logo preview */
+
+.logoPreview {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoImg {
+  width: 80px;
+  height: 40px;
+  object-fit: contain;
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 8px;
+  background: var(--color-warm-gray-50);
+  padding: 4px;
+}
+
+.logoPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 40px;
+  border: 1.5px dashed var(--color-warm-gray-200);
+  border-radius: 8px;
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Color pickers */
+
+.colorsRow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.colorField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.colorPickerWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.colorSwatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-warm-gray-200);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.colorSwatch:hover {
+  border-color: rgba(27, 119, 190, 0.45);
+  box-shadow: var(--shadow-md);
+}
+
+.colorSwatch:focus-within {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.colorInput {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.hexLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-family: var(--font-ibm-plex-mono), monospace;
+  letter-spacing: 0.03em;
+}
+
+/* DNS instructions */
+
+.dnsNotice {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(2, 170, 235, 0.05);
+  border: 1px solid rgba(2, 170, 235, 0.15);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+.dnsNotice strong {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12.5px;
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+/* Save bar */
+
+.saveBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background: var(--color-brand-gradient);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(27, 119, 190, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.18s var(--ease-spring), opacity 0.18s ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(27, 119, 190, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.btnPrimary:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+.btnPrimary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation-duration: 1.6s;
+  }
+}

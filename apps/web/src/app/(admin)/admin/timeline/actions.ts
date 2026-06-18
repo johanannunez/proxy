@@ -36,7 +36,7 @@ async function requireAdmin() {
 
 function revalidateTimeline() {
   revalidatePath("/admin/timeline");
-  revalidatePath("/portal/timeline");
+  revalidatePath("/workspace/timeline");
 }
 
 // ---------------------------------------------------------------------------

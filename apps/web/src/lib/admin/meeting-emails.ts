@@ -4,7 +4,7 @@
  * with Gmail, Apple Mail, and Outlook.
  */
 
-const LOGO_URL = "https://www.theparcelco.com/brand/logo-full-color.png";
+const LOGO_URL = "https://www.myproxyhost.com/brand/logo-full-color.png";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,7 +88,7 @@ function shell(opts: {
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
             <tr>
               <td style="padding:24px 36px 20px;">
-                <img src="${LOGO_URL}" alt="The Parcel Company" width="110" height="auto"
+                <img src="${LOGO_URL}" alt="Proxy" width="110" height="auto"
                      style="display:block;border:0;outline:none;line-height:100%;max-width:110px;
                             filter:brightness(0) invert(1);opacity:0.92;">
               </td>
@@ -118,15 +118,15 @@ function shell(opts: {
               <p style="margin:0 0 5px;
                          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
                          font-size:12px;color:#9A9590;line-height:1.5;">
-                <strong style="color:#6A6560;font-weight:600;">The Parcel Company</strong>
+                <strong style="color:#6A6560;font-weight:600;">Proxy</strong>
                 &nbsp;&middot;&nbsp;Professional Property Management
               </p>
               <p style="margin:0;
                          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
                          font-size:12px;color:#B0ABA6;line-height:1.5;">
                 Questions? Reply to this email or reach us at
-                <a href="mailto:jo@theparcelco.com"
-                   style="color:#1B77BE;text-decoration:none;">jo@theparcelco.com</a>
+                <a href="mailto:jo@myproxyhost.com"
+                   style="color:#1B77BE;text-decoration:none;">jo@myproxyhost.com</a>
               </p>
             </td></tr>
           </table>
@@ -363,7 +363,6 @@ export interface MeetingRescheduledData {
 }
 
 export function buildMeetingRescheduledEmail(d: MeetingRescheduledData): { subject: string; html: string } {
-  const typeLabel = MEETING_TYPE_LABEL[d.meetingType] ?? "Meeting";
   const subject = `Meeting rescheduled: ${d.title}`;
 
   const body = [

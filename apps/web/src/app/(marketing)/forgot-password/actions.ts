@@ -25,7 +25,7 @@ export async function requestPasswordReset(
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "https";
-  const origin = host ? `${proto}://${host}` : "https://www.theparcelco.com";
+  const origin = host ? `${proto}://${host}` : "https://www.myproxyhost.com";
   const redirectTo = `${origin}/auth/callback?next=/reset-password`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {

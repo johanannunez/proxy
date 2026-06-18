@@ -10,6 +10,7 @@ import {
   syncWorkspaceInvoiceFromStripe,
   syncWorkspacePaymentMethodFromStripe,
 } from "@/lib/billing/stripe-workspace";
+import { syncOrgSubscriptionFromStripe } from "@/lib/billing/org-billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,12 +65,12 @@ export async function POST(req: Request) {
           typeof intent.payment_method === "string"
             ? intent.payment_method
             : intent.payment_method?.id;
-        if (paymentMethodId && intent.metadata?.parcel_workspace_id) {
+        if (paymentMethodId && intent.metadata?.proxy_workspace_id) {
           const paymentMethod =
             await getStripe().paymentMethods.retrieve(paymentMethodId);
           await syncWorkspacePaymentMethodFromStripe({
             paymentMethod,
-            workspaceId: intent.metadata.parcel_workspace_id,
+            workspaceId: intent.metadata.proxy_workspace_id,
           });
         }
         break;
@@ -78,6 +79,10 @@ export async function POST(req: Request) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
         await syncSubscriptionFromStripe(
+          event.data.object as Stripe.Subscription,
+        );
+        // Tenant org subscriptions (metadata.org_id) drive plan_tier.
+        await syncOrgSubscriptionFromStripe(
           event.data.object as Stripe.Subscription,
         );
         break;

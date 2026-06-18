@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 const REVIEWS = [
   {
     quote:
-      "Parcel is the first tool that actually feels like it was built for landlords, not accountants. I open it every morning before anything else and I already know where everything stands.",
+      "Proxy is the first tool that actually feels like it was built for landlords, not accountants. I open it every morning before anything else and I already know where everything stands.",
     name: "Maria T.",
     meta: "Kennewick, WA · 4 properties",
   },
   {
     quote:
-      "I used to dread Mondays. Now I open Parcel first thing and everything is right there. It completely changed how I think about owning and managing properties.",
+      "I used to dread Mondays. Now I open Proxy first thing and everything is right there. It completely changed how I think about owning and managing properties.",
     name: "Derek W.",
     meta: "Spokane, WA · 6 units · Owner since 2023",
   },
@@ -23,7 +23,7 @@ const REVIEWS = [
   },
   {
     quote:
-      "Switching to Parcel was the best decision I made for my rental business. I spend half the time I used to on admin work and actually enjoy managing my units now.",
+      "Switching to Proxy was the best decision I made for my rental business. I spend half the time I used to on admin work and actually enjoy managing my units now.",
     name: "James R.",
     meta: "Portland, OR · 8 units",
   },
@@ -123,7 +123,7 @@ export function RotatingTestimonials() {
         <p
           style={{
             fontSize: "12px",
-            color: "#4b5563",
+            color: "var(--color-text-secondary)",
             lineHeight: "1.55",
             marginBottom: "8px",
             fontWeight: 400,
@@ -138,11 +138,11 @@ export function RotatingTestimonials() {
           <span style={{ color: "#f59e0b", fontSize: "10px", letterSpacing: "1px" }}>
             ★★★★★
           </span>
-          <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#1a1a1a" }}>
+          <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--color-text-primary)" }}>
             {review.name}
           </span>
-          <span style={{ fontSize: "11px", color: "#6b7280" }}>·</span>
-          <span style={{ fontSize: "11px", color: "#6b7280" }}>{review.meta}</span>
+          <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>·</span>
+          <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>{review.meta}</span>
         </div>
       </div>
 

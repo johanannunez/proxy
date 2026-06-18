@@ -44,12 +44,12 @@ export default function ThemeProvider({
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
     if (t === "system") {
-      localStorage.removeItem("parcel-theme");
+      localStorage.removeItem("proxy-theme");
       const resolved = getSystemTheme();
       setResolvedTheme(resolved);
       applyTheme(resolved);
     } else {
-      localStorage.setItem("parcel-theme", t);
+      localStorage.setItem("proxy-theme", t);
       setResolvedTheme(t);
       applyTheme(t);
     }
@@ -62,13 +62,13 @@ export default function ThemeProvider({
   useEffect(() => {
     const old = localStorage.getItem("theme");
     if (old) {
-      localStorage.setItem("parcel-theme", old);
+      localStorage.setItem("proxy-theme", old);
       localStorage.removeItem("theme");
     }
 
-    const stored = localStorage.getItem("parcel-theme") as Theme | null;
+    const stored = localStorage.getItem("proxy-theme") as Theme | null;
     const initial: Theme = stored ?? "system";
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setThemeState(initial);
     const resolved = initial === "system" ? getSystemTheme() : initial;
     setResolvedTheme(resolved);
@@ -77,7 +77,7 @@ export default function ThemeProvider({
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
-      if (!localStorage.getItem("parcel-theme")) {
+      if (!localStorage.getItem("proxy-theme")) {
         const sys = getSystemTheme();
         setResolvedTheme(sys);
         applyTheme(sys);

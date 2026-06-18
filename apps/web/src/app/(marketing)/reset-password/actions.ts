@@ -49,5 +49,5 @@ export async function updatePassword(
     visibility: "admin_only",
   });
 
-  redirect("/portal/dashboard");
+  redirect("/workspace/home");
 }

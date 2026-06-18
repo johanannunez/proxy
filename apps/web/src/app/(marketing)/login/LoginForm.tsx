@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useActionState, useEffect } from "react";
+import { useActionState } from "react";
 import { PasswordField } from "@/components/auth/PasswordField";
-import { useTypewriterPlaceholder, usePasswordPlaceholder } from "@/components/auth/useTypewriterPlaceholder";
 import { login, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
 
 const fieldInputStyle: React.CSSProperties = {
   width: "100%",
-  border: "1.5px solid #dce8f0",
+  border: "1.5px solid var(--border)",
   borderRadius: "10px",
-  padding: "11px 14px",
+  padding: "10px 14px",
   fontSize: "14px",
   fontFamily: "inherit",
-  color: "#1a1a1a",
-  background: "#f7fbfd",
+  color: "var(--color-text-primary)",
+  background: "var(--surface-elevated)",
   outline: "none",
 };
 
@@ -24,84 +23,21 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.07em",
-  color: "#6b7280",
+  color: "var(--color-text-secondary)",
 };
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [state, formAction, pending] = useActionState(login, initialState);
-  const { emailPlaceholder, onFocus, onBlur } = useTypewriterPlaceholder();
-  const { passwordPlaceholder, onPasswordFocus, onPasswordBlur } = usePasswordPlaceholder();
-  const [role, setRole] = useState<"owner" | "admin">("owner");
 
-  useEffect(() => {
-    document.body.classList.toggle("auth-admin-mode", role === "admin");
-    return () => document.body.classList.remove("auth-admin-mode");
-  }, [role]);
-
-  // Only allow role switching when no specific redirect was requested.
-  // If the user was sent here from a protected page (/portal/settings, etc.), honor that.
-  const isDefaultRedirect = redirectTo === "/portal/dashboard";
-  const effectiveRedirect = isDefaultRedirect && role === "admin" ? "/admin" : redirectTo;
+  // If the user was sent here from a protected page, honor that destination.
+  // Otherwise the login action routes admins to admin and owners to the portal.
+  const effectiveRedirect = redirectTo;
 
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       <input type="hidden" name="redirect" value={effectiveRedirect} />
 
-      {/* Role selector — only shown when using the default redirect */}
-      {isDefaultRedirect && (
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ marginBottom: "6px" }}>
-            <span style={labelStyle}>Signing in as</span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              background: "#f0f4f8",
-              borderRadius: "10px",
-              padding: "3px",
-              gap: "3px",
-            }}
-          >
-            {(["owner", "admin"] as const).map((r) => {
-              const isActive = role === r;
-              const isAdmin = r === "admin";
-              return (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  style={{
-                    flex: 1,
-                    padding: "6px 14px",
-                    borderRadius: "7px",
-                    fontSize: "12.5px",
-                    fontWeight: isActive ? 600 : 400,
-                    background: isActive
-                      ? isAdmin
-                        ? "linear-gradient(135deg, #02aaeb 0%, #1b77be 60%, #155fa0 100%)"
-                        : "#ffffff"
-                      : "transparent",
-                    color: isActive ? (isAdmin ? "#ffffff" : "#1a1a1a") : "#6b7280",
-                    border: "none",
-                    cursor: "pointer",
-                    boxShadow: isActive
-                      ? isAdmin
-                        ? "0 2px 10px rgba(27,119,190,0.45)"
-                        : "0 1px 3px rgba(0,0,0,0.08)"
-                      : "none",
-                    transition: "background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {r === "owner" ? "Owner" : "Admin"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginBottom: "14px" }}>
+      <div style={{ marginBottom: "12px" }}>
         <div style={{ marginBottom: "6px" }}>
           <label htmlFor="email" style={labelStyle}>
             Email
@@ -113,17 +49,15 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           type="email"
           autoComplete="email"
           required
-          placeholder={emailPlaceholder}
+          placeholder="you@example.com"
           style={fieldInputStyle}
           onFocus={(e) => {
-            onFocus();
             e.target.style.borderColor = "var(--color-brand)";
-            e.target.style.background = "#ffffff";
+            e.target.style.background = "var(--surface-floating)";
           }}
           onBlur={(e) => {
-            onBlur();
-            e.target.style.borderColor = "#dce8f0";
-            e.target.style.background = "#f7fbfd";
+            e.target.style.borderColor = "var(--border)";
+            e.target.style.background = "var(--surface-elevated)";
           }}
         />
       </div>
@@ -157,9 +91,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           name="password"
           autoComplete="current-password"
           required
-          placeholder={passwordPlaceholder}
-          onFocus={onPasswordFocus}
-          onBlur={onPasswordBlur}
+          placeholder="Password"
         />
       </div>
 
@@ -182,12 +114,12 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           color: "white",
           border: "none",
           borderRadius: "10px",
-          padding: "13px",
-          fontSize: "14.5px",
+          padding: "12px",
+          fontSize: "14px",
           fontWeight: 600,
           fontFamily: "inherit",
           cursor: pending ? "not-allowed" : "pointer",
-          marginTop: "18px",
+          marginTop: "16px",
           letterSpacing: "-0.01em",
           boxShadow: "0 4px 16px rgba(27,119,190,0.28)",
           opacity: pending ? 0.65 : 1,

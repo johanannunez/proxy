@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getPropertyForm } from "@/lib/workspace/property-forms";
 import { InspectionForm } from "./InspectionForm";
 import { OffboardingForm } from "./OffboardingForm";
 
@@ -31,28 +32,13 @@ export default async function PropertyFormsPage({
 
   if (!property) notFound();
 
-  const { data: inspectionRow } = await (supabase as any)
-    .from("property_forms")
-    .select("data, completed_at, updated_at")
-    .eq("property_id", id)
-    .eq("form_key", "onboarding_inspection")
-    .maybeSingle();
+  const [inspectionRow, offboardingRow] = await Promise.all([
+    getPropertyForm(id, "onboarding_inspection"),
+    getPropertyForm(id, "property_offboarding"),
+  ]);
 
-  const { data: offboardingRow } = await (supabase as any)
-    .from("property_forms")
-    .select("data, completed_at, updated_at")
-    .eq("property_id", id)
-    .eq("form_key", "property_offboarding")
-    .maybeSingle();
-
-  const inspectionSaved = (inspectionRow?.data ?? {}) as Record<
-    string,
-    unknown
-  >;
-  const offboardingSaved = (offboardingRow?.data ?? {}) as Record<
-    string,
-    unknown
-  >;
+  const inspectionSaved: Record<string, unknown> = inspectionRow?.data ?? {};
+  const offboardingSaved: Record<string, unknown> = offboardingRow?.data ?? {};
   const inspectionLastUpdated: string | null = inspectionRow?.updated_at ?? null;
   const offboardingLastUpdated: string | null =
     offboardingRow?.updated_at ?? null;

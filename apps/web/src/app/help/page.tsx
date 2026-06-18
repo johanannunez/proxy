@@ -19,12 +19,12 @@ const FAQ_ITEMS = [
   {
     question: "How do I contact support?",
     answer:
-      "Email us at hello@theparcelco.com or send a message through your owner portal. We respond within 24 hours on business days.",
+      "Email us at hello@myproxyhost.com or send a message through your owner workspace. We respond within 24 hours on business days.",
   },
   {
     question: "How do I view my payouts?",
     answer:
-      "Log in to your owner portal and navigate to the Payouts page. You can view payout history, download CSV exports, and see upcoming scheduled payouts.",
+      "Log in to your owner workspace and navigate to the Payouts page. You can view payout history, download CSV exports, and see upcoming scheduled payouts.",
   },
 ];
 
@@ -202,7 +202,7 @@ export default async function HelpPage() {
 
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/portal/messages"
+              href="/workspace/inbox"
               className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)] active:opacity-80"
               style={{ background: "var(--color-brand-gradient)" }}
             >
@@ -211,7 +211,7 @@ export default async function HelpPage() {
             </Link>
 
             <a
-              href="mailto:hello@theparcelco.com"
+              href="mailto:hello@myproxyhost.com"
               className="inline-flex items-center gap-2.5 rounded-xl border px-6 py-3 text-sm font-semibold transition-colors duration-150 hover:bg-[var(--color-warm-gray-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)]"
               style={{
                 borderColor: "var(--color-warm-gray-200)",
@@ -220,7 +220,7 @@ export default async function HelpPage() {
               }}
             >
               <Envelope size={18} weight="duotone" />
-              hello@theparcelco.com
+              hello@myproxyhost.com
             </a>
           </div>
         </div>

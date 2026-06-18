@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 // Verify the caller is an admin. Returns an error string or null.
 async function checkAdmin(): Promise<string | null> {
@@ -84,14 +85,15 @@ export async function uploadAdminAvatar(args: {
   await svc.from("profiles").update({ avatar_url: publicUrl }).eq("id", pid);
 
   // Sync to the linked contact row so the header/sidebar also reflect the new photo.
-  const { data: contactRow } = await (svc as any)
-    .from("contacts")
+  const db = untypedDatabase(svc);
+  const { data: contactRow } = await db
+    .from<{ id: string; workspace_id: string | null }>("contacts")
     .select("id, workspace_id")
     .eq("profile_id", pid)
-    .maybeSingle() as { data: { id: string; workspace_id: string | null } | null };
+    .maybeSingle();
 
   if (contactRow?.id) {
-    await (svc as any)
+    await db
       .from("contacts")
       .update({ avatar_url: publicUrl })
       .eq("id", contactRow.id);
@@ -154,14 +156,15 @@ export async function removeAdminAvatar(
   await svc.storage.from("avatars").remove(filesToDelete);
 
   // Sync to linked contact.
-  const { data: contactRow } = await (svc as any)
-    .from("contacts")
+  const db = untypedDatabase(svc);
+  const { data: contactRow } = await db
+    .from<{ id: string; workspace_id: string | null }>("contacts")
     .select("id, workspace_id")
     .eq("profile_id", targetProfileId)
-    .maybeSingle() as { data: { id: string; workspace_id: string | null } | null };
+    .maybeSingle();
 
   if (contactRow?.id) {
-    await (svc as any)
+    await db
       .from("contacts")
       .update({ avatar_url: null })
       .eq("id", contactRow.id);

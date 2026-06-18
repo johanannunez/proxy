@@ -20,7 +20,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
  * too low), the call resolves as "dismissed" with no UI noise.
  *
  * iOS Safari is the one exception: it never fires the event, and the
- * user has to add Parcel via the Share sheet, so iOS gets a separate
+ * user has to add Proxy via the Share sheet, so iOS gets a separate
  * state with three Safari-specific steps.
  */
 
@@ -71,7 +71,7 @@ export function usePwaInstall(): PwaInstallState {
     if (typeof window === "undefined") return;
 
     if (detectIOS()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setState({ status: "ios" });
       return;
     }

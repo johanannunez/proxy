@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const plaid = getPlaidClient();
     const response = await plaid.linkTokenCreate({
       user: { client_user_id: user.id },
-      client_name: "Parcel Co Treasury",
+      client_name: "Proxy Co Treasury",
       products: PLAID_PRODUCTS,
       country_codes: PLAID_COUNTRY_CODES,
       language: "en",

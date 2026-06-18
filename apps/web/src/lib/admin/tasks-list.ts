@@ -15,6 +15,32 @@ type Options = {
   parentFilter?: { type: 'contact' | 'property' | 'project'; id: string } | null;
 };
 
+// Minimal builder shape covering the PostgREST filter/order methods used in this
+// file. Generated Supabase types reject the `priority` / `caldav_uid` columns in
+// the select, which would otherwise poison every row property access, so we type
+// the chain locally instead of casting through `any`.
+type FilterQuery<Row> = PromiseLike<{ data: Row[] | null; error: { code?: string; message: string } | null }> & {
+  select(columns: string): FilterQuery<Row>;
+  is(column: string, value: null): FilterQuery<Row>;
+  eq(column: string, value: string | number | boolean): FilterQuery<Row>;
+  neq(column: string, value: string | number | boolean): FilterQuery<Row>;
+  lt(column: string, value: string): FilterQuery<Row>;
+  lte(column: string, value: string): FilterQuery<Row>;
+  not(column: string, operator: string, value: string | null): FilterQuery<Row>;
+  ilike(column: string, pattern: string): FilterQuery<Row>;
+  order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }): FilterQuery<Row>;
+};
+
+// Minimal builder shape for the count queries (head: true), which return only a count.
+type CountQuery = PromiseLike<{ count: number | null }> & {
+  is(column: string, value: null): CountQuery;
+  eq(column: string, value: string | number | boolean): CountQuery;
+  neq(column: string, value: string | number | boolean): CountQuery;
+  lt(column: string, value: string): CountQuery;
+  lte(column: string, value: string): CountQuery;
+  not(column: string, operator: string, value: string | null): CountQuery;
+};
+
 export async function fetchAdminTasksList(
   opts: Options = {},
 ): Promise<TasksFetchResult> {
@@ -43,18 +69,16 @@ export async function fetchAdminTasksList(
     views[0];
   if (!activeView) throw new Error('No task saved views');
 
-  // Cast through `any` so that columns not yet in generated Supabase types
-  // (e.g. priority, caldav_uid) do not produce a SelectQueryError that
-  // poisons all property accesses on the result rows.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase as any)
-    .from('tasks')
-    .select(`
+  // Columns not yet in generated Supabase types (e.g. priority, caldav_uid)
+  // would produce a SelectQueryError that poisons all property accesses on the
+  // result rows, so the query is typed through the local FilterQuery shape.
+  const tasksTable = supabase.from('tasks') as unknown as FilterQuery<RawTaskRow>;
+  let query = tasksTable.select(`
       id, parent_task_id, parent_type, parent_id, title, description, status, priority,
       assignee_id, created_by, due_at, completed_at, created_at, tags,
       assignee:profiles!tasks_assignee_id_fkey(full_name, avatar_url),
       creator:profiles!tasks_created_by_fkey1(full_name)
-    `)
+    `);
     switch (activeView.key) {
     case 'inbox':
       query = query
@@ -104,7 +128,7 @@ export async function fetchAdminTasksList(
 
   // Apply ordering after switch so today view can use priority-first sort
   if (activeView.key === 'today') {
-    query = (query as any)
+    query = query
       .order('priority', { ascending: true })
       .order('due_at', { ascending: true, nullsFirst: false });
   } else {
@@ -147,8 +171,7 @@ export async function fetchAdminTasksList(
     assignee: { full_name?: string; avatar_url?: string } | { full_name?: string; avatar_url?: string }[] | null;
     creator: { full_name?: string } | { full_name?: string }[] | null;
   };
-  const { data: dataRaw, error } = await query;
-  const data = dataRaw as RawTaskRow[] | null;
+  const { data, error } = await query;
   if (error) {
     console.error('[tasks-list] tasks fetch error:', error.code, error.message);
     return { groups: [], views, activeView, totalCount: 0 };
@@ -257,7 +280,7 @@ export async function fetchAdminTasksList(
       title: t.title,
       description: t.description,
       status: t.status as Task['status'],
-      priority: ((t as any).priority ?? 4) as 1 | 2 | 3 | 4,
+      priority: (t.priority ?? 4) as 1 | 2 | 3 | 4,
       assigneeId: t.assignee_id,
       assigneeName: assignee?.full_name ?? null,
       assigneeAvatarUrl: assignee?.avatar_url ?? null,
@@ -288,10 +311,12 @@ export async function fetchAdminTasksList(
   // Per-view counts (mirror the active-view filters per key) — run all concurrently
   const viewCounts = await Promise.all(
     views.map((v) => {
-      let cq = supabase.from('tasks').select('*', { count: 'exact', head: true });
+      let cq = supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true }) as unknown as CountQuery;
       switch (v.key) {
         case 'inbox':
-          cq = (cq as any).is('due_at', null).is('parent_task_id', null).neq('status', 'done');
+          cq = cq.is('due_at', null).is('parent_task_id', null).neq('status', 'done');
           break;
         case 'today': {
           const eot = new Date();
@@ -301,7 +326,7 @@ export async function fetchAdminTasksList(
         }
         case 'upcoming': {
           const in14c = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-          cq = (cq as any).not('due_at', 'is', null).lte('due_at', in14c).neq('status', 'done');
+          cq = cq.not('due_at', 'is', null).lte('due_at', in14c).neq('status', 'done');
           break;
         }
         case 'my-tasks':

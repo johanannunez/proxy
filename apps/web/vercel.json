@@ -17,6 +17,14 @@
       "schedule": "0 12 * * *"
     },
     {
+      "path": "/api/cron/document-expiry",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/document-reminders",
+      "schedule": "0 9 * * *"
+    },
+    {
       "path": "/api/cron/flush-scheduled-messages",
       "schedule": "*/5 * * * *"
     }

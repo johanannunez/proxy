@@ -2,8 +2,8 @@ import StaticPage from "@/components/StaticPage";
 
 export const metadata = {
   title: "Careers",
-  description: "Join The Parcel Company. We're building a better way to book vacation rentals and corporate housing.",
-  alternates: { canonical: "https://theparcelco.com/careers" },
+  description: "Join Proxy. We're building a better way to book vacation rentals and corporate housing.",
+  alternates: { canonical: "https://www.myproxyhost.com/careers" },
 };
 
 export default function CareersPage() {
@@ -18,10 +18,10 @@ export default function CareersPage() {
         We don&apos;t have open positions listed right now, but we&apos;re
         always interested in meeting talented people. Send us a note at{" "}
         <a
-          href="mailto:hello@theparcelco.com"
+          href="mailto:hello@myproxyhost.com"
           className="text-brand hover:underline"
         >
-          hello@theparcelco.com
+          hello@myproxyhost.com
         </a>{" "}
         and tell us what you&apos;re great at.
       </p>

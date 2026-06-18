@@ -1,0 +1,258 @@
+/* ─── PaperworkShell — shared chrome for Documents | Forms | Templates ─── */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 0;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: -1px;
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 13px;
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--text-secondary, var(--color-text-secondary));
+  text-decoration: none;
+  border-radius: 9px 9px 0 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--text-primary, var(--color-text-primary));
+  background: var(--surface-hover, rgba(0, 0, 0, 0.03));
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+.tabActive {
+  color: var(--text-primary, var(--color-text-primary));
+  font-weight: 600;
+}
+
+.tabLabel {
+  position: relative;
+  z-index: 1;
+}
+
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text-secondary, var(--color-text-secondary));
+  background: var(--surface-hover, rgba(0, 0, 0, 0.05));
+  border-radius: 999px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.tabActive .tabCount {
+  color: var(--color-brand, #1b77be);
+  background: rgba(27, 119, 190, 0.12);
+}
+
+.tabIndicator {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.newDocBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(27, 119, 190, 0.25), 0 3px 10px rgba(2, 170, 235, 0.18);
+  transition: transform 0.15s var(--ease-spring), opacity 0.15s ease;
+}
+
+.newDocBtn:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
+}
+
+.newDocBtn:active {
+  transform: translateY(0);
+}
+
+.newDocBtn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.newDocBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
+}
+
+.btnSpinner {
+  animation: btnSpin 0.8s linear infinite;
+}
+
+@keyframes btnSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Action Center trigger (inline, left of the create button) ─── */
+
+.actionCenterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--dash-border, #e5e7eb);
+  background: var(--surface-base, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.05));
+  transition: transform 0.16s var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+    box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.actionCenterBtn svg {
+  color: var(--text-tertiary, #9ca3af);
+  transition: color 0.16s ease;
+}
+
+.actionCenterBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(16, 24, 40, 0.08));
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 32%, var(--dash-border, #e5e7eb));
+}
+
+.actionCenterBtn:active {
+  transform: translateY(0);
+}
+
+.actionCenterBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand, #1b77be) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* Active = at least one item needs attention: brand-tinted, alive. */
+.actionCenterBtnActive {
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 40%, transparent);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 7%, var(--surface-base, #ffffff));
+  color: var(--color-brand, #1b77be);
+}
+
+.actionCenterBtnActive svg {
+  color: var(--color-brand, #1b77be);
+}
+
+.actionCenterCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-brand, #1b77be) 40%, transparent);
+}
+
+.tabRule {
+  height: 1px;
+  background: var(--border-default, rgba(0, 0, 0, 0.08));
+  margin: 0 24px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  /* Breathing room so the board/hub never hugs the nav or the sidebar edge. */
+  padding: 22px 24px 32px;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 16px 16px 0;
+  }
+  .tabRule {
+    margin: 0 16px;
+  }
+  .headerActions {
+    width: 100%;
+    padding-bottom: 12px;
+  }
+  .actionCenterBtn {
+    flex: 1;
+    justify-content: center;
+  }
+  .newDocBtn {
+    flex: 1;
+    justify-content: center;
+  }
+  .content {
+    padding: 16px 16px 26px;
+  }
+}

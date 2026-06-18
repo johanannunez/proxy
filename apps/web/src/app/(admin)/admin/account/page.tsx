@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AccountNav } from "@/app/(portal)/portal/account/AccountNav";
-import ProfileSection from "@/app/(portal)/portal/account/components/ProfileSection";
-import SecuritySection from "@/app/(portal)/portal/account/components/SecuritySection";
-import { SessionsSection } from "@/app/(portal)/portal/account/components/SessionsSection";
-import { RegionSection } from "@/app/(portal)/portal/account/components/RegionSection";
+import { AccountNav } from "@/app/(workspace)/workspace/account/AccountNav";
+import ProfileSection from "@/app/(workspace)/workspace/account/components/ProfileSection";
+import SecuritySection from "@/app/(workspace)/workspace/account/components/SecuritySection";
+import { SessionsSection } from "@/app/(workspace)/workspace/account/components/SessionsSection";
+import { RegionSection } from "@/app/(workspace)/workspace/account/components/RegionSection";
 import { DeveloperSection } from "./DeveloperSection";
 
 export const metadata: Metadata = { title: "Admin Account" };
@@ -25,7 +25,7 @@ export default async function AdminAccountPage() {
     .single();
 
   if (profile?.role !== "admin") {
-    redirect("/portal/dashboard");
+    redirect("/workspace/home");
   }
 
   const profileData = {

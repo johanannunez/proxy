@@ -18,8 +18,8 @@ export default function OfflinePage() {
       }}
     >
       <Image
-        src="/brand/logo-mark.png"
-        alt="Parcel"
+        src="/brand/logo-mark-v2.png"
+        alt="Proxy"
         width={48}
         height={48}
         style={{ marginBottom: "2rem" }}

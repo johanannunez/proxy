@@ -34,7 +34,7 @@ function dueDatePreset(daysFromNow: number): string {
 }
 
 export function TaskDetailDrawer({ task, onClose }: { task: Task | null; onClose: () => void }) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
 
@@ -51,6 +51,10 @@ export function TaskDetailDrawer({ task, onClose }: { task: Task | null; onClose
       setLocalDueAt(task.dueAt);
       setLocalStatus(task.status);
     }
+    // Re-init draft state only when the task identity changes. Depending on the
+    // full `task` object would re-run on every optimistic update and clobber the
+    // user's in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id]);
 
   // Fix 3: Only attach Escape listener when a task is open; re-attach only on task change
@@ -59,6 +63,8 @@ export function TaskDetailDrawer({ task, onClose }: { task: Task | null; onClose
     const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
+    // `task` is only read for the open/closed check; keying on its identity is intended.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose, task?.id]);
 
   const saveTitle = useCallback(() => {

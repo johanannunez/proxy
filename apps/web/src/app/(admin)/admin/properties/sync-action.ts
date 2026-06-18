@@ -34,9 +34,9 @@ export async function triggerSync(): Promise<SyncResult> {
   const result = await syncFromHospitable(user.id);
 
   revalidatePath("/admin/properties");
-  revalidatePath("/portal/dashboard");
-  revalidatePath("/portal/reserve");
-  revalidatePath("/portal/payouts");
+  revalidatePath("/workspace/home");
+  revalidatePath("/workspace/reserve");
+  revalidatePath("/workspace/payouts");
 
   return result;
 }

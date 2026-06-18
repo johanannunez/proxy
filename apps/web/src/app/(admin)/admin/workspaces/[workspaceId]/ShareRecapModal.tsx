@@ -60,7 +60,7 @@ export function ShareRecapModal({
   const includedItems = actionItems.filter((a) => !excludedIds.includes(a.id));
 
   const smsPreview = (() => {
-    const suffix = " - Parcel";
+    const suffix = " - Proxy";
     const dateStr = scheduledAt ? ` from ${formatDateShort(scheduledAt)}` : "";
     const body = `Hi ${ownerFirstName}! Your meeting recap${dateStr} is ready. ${summary.slice(0, 80)}${summary.length > 80 ? "…" : ""}`;
     const max = 155 - suffix.length;
@@ -98,7 +98,7 @@ export function ShareRecapModal({
             <div className={styles.sectionLabel}>Email preview</div>
             <div className={styles.emailPreview}>
               <div className={styles.emailPreviewHeader}>
-                <span className={styles.emailPreviewLogo}>Parcel</span>
+                <span className={styles.emailPreviewLogo}>Proxy</span>
                 <span className={styles.emailPreviewLabel}>Meeting Recap</span>
               </div>
               <div className={styles.emailPreviewBody}>

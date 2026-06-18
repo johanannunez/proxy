@@ -1,0 +1,92 @@
+/* ─── StageMeter — package-tracking style document progress ─── */
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.stage:first-child {
+  flex: 0 0 auto;
+}
+
+.node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--border-strong, rgba(0, 0, 0, 0.16));
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dotDone {
+  background: var(--color-brand, #1b77be);
+}
+
+.dotCurrent {
+  background: var(--color-brand-gradient, linear-gradient(135deg, #02aaeb, #1b77be));
+  box-shadow: 0 0 0 3.5px rgba(2, 170, 235, 0.18), 0 0 8px rgba(2, 170, 235, 0.45);
+}
+
+.connector {
+  flex: 1;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--border-default, rgba(0, 0, 0, 0.09));
+  margin: 0 3px;
+  transform: translateY(-8px);
+}
+
+.compact .connector {
+  transform: translateY(0);
+}
+
+.connectorDone {
+  background: linear-gradient(90deg, #02aaeb, #1b77be);
+}
+
+.label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+}
+
+.labelDone {
+  color: var(--color-brand, #1b77be);
+}
+
+.labelCurrent {
+  color: var(--text-primary, var(--color-text-primary));
+}
+
+/* Compact variant: dots + connectors only, labels hidden */
+.compact .label {
+  display: none;
+}
+
+.compact .dot {
+  width: 7px;
+  height: 7px;
+}
+
+.compact .dotCurrent {
+  box-shadow: 0 0 0 2.5px rgba(2, 170, 235, 0.18), 0 0 6px rgba(2, 170, 235, 0.4);
+}

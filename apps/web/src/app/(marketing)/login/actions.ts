@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { recordSessionLogin } from "@/lib/session-log";
 import { logTimelineEvent } from "@/lib/timeline";
+import { hasVerifiedTotp } from "@/lib/auth/mfa";
 
 export type LoginState = {
   error?: string;
@@ -16,7 +17,7 @@ export async function login(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const redirectTo = String(formData.get("redirect") ?? "/portal/dashboard");
+  const redirectTo = String(formData.get("redirect") ?? "/workspace/home");
 
   if (!email || !password) {
     return { error: "Please enter your email and password." };
@@ -72,7 +73,7 @@ export async function login(
     // Validate redirect is internal to prevent open-redirect attacks.
     // A valid redirect starts with "/" but not "//" (which browsers treat as protocol-relative).
     const isInternalRedirect = redirectTo.startsWith("/") && !redirectTo.startsWith("//");
-    const safeRedirect = isInternalRedirect ? redirectTo : "/portal/dashboard";
+    const safeRedirect = isInternalRedirect ? redirectTo : "/workspace/home";
 
     // Admin access guard: if the user explicitly selected Admin but their profile is not admin,
     // deny immediately rather than silently bouncing them via middleware.
@@ -82,11 +83,22 @@ export async function login(
     }
 
     // If no specific destination was requested (still on the default), route by role.
-    // If the user was sent here from a specific page (e.g., /portal/settings), honor that.
+    // If the user was sent here from a specific page (e.g., /workspace/settings), honor that.
     const destination =
-      safeRedirect === "/portal/dashboard" && profile?.role === "admin"
+      safeRedirect === "/workspace/home" && profile?.role === "admin"
         ? "/admin"
         : safeRedirect;
+
+    // Second factor gate: a password sign-in always leaves the session at aal1,
+    // so if the user has a verified authenticator factor they must clear the
+    // login-time verify screen before we honor their destination. We check
+    // factors authoritatively via listFactors (a /user fetch) rather than the
+    // assurance level's nextLevel, which is not reliably populated in the
+    // freshly stored session right after sign-in.
+    if (await hasVerifiedTotp()) {
+      const verifyUrl = `/verify-2fa?redirect=${encodeURIComponent(destination)}`;
+      redirect(verifyUrl);
+    }
 
     redirect(destination);
   }

@@ -341,3 +341,130 @@
 }
 .addTaskSubmitBtn:hover { background: #374151; }
 .addTaskSubmitBtn:disabled { opacity: 0.4; cursor: default; }
+
+/* ─── Dark mode ─── */
+
+/* Page canvas */
+:global(.dark) .page { background: var(--surface-base); }
+
+/* Tab bar */
+:global(.dark) .views { border-bottom-color: var(--border); }
+:global(.dark) .tab { color: var(--text-secondary); }
+:global(.dark) .tab:hover { color: var(--text-primary); }
+:global(.dark) .tab:focus-visible { color: var(--text-primary); }
+:global(.dark) .tabActive { color: var(--text-primary); }
+
+/* Count badges (inactive) */
+:global(.dark) .count { background: var(--border-strong); color: var(--text-secondary); }
+
+/* Toolbar */
+:global(.dark) .search {
+  background: var(--surface-floating);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+:global(.dark) .meta { color: var(--text-secondary); }
+
+/* Task list card */
+:global(.dark) .list {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+
+/* Group headers */
+:global(.dark) .groupHead {
+  background: var(--surface-elevated);
+  border-top-color: var(--border);
+  color: var(--text-secondary);
+}
+:global(.dark) .groupCount { background: var(--border-strong); color: var(--text-secondary); }
+
+/* Workspace entity group header */
+:global(.dark) .entityHead {
+  background: var(--surface-elevated);
+  border-top-color: var(--border);
+  color: var(--text-primary);
+}
+
+/* Empty state */
+:global(.dark) .empty { color: var(--text-secondary); }
+
+/* Sort button + menu */
+:global(.dark) .sortBtn {
+  background: var(--surface-floating);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+:global(.dark) .sortBtn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+:global(.dark) .sortMenu {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+:global(.dark) .sortOption { color: var(--text-primary); }
+:global(.dark) .sortOption:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* Toolbar action buttons */
+:global(.dark) .toolbarBtn {
+  background: var(--surface-floating);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+:global(.dark) .toolbarBtn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+/* Filter panel */
+:global(.dark) .filterPanel {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+:global(.dark) .filterPanelHeader { border-bottom-color: var(--border); }
+:global(.dark) .filterPanelTitle { color: var(--text-primary); }
+:global(.dark) .filterSection { border-bottom-color: var(--border); }
+:global(.dark) .filterAssigneeItem { color: var(--text-primary); }
+:global(.dark) .filterAssigneeItem:hover { background: rgba(255, 255, 255, 0.05); }
+:global(.dark) .filterAssigneeCount {
+  background: var(--border-strong);
+  color: var(--text-secondary);
+}
+:global(.dark) .filterPill {
+  background: var(--surface-floating);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+:global(.dark) .filterPill:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+/* Group by menu */
+:global(.dark) .groupMenu {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+:global(.dark) .groupOption { color: var(--text-primary); }
+:global(.dark) .groupOption:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* Active filter chips */
+:global(.dark) .chipClearAll { color: var(--text-secondary); }
+:global(.dark) .chipClearAll:hover { color: var(--text-primary); }
+
+/* Skeleton shimmer */
+:global(.dark) .skeleton {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+:global(.dark) .skeletonRow {
+  background: linear-gradient(90deg, #1e2028 25%, #252830 50%, #1e2028 75%);
+  background-size: 400% 100%;
+  border-top-color: var(--border);
+}
+
+/* Add task row */
+:global(.dark) .addTaskRow { border-top-color: var(--border); color: var(--text-secondary); }
+:global(.dark) .addTaskRow:hover { color: var(--text-primary); }
+
+/* Add task form */
+:global(.dark) .addTaskForm { border-top-color: var(--border); }
+:global(.dark) .addTaskInput { color: var(--text-primary); }
+:global(.dark) .addTaskCancelBtn { color: var(--text-secondary); }
+:global(.dark) .addTaskCancelBtn:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* Submit button: stays dark but uses a visible surface so it reads on the dark canvas */
+:global(.dark) .addTaskSubmitBtn { background: var(--surface-floating); color: var(--text-primary); border: 1px solid var(--border-strong); }
+:global(.dark) .addTaskSubmitBtn:hover { background: var(--border-strong); }

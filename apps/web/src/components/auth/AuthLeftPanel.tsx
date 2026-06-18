@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { AuthFeatureRows } from "./AuthFeatureRows";
 import { PremiumTestimonials } from "./PremiumTestimonials";
 
@@ -13,21 +14,21 @@ export function AuthLeftPanel() {
         padding: "32px 0",
       }}
     >
-      {/* Single unified block — logo through testimonial, centered as one unit */}
+      {/* Single unified block from logo through proof, centered as one unit */}
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <a
+        <Link
           href="/"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "10px",
             textDecoration: "none",
-            marginBottom: "32px",
+            marginBottom: "26px",
           }}
         >
           <Image
-            src="/brand/logo-mark.png"
-            alt="The Parcel Co."
+            src="/brand/logo-mark-v2.png"
+            alt="The Proxy"
             width={34}
             height={34}
             style={{
@@ -41,44 +42,44 @@ export function AuthLeftPanel() {
             style={{
               fontSize: "15px",
               fontWeight: 600,
-              color: "#1a1a1a",
+              color: "var(--color-text-primary)",
               letterSpacing: "-0.01em",
             }}
           >
-            The Parcel Co.
+            The Proxy
           </span>
-        </a>
+        </Link>
 
         <h1
           style={{
             fontFamily: "var(--font-lora), Georgia, serif",
-            fontSize: "46px",
+            fontSize: "42px",
             fontWeight: 700,
-            color: "#1a1a1a",
-            lineHeight: 1.08,
+            color: "var(--color-text-primary)",
+            lineHeight: 1.06,
             letterSpacing: "-0.025em",
             marginBottom: "10px",
           }}
         >
-          Meet Parcel.
+          Meet Proxy.
         </h1>
 
         <p
           style={{
             fontSize: "15px",
-            color: "#4b5563",
+            color: "var(--color-text-secondary)",
             lineHeight: 1.6,
-            maxWidth: "480px",
-            marginBottom: "22px",
+            maxWidth: "460px",
+            marginBottom: "20px",
             fontWeight: 400,
           }}
         >
-          Maximize your rentals, simplify your operations. The owner portal built for serious landlords.
+          Your property in good hands, with every important detail in view.
         </p>
 
         <AuthFeatureRows />
 
-        <div style={{ marginTop: "20px" }}>
+        <div style={{ marginTop: "18px" }}>
           <PremiumTestimonials />
         </div>
       </div>

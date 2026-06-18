@@ -1,0 +1,532 @@
+/* ── Root: 3-panel grid ──────────────────────────────────── */
+
+.root {
+  display: grid;
+  grid-template-columns: 220px 1fr minmax(360px, 440px);
+  grid-template-rows: auto 1fr;
+  /* Height is set at runtime to (viewport bottom − this element's top) so the
+     page never scrolls; only the column bodies (row 2) scroll. The admin shell
+     is a grow-based scroll chain, so a measured height is the reliable cap. */
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-warm-gray-50, #f8f7f6);
+  outline: none;
+}
+
+@media (max-width: 1180px) {
+  .root {
+    grid-template-columns: 220px 1fr 320px;
+  }
+}
+
+@media (max-width: 980px) {
+  .root {
+    grid-template-columns: 220px 1fr 0px;
+  }
+  .rightPanel {
+    display: none;
+  }
+}
+
+/* ── Top bar (spans all columns) ─────────────────────────── */
+
+.topBar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-surface-elevated);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.backBtn:hover {
+  background: var(--color-surface-hover, rgba(0,0,0,0.04));
+  color: var(--color-text-primary);
+}
+
+.nameInput {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm, 0.375rem);
+  min-width: 0;
+  flex: 1;
+  max-width: 320px;
+  transition: background 0.15s ease;
+}
+.nameInput:hover {
+  background: color-mix(in srgb, var(--color-border) 40%, transparent);
+}
+.nameInput:focus {
+  background: var(--color-surface-elevated);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+
+.saveStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  min-width: 4rem;
+}
+
+.savedIcon {
+  color: var(--color-success);
+}
+
+.topRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.aiBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.aiBtn:hover {
+  background: color-mix(in srgb, var(--color-brand) 6%, transparent);
+  color: var(--color-brand);
+  border-color: color-mix(in srgb, var(--color-brand) 40%, var(--color-border));
+}
+
+.shareBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.shareBtn:hover {
+  background: color-mix(in srgb, var(--color-success, #16a34a) 6%, transparent);
+  color: var(--color-success, #16a34a);
+  border-color: color-mix(in srgb, var(--color-success, #16a34a) 40%, var(--color-border));
+}
+
+.previewBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 0.5rem);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.previewBtn:hover:not(.previewBtnDisabled) {
+  background: var(--color-surface-hover, rgba(0,0,0,0.04));
+  color: var(--color-text-primary);
+}
+.previewBtnDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.publishBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 1rem;
+  border: none;
+  border-radius: var(--radius-sm, 0.5rem);
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.publishBtn:hover:not(:disabled) { opacity: 0.88; }
+.publishBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.unpublishBtn {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+.unpublishBtn:hover:not(:disabled) {
+  background: var(--color-surface-hover, rgba(0,0,0,0.04));
+  opacity: 1;
+}
+
+/* ── Right panel ─────────────────────────────────────────── */
+
+.rightPanel {
+  border-left: 1px solid var(--color-border);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Center canvas panel ─────────────────────────────────── */
+
+.canvasWrap {
+  overflow-y: auto;
+  padding: 2rem 1rem;
+  min-height: 0;
+}
+
+.canvas {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Sortable items ──────────────────────────────────────── */
+
+.sortableItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.875rem 0.75rem;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md, 0.75rem);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 0.375rem;
+}
+.fieldRow:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 40%, var(--color-border));
+}
+.fieldRowSelected {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 15%, transparent);
+}
+.fieldRowDragging {
+  opacity: 0.5;
+}
+
+.fieldRowLayout {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0.375rem 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.375rem;
+}
+.fieldRowLayout:hover {
+  background: color-mix(in srgb, var(--color-border) 20%, transparent);
+}
+.fieldRowLayout .dragHandle {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.fieldRowLayout:hover .dragHandle {
+  opacity: 0.5;
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+  margin-top: 0.125rem;
+}
+.dragHandle:active { cursor: grabbing; }
+
+.fieldContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: var(--radius-sm, 0.375rem);
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.fieldRow:hover .removeBtn,
+.fieldRowSelected .removeBtn,
+.fieldRowLayout:hover .removeBtn {
+  opacity: 1;
+}
+.removeBtn:hover {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-error);
+}
+
+/* ── Add below ───────────────────────────────────────────── */
+
+.addBelowRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.addBelowBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border: 1.5px dashed var(--color-border);
+  border-radius: 9999px;
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.sortableItem:hover .addBelowBtn {
+  opacity: 1;
+}
+.addBelowBtn:hover {
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.paletteBelow {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+/* ── Empty canvas ────────────────────────────────────────── */
+
+.emptyCanvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg, 1rem);
+  background: #fff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* While a palette item is being dragged, the empty canvas is the drop target. */
+.emptyCanvasArmed {
+  border-color: color-mix(in srgb, var(--color-brand-light, #02aaeb) 55%, transparent);
+}
+.emptyCanvasOver {
+  border-color: var(--color-brand-light, #02aaeb);
+  background: color-mix(in srgb, var(--color-brand-light, #02aaeb) 7%, #fff);
+}
+
+.emptyCanvasHint {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.7;
+  max-width: 360px;
+}
+
+.emptyAiLink {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-brand);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.emptyAiLink:hover {
+  opacity: 0.8;
+}
+
+/* ── Field counter ───────────────────────────────────────── */
+
+.fieldCounter {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Duplicate button ────────────────────────────────────── */
+
+.duplicateBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: var(--radius-sm, 0.375rem);
+  background: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.fieldRow:hover .duplicateBtn,
+.fieldRowSelected .duplicateBtn,
+.fieldRowLayout:hover .duplicateBtn {
+  opacity: 1;
+}
+.duplicateBtn:hover {
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+  color: var(--color-brand);
+}
+
+/* ── Right panel tabs ────────────────────────────────────── */
+
+.rightPanelTabbed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rightPanelTabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.rightPanelTab {
+  flex: 1;
+  padding: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  border: none;
+  background: var(--color-surface-elevated);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.rightPanelTab:hover {
+  color: var(--color-text-primary);
+}
+.rightPanelTabActive {
+  color: var(--color-brand);
+  border-bottom-color: var(--color-brand);
+}
+
+/* ── Drop gaps (palette drag insertion) ─────────────────── */
+
+.dropGap {
+  height: 6px;
+  border-radius: 3px;
+  margin: 1px 0;
+  transition: height 0.12s ease, background 0.12s ease;
+}
+
+.dropGapActive {
+  height: 4px;
+  background: var(--color-brand-light, #02aaeb);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand-light, #02aaeb) 30%, transparent);
+}
+
+/* ── Palette drag overlay chip ───────────────────────────── */
+
+.dragOverlayChip {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-brand);
+  color: #fff;
+  border-radius: var(--radius-sm, 0.5rem);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(27, 119, 190, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── Palette item dragging state ─────────────────────────── */
+
+.typeItemDragging {
+  opacity: 0.4;
+}
+
+/* ── Spin ────────────────────────────────────────────────── */
+
+.spin {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

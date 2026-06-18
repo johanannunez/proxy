@@ -22,7 +22,7 @@ export function taskToVTodo(task: CalDAVTask, baseUrl: string): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Parcel//TaskOS//EN',
+    'PRODID:-//Proxy//TaskOS//EN',
     'BEGIN:VTODO',
     `UID:${uid}`,
     `DTSTAMP:${dtStamp}`,

@@ -6,7 +6,7 @@ import { CustomSelect } from "@/components/admin/CustomSelect";
 import { HelpArticleEditor } from "@/components/help/HelpArticleEditor";
 import { parseAlcoveDraft, type ContentType } from "@/lib/admin/help-intake-parser";
 import { createArticle, checkSlugExists } from "../actions";
-import { PORTAL_ROUTE_GROUPS } from "../portal-routes";
+import { WORKSPACE_ROUTE_GROUPS } from "../workspace-routes";
 
 type Category = { id: string; name: string; slug: string };
 
@@ -106,8 +106,8 @@ export function IntakePage({ categories }: { categories: Category[] }) {
   const [tags, setTags] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [readTime, setReadTime] = useState<number | "">(5);
-  const [portalPath, setPortalPath] = useState("");
-  const [portalPathEditing, setPortalPathEditing] = useState(false);
+  const [workspacePath, setWorkspacePath] = useState("");
+  const [workspacePathEditing, setWorkspacePathEditing] = useState(false);
   const [needsVisual, setNeedsVisual] = useState(false);
   const [needsVisualDismissed, setNeedsVisualDismissed] = useState(false);
   const [publishedInfo, setPublishedInfo] = useState<{
@@ -158,8 +158,8 @@ export function IntakePage({ categories }: { categories: Category[] }) {
     setContent(parsed.content);
     setTags(parsed.tags.join(", "));
     setReadTime(parsed.readTimeMinutes);
-    setPortalPath(parsed.suggestedPortalPath ?? "");
-    setPortalPathEditing(!parsed.suggestedPortalPath);
+    setWorkspacePath(parsed.suggestedWorkspacePath ?? "");
+    setWorkspacePathEditing(!parsed.suggestedWorkspacePath);
     setNeedsVisual(parsed.needsVisual);
     setNeedsVisualDismissed(false);
 
@@ -184,7 +184,7 @@ export function IntakePage({ categories }: { categories: Category[] }) {
       setSlug(smartSlugify(title, type));
     }
     if (type === "flagship") setSlug("");
-    if (type === "blog") setPortalPath("");
+    if (type === "blog") setWorkspacePath("");
   }
 
   function buildFormData(status: "draft" | "published"): FormData {
@@ -195,7 +195,7 @@ export function IntakePage({ categories }: { categories: Category[] }) {
     fd.set("content", content);
     fd.set("category_id", categoryId);
     fd.set("content_type", contentType);
-    fd.set("related_portal_path", portalPath);
+    fd.set("related_portal_path", workspacePath);
     const tagList = tags
       .split(",")
       .map((t) => t.trim())
@@ -335,7 +335,7 @@ NEEDS_VISUAL: false
     );
   }
 
-  const showPortalPath = contentType !== "blog";
+  const showWorkspacePath = contentType !== "blog";
 
   return (
     <div className="flex flex-col gap-5">
@@ -550,14 +550,14 @@ NEEDS_VISUAL: false
         </div>
       </div>
 
-      {/* Portal Path */}
-      {showPortalPath && (
+      {/* Workspace Path */}
+      {showWorkspacePath && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
-            Portal Path
+            Workspace Path
           </label>
 
-          {portalPath && !portalPathEditing ? (
+          {workspacePath && !workspacePathEditing ? (
             <div className="flex items-center gap-2">
               <span
                 className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-xs"
@@ -567,10 +567,10 @@ NEEDS_VISUAL: false
                   color: "var(--color-text-primary)",
                 }}
               >
-                {portalPath}
+                {workspacePath}
                 <button
                   type="button"
-                  onClick={() => { setPortalPath(""); setPortalPathEditing(true); }}
+                  onClick={() => { setWorkspacePath(""); setWorkspacePathEditing(true); }}
                   className="ml-1 opacity-50 transition-opacity hover:opacity-100"
                   aria-label="Clear portal path"
                 >
@@ -579,7 +579,7 @@ NEEDS_VISUAL: false
               </span>
               <button
                 type="button"
-                onClick={() => setPortalPathEditing(true)}
+                onClick={() => setWorkspacePathEditing(true)}
                 className="text-xs font-medium transition-colors"
                 style={{ color: "var(--color-brand)" }}
               >
@@ -588,10 +588,10 @@ NEEDS_VISUAL: false
             </div>
           ) : (
             <CustomSelect
-              value={portalPath}
+              value={workspacePath}
               onChange={(value) => {
-                setPortalPath(value);
-                if (value) setPortalPathEditing(false);
+                setWorkspacePath(value);
+                if (value) setWorkspacePathEditing(false);
               }}
               placeholder="No portal path"
               groups={[
@@ -599,7 +599,7 @@ NEEDS_VISUAL: false
                   label: "General",
                   options: [{ value: "", label: "No portal path" }],
                 },
-                ...PORTAL_ROUTE_GROUPS.map((group) => ({
+                ...WORKSPACE_ROUTE_GROUPS.map((group) => ({
                   label: group.label,
                   options: group.routes.map((route) => ({
                     value: route.path,

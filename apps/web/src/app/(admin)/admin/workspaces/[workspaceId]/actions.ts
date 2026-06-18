@@ -40,7 +40,7 @@ export async function inviteOwner(
     return { ok: false, message: "Owner not found." };
   }
 
-  if (!ownerProfile.email.endsWith("@pending.theparcelco.com")) {
+  if (!ownerProfile.email.endsWith("@pending.myproxyhost.com")) {
     return { ok: false, message: "This owner has already been invited." };
   }
 
@@ -94,7 +94,7 @@ export async function inviteOwner(
     ownerId,
     eventType: "welcome",
     category: "account",
-    title: "Welcome to Parcel",
+    title: "Welcome to Proxy",
     body: `Invited as ${realEmail}`,
     visibility: "owner",
     isPinned: true,

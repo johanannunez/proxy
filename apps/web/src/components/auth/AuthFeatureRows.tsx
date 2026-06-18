@@ -1,7 +1,7 @@
 const features = [
   {
-    title: "Full Property Dashboard",
-    desc: "Every unit, lease, and tenant visible at a glance from one command center.",
+    title: "Everything About Your Property",
+    desc: "See the setup details, records, documents, and updates Proxy has on file.",
     icon: (
       <>
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
@@ -10,29 +10,32 @@ const features = [
     ),
   },
   {
-    title: "Automated Task Management",
-    desc: "Log repairs, assign priorities, and close tickets without chasing anyone down.",
-    icon: (
-      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94z" />
-    ),
-  },
-  {
-    title: "Owner Financial Reporting",
-    desc: "Monthly statements and payout history generated automatically for every property.",
+    title: "Messages With Context",
+    desc: "Keep owner conversations connected to the right property and next step.",
     icon: (
       <>
-        <line x1="12" y1="1" x2="12" y2="23" />
-        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+        <path d="M21 15a4 4 0 01-4 4H8l-5 3V7a4 4 0 014-4h10a4 4 0 014 4z" />
+        <path d="M8 9h8M8 13h5" />
       </>
     ),
   },
   {
-    title: "Guest Intelligence, Powered by AI",
-    desc: "Weekly AI summaries of guest feedback and owner action items, ready before you need them.",
+    title: "Know What Needs Attention",
+    desc: "See requested items and updates before they become another follow-up.",
     icon: (
       <>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+      </>
+    ),
+  },
+  {
+    title: "Documents When You Need Them",
+    desc: "Find agreements, forms, records, and files without asking for a resend.",
+    icon: (
+      <>
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+        <path d="M14 2v6h6M8 13h8M8 17h5" />
       </>
     ),
   },
@@ -55,7 +58,7 @@ export function AuthFeatureRows() {
               display: "flex",
               alignItems: "flex-start",
               gap: "14px",
-              padding: "12px 0",
+              padding: "10px 0",
             }}
           >
             <div
@@ -86,7 +89,7 @@ export function AuthFeatureRows() {
                   display: "block",
                   fontSize: "14px",
                   fontWeight: 600,
-                  color: "#1a1a1a",
+                  color: "var(--color-text-primary)",
                   marginBottom: "2px",
                   letterSpacing: "-0.01em",
                 }}
@@ -96,7 +99,7 @@ export function AuthFeatureRows() {
               <span
                 style={{
                   fontSize: "13px",
-                  color: "#6b7280",
+                  color: "var(--color-text-secondary)",
                   lineHeight: 1.5,
                 }}
               >

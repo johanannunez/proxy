@@ -765,7 +765,7 @@ function GenericSummary({ itemKey }: { itemKey: string }) {
               justifyContent: "space-between",
               padding: "10px 14px",
               borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--color-warm-gray-100)",
-              backgroundColor: i % 2 === 0 ? "var(--color-white)" : "#fafafa",
+              backgroundColor: i % 2 === 0 ? "var(--color-white)" : "var(--color-warm-gray-50)",
               fontSize: "13px",
             }}
           >
@@ -874,7 +874,7 @@ function BlockList({
             gap: "12px",
             padding: "10px 14px",
             borderBottom: i === items.length - 1 ? "none" : "1px solid var(--color-warm-gray-100)",
-            backgroundColor: i % 2 === 0 ? "var(--color-white)" : "#fafafa",
+            backgroundColor: i % 2 === 0 ? "var(--color-white)" : "var(--color-warm-gray-50)",
           }}
         >
           <div
@@ -967,7 +967,7 @@ function getFormFields(itemKey: string): FormField[] {
         { label: "Agreement Version", value: "v2026-01" },
         { label: "Effective Date", value: "Mar 18, 2026" },
         { label: "Term Length", value: "Month-to-month", hint: "Months or 'month-to-month'" },
-        { label: "Revenue Split", value: "80% owner / 20% Parcel" },
+        { label: "Revenue Split", value: "80% owner / 20% Proxy" },
       ];
     case "property_setup_form":
       return [
@@ -985,7 +985,7 @@ function getFormFields(itemKey: string): FormField[] {
       ];
     case "wifi_info":
       return [
-        { label: "Network Name (SSID)", value: "ParcelHouse-524", copyable: true },
+        { label: "Network Name (SSID)", value: "ProxyHouse-524", copyable: true },
         { label: "Password", value: "SycamoreSun2026!", hint: "Shared with guests via guidebook", copyable: true },
         { label: "Router Location", value: "Utility closet, top shelf" },
       ];

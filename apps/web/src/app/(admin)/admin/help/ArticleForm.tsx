@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useTransition } from "react";
 import { CustomSelect } from "@/components/admin/CustomSelect";
 import { HelpArticleEditor } from "@/components/help/HelpArticleEditor";
 import { checkSlugExists } from "./actions";
-import { PORTAL_ROUTE_GROUPS } from "./portal-routes";
+import { WORKSPACE_ROUTE_GROUPS } from "./workspace-routes";
 import type { ContentType } from "@/lib/admin/help-intake-parser";
 
 type Category = { id: string; name: string };
@@ -138,7 +138,7 @@ export function ArticleForm({
     });
   }
 
-  const showPortalPath = contentType !== "blog";
+  const showWorkspacePath = contentType !== "blog";
 
   return (
     <form ref={formRef} action={handleSubmit} className="flex flex-col gap-5">
@@ -299,7 +299,7 @@ export function ArticleForm({
             defaultValue={initialData?.tags?.join(", ") ?? ""}
             className="rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors"
             style={fieldStyle}
-            placeholder="getting-started, properties, billing"
+            placeholder="getting-started, properties, finances"
           />
           <span className="text-[11px]" style={{ color: "var(--color-text-tertiary, #9ca3af)" }}>
             Comma-separated
@@ -322,11 +322,11 @@ export function ArticleForm({
         </div>
       </div>
 
-      {/* Portal Path */}
-      {showPortalPath && (
+      {/* Workspace Path */}
+      {showWorkspacePath && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
-            Portal Path (optional)
+            Workspace Path (optional)
           </label>
           <CustomSelect
             name="related_portal_path"
@@ -337,7 +337,7 @@ export function ArticleForm({
                 label: "General",
                 options: [{ value: "", label: "No portal path" }],
               },
-              ...PORTAL_ROUTE_GROUPS.map((group) => ({
+              ...WORKSPACE_ROUTE_GROUPS.map((group) => ({
                 label: group.label,
                 options: group.routes.map((route) => ({
                   value: route.path,

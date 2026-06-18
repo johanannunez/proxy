@@ -46,7 +46,7 @@ export default function DarkFooter() {
           <div className="md:col-span-3">
             <Image
               src="/brand/logo-white.png"
-              alt="The Parcel Company"
+              alt="Proxy"
               width={160}
               height={48}
               className="h-10 w-auto brightness-0 invert"
@@ -97,7 +97,7 @@ export default function DarkFooter() {
         {/* Bottom Row */}
         <div className="mt-6 flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-xs text-white/70">
-            &copy; {new Date().getFullYear()} The Parcel Company. All rights
+            &copy; {new Date().getFullYear()} Proxy. All rights
             reserved.
           </p>
           <div className="flex gap-2">

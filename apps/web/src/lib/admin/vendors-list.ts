@@ -1,6 +1,18 @@
 // apps/web/src/lib/admin/vendors-list.ts
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import { untypedDatabase } from '@/lib/supabase/untyped';
+
+type VendorDbRow = {
+  id: string;
+  full_name: string;
+  company_name: string | null;
+  phone: string | null;
+  email: string | null;
+  trade: string | null;
+  notes: string | null;
+  created_at: string;
+};
 
 export type VendorRow = {
   id: string;
@@ -15,19 +27,20 @@ export type VendorRow = {
 
 export async function fetchVendors(): Promise<VendorRow[]> {
   const supabase = await createClient();
-  const { data, error } = await (supabase as any)
-    .from('vendors')
+  // vendors not yet in generated types; use the untyped helper.
+  const { data, error } = await untypedDatabase(supabase)
+    .from<VendorDbRow[]>('vendors')
     .select('id, full_name, company_name, phone, email, trade, notes, created_at')
     .order('full_name', { ascending: true });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r: Record<string, unknown>) => ({
-    id: r.id as string,
-    fullName: r.full_name as string,
-    companyName: (r.company_name as string | null) ?? null,
-    phone: (r.phone as string | null) ?? null,
-    email: (r.email as string | null) ?? null,
-    trade: (r.trade as string | null) ?? null,
-    notes: (r.notes as string | null) ?? null,
-    createdAt: r.created_at as string,
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    fullName: r.full_name,
+    companyName: r.company_name ?? null,
+    phone: r.phone ?? null,
+    email: r.email ?? null,
+    trade: r.trade ?? null,
+    notes: r.notes ?? null,
+    createdAt: r.created_at,
   }));
 }

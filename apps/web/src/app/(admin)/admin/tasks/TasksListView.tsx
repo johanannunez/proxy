@@ -111,6 +111,7 @@ function FilterPanel({
                   onClick={() => onChange({ ...filters, assignees: toggle(filters.assignees, a.name) })}
                 >
                   {a.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- dynamic assignee avatar URL from Supabase, dimensions unknown at render time
                     <img src={a.avatarUrl} alt={a.name} className={styles.filterAvatar} />
                   ) : (
                     <span className={styles.filterAvatarFallback}>
@@ -714,6 +715,7 @@ export function TasksListView(props: Props) {
             <section key={g.name}>
               <header className={styles.entityHead}>
                 {g.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- dynamic entity group avatar URL from Supabase, dimensions unknown at render time
                   <img src={g.avatarUrl} alt={g.name} className={styles.entityAvatar} />
                 ) : g.initials ? (
                   <span className={styles.entityAvatarFallback}>{g.initials}</span>

@@ -805,3 +805,55 @@
     font-size: 31px;
   }
 }
+
+/* ─── Dark mode ─── */
+
+/* Page canvas: replace light cream gradient with dark surface */
+:global(.dark) .shell {
+  background: var(--surface-base);
+}
+
+/* Content panels sitting above the canvas (NOT the navy hero) */
+:global(.dark) .panel {
+  background: var(--surface-floating);
+  border-color: var(--border);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+:global(.dark) .panelHeader {
+  background: var(--surface-floating);
+  border-bottom-color: var(--border);
+}
+
+/* Insight grid inside the panel */
+:global(.dark) .insightGrid {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+
+:global(.dark) .insight:not(:last-child) {
+  border-right-color: var(--border);
+}
+
+/* Recent meeting items */
+:global(.dark) .recentItem {
+  background: var(--surface-floating);
+  border-color: var(--border);
+}
+
+/* Recap fact mini-cards inside recent items */
+:global(.dark) .recapFact {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+
+/* Missing-link button (near-white warm tone on light) */
+:global(.dark) .missingLink {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+}
+
+/* openAction uses var(--color-white) which flips, but needs border update */
+:global(.dark) .openAction {
+  border-color: var(--border);
+}

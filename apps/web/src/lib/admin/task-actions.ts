@@ -7,8 +7,13 @@ import { nextOccurrence } from './recurrence';
 import { sanitizeHtml } from './sanitize-html';
 import { requireAdminUser } from './auth';
 import type { Database } from '@/types/supabase';
+import { untypedDatabase } from '@/lib/supabase/untyped';
 
 type TaskUpdate = Database['public']['Tables']['tasks']['Update'];
+
+// `priority`, `caldav_uid` and recurrence columns are not yet in the generated
+// Supabase types, so inserts/updates go through the untyped helper.
+type TaskInsertRow = Record<string, unknown>;
 
 export type CreateTaskInput = {
   title: string;
@@ -29,7 +34,7 @@ export type CreateTaskInput = {
 export async function createTask(input: CreateTaskInput): Promise<{ id: string }> {
   const { supabase, user } = await requireAdminUser();
 
-  const caldav_uid = `task-${crypto.randomUUID()}@parcelco.com`;
+  const caldav_uid = `task-${crypto.randomUUID()}@myproxyhost.com`;
 
   // Compute next_spawn_at when creating a recurring task
   let next_spawn_at: string | null = null;
@@ -57,12 +62,14 @@ export async function createTask(input: CreateTaskInput): Promise<{ id: string }
     caldav_uid,
   };
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert(row as any)
+  const db = untypedDatabase(supabase);
+  const { data, error } = await db
+    .from<{ id: string }>('tasks')
+    .insert(row satisfies TaskInsertRow)
     .select('id')
     .single();
   if (error) throw error;
+  if (!data) throw new Error('Task insert returned no row');
 
   revalidatePath('/admin/tasks');
   if (input.parentType && input.parentId) {
@@ -88,7 +95,8 @@ export async function updateTask(
   }>,
 ): Promise<void> {
   const { supabase } = await requireAdminUser();
-  const update: TaskUpdate = {};
+  // `priority` is not yet in the generated TaskUpdate type.
+  const update: TaskUpdate & { priority?: 1 | 2 | 3 | 4 } = {};
   if (patch.title !== undefined) update.title = patch.title;
   if (patch.description !== undefined) {
     update.description =
@@ -100,9 +108,15 @@ export async function updateTask(
   if (patch.taskType !== undefined && patch.taskType !== null) update.task_type = patch.taskType;
   if (patch.tags !== undefined) update.tags = patch.tags && patch.tags.length > 0 ? patch.tags : [];
   if (patch.estimatedMinutes !== undefined) update.estimated_minutes = patch.estimatedMinutes;
-  if (patch.priority !== undefined) (update as any).priority = patch.priority;
+  if (patch.priority !== undefined) update.priority = patch.priority;
 
-  const { error } = await supabase.from('tasks').update(update).eq('id', id);
+  // Cast: `priority` is not yet in the generated TaskUpdate type (see above),
+  // so the typed client rejects it as an excess property. The column exists at
+  // runtime; the value is still sent.
+  const { error } = await supabase
+    .from('tasks')
+    .update(update as TaskUpdate)
+    .eq('id', id);
   if (error) throw error;
   revalidatePath('/admin/tasks');
 }
@@ -134,8 +148,11 @@ export async function completeTask(id: string): Promise<void> {
       // Compute the spawn after THAT one so next_spawn_at is always one step ahead
       const afterNext = nextOccurrence(next, rule)?.toISOString() ?? null;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from('tasks').insert({
+      // `priority` is not yet in the generated row type; read it from an
+      // untyped view of the same row rather than asserting `any`.
+      const priority = (task as { priority?: number }).priority ?? 4;
+
+      const insertRow: TaskInsertRow = {
         title: task.title,
         description: task.description,
         parent_type: task.parent_type,
@@ -149,13 +166,14 @@ export async function completeTask(id: string): Promise<void> {
         linked_property_id: task.linked_property_id,
         recurrence_rule: task.recurrence_rule,
         pre_notify_hours: task.pre_notify_hours,
-        priority: (task as any).priority ?? 4,
-        caldav_uid: `task-${crypto.randomUUID()}@parcelco.com`,
+        priority,
+        caldav_uid: `task-${crypto.randomUUID()}@myproxyhost.com`,
         spawned_from_task_id: task.id,
         due_at: nextDue,
         next_spawn_at: afterNext,
         status: 'todo',
-      });
+      };
+      await untypedDatabase(supabase).from('tasks').insert(insertRow);
     }
   }
 

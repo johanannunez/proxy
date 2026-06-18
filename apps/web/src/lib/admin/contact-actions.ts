@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import type { LifecycleStage } from './contact-types';
 import { requireAdminUser } from './auth';
 import { seedOnboardingTasks } from './onboarding-actions';
+import { untypedDatabase } from '@/lib/supabase/untyped';
 
 type DbLifecycleStage = LifecycleStage;
 
@@ -37,8 +38,10 @@ export async function createContact(
     ? { notes: input.notes.trim() }
     : {};
 
-  const { data, error } = await supabase
-    .from('contacts')
+  // Some contacts columns are not yet in the generated Supabase types, so the
+  // insert goes through the untyped helper.
+  const { data, error } = await untypedDatabase(supabase)
+    .from<{ id: string }>('contacts')
     .insert({
       full_name: input.fullName.trim(),
       email: input.email?.trim() || null,
@@ -50,13 +53,14 @@ export async function createContact(
       metadata,
       assigned_to: user.id,
       workspace_id: workspace.id,
-    } as any)
+    })
     .select('id')
     .single();
 
   if (error) throw error;
+  if (!data) throw new Error('Contact insert returned no row');
   revalidatePath('/admin/people');
-  return { id: data.id as string, workspaceId: workspace.id as string };
+  return { id: data.id, workspaceId: workspace.id as string };
 }
 
 export async function updateContactStage(

@@ -29,7 +29,7 @@ export async function enforceOwnerAccountGate(): Promise<string> {
   // Currently only check full_name since phone/mailing_address
   // columns don't exist until migration runs
   if (!profile?.full_name) {
-    redirect("/portal/setup?gate=account");
+    redirect("/workspace/setup?gate=account");
   }
 
   return user.id;

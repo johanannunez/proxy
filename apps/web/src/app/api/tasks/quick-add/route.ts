@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import * as chrono from 'chrono-node';
 import { verifyApiToken } from '@/lib/api-tokens';
+import { untypedDatabase } from '@/lib/supabase/untyped';
+
+type InsertedTaskRow = { id: string; title: string };
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get('Authorization') ?? '';
@@ -15,7 +18,7 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SECRET_KEY!,
   );
 
-  const result = await verifyApiToken(token, supabase as any);
+  const result = await verifyApiToken(token, untypedDatabase(supabase));
   if (!result) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
   }
@@ -48,10 +51,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const caldavUid = `task-${crypto.randomUUID()}@parcelco.com`;
+  const caldavUid = `task-${crypto.randomUUID()}@myproxyhost.com`;
 
-  const { data, error } = await (supabase as any)
-    .from('tasks')
+  const { data, error } = await untypedDatabase(supabase)
+    .from<InsertedTaskRow>('tasks')
     .insert({
       title: trimmedTitle,
       created_by: result.profileId,
@@ -63,9 +66,14 @@ export async function POST(request: Request) {
     .select('id, title')
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json(
+      { error: error?.message ?? "Failed to create task" },
+      { status: 500 },
+    );
+  }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.theparcelco.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.myproxyhost.com';
   return NextResponse.json({
     id: data.id,
     title: data.title,

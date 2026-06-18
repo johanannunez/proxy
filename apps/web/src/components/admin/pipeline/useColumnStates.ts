@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ColumnState } from './pipeline-types';
 
-const STORAGE_PREFIX = 'parcel.columnState.v1.';
-const SYNC_EVENT = 'parcel:column-state-changed';
+const STORAGE_PREFIX = 'proxy.columnState.v1.';
+const SYNC_EVENT = 'proxy:column-state-changed';
 
 type StateMap = Record<string, ColumnState>;
 

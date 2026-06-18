@@ -3,7 +3,7 @@
  *
  * Run with: pnpm --filter web gen:checklist-pdf
  *
- * Source: `src/app/(portal)/portal/cleaning-checklist/modules.ts`
+ * Source: `src/app/(workspace)/workspace/cleaning-checklist/modules.ts`
  * Output: `public/cleaning-checklist.pdf`
  *
  * This is a TSX script (not a Next.js server component) executed via
@@ -29,7 +29,7 @@ import {
   StyleSheet,
   renderToFile,
 } from "@react-pdf/renderer";
-import { MODULES, TOTAL_ITEMS } from "../src/app/(portal)/portal/cleaning-checklist/modules";
+import { MODULES, TOTAL_ITEMS } from "../src/app/(workspace)/workspace/cleaning-checklist/modules";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

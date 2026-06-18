@@ -311,7 +311,7 @@ function AssigneeTab({
 
   return (
     <div className={styles.tabContent}>
-      <Section label="Assignee" hint="Show people assigned to specific Parcel team members.">
+      <Section label="Assignee" hint="Show people assigned to specific Proxy team members.">
         <div className={styles.assigneeList}>
           <AssigneeRow
             label="Unassigned"

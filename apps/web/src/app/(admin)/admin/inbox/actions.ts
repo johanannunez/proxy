@@ -7,11 +7,23 @@ import { buildMessageEmail, buildBroadcastEmail } from "@/lib/email-template";
 import { sendPushToOwner, sendPushToAllOwners } from "@/lib/push";
 import { createNotification, createNotificationForAllOwners } from "@/lib/notifications";
 import { logTimelineEvent } from "@/lib/timeline";
+import { sendOpenPhoneSms, smsTextFromHtml } from "@/lib/admin/sms-delivery";
+import { untypedDatabase } from "@/lib/supabase/untyped";
+import {
+  resolveEmailReplyContext,
+  resolveEmailReplyRecipients,
+  resolveSendMessageConversationTarget,
+  shouldNotifyOwnerForAdminMessage,
+  type EmailReplyMessage,
+  type EmailReplyContext,
+  type InboxConversationForSend,
+} from "./send-target";
 
 /* ─── Helpers ─── */
 
 async function sendViaResend(args: {
-  to: string;
+  to: string[];
+  cc?: string[];
   subject: string;
   html: string;
 }): Promise<{ ok: boolean; resendId?: string; error?: string }> {
@@ -29,8 +41,9 @@ async function sendViaResend(args: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Parcel <hello@theparcelco.com>",
+        from: "Proxy <hello@myproxyhost.com>",
         to: args.to,
+        cc: args.cc && args.cc.length > 0 ? args.cc : undefined,
         subject: args.subject,
         html: args.html,
       }),
@@ -50,6 +63,21 @@ async function sendViaResend(args: {
   }
 }
 
+async function fetchEmailReplyMessages(conversationId: string): Promise<EmailReplyMessage[]> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("messages")
+    .select("delivery_method, metadata, created_at")
+    .eq("conversation_id", conversationId)
+    .eq("delivery_method", "email")
+    .order("created_at", { ascending: true });
+
+  return (data ?? []).map((message) => ({
+    deliveryMethod: message.delivery_method,
+    metadata: message.metadata,
+  }));
+}
+
 /* ─── Actions ─── */
 
 /**
@@ -59,8 +87,13 @@ async function sendViaResend(args: {
 export async function sendMessage(args: {
   ownerId: string;
   body: string;
-  deliveryMethod?: "portal" | "email";
+  deliveryMethod?: "workspace" | "email" | "sms";
   subject?: string;
+  conversationId?: string;
+  emailHtml?: string;
+  emailTo?: string[];
+  emailCc?: string[];
+  smsBody?: string;
 }) {
   const supabase = await createClient();
   const {
@@ -69,6 +102,28 @@ export async function sendMessage(args: {
   if (!user) return { error: "Not authenticated" };
 
   const svc = createServiceClient();
+  const deliveryMethod = args.deliveryMethod ?? "workspace";
+
+  let selectedConversation: InboxConversationForSend | null = null;
+  if (args.conversationId) {
+    const { data: conversation, error: conversationError } = await svc
+      .from("conversations")
+      .select("id, owner_id, type")
+      .eq("id", args.conversationId)
+      .maybeSingle();
+
+    if (conversationError) return { error: conversationError.message };
+    if (!conversation) return { error: "Conversation not found." };
+    if (conversation.owner_id !== args.ownerId) {
+      return { error: "Conversation does not belong to this owner." };
+    }
+
+    selectedConversation = {
+      id: conversation.id,
+      ownerId: conversation.owner_id,
+      type: conversation.type as InboxConversationForSend["type"],
+    };
+  }
 
   // Find or create a direct conversation with this owner
   const { data: existing } = await svc
@@ -78,9 +133,17 @@ export async function sendMessage(args: {
     .eq("type", "direct")
     .maybeSingle();
 
-  let conversationId = existing?.id;
+  const target = resolveSendMessageConversationTarget({
+    deliveryMethod,
+    selectedConversation,
+    existingDirectConversationId: existing?.id ?? null,
+  });
 
-  if (!conversationId) {
+  if (!target.ok) return { error: target.error };
+
+  let conversationId = target.conversationId;
+
+  if (target.createDirect) {
     const { data: conv, error: convErr } = await svc
       .from("conversations")
       .insert({
@@ -95,37 +158,100 @@ export async function sendMessage(args: {
     conversationId = conv.id;
   }
 
+  if (!conversationId) return { error: "Could not resolve conversation." };
+
   // If email delivery, send via Resend first
   let resendId: string | undefined;
-  if (args.deliveryMethod === "email") {
+  let emailRecipients: string[] = [];
+  let emailReplyContext: EmailReplyContext = {};
+  let ownerEmailForDelivery: string | null = null;
+  let smsTo: string | undefined;
+  let smsProviderMessageId: string | undefined;
+  if (deliveryMethod === "email") {
     const { data: ownerProfile } = await svc
       .from("profiles")
       .select("email, full_name")
       .eq("id", args.ownerId)
       .single();
 
-    if (ownerProfile?.email) {
-      const subject = args.subject || "New message from The Parcel Company";
-      const html = buildMessageEmail({
-        subject,
-        body: args.body,
-        conversationId,
-        ownerName: ownerProfile.full_name?.split(" ")[0] ?? undefined,
-      });
+    ownerEmailForDelivery = ownerProfile?.email ?? null;
+    const priorEmailMessages = selectedConversation?.type === "email_log"
+      ? await fetchEmailReplyMessages(conversationId)
+      : [];
+    emailReplyContext = resolveEmailReplyContext(priorEmailMessages);
+    const recipients = resolveEmailReplyRecipients({
+      conversationType: selectedConversation?.type ?? "direct",
+      ownerEmail: ownerProfile?.email,
+      messages: priorEmailMessages,
+    });
 
-      const result = await sendViaResend({
-        to: ownerProfile.email,
-        subject,
-        html,
-      });
-      resendId = result.resendId;
+    if (!recipients.ok) return { error: recipients.error };
+    emailRecipients = args.emailTo && args.emailTo.length > 0 ? args.emailTo : recipients.to;
+
+    const subject = args.subject || "New message from Proxy";
+    const html = args.emailHtml ?? buildMessageEmail({
+      subject,
+      body: args.body,
+      conversationId,
+      ownerName: ownerProfile?.full_name?.split(" ")[0] ?? undefined,
+    });
+
+    const result = await sendViaResend({
+      to: emailRecipients,
+      cc: args.emailCc,
+      subject,
+      html,
+    });
+    if (!result.ok) {
+      return { error: result.error ?? "Email could not be sent." };
     }
+
+    resendId = result.resendId;
+  }
+
+  if (deliveryMethod === "sms") {
+    const { data: ownerProfile } = await svc
+      .from("profiles")
+      .select("phone")
+      .eq("id", args.ownerId)
+      .single();
+
+    if (!ownerProfile?.phone) {
+      return { error: "This owner does not have a phone number for SMS." };
+    }
+
+    const smsResult = await sendOpenPhoneSms({
+      to: ownerProfile.phone,
+      bodyHtml: args.smsBody ?? args.body,
+    });
+
+    if (!smsResult.ok) {
+      return { error: smsResult.error };
+    }
+
+    smsTo = smsResult.normalizedTo;
+    smsProviderMessageId = smsResult.providerMessageId;
   }
 
   // Insert the message
-  const metadata: Record<string, string> = {};
+  const metadata: Record<string, string | string[]> = {};
   if (args.subject) metadata.subject = args.subject;
-  if (resendId) metadata.resend_id = resendId;
+  if (deliveryMethod === "email") {
+    metadata.direction = "outbound";
+    metadata.from = "hello@myproxyhost.com";
+    metadata.to = emailRecipients;
+    if (args.emailCc && args.emailCc.length > 0) metadata.cc = args.emailCc;
+    metadata.source = "admin_inbox";
+    if (emailReplyContext.relatedContactId) metadata.related_contact_id = emailReplyContext.relatedContactId;
+    if (emailReplyContext.relatedContactName) metadata.related_contact_name = emailReplyContext.relatedContactName;
+    if (emailReplyContext.workspaceId) metadata.workspace_id = emailReplyContext.workspaceId;
+  }
+  if (resendId) {
+    metadata.resend_id = resendId;
+    metadata.resend_email_id = resendId;
+  }
+  if (smsTo) metadata.sms_to = smsTo;
+  if (smsProviderMessageId) metadata.quo_id = smsProviderMessageId;
 
   const { data: msg, error: msgErr } = await svc
     .from("messages")
@@ -133,7 +259,7 @@ export async function sendMessage(args: {
       conversation_id: conversationId,
       sender_id: user.id,
       body: args.body,
-      delivery_method: args.deliveryMethod ?? "portal",
+      delivery_method: deliveryMethod,
       metadata: metadata as unknown as import("@/types/supabase").Json,
     })
     .select("id, created_at")
@@ -141,24 +267,53 @@ export async function sendMessage(args: {
 
   if (msgErr || !msg) return { error: msgErr?.message ?? "Failed to send message" };
 
+  const shouldNotifyOwner = shouldNotifyOwnerForAdminMessage({
+    deliveryMethod,
+    conversationType: selectedConversation?.type ?? "direct",
+    ownerEmail: ownerEmailForDelivery,
+    recipients: emailRecipients,
+  });
+
+  if (deliveryMethod === "sms" && smsTo) {
+    const adminPhone = process.env.OPENPHONE_PHONE_NUMBER ?? "";
+    void untypedDatabase(svc)
+      .from("communication_events")
+      .insert({
+        profile_id: user.id,
+        quo_id: smsProviderMessageId ?? `admin-sms:${msg.id}`,
+        channel: "sms",
+        direction: "outbound",
+        phone_from: adminPhone,
+        phone_to: smsTo,
+        raw_transcript: smsTextFromHtml(args.body),
+        entity_type: "owner",
+        entity_id: args.ownerId,
+        processed_at: new Date().toISOString(),
+        tier: "fyi",
+      })
+      .then(() => {}, () => {});
+  }
+
   // In-app notification (only if there's actual content)
-  if (args.body.trim()) {
+  if (shouldNotifyOwner && args.body.trim()) {
     createNotification({
       ownerId: args.ownerId,
       type: "message_received",
-      title: "New message from The Parcel Company",
+      title: "New message from Proxy",
       body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
-      link: "/portal/messages",
+      link: "/workspace/inbox",
     }).catch(() => {});
   }
 
   // Push notification (fire-and-forget)
-  sendPushToOwner({
-    ownerId: args.ownerId,
-    title: "The Parcel Company",
-    body: args.body,
-    url: "/portal/messages",
-  }).catch(() => {});
+  if (shouldNotifyOwner) {
+    sendPushToOwner({
+      ownerId: args.ownerId,
+      title: "Proxy",
+      body: args.body,
+      url: "/workspace/inbox",
+    }).catch(() => {});
+  }
 
   // Log activity (fire-and-forget)
   svc.from("activity_log").insert({
@@ -168,20 +323,26 @@ export async function sendMessage(args: {
     actor_id: user.id,
     metadata: {
       recipient_id: args.ownerId,
-      delivery_method: args.deliveryMethod ?? "portal",
+      recipients: emailRecipients,
+      notified_owner: shouldNotifyOwner,
+      delivery_method: deliveryMethod,
       subject: args.subject ?? null,
-      description: `Message sent to owner via ${args.deliveryMethod ?? "portal"}`,
+      description: shouldNotifyOwner
+        ? `Message sent to owner via ${deliveryMethod}`
+        : `Message sent via ${deliveryMethod}`,
     },
   }).then(() => {}, () => {});
 
-  void logTimelineEvent({
-    ownerId: args.ownerId,
-    eventType: "message_received",
-    category: "communication",
-    title: "New message from Parcel",
-    body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
-    visibility: "admin_only",
-  });
+  if (shouldNotifyOwner) {
+    void logTimelineEvent({
+      ownerId: args.ownerId,
+      eventType: "message_received",
+      category: "communication",
+      title: "New message from Proxy",
+      body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
+      visibility: "admin_only",
+    });
+  }
 
   revalidatePath("/admin/inbox");
   return { success: true, messageId: msg.id, conversationId };
@@ -194,7 +355,7 @@ export async function sendMessage(args: {
 export async function sendBroadcast(args: {
   subject: string;
   body: string;
-  deliveryMethod: "portal" | "portal_email";
+  deliveryMethod: "workspace" | "workspace_email";
 }) {
   const supabase = await createClient();
   const {
@@ -225,7 +386,7 @@ export async function sendBroadcast(args: {
       sender_id: user.id,
       body: args.body,
       is_system: true,
-      delivery_method: args.deliveryMethod === "portal_email" ? "email" : "portal",
+      delivery_method: args.deliveryMethod === "workspace_email" ? "email" : "workspace",
       metadata: { subject: args.subject } as unknown as import("@/types/supabase").Json,
     })
     .select("id")
@@ -234,7 +395,7 @@ export async function sendBroadcast(args: {
   if (msgErr || !msg) return { error: msgErr?.message ?? "Failed to send announcement" };
 
   // If email delivery, send to all owners
-  if (args.deliveryMethod === "portal_email") {
+  if (args.deliveryMethod === "workspace_email") {
     const { data: owners, error: ownersErr } = await svc
       .from("profiles")
       .select("email, full_name")
@@ -250,7 +411,7 @@ export async function sendBroadcast(args: {
           ownerName: owner.full_name?.split(" ")[0] ?? undefined,
         });
         return sendViaResend({
-          to: owner.email,
+          to: [owner.email],
           subject: args.subject,
           html,
         });
@@ -266,14 +427,14 @@ export async function sendBroadcast(args: {
     type: "announcement",
     title: args.subject,
     body: args.body.replace(/<[^>]*>/g, "").slice(0, 120),
-    link: "/portal/messages",
+    link: "/workspace/inbox",
   }).catch(() => {});
 
   // Push notification to all owners (fire-and-forget)
   sendPushToAllOwners({
-    title: "Parcel Announcement",
+    title: "Proxy Announcement",
     body: args.body,
-    url: "/portal/messages",
+    url: "/workspace/inbox",
   }).catch(() => {});
 
   // Log activity (fire-and-forget)
@@ -306,6 +467,42 @@ export async function getOwnerCount(): Promise<number | null> {
   return count ?? 0;
 }
 
+export async function getOrCreateDirectConversation(ownerId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated", conversationId: null };
+
+  const svc = createServiceClient();
+  const { data: existing, error: existingError } = await svc
+    .from("conversations")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("type", "direct")
+    .maybeSingle();
+
+  if (existingError) return { error: existingError.message, conversationId: null };
+  if (existing?.id) return { conversationId: existing.id, error: null };
+
+  const { data: conversation, error } = await svc
+    .from("conversations")
+    .insert({
+      owner_id: ownerId,
+      type: "direct",
+      subject: null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !conversation) {
+    return { error: error?.message ?? "Failed to create conversation", conversationId: null };
+  }
+
+  revalidatePath("/admin/inbox");
+  return { conversationId: conversation.id, error: null };
+}
+
 /**
  * Fetch all conversations for the admin inbox.
  */
@@ -332,29 +529,52 @@ export async function getAdminConversations(filter?: string) {
 
   const [ownersRes, messagesRes] = await Promise.all([
     ownerIds.length
-      ? svc.from("profiles").select("id, full_name, email").in("id", ownerIds)
+      ? svc.from("profiles").select("id, full_name, email, phone").in("id", ownerIds)
       : { data: [] },
     conversationIds.length
       ? svc
           .from("messages")
-          .select("id, conversation_id, sender_id, body, delivery_method, created_at")
+          .select("id, conversation_id, sender_id, body, delivery_method, metadata, created_at")
           .in("conversation_id", conversationIds)
           .order("created_at", { ascending: false })
       : { data: [] },
   ]);
 
   const ownerMap = new Map(
-    (ownersRes.data ?? []).map((o) => [o.id, { name: o.full_name?.trim() || o.email, email: o.email }]),
+    (ownersRes.data ?? []).map((o) => [
+      o.id,
+      { name: o.full_name?.trim() || o.email, email: o.email, phone: o.phone },
+    ]),
   );
 
-  const lastMessageMap = new Map<string, { body: string; senderId: string; createdAt: string; deliveryMethod: string }>();
+  const lastSenderIds = [
+    ...new Set((messagesRes.data ?? []).map((m) => m.sender_id).filter(Boolean)),
+  ] as string[];
+  const { data: lastSenders } = lastSenderIds.length
+    ? await svc.from("profiles").select("id, role").in("id", lastSenderIds)
+    : { data: [] };
+  const lastSenderRoleMap = new Map((lastSenders ?? []).map((sender) => [sender.id, sender.role]));
+
+  const lastMessageMap = new Map<
+    string,
+    {
+      body: string;
+      senderId: string;
+      senderRole: string | null;
+      createdAt: string;
+      deliveryMethod: string;
+      metadata: Record<string, unknown>;
+    }
+  >();
   for (const m of messagesRes.data ?? []) {
     if (!lastMessageMap.has(m.conversation_id)) {
       lastMessageMap.set(m.conversation_id, {
         body: m.body,
         senderId: m.sender_id,
+        senderRole: lastSenderRoleMap.get(m.sender_id) ?? null,
         createdAt: m.created_at,
         deliveryMethod: m.delivery_method,
+        metadata: isRecord(m.metadata) ? m.metadata : {},
       });
     }
   }
@@ -363,10 +583,15 @@ export async function getAdminConversations(filter?: string) {
     ...c,
     ownerName: c.owner_id ? ownerMap.get(c.owner_id)?.name ?? "Unknown" : null,
     ownerEmail: c.owner_id ? ownerMap.get(c.owner_id)?.email ?? "" : null,
+    ownerPhone: c.owner_id ? ownerMap.get(c.owner_id)?.phone ?? null : null,
     lastMessage: lastMessageMap.get(c.id) ?? null,
   }));
 
   return { conversations, error: null };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 /**
@@ -422,10 +647,18 @@ export async function getConversationMessages(conversationId: string) {
   if (convRes.data.owner_id) {
     const { data: profile } = await svc
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, full_name, email, phone, workspace_id")
       .eq("id", convRes.data.owner_id)
       .single();
-    ownerProfile = profile;
+    ownerProfile = profile
+      ? {
+          id: profile.id,
+          full_name: profile.full_name,
+          email: profile.email,
+          phone: profile.phone,
+          workspaceId: profile.workspace_id,
+        }
+      : null;
   }
 
   return {

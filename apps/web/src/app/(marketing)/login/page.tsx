@@ -14,7 +14,7 @@ const lora = Lora({
 
 export const metadata: Metadata = {
   title: "Log in",
-  description: "Log in to your Parcel owner portal.",
+  description: "Log in to your Proxy owner workspace.",
 };
 
 type SearchParams = Promise<{ redirect?: string }>;
@@ -37,8 +37,8 @@ export default async function LoginPage({
           {/* Branding — mobile only, hidden on desktop where the left panel shows it */}
           <div className="auth-mobile-branding">
             <Image
-              src="/brand/logo-mark.png"
-              alt="The Parcel Co."
+              src="/brand/logo-mark-v2.png"
+              alt="The Proxy"
               width={72}
               height={72}
               style={{
@@ -53,9 +53,9 @@ export default async function LoginPage({
           <h2
             style={{
               fontFamily: "var(--font-lora), Georgia, serif",
-              fontSize: "32px",
+              fontSize: "30px",
               fontWeight: 700,
-              color: "#1a1a1a",
+              color: "var(--color-text-primary)",
               textAlign: "center",
               letterSpacing: "-0.02em",
               marginBottom: "8px",
@@ -65,34 +65,34 @@ export default async function LoginPage({
           </h2>
           <p
             style={{
-              fontSize: "13.5px",
-              color: "#6b7280",
+              fontSize: "13px",
+              color: "var(--color-text-secondary)",
               textAlign: "center",
-              marginBottom: "28px",
+              marginBottom: "24px",
               lineHeight: 1.5,
             }}
           >
-            Log in to your Parcel owner portal.
+            Login to your workspace.
           </p>
 
-          <LoginForm redirectTo={redirect ?? "/portal/dashboard"} />
+          <LoginForm redirectTo={redirect ?? "/workspace/home"} />
 
           <hr
             style={{
               border: "none",
-              borderTop: "1px solid #f0f4f8",
-              margin: "24px 0 0",
+              borderTop: "1px solid var(--border)",
+              margin: "22px 0 0",
             }}
           />
           <p
             style={{
               textAlign: "center",
-              marginTop: "16px",
+              marginTop: "14px",
               fontSize: "13px",
-              color: "#6b7280",
+              color: "var(--color-text-secondary)",
             }}
           >
-            New to Parcel?{" "}
+            New to Proxy?{" "}
             <Link
               href="/signup"
               style={{

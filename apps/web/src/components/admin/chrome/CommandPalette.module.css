@@ -373,3 +373,125 @@
   .colCreate { border-top: 0 !important; }
   .footer { padding: 10px 12px; gap: 10px; }
 }
+
+/* ─── Dark mode ─── */
+/* All rules below ADD overrides only; no existing rule above is modified. */
+
+:global(.dark) .scrim {
+  /* Dim the dark page so the palette reads as a floating layer. */
+  background: rgba(0, 0, 0, 0.68);
+}
+
+:global(.dark) .dialog {
+  /* Lift the surface above the page, add a crisp edge and a real shadow so
+     it no longer blends into the dark background. */
+  background: #1d1f27;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 32px 90px -20px rgba(0, 0, 0, 0.85),
+    0 4px 16px -4px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+:global(.dark) .inputRow {
+  border-bottom-color: var(--border);
+}
+
+:global(.dark) .inputIcon {
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .input {
+  color: var(--text-primary);
+}
+
+:global(.dark) .input::placeholder {
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .inputKbd {
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+}
+
+:global(.dark) .closeBtn {
+  border-color: var(--border);
+  color: var(--text-secondary);
+  background: var(--surface-elevated);
+}
+
+:global(.dark) .closeBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+/* Column divider — light: border-left on .col + .col */
+:global(.dark) .col + .col {
+  border-left-color: var(--border);
+}
+
+:global(.dark) .sectionLabel {
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .row {
+  color: var(--text-secondary);
+}
+
+:global(.dark) .row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+:global(.dark) .rowActive {
+  color: var(--text-primary);
+  /* keep the #02AAEB inset box-shadow from the base rule */
+}
+
+:global(.dark) .rowIcon {
+  /* Lighter-than-dialog chip with a bright icon so it stays visible. */
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:global(.dark) .rowSub {
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .shimmerRow {
+  background: linear-gradient(90deg, #1e2028 0%, #2a2d38 50%, #1e2028 100%);
+}
+
+:global(.dark) .rowKbd {
+  border-color: var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .empty {
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .footer {
+  border-top-color: var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-tertiary);
+}
+
+:global(.dark) .footerCluster kbd {
+  border-color: var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+}
+
+:global(.dark) .footerHint {
+  color: var(--text-tertiary);
+}
+
+/* Responsive: mobile stacks columns with border-top instead of border-left */
+@media (max-width: 640px) {
+  :global(.dark) .col + .col {
+    border-top-color: var(--border);
+  }
+}

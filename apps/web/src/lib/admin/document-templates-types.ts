@@ -1,0 +1,80 @@
+// apps/web/src/lib/admin/document-templates-types.ts
+
+/**
+ * Per-template settings bag (migration 20260613090000_template_settings).
+ * Stored as a single jsonb column so new options ship without a migration each
+ * time. Every field is optional; an empty object is the valid default.
+ */
+export type TemplateSettings = {
+  email?: { subject?: string; message?: string };
+  reminders?: { everyDays: number; maxCount: number } | null;
+  expiresInDays?: number | null;
+  afterSign?: { redirectUrl?: string; cc?: string[] };
+  prefill?: boolean;
+  accessPin?: string | null;
+};
+
+export type DocumentTemplate = {
+  id: string;
+  org_id: string | null;
+  document_key: string;
+  display_name: string;
+  description: string | null;
+  docuseal_template_id: number | null;
+  signer_roles: string[];
+  requires_countersignature: boolean;
+  gate_step: number | null;
+  is_system: boolean;
+  is_active: boolean;
+  /** Coverage tracking (migration 20260612090000_template_tracking). Until the
+      migration runs the DB rows lack these columns; helpers normalize to
+      false/null so the code path stays safe either way. */
+  tracked: boolean;
+  category: string | null;
+  /** Optional display title override + flexible settings bag (migration
+      20260613090000_template_settings). Rows read before the migration runs
+      lack these columns; helpers normalize to null/{} so the path stays safe. */
+  title: string | null;
+  settings: TemplateSettings;
+  /** HTML-authored template body (migration 20260616013604_document_templates_source_html).
+      null = PDF-based template (existing behavior). '' = HTML template created but
+      not yet authored. Non-empty = HTML fragment authored in the Plate editor. The
+      column presence is the discriminant between PDF and HTML templates. */
+  source_html: string | null;
+  /** Snapshot of source_html at the last DocuSeal publish (migration
+      20260616020000_document_templates_published_html). Compared against
+      source_html to detect unpublished draft changes. null = never published. */
+  published_html: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateDocumentTemplateInput = {
+  org_id?: string;
+  document_key: string;
+  display_name: string;
+  description?: string;
+  docuseal_template_id?: number;
+  signer_roles: string[];
+  requires_countersignature: boolean;
+  gate_step?: number;
+  source_html?: string | null;
+};
+
+export type UpdateDocumentTemplateInput = Partial<Pick<
+  DocumentTemplate,
+  | "title"
+  | "display_name"
+  | "description"
+  | "document_key"
+  | "docuseal_template_id"
+  | "signer_roles"
+  | "requires_countersignature"
+  | "gate_step"
+  | "is_active"
+  | "tracked"
+  | "category"
+  | "settings"
+  | "source_html"
+  | "published_html"
+>>;

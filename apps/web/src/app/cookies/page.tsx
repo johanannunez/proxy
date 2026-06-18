@@ -2,8 +2,8 @@ import StaticPage from "@/components/StaticPage";
 
 export const metadata = {
   title: "Cookie Policy",
-  description: "Learn how The Parcel Company uses cookies to improve your browsing experience.",
-  alternates: { canonical: "https://theparcelco.com/cookies" },
+  description: "Learn how Proxy uses cookies to improve your browsing experience.",
+  alternates: { canonical: "https://www.myproxyhost.com/cookies" },
 };
 
 export default function CookiesPage() {
@@ -38,10 +38,10 @@ export default function CookiesPage() {
       <p>
         Questions about cookies? Email{" "}
         <a
-          href="mailto:hello@theparcelco.com"
+          href="mailto:hello@myproxyhost.com"
           className="text-brand hover:underline"
         >
-          hello@theparcelco.com
+          hello@myproxyhost.com
         </a>
         .
       </p>

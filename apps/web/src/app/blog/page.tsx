@@ -8,7 +8,7 @@ import { BLOG_POSTS, BLOG_CATEGORIES } from "@/data/blog-posts";
 export const metadata: Metadata = {
   title: "Journal: Vacation Rental Tips, Property Investment & Travel Guides",
   description:
-    "Expert articles on vacation rental management, property investment, corporate housing, sustainable travel, and destination guides. Insights from Parcel Co.",
+    "Expert articles on vacation rental management, property investment, corporate housing, sustainable travel, and destination guides. Insights from Proxy",
   keywords: [
     "vacation rental blog",
     "property management tips",
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     "short-term rental advice",
   ],
   openGraph: {
-    title: "Parcel Co. | Journal",
+    title: "Proxy | Journal",
     description:
       "Expert articles on vacation rental management, property investment, and travel.",
     type: "website",
   },
   alternates: {
-    canonical: "https://theparcelco.com/blog",
+    canonical: "https://www.myproxyhost.com/blog",
   },
 };
 
@@ -32,25 +32,25 @@ export default function BlogPage() {
   const blogListSchema = {
     "@context": "https://schema.org",
     "@type": "Blog",
-    name: "The Parcel Company Journal",
+    name: "Proxy Journal",
     description:
       "Expert articles on vacation rental management, property investment, corporate housing, and travel guides.",
-    url: "https://theparcelco.com/blog",
+    url: "https://www.myproxyhost.com/blog",
     publisher: {
       "@type": "Organization",
-      name: "The Parcel Company",
-      url: "https://theparcelco.com",
+      name: "Proxy",
+      url: "https://www.myproxyhost.com",
     },
     blogPost: BLOG_POSTS.map((post) => ({
       "@type": "BlogPosting",
       headline: post.title,
       description: post.excerpt,
-      url: `https://theparcelco.com/blog/${post.slug}`,
+      url: `https://www.myproxyhost.com/blog/${post.slug}`,
       datePublished: new Date(post.date).toISOString(),
       image: post.image,
       author: {
         "@type": "Organization",
-        name: "The Parcel Company",
+        name: "Proxy",
       },
     })),
   };

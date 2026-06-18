@@ -113,7 +113,7 @@ export function AppPreferencesSection() {
             <div className={s.labelCell}>
               <label className={s.label}>Standalone window</label>
               <span className={s.labelHint}>
-                Install Parcel as its own desktop / mobile app.
+                Install Proxy as its own desktop / mobile app.
               </span>
             </div>
             <div
@@ -139,7 +139,7 @@ export function AppPreferencesSection() {
                     className={s.btnSecondary}
                     onClick={() => setInstalled(true)}
                   >
-                    <Command size={14} weight="duotone" /> Install Parcel
+                    <Command size={14} weight="duotone" /> Install Proxy
                   </button>
                 </>
               )}

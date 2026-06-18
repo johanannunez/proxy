@@ -8,8 +8,8 @@ interface InquiryBody {
   message?: string;
 }
 
-const BRAND_FROM = '"The Parcel Company" <hello@theparcelco.com>';
-const LOGO_URL = "https://www.theparcelco.com/brand/logo-full-color.png";
+const BRAND_FROM = '"Proxy" <hello@myproxyhost.com>';
+const LOGO_URL = "https://www.myproxyhost.com/brand/logo-full-color.png";
 
 function escapeHtml(input: string): string {
   return input
@@ -30,15 +30,15 @@ function brandedShell(opts: {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9F7F4;padding:40px 16px;"><tr><td align="center">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(28,26,23,0.06);">
 <tr><td align="center" style="padding:32px 32px 8px 32px;background:#F9F7F4;">
-<img src="${LOGO_URL}" alt="The Parcel Company" width="180" style="display:block;border:0;outline:none;max-width:180px;height:auto;">
+<img src="${LOGO_URL}" alt="Proxy" width="180" style="display:block;border:0;outline:none;max-width:180px;height:auto;">
 </td></tr>
 <tr><td style="padding:32px 40px 8px 40px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;color:#1C1A17;font-weight:500;">${opts.heading}</h1>
 ${opts.bodyHtml}
 </td></tr>
 <tr><td style="padding:24px 40px 32px 40px;border-top:1px solid #eee8df;">
-<p style="margin:0 0 6px 0;font-size:13px;line-height:1.6;color:#8a8680;">The Parcel Company &middot; Rentals Made Easy</p>
-<p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;color:#8a8680;">Questions? Just reply to this email or write us at <a href="mailto:hello@theparcelco.com" style="color:#3D6B61;text-decoration:none;">hello@theparcelco.com</a>.</p>
+<p style="margin:0 0 6px 0;font-size:13px;line-height:1.6;color:#8a8680;">Proxy &middot; Rentals Made Easy</p>
+<p style="margin:0 0 12px 0;font-size:13px;line-height:1.6;color:#8a8680;">Questions? Just reply to this email or write us at <a href="mailto:hello@myproxyhost.com" style="color:#3D6B61;text-decoration:none;">hello@myproxyhost.com</a>.</p>
 <p style="margin:0;font-size:12px;line-height:1.5;color:#b3ada4;">${opts.footerHint}</p>
 </td></tr>
 </table></td></tr></table></body></html>`;
@@ -50,9 +50,9 @@ function buildOwnerAutoReply(name: string, address: string): string {
   return brandedShell({
     heading: `Thanks, ${firstName}`,
     bodyHtml: `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#4a4641;">We got your inquiry about <strong style="color:#1C1A17;">${safeAddress}</strong> and we're excited to learn more about your property.</p>
-<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#4a4641;">A real human (hi, I'm Johan) will review your details and get back to you personally within 24 hours. We'll walk you through how Parcel Co turns investment homes into hands-off rental income.</p>
+<p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#4a4641;">A real human (hi, I'm Johan) will review your details and get back to you personally within 24 hours. We'll walk you through how Proxy Co turns investment homes into hands-off rental income.</p>
 <p style="margin:0 0 4px 0;font-size:16px;line-height:1.6;color:#4a4641;">In the meantime, if anything comes to mind, just reply to this email.</p>`,
-    footerHint: "You received this because you submitted an inquiry at theparcelco.com.",
+    footerHint: "You received this because you submitted an inquiry at myproxyhost.com.",
   });
 }
 
@@ -88,7 +88,7 @@ function buildInternalNotification(params: {
 
   return brandedShell({
     heading: "New owner inquiry",
-    bodyHtml: `<p style="margin:0 0 20px 0;font-size:16px;line-height:1.6;color:#4a4641;">Someone just submitted an inquiry through theparcelco.com. Details below.</p>
+    bodyHtml: `<p style="margin:0 0 20px 0;font-size:16px;line-height:1.6;color:#4a4641;">Someone just submitted an inquiry through myproxyhost.com. Details below.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid #eee8df;">${rowsHtml}</table>
 ${messageBlock}
 <p style="margin:24px 0 0 0;font-size:14px;line-height:1.6;color:#8a8680;">Reply directly to this email to respond to <a href="mailto:${escapeHtml(params.email)}" style="color:#3D6B61;text-decoration:none;">${escapeHtml(params.email)}</a>.</p>`,
@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   }
 
-  const internalTo = process.env.INQUIRY_TO_EMAIL ?? "hello@theparcelco.com";
+  const internalTo = process.env.INQUIRY_TO_EMAIL ?? "hello@myproxyhost.com";
 
   const internalHtml = buildInternalNotification({
     name,
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
     sendEmail({
       apiKey: resendKey,
       to: email,
-      subject: "We got your inquiry — The Parcel Company",
+      subject: "We got your inquiry — Proxy",
       html: autoReplyHtml,
     }),
   ]);

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 import { logEmailToOwner } from "@/lib/log-email";
 import {
   buildMeetingCreatedEmail,
@@ -17,7 +18,7 @@ import {
 // Config
 // ---------------------------------------------------------------------------
 
-const BRAND_FROM = '"The Parcel Company" <hello@theparcelco.com>';
+const BRAND_FROM = '"Proxy" <hello@myproxyhost.com>';
 
 // ---------------------------------------------------------------------------
 // Owner contact lookup
@@ -31,21 +32,25 @@ interface OwnerContact {
 
 async function getOwnerContact(ownerId: string): Promise<OwnerContact> {
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+
+  type ProfileRow = { email: string | null };
+  type ContactRow = { phone: string | null; email: string | null; first_name: string | null };
 
   const [{ data: profile }, { data: contact }] = await Promise.all([
-    svc.from("profiles").select("email").eq("id", ownerId).maybeSingle(),
-    (svc as any).from("contacts").select("phone, email, first_name").eq("profile_id", ownerId).maybeSingle(),
+    db.from<ProfileRow>("profiles").select("email").eq("id", ownerId).maybeSingle(),
+    db.from<ContactRow>("contacts").select("phone, email, first_name").eq("profile_id", ownerId).maybeSingle(),
   ]);
 
   const firstName =
-    (contact as any)?.first_name ??
-    ((contact as any)?.email as string | null)?.split("@")[0] ??
-    ((profile as any)?.email as string | null)?.split("@")[0] ??
+    contact?.first_name ??
+    contact?.email?.split("@")[0] ??
+    profile?.email?.split("@")[0] ??
     "there";
 
   return {
-    email: (contact as any)?.email ?? (profile as any)?.email ?? null,
-    phone: (contact as any)?.phone ?? null,
+    email: contact?.email ?? profile?.email ?? null,
+    phone: contact?.phone ?? null,
     firstName,
   };
 }
@@ -91,9 +96,9 @@ function normalizePhone(raw: string): string | null {
   return null;
 }
 
-// Trim to 155 chars to leave room for " - Parcel" suffix without exceeding segment
+// Trim to 155 chars to leave room for " - Proxy" suffix without exceeding segment
 function smsText(body: string): string {
-  const suffix = " - Parcel";
+  const suffix = " - Proxy";
   const max = 155 - suffix.length;
   const trimmed = body.length > max ? body.slice(0, max - 1) + "…" : body;
   return trimmed + suffix;

@@ -44,14 +44,15 @@ export function PasswordField({
         onBlur={() => { setFocused(false); onBlurProp?.(); }}
         style={{
           width: "100%",
-          border: `1.5px solid ${focused ? "var(--color-brand)" : "#dce8f0"}`,
+          border: `1.5px solid ${focused ? "var(--color-brand)" : "var(--border)"}`,
           borderRadius: "10px",
-          padding: "11px 14px",
+          paddingBlock: "10px",
+          paddingLeft: "14px",
           paddingRight: "44px",
           fontSize: "14px",
           fontFamily: "inherit",
-          color: "#1a1a1a",
-          background: focused ? "#ffffff" : "#f7fbfd",
+          color: "var(--color-text-primary)",
+          background: focused ? "var(--surface-floating)" : "var(--surface-elevated)",
           outline: "none",
           transition: "border-color 0.15s ease, background 0.15s ease",
         }}
@@ -73,7 +74,7 @@ export function PasswordField({
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "#6b7280",
+          color: "var(--color-text-secondary)",
           borderRadius: "0 10px 10px 0",
         }}
       >

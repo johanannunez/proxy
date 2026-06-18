@@ -3,14 +3,14 @@ import StaticPage from "@/components/StaticPage";
 export const metadata = {
   title: "About Us",
   description:
-    "The Parcel Company curates vacation homes and furnished residences for people who notice the details. Learn about our mission, standards, and commitment to quality.",
+    "Proxy curates vacation homes and furnished residences for people who notice the details. Learn about our mission, standards, and commitment to quality.",
   openGraph: {
-    title: "Parcel Co. | About Us",
+    title: "Proxy | About Us",
     description:
-      "Learn about The Parcel Company's mission to make short-term rentals better, one property at a time.",
+      "Learn about Proxy's mission to make short-term rentals better, one property at a time.",
   },
   alternates: {
-    canonical: "https://theparcelco.com/about",
+    canonical: "https://www.myproxyhost.com/about",
   },
 };
 
@@ -18,7 +18,7 @@ export default function AboutPage() {
   return (
     <StaticPage title="About Us">
       <p>
-        The Parcel Company curates vacation homes and furnished residences for
+        Proxy curates vacation homes and furnished residences for
         people who notice the details. We partner with property owners who share
         our standards — quality furnishings, responsive management, and spaces
         that feel like home from the moment you walk in.

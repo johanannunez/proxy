@@ -1,0 +1,318 @@
+/* ─── Queue list ─── */
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 32px 32px;
+}
+
+@media (max-width: 640px) {
+  .queue {
+    padding: 0 16px 24px;
+  }
+
+  .emptyState {
+    margin: 0 16px 24px;
+  }
+
+  .card {
+    flex-wrap: wrap;
+  }
+
+  .cardActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ─── Card ─── */
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px 14px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-left-width: 4px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s var(--ease-spring, ease);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong, #d1d5db);
+  transform: translateY(-1px);
+}
+
+/* Urgency rail: red = high, amber = medium, slate = low */
+.cardHigh {
+  border-left-color: var(--color-error, #dc2626) !important;
+}
+
+.cardMedium {
+  border-left-color: var(--status-warning, #d97706) !important;
+}
+
+.cardLow {
+  border-left-color: var(--text-tertiary, #94a3b8) !important;
+}
+
+/* ─── Avatar ─── */
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ─── Body ─── */
+.cardBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ownerName {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kindBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badgeDeclined {
+  background: color-mix(in srgb, var(--color-error, #dc2626) 9%, transparent);
+  color: var(--status-danger-fg, #b91c1c);
+}
+
+.badgeStuck {
+  background: rgba(27, 119, 190, 0.1);
+  color: var(--color-brand, #1b77be);
+}
+
+.badgeExpiring {
+  background: color-mix(in srgb, var(--status-warning, #d97706) 10%, transparent);
+  color: var(--status-warning-fg, #b45309);
+}
+
+.badgeCountersign {
+  background: rgba(2, 170, 235, 0.1);
+  color: var(--status-info-fg, #0369a1);
+}
+
+.badgeOverdue {
+  background: color-mix(in srgb, var(--color-error, #dc2626) 9%, transparent);
+  color: var(--status-danger-fg, #b91c1c);
+}
+
+.cardBottomRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.docTitle {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metaSep {
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+  flex-shrink: 0;
+}
+
+.waiting {
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.waitNeutral {
+  color: var(--text-tertiary, #9ca3af);
+  font-weight: 500;
+}
+
+.waitAmber {
+  color: var(--status-warning-fg, #b45309);
+}
+
+.waitRed {
+  color: var(--color-error, #dc2626);
+}
+
+/* ─── Actions ─── */
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.viewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.viewLink:hover {
+  color: var(--text-primary, #111827);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.viewLink:focus-visible {
+  outline: 2px solid var(--color-brand-light, #02aaeb);
+  outline-offset: 2px;
+}
+
+.viewLink:active {
+  opacity: 0.8;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--color-brand, #1b77be);
+  background: var(--color-brand, #1b77be);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(27, 119, 190, 0.3);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: #15619c;
+  border-color: #15619c;
+  box-shadow: 0 2px 6px rgba(27, 119, 190, 0.35);
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid var(--color-brand-light, #02aaeb);
+  outline-offset: 2px;
+}
+
+.primaryBtn:active:not(:disabled) {
+  opacity: 0.85;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 32px;
+  margin: 0 32px 32px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--surface-base, #fff);
+  border: 1px dashed var(--border, #e5e7eb);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-success, #16a34a) 9%, var(--surface-base, #fff));
+  color: var(--color-success, #16a34a);
+  margin-bottom: 6px;
+}
+
+.emptyBody {
+  max-width: 380px;
+}
+
+.emptyTitle {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.emptyBody {
+  font-size: 12.5px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* ─── Engagement chip + compact stage meter (premium upgrades 1 + 3) ─── */
+
+.viewedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(2, 170, 235, 0.1);
+  color: var(--color-brand, #1b77be);
+  flex-shrink: 0;
+}
+
+.stageMeterRow {
+  margin-top: 7px;
+  max-width: 260px;
+}

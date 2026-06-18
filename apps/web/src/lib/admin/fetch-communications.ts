@@ -1,9 +1,14 @@
 // apps/web/src/lib/admin/fetch-communications.ts
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import { untypedDatabase } from '@/lib/supabase/untyped';
 import type { CommunicationEvent } from './communication-types';
 import type { CommunicationInsightPayload } from './communication-types';
 import { fetchInsightsByParentWithPayload } from './ai-insights';
+import {
+  buildCommunicationsDashboardData,
+  type CommunicationsDashboardData,
+} from './communications-dashboard-data';
 
 type CommunicationsData = {
   events: CommunicationEvent[];
@@ -38,8 +43,8 @@ export async function fetchCommunications(
   workspaceId: string
 ): Promise<CommunicationsData> {
   const supabase = await createClient();
-  const { data, error } = await (supabase as any)
-    .from('communication_events')
+  const { data, error } = await untypedDatabase(supabase)
+    .from<Record<string, unknown>[]>('communication_events')
     .select('*')
     .eq('entity_type', entityType)
     .eq('entity_id', workspaceId)
@@ -70,18 +75,7 @@ export type UnresolvedCaller = {
   claudeSummary: string | null;
   createdAt: string;
 };
-
-export type CommunicationsDashboardData = {
-  recentActionItems: Array<{
-    id: string;
-    title: string;
-    body: string;
-    entityType: string;
-    workspaceId: string;
-    createdAt: string;
-  }>;
-  unresolvedCallers: UnresolvedCaller[];
-};
+export type { CommunicationsDashboardData };
 
 export async function fetchCommunicationsDashboard(): Promise<CommunicationsDashboardData> {
   const supabase = await createClient();
@@ -95,37 +89,30 @@ export async function fetchCommunicationsDashboard(): Promise<CommunicationsDash
       .is('dismissed_at', null)
       .order('created_at', { ascending: false })
       .limit(10),
-    (supabase as any)
-      .from('communication_events')
+    untypedDatabase(supabase)
+      .from<Record<string, unknown>[]>('communication_events')
       .select('phone_from, claude_summary, created_at')
       .eq('entity_type', 'unknown')
       .not('tier', 'eq', 'noise')
+      // PostgREST's `is` filter takes a null literal here ("processed_at IS NOT NULL").
       .not('processed_at', 'is', null)
       .order('created_at', { ascending: false })
       .limit(10),
   ]);
 
-  const recentActionItems = (insightsResult.data ?? []).map((r: Record<string, unknown>) => ({
-    id: r.id as string,
-    title: r.title as string,
-    body: r.body as string,
-    entityType: r.parent_type as string,
-    workspaceId: r.parent_id as string,
-    createdAt: r.created_at as string,
-  }));
-
-  const seenPhones = new Set<string>();
-  const unresolvedCallers: UnresolvedCaller[] = [];
-  for (const r of unresolvedResult.data ?? []) {
-    if (!seenPhones.has(r.phone_from)) {
-      seenPhones.add(r.phone_from);
-      unresolvedCallers.push({
-        phone: r.phone_from,
-        claudeSummary: r.claude_summary,
-        createdAt: r.created_at,
-      });
-    }
-  }
-
-  return { recentActionItems, unresolvedCallers };
+  return buildCommunicationsDashboardData({
+    insightRows: (insightsResult.data ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      title: row.title as string,
+      body: row.body as string,
+      parent_type: row.parent_type as string,
+      parent_id: row.parent_id as string,
+      created_at: row.created_at as string,
+    })),
+    unresolvedRows: (unresolvedResult.data ?? []).map((row: Record<string, unknown>) => ({
+      phone_from: row.phone_from as string,
+      claude_summary: (row.claude_summary as string | null) ?? null,
+      created_at: row.created_at as string,
+    })),
+  });
 }

@@ -4,16 +4,16 @@ import DarkFooter from "@/components/DarkFooter";
 
 export const metadata: Metadata = {
   title: {
-    default: "Parcel Co. | Help Center",
-    template: "Parcel Co. | %s | Help Center",
+    default: "Proxy | Help Center",
+    template: "Proxy | %s | Help Center",
   },
   description:
-    "Find answers about property management, payouts, calendar, bookings, and your owner portal at Parcel Co.",
-  alternates: { canonical: "https://theparcelco.com/help" },
+    "Find answers about property management, payouts, calendar, bookings, and your owner workspace at Proxy",
+  alternates: { canonical: "https://www.myproxyhost.com/help" },
   openGraph: {
-    title: "Parcel Co. | Help Center",
+    title: "Proxy | Help Center",
     description:
-      "Find answers about property management, payouts, calendar, bookings, and your owner portal.",
+      "Find answers about property management, payouts, calendar, bookings, and your owner workspace.",
     type: "website",
   },
 };

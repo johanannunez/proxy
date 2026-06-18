@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 /**
  * Update a profile's personal info from the admin Settings tab.
@@ -133,11 +134,12 @@ export async function updatePersonalInfo(
   }
 
   // Sync name and phone back to the linked contact so the sidebar stays in sync.
-  const { data: contactRow } = await (supabase as any)
-    .from("contacts")
+  const db = untypedDatabase(supabase);
+  const { data: contactRow } = await db
+    .from<{ id: string }>("contacts")
     .select("id")
     .eq("profile_id", profileId)
-    .maybeSingle() as { data: { id: string } | null };
+    .maybeSingle();
 
   if (contactRow?.id) {
     const contactUpdate: Record<string, unknown> = {
@@ -147,7 +149,7 @@ export async function updatePersonalInfo(
     };
     if (phone !== null) contactUpdate.phone = phone;
 
-    await (supabase as any)
+    await db
       .from("contacts")
       .update(contactUpdate)
       .eq("id", contactRow.id);

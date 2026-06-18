@@ -166,6 +166,11 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
 
   const { subtasks, setSubtasks } = useSubtasks(task);
 
+  function autoResizeTextarea(el: HTMLTextAreaElement) {
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
+
   // Re-initialize state when task changes
   useEffect(() => {
     if (!task) return;
@@ -189,6 +194,9 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
       descRef.current.value = task.description ?? '';
       autoResizeTextarea(descRef.current);
     }
+    // Re-init only when the task identity changes; depending on the full `task`
+    // would re-run on every optimistic update and overwrite in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id]);
 
   // Escape key
@@ -204,6 +212,8 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
+    // `task` is only read for the open/closed check; keying on its identity is intended.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, onClose, showPriorityMenu, showDatePicker, showDeadlinePicker]);
 
   // Close priority menu on outside click
@@ -218,13 +228,8 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showPriorityMenu]);
 
-  function autoResizeTextarea(el: HTMLTextAreaElement) {
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }
-
   // Save wrapper
-  async function withSave(fn: () => Promise<void>) {
+  const withSave = useCallback(async (fn: () => Promise<void>) => {
     if (!task) return;
     setSavedState('saving');
     try {
@@ -235,7 +240,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     } catch {
       setSavedState(null);
     }
-  }
+  }, [task, onSaved]);
 
   const handleTitleBlur = useCallback(() => {
     if (!task || !titleRef.current) return;
@@ -244,7 +249,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     startTransition(() => {
       withSave(() => updateTask(task.id, { title: newTitle }));
     });
-  }, [task]);
+  }, [task, withSave]);
 
   const handleDescBlur = useCallback(() => {
     if (!task || !descRef.current) return;
@@ -253,7 +258,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     startTransition(() => {
       withSave(() => updateTask(task.id, { description: newDesc || null }));
     });
-  }, [task]);
+  }, [task, withSave]);
 
   const toggleDone = useCallback(() => {
     if (!task) return;
@@ -265,7 +270,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
         else await completeTask(task.id);
       });
     });
-  }, [task, localStatus]);
+  }, [task, localStatus, withSave]);
 
   const handleDueAtChange = useCallback((iso: string | null) => {
     if (!task) return;
@@ -274,7 +279,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     startTransition(() => {
       withSave(() => updateTask(task.id, { dueAt: iso }));
     });
-  }, [task]);
+  }, [task, withSave]);
 
   const handlePriorityChange = useCallback((value: 1 | 2 | 3 | 4) => {
     if (!task) return;
@@ -283,7 +288,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
     startTransition(() => {
       withSave(() => updateTask(task.id, { priority: value }));
     });
-  }, [task]);
+  }, [task, withSave]);
 
   const handleToggleSubtask = useCallback((subtaskId: string, currentStatus: string) => {
     setSubtasks((prev) =>
@@ -299,7 +304,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
         else await completeTask(subtaskId);
       });
     });
-  }, [task]);
+  }, [setSubtasks, withSave]);
 
   const handleSubtaskSave = useCallback(async (data: {
     title: string;
@@ -318,7 +323,7 @@ export function TaskDetailModal({ task, onClose, onSaved }: TaskDetailModalProps
       { id: `optimistic-${Date.now()}`, title: data.title, status: 'todo' },
     ]);
     onSaved?.(task.id);
-  }, [task, onSaved]);
+  }, [task, onSaved, setSubtasks]);
 
   const priorityConfig = getPriorityConfig(localPriority);
 
