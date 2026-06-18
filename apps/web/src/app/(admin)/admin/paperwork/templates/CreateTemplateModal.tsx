@@ -240,6 +240,11 @@ export function CreateTemplateModal({ open, onClose, onCreated, prefill }: Props
   // modal needs no content; only the upload mode is gated on a chosen PDF.
   const canBuild = docMode === "upload" ? pdfFile !== null : true;
 
+  // pdfUrl is always a same-origin blob: URL from URL.createObjectURL of a
+  // locally chosen file. Guard the scheme explicitly so only a blob reference
+  // can ever reach the <object> data sink (no javascript:/data: URLs).
+  const safePdfUrl = pdfUrl && pdfUrl.startsWith("blob:") ? pdfUrl : null;
+
   async function handleBuild() {
     if (docMode === "upload" && !pdfFile) {
       setError("A PDF document is required.");
@@ -517,9 +522,9 @@ export function CreateTemplateModal({ open, onClose, onCreated, prefill }: Props
                       Place signature and date fields once your content is ready.
                     </p>
                   </div>
-                ) : pdfUrl ? (
+                ) : safePdfUrl ? (
                   <div className={styles.previewWrap}>
-                    <object data={pdfUrl} type="application/pdf" className={styles.previewObject}>
+                    <object data={safePdfUrl} type="application/pdf" className={styles.previewObject}>
                       <div className={styles.previewFallback}>
                         <FilePdf size={28} weight="duotone" />
                         <span>{pdfFile?.name}</span>
