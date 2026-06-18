@@ -104,7 +104,7 @@ create extension if not exists pg_net;
 
 -- every 5 minutes, POST the existing cron endpoint with the CRON_SECRET.
 -- Set these once via:  alter database postgres set "app.cron_secret" = '...';
---                      alter database postgres set "app.app_url"     = 'https://www.myproxyhost.com';
+--                      alter database postgres set "app.app_url"     = 'https://www.theparcelco.com';
 select cron.schedule(
   'flush-scheduled-messages',
   '*/5 * * * *',
