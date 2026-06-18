@@ -25,7 +25,7 @@ import { fetchWorkspaceDocuments } from "@/lib/admin/workspace-documents";
 import { fetchOwnerSpine } from "@/lib/documents/spine";
 import { fetchDocumentGroupSettings } from "@/lib/admin/document-group-settings";
 import { MessagingTab } from "./MessagingTab";
-import { fetchWorkspacePersonMessages, fetchWorkspaceMessages, fetchWorkspaceInboxConversations } from "@/lib/admin/workspace-messages";
+import { fetchWorkspacePersonMessages, fetchWorkspaceThread } from "@/lib/admin/workspace-messages";
 import { WorkspaceOverviewTab } from "./WorkspaceOverviewTab";
 import { fetchWorkspaceContactOpenTasks } from "@/lib/admin/workspace-overview";
 import { TasksTab } from "@/components/admin/tasks/TasksTab";
@@ -151,7 +151,6 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
     ownerSpineDocuments,
     documentGroupSettings,
     allWorkspaceMessages,
-    workspaceInboxConversations,
     overviewMessages,
     openTasks,
     workspaceProjects,
@@ -166,8 +165,7 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
     workspaceContact.profileId ? fetchWorkspaceDocuments(workspaceContact.profileId, propertyIds) : Promise.resolve([]),
     workspaceContact.profileId ? fetchOwnerSpine(workspaceContact.profileId) : Promise.resolve([]),
     workspaceContact.profileId ? fetchDocumentGroupSettings(workspaceContact.profileId) : Promise.resolve([]),
-    fetchWorkspaceMessages(messagingContactIds),
-    fetchWorkspaceInboxConversations(workspaceContact.profileId),
+    fetchWorkspaceThread(messagingContactIds),
     fetchWorkspacePersonMessages(activeContactId),
     fetchWorkspaceContactOpenTasks(activeContactId),
     fetchWorkspaceProjects({ contactIds, propertyIds }),
@@ -276,11 +274,10 @@ export default async function WorkspaceDetailPage({ params, searchParams }: Prop
     inbox: (
       <MessagingTab
         contactId={activeContactId}
+        workspaceId={workspaceId}
         messages={allWorkspaceMessages}
-        inboxConversations={workspaceInboxConversations}
         members={members}
         activeContactId={activeContactId}
-        ownerId={workspaceContact.profileId}
       />
     ),
     tasks: <TasksTab parentType="contact" parentId={activeContactId} />,

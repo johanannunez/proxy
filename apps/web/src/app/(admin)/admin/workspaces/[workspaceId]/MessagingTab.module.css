@@ -381,5 +381,352 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--color-text-tertiary);
-  padding: 0 0 6px;
+}
+
+/* ── Channel badge (per message) ─────────────────────────────────────────── */
+
+.channelBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+/* ── Subject line (email messages) ───────────────────────────────────────── */
+
+.bubbleSubject {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.bubbleBodyHtml {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.bubbleBodyHtml :global(p) { margin: 0 0 6px; }
+.bubbleBodyHtml :global(p:last-child) { margin-bottom: 0; }
+.bubbleBodyHtml :global(img) { max-width: 100%; height: auto; border-radius: 6px; }
+.bubbleBodyHtml :global(a) { color: inherit; text-decoration: underline; }
+
+/* ── Delivery status pills ───────────────────────────────────────────────── */
+
+.deliveryPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.deliveryPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  opacity: 0.85;
+}
+
+.deliveryPillFailed {
+  background: color-mix(in srgb, var(--color-error) 88%, #fff);
+  color: #fff;
+  opacity: 1;
+}
+
+.deliveryPillPending {
+  background: color-mix(in srgb, #b45309 16%, transparent);
+  opacity: 0.9;
+}
+
+/* ── Compose meta row (target + channel chips) ───────────────────────────── */
+
+.composeMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.channelChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.channelChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--color-warm-gray-200);
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+.channelChip:hover:not(:disabled) {
+  background: var(--color-warm-gray-50);
+  color: var(--color-text-primary);
+}
+.channelChip:disabled { opacity: 0.4; cursor: not-allowed; }
+.channelChipActive,
+.channelChipActive:hover {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+}
+
+/* ── Subject input ───────────────────────────────────────────────────────── */
+
+.subjectInput {
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 120ms ease;
+}
+.subjectInput:focus { border-color: var(--color-brand); }
+.subjectInput::placeholder { color: var(--color-text-muted); font-weight: 400; }
+
+/* ── Channel filter bar ──────────────────────────────────────────────────── */
+
+.channelFilterBar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.channelFilterBtn {
+  padding: 3px 11px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+.channelFilterBtn:hover { background: var(--color-warm-gray-50); color: var(--color-text-primary); }
+.channelFilterBtnActive,
+.channelFilterBtnActive:hover {
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  color: var(--color-brand);
+}
+
+/* ── Call / recording / transcript ───────────────────────────────────────── */
+
+.duration {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.recordingLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.85;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+.recordingLink:hover { opacity: 1; }
+
+.expandBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0.6;
+  color: inherit;
+  flex-shrink: 0;
+}
+.expandBtn:hover { opacity: 1; }
+
+.transcript {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  opacity: 0.92;
+}
+
+/* ── Composer toolbar (templates + schedule) ─────────────────────────────── */
+
+.composerToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.templateSelect {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  max-width: 160px;
+}
+.templateSelect:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+.toolBtn:hover:not(:disabled) { background: var(--color-warm-gray-50); color: var(--color-text-primary); }
+.toolBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.toolBtnActive,
+.toolBtnActive:hover {
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.scheduleInput {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text-primary);
+}
+
+.toolDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--color-border);
+  margin: 2px 2px;
+}
+
+.spin {
+  animation: messagingSpin 0.8s linear infinite;
+}
+@keyframes messagingSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── AI summary banner ───────────────────────────────────────────────────── */
+
+.summaryBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 22%, transparent);
+}
+
+.summaryIcon {
+  color: var(--color-brand);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.summaryText {
+  flex: 1;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.summaryClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.summaryClose:hover { color: var(--color-text-primary); }
+
+/* ── Rich composer + footer ──────────────────────────────────────────────── */
+
+.richWrap {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+.richWrap:focus-within { border-color: var(--color-brand); }
+
+.composeFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.smsCounter {
+  margin-right: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
 }
