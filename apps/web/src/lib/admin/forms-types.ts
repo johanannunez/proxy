@@ -72,6 +72,21 @@ export type FormCompletion = {
   customUrl?: string;
 };
 
+export type FormCoverMode = "smart" | "stock" | "upload" | "color";
+export type FormCoverBackground = "wash" | "mesh" | "paper" | "minimal";
+
+export type FormCoverSettings = {
+  mode: FormCoverMode;
+  stockId?: string | null;
+  imageUrl?: string | null;
+  imagePath?: string | null;
+  alt?: string | null;
+  color?: string | null;
+  blur?: boolean;
+  showIcon?: boolean;
+  background?: FormCoverBackground | null;
+};
+
 export type FormSchema = {
   version: 1;
   fields: FormField[];
@@ -82,6 +97,13 @@ export type FormSchema = {
     /** @deprecated Use completion instead. Kept for back-compat reads. */
     redirectUrl?: string;
     completion?: FormCompletion;
+    cover?: FormCoverSettings;
+    /** @deprecated Use cover instead. Kept for back-compat reads. */
+    coverImageUrl?: string | null;
+    /** @deprecated Use cover instead. Kept for back-compat reads. */
+    coverImagePath?: string | null;
+    /** @deprecated Use cover instead. Kept for back-compat reads. */
+    coverImageAlt?: string | null;
   };
 };
 
@@ -95,15 +117,14 @@ export type Form = {
   slug: string | null;
   is_active: boolean;
   created_by: string | null;
-  /** Coverage tracking + archive (migration 20260612090000_template_tracking).
+  /** Status board tracking + archive (migration 20260612090000_template_tracking).
       Rows read before the migration runs lack these columns; the forms helpers
-      normalize to false/null. */
+      normalize to product defaults. */
   tracked: boolean;
   category: string | null;
   archived_at: string | null;
-  /** Custom appearance (migration 20260612120000_form_appearance). icon is a
-      key into FORM_ICONS; icon_color is a key into FORM_TINTS. Null = fall
-      back to a deterministic tint + default glyph. */
+  /** Custom appearance. icon is a symbol key. icon_color is a preset key or
+      hex color. Null falls back to a deterministic tint and default glyph. */
   icon: string | null;
   icon_color: string | null;
   created_at: string;

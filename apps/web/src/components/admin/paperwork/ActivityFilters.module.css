@@ -1,17 +1,21 @@
 .bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
   justify-content: flex-end;
+  min-width: 0;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
 .searchWrap {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1 1 320px;
-  min-width: min(320px, 100%);
+  flex: 0 1 300px;
+  min-width: 220px;
+  max-width: 340px;
 }
 
 .searchIcon {
@@ -45,40 +49,52 @@
   box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.12);
 }
 
-.filterMenu {
+.scopeWrap {
   position: relative;
   display: inline-flex;
   flex: 0 0 auto;
 }
 
-.filterButton {
+.scopeButton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
+  flex: 0 0 auto;
   height: 34px;
   padding: 0 12px;
   border: 1px solid var(--border-card, var(--dash-border, #e5e4e1));
   border-radius: 9px;
   background: var(--surface-base, #fff);
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary, #596274);
   cursor: pointer;
+  font-family: inherit;
   font-size: 12.5px;
   font-weight: 650;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease, color 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    color 0.12s ease;
 }
 
-.filterButton:hover {
+.scopeButton:hover {
   color: var(--text-primary, #1a1a1a);
-  border-color: var(--border-strong, rgba(15, 23, 42, 0.16));
+  border-color: rgba(15, 23, 42, 0.16);
 }
 
-.filterButton:focus-visible {
+.scopeButton:focus-visible {
   outline: none;
   border-color: var(--color-brand, #1b77be);
   box-shadow: 0 0 0 3px rgba(27, 119, 190, 0.12);
 }
 
-.filterCount {
+.scopeButtonActive {
+  color: var(--color-brand, #1b77be);
+  border-color: rgba(27, 119, 190, 0.22);
+  box-shadow: 0 8px 18px -16px rgba(27, 119, 190, 0.65);
+}
+
+.scopeCount {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,107 +109,258 @@
   line-height: 1;
 }
 
-.filterCaret {
+.scopeCaret {
   color: var(--text-tertiary, #9ca3af);
   transition: transform 0.14s ease;
 }
 
-.filterCaretOpen {
+.scopeCaretOpen {
   transform: rotate(180deg);
 }
 
-.filterPanel {
+.scopeSheet {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  z-index: 35;
-  width: 292px;
-  padding: 12px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 48px));
+  max-height: min(680px, calc(100vh - 180px));
   border: 1px solid var(--border-card, rgba(15, 23, 42, 0.1));
-  border-radius: 13px;
+  border-radius: 10px;
   background: var(--surface-card, #fff);
   box-shadow:
-    0 22px 48px -22px rgba(15, 23, 42, 0.34),
-    0 2px 10px rgba(15, 23, 42, 0.08);
+    0 28px 72px -38px rgba(15, 23, 42, 0.44),
+    0 12px 34px -28px rgba(27, 119, 190, 0.5),
+    0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
-.filterPanelHead {
+.sheetHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-  color: var(--text-primary, #1a1a1a);
-  font-size: 12.5px;
-  font-weight: 750;
+  gap: 14px;
+  padding: 14px 14px 11px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-.clearButton {
+.sheetTitle,
+.sheetSubtitle {
+  display: block;
+}
+
+.sheetTitle {
+  color: var(--text-primary, #111827);
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.sheetSubtitle {
+  margin-top: 3px;
+  color: var(--text-tertiary, #9ca3af);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.closeButton {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text-tertiary, #9ca3af);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text-secondary, #596274);
   cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 650;
-  padding: 4px 6px;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
-.clearButton:hover {
-  background: rgba(15, 23, 42, 0.05);
-  color: var(--text-primary, #1a1a1a);
+.closeButton:hover {
+  background: rgba(15, 23, 42, 0.07);
+  color: var(--text-primary, #111827);
 }
 
-.clearButton:focus-visible {
+.closeButton:focus-visible,
+.clearButton:focus-visible,
+.applyButton:focus-visible,
+.optionRow:focus-visible {
   outline: 2px solid var(--color-brand, #1b77be);
   outline-offset: 1px;
 }
 
-.facets {
+.sheetBody {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  overflow-y: auto;
+  padding: 4px 8px;
 }
 
-.facet {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.scopeSection {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-.facetLabel {
+.scopeSection:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  margin: 0 0 6px;
+  padding: 0 6px;
   color: var(--text-tertiary, #9ca3af);
-  font-size: 10.5px;
-  font-weight: 750;
-  letter-spacing: 0.05em;
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
-.facet > * {
-  width: 100%;
+.optionList {
+  display: grid;
+  gap: 2px;
 }
 
-@media (max-width: 860px) {
+.optionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 6px 7px 9px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary, #596274);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.optionRow:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text-primary, #111827);
+}
+
+.optionRowActive {
+  background: rgba(27, 119, 190, 0.08);
+  color: var(--color-brand, #1b77be);
+}
+
+.optionLabel {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 640;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: var(--color-brand, #1b77be);
+}
+
+.sheetFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.clearButton,
+.applyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.clearButton {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-tertiary, #9ca3af);
+  padding: 0 8px;
+}
+
+.clearButton:hover {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-primary, #111827);
+}
+
+.applyButton {
+  min-width: 96px;
+  border: 1px solid var(--color-brand, #1b77be);
+  background: var(--color-brand, #1b77be);
+  color: #fff;
+  box-shadow: 0 10px 22px -16px rgba(27, 119, 190, 0.8);
+}
+
+.applyButton:hover {
+  border-color: color-mix(in srgb, var(--color-brand, #1b77be) 84%, #000);
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 90%, #000);
+}
+
+:global(.dark) .scopeSheet {
+  background: var(--surface-card, #1d212a);
+}
+
+:global(.dark) .scopeButton,
+:global(.dark) .optionRowActive {
+  background: var(--surface-card, #1d212a);
+}
+
+@media (max-width: 720px) {
   .bar {
-    justify-content: stretch;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
-  .filterMenu {
-    flex: 1 1 160px;
+  .searchWrap {
+    flex: 1 1 100%;
+    max-width: none;
   }
 
-  .filterButton {
-    justify-content: center;
+  .scopeWrap,
+  .scopeButton {
     width: 100%;
   }
 
-  .filterPanel {
-    left: 0;
-    right: auto;
-    width: min(292px, calc(100vw - 48px));
+  .scopeButton {
+    justify-content: center;
+  }
+
+  .scopeSheet {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-height: min(70vh, 620px);
+    border-radius: 14px;
   }
 }

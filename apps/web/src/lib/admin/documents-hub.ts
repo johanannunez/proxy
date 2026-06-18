@@ -70,6 +70,7 @@ function makeInitialForms(): Record<FormKey, DocHubFormEntry> {
 type ContactRow = {
   id: string;
   profile_id: string | null;
+  workspace_id: string | null;
   full_name: string | null;
   email: string | null;
   phone: string | null;
@@ -117,6 +118,7 @@ type PropertyFormRow = {
 };
 
 type FormEntry = { data: Record<string, unknown>; completed_at: string | null };
+type WorkspaceLookupRow = { id: string; name: string };
 
 /** Coerce a JSON form-field value to the `string | null` shape DocHubFormEntry.data expects. */
 function asText(v: unknown): string | null {
@@ -143,6 +145,7 @@ export async function fetchDocumentsHubData(
     .select(`
       id,
       profile_id,
+      workspace_id,
       full_name,
       email,
       phone,
@@ -170,6 +173,28 @@ export async function fetchDocumentsHubData(
     .filter((id): id is string => Boolean(id));
 
   const contactIds = contacts.map((c) => c.id);
+  const workspaceIds = Array.from(
+    new Set(
+      contacts
+        .map((contact) => contact.workspace_id)
+        .filter((workspaceId): workspaceId is string => Boolean(workspaceId)),
+    ),
+  );
+
+  const { data: workspaceRows, error: workspaceErr } = workspaceIds.length > 0
+    ? await db
+        .from<WorkspaceLookupRow[]>("workspaces")
+        .select("id, name")
+        .in("id", workspaceIds)
+    : { data: [], error: null };
+
+  if (workspaceErr) {
+    console.error("[documents-hub] workspaces fetch error:", workspaceErr.message);
+  }
+
+  const workspaceNameById = new Map(
+    (workspaceRows ?? []).map((workspace) => [workspace.id, workspace.name]),
+  );
 
   // 2. All signature documents on the spine for these profile IDs, join sender profile
   const { data: signedDocs, error: docsErr } = await db
@@ -570,6 +595,10 @@ export async function fetchDocumentsHubData(
       email: contact.email ?? "",
       phone: contact.phone ?? null,
       avatarUrl: contact.avatar_url ?? null,
+      workspaceId: contact.workspace_id ?? null,
+      workspaceName: contact.workspace_id
+        ? (workspaceNameById.get(contact.workspace_id) ?? null)
+        : null,
       propertyCount: Number(propertyCount),
       secureDocs,
       forms,

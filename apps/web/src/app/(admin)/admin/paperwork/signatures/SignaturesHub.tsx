@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * SignaturesHub — Library | Activity sub-tab layout (2026-06-15 redesign).
+ * SignaturesHub: Library | Activity sub-tab layout (2026-06-15 redesign).
  *
  * Library tab: TemplateCard grid or list view for signature masters. Send button
  * opens SendSheet (same pattern as TemplatesTab). A cross-link nudges admins
@@ -54,6 +54,10 @@ const SIGNATURE_DOC_KEYS: SecureDocKey[] = [
 ];
 
 type StatusFilter = "all" | "awaiting" | "viewed" | "signed";
+type SignatureActivityRow = ActivityRow & {
+  workspaceId: string | null;
+  workspaceName: string | null;
+};
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -88,6 +92,7 @@ export function SignaturesHub({
 
   /* ── Activity filters ── */
   const [search, setSearch] = useState("");
+  const [workspaceFilter, setWorkspaceFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [docFilter, setDocFilter] = useState("");
   const [personFilter, setPersonFilter] = useState("");
@@ -112,7 +117,7 @@ export function SignaturesHub({
   const sigTemplates = templates.filter((t) => t.kind === "signature");
 
   /* ── Build ActivityRows from owners × SIGNATURE_DOC_KEYS ── */
-  const allRows: ActivityRow[] = [];
+  const allRows: SignatureActivityRow[] = [];
   for (const owner of owners) {
     for (const key of SIGNATURE_DOC_KEYS) {
       const entry = owner.secureDocs[key];
@@ -134,10 +139,12 @@ export function SignaturesHub({
         glyph: <PenNib size={14} weight="duotone" />,
         who: owner.fullName,
         whoColor: avatarColor(owner.fullName),
+        workspaceId: owner.workspaceId,
+        workspaceName: owner.workspaceName,
         status,
         sent: fmtShortDate(latest?.sentAt ?? null),
         seen: latest?.viewedAt ? fmtShortDate(latest.viewedAt) : null,
-        last: latest?.signedAt ? fmtShortDate(latest.signedAt) : "—",
+        last: latest?.signedAt ? fmtShortDate(latest.signedAt) : "Not signed",
         onOpen: () => setDrawerEntry({ owner, docKey: key }),
       });
     }
@@ -155,6 +162,20 @@ export function SignaturesHub({
   });
 
   /* Facet options derived from the rows that actually exist. */
+  const workspaceOptions = [
+    { value: "", label: "All workspaces" },
+    ...(allRows.some((r) => r.workspaceId === null)
+      ? [{ value: "__none", label: "No workspace" }]
+      : []),
+    ...Array.from(
+      new Map(
+        allRows
+          .filter((r) => r.workspaceId && r.workspaceName)
+          .map((r) => [r.workspaceId, r.workspaceName] as const),
+      ),
+      ([value, label]) => ({ value: value ?? "", label: label ?? "Unnamed workspace" }),
+    ),
+  ];
   const docOptions = [
     { value: "", label: "All documents" },
     ...Array.from(new Set(allRows.map((r) => r.doc))).map((d) => ({ value: d, label: d })),
@@ -169,6 +190,10 @@ export function SignaturesHub({
     if (search) {
       const q = search.toLowerCase();
       if (!r.who.toLowerCase().includes(q) && !r.doc.toLowerCase().includes(q)) return false;
+    }
+    if (workspaceFilter === "__none" && r.workspaceId !== null) return false;
+    if (workspaceFilter && workspaceFilter !== "__none" && r.workspaceId !== workspaceFilter) {
+      return false;
     }
     if (docFilter && r.doc !== docFilter) return false;
     if (personFilter && r.who !== personFilter) return false;
@@ -187,9 +212,38 @@ export function SignaturesHub({
       searchPlaceholder="Search owner or document"
       searchAriaLabel="Search signatures"
       facets={[
-        { key: "doc", placeholder: "All documents", value: docFilter, onChange: setDocFilter, options: docOptions },
-        { key: "person", placeholder: "All people", value: personFilter, onChange: setPersonFilter, options: personOptions },
-        { key: "status", placeholder: "All statuses", value: statusFilter, onChange: (v) => setStatusFilter(v as StatusFilter), options: STATUS_OPTIONS },
+        {
+          key: "workspace",
+          label: "Workspace",
+          placeholder: "All workspaces",
+          value: workspaceFilter,
+          onChange: setWorkspaceFilter,
+          options: workspaceOptions,
+        },
+        {
+          key: "doc",
+          label: "Document",
+          placeholder: "All documents",
+          value: docFilter,
+          onChange: setDocFilter,
+          options: docOptions,
+        },
+        {
+          key: "person",
+          label: "Person",
+          placeholder: "All people",
+          value: personFilter,
+          onChange: setPersonFilter,
+          options: personOptions,
+        },
+        {
+          key: "status",
+          label: "Status",
+          placeholder: "All statuses",
+          value: statusFilter,
+          onChange: (v) => setStatusFilter(v as StatusFilter),
+          options: STATUS_OPTIONS,
+        },
       ]}
     />
   );
@@ -311,7 +365,7 @@ export function SignaturesHub({
                           </span>
                         ))
                       ) : (
-                        <span className={styles.libRowMuted}>—</span>
+                        <span className={styles.libRowMuted}>None</span>
                       )}
                     </span>
                     <span

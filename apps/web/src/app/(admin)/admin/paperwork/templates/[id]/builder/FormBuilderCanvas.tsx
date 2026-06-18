@@ -130,7 +130,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Undo/redo stacks — refs avoid triggering re-renders for the stacks themselves
+  // Undo/redo stacks use refs to avoid triggering rerenders for the stacks.
   const historyRef = useRef<FormSchema[]>([]);
   const futureRef = useRef<FormSchema[]>([]);
 
@@ -379,6 +379,7 @@ export function FormBuilderCanvas({ form: initialForm }: Props) {
 
   return (
     <DndContext
+      id={`form-builder-${initialForm.id}`}
       sensors={sensors}
       collisionDetection={collisionDetection}
       onDragStart={handleDragStart}

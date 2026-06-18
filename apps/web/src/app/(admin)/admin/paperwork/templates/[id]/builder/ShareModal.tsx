@@ -60,7 +60,12 @@ export function ShareModal({ form, onClose, onIsPublicChange }: Props) {
     const next = !isPublic;
     setIsPublic(next);
     onIsPublicChange(next);
-    await toggleFormPublicAction(form.id, next);
+    const res = await toggleFormPublicAction(form.id, next);
+    if (!res.ok) {
+      // Revert the optimistic toggle so the UI never shows a false success.
+      setIsPublic(!next);
+      onIsPublicChange(!next);
+    }
     setToggling(false);
   }
 
