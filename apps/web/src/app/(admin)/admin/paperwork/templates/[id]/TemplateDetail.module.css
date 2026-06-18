@@ -408,6 +408,113 @@
   justify-content: space-between;
 }
 
+.statusBoardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.statusBoardState {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.statusBoardStateShown {
+  color: var(--color-success, #16a34a);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.statusBoardStateHidden {
+  color: var(--text-secondary, var(--color-text-secondary));
+  background: var(--surface-base, var(--color-warm-gray-50));
+}
+
+.statusBoardPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background:
+    linear-gradient(180deg, rgba(27, 119, 190, 0.045), rgba(27, 119, 190, 0)),
+    var(--surface-base, var(--color-warm-gray-50));
+  border: 1px solid color-mix(in srgb, var(--color-brand, #1b77be) 16%, transparent);
+  border-radius: 12px;
+}
+
+.statusBoardPreview[data-hidden="true"] {
+  opacity: 0.62;
+  filter: grayscale(0.35);
+}
+
+.statusBoardPreviewTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #9aa1ab);
+}
+
+.statusBoardMiniGrid {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.9fr) minmax(96px, 1.2fr) minmax(72px, 0.9fr);
+  overflow: hidden;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.07));
+  border-radius: 10px;
+  background: var(--surface-elevated, #fff);
+}
+
+.statusBoardMiniGrid > span {
+  min-width: 0;
+  padding: 8px 9px;
+  font-size: 11.5px;
+  color: var(--text-secondary, var(--color-text-secondary));
+  border-right: 1px solid var(--border-default, rgba(0, 0, 0, 0.06));
+  border-bottom: 1px solid var(--border-default, rgba(0, 0, 0, 0.06));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusBoardMiniGrid > span:nth-child(3n) {
+  border-right: none;
+}
+
+.statusBoardMiniGrid > span:nth-last-child(-n + 3) {
+  border-bottom: none;
+}
+
+.statusBoardHeaderCell {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary, var(--color-text-primary)) !important;
+  background: color-mix(in srgb, var(--color-brand, #1b77be) 7%, #fff);
+}
+
+.statusBoardChip,
+.statusBoardMutedChip {
+  font-weight: 700;
+}
+
+.statusBoardChip {
+  color: var(--color-success, #16a34a) !important;
+}
+
+.statusBoardMutedChip {
+  color: var(--text-tertiary, #9aa1ab) !important;
+}
+
 .settingMeta {
   display: flex;
   flex-direction: column;

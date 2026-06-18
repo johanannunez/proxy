@@ -215,6 +215,11 @@
   color: var(--color-brand, #1b77be);
 }
 
+.rowEmoji {
+  font-size: 18px;
+  line-height: 1;
+}
+
 .nameCell {
   display: flex;
   flex-direction: column;

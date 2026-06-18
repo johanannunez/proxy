@@ -168,7 +168,7 @@ async function enrichUnifiedResponseRows(
 function normalizeForm<T extends Form>(row: T): T {
   return {
     ...row,
-    tracked: row.tracked ?? false,
+    tracked: row.tracked ?? true,
     category: row.category ?? null,
     archived_at: row.archived_at ?? null,
     icon: row.icon ?? null,
@@ -218,6 +218,7 @@ export async function createForm(input: CreateFormInput): Promise<Form | null> {
       schema,
       is_public: input.is_public ?? false,
       is_active: false,
+      tracked: true,
       created_by: input.created_by ?? null,
       icon: input.icon ?? null,
       icon_color: input.icon_color ?? null,
@@ -258,6 +259,8 @@ export async function duplicateForm(id: string, createdBy?: string): Promise<For
       schema: source.schema,
       is_public: source.is_public,
       is_active: false,
+      tracked: source.tracked,
+      category: source.category,
       created_by: createdBy ?? null,
     })
     .select("*")

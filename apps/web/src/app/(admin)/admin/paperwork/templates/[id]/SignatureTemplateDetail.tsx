@@ -529,6 +529,7 @@ function SignatureSettings({
       <CoverageSettingsCard
         tracked={template.tracked}
         category={template.category}
+        displayName={template.display_name}
         onSave={(updates) => updateTemplateTracking(template.id, updates)}
       />
 
