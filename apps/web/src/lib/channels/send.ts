@@ -1,4 +1,5 @@
 import "server-only";
+import { htmlToPlainText } from "@/lib/html-text";
 
 /**
  * Canonical channel senders for outbound communication (email + SMS).
@@ -43,7 +44,7 @@ export function normalizePhoneE164(raw: string | null | undefined): string | nul
 export function smsText(body: string): string {
   const suffix = " - Parcel";
   const max = 155 - suffix.length;
-  const clean = body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  const clean = htmlToPlainText(body);
   const trimmed = clean.length > max ? clean.slice(0, max - 1) + "…" : clean;
   return trimmed + suffix;
 }

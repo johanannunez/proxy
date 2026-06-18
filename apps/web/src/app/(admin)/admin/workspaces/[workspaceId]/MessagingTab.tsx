@@ -41,10 +41,11 @@ import type { WorkspaceMember } from "@/lib/admin/workspace-contact-detail";
 import { SafeHtml } from "@/components/messages/SafeHtml";
 import { RichTextEditor } from "@/components/messages/RichTextEditor";
 import styles from "./MessagingTab.module.css";
+import { htmlToPlainText } from "@/lib/html-text";
 
 // SMS GSM segment is 160 chars; we trim to ~155 + suffix when sending.
 function smsStats(body: string): { chars: number; segments: number } {
-  const chars = body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().length;
+  const chars = htmlToPlainText(body).length;
   return { chars, segments: Math.max(1, Math.ceil(chars / 153)) };
 }
 
@@ -353,10 +354,7 @@ export function MessagingTab({
       .slice(-20)
       .map(
         (m) =>
-          `${m.direction === "inbound" ? "Contact" : "Parcel"}: ${m.body
-            .replace(/<[^>]*>/g, "")
-            .replace(/\s+/g, " ")
-            .trim()}`,
+          `${m.direction === "inbound" ? "Contact" : "Parcel"}: ${htmlToPlainText(m.body)}`,
       )
       .join("\n");
   }

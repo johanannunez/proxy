@@ -7,6 +7,7 @@ import { buildMessageEmail } from "@/lib/email-template";
 import { createNotification } from "@/lib/notifications";
 import { sendPushToOwner } from "@/lib/push";
 import { logTimelineEvent } from "@/lib/timeline";
+import { htmlToPlainText } from "@/lib/html-text";
 import {
   sendEmailChannel,
   sendSmsChannel,
@@ -53,7 +54,7 @@ function firstNameOf(contact: ContactRow): string {
 }
 
 function plainPreview(body: string): string {
-  return body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, 120);
+  return htmlToPlainText(body).slice(0, 120);
 }
 
 /**

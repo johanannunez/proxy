@@ -4,6 +4,7 @@ import { buildMessageEmail } from "@/lib/email-template";
 import { createNotification } from "@/lib/notifications";
 import { sendPushToOwner } from "@/lib/push";
 import { sendEmailChannel, sendSmsChannel, smsText, normalizePhoneE164 } from "@/lib/channels/send";
+import { htmlToPlainText } from "@/lib/html-text";
 
 /**
  * Cron: delivers due scheduled messages.
@@ -111,13 +112,13 @@ export async function GET(request: NextRequest) {
           ownerId,
           type: "message_received",
           title: "New message from The Parcel Company",
-          body: msg.body.replace(/<[^>]*>/g, "").slice(0, 120),
+          body: htmlToPlainText(msg.body).slice(0, 120),
           link: "/portal/messages",
         }),
         sendPushToOwner({
           ownerId,
           title: "The Parcel Company",
-          body: msg.body.replace(/<[^>]*>/g, "").slice(0, 120),
+          body: htmlToPlainText(msg.body).slice(0, 120),
           url: "/portal/messages",
           tag: "message",
         }),

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { looksLikeHtml } from "@/lib/html-text";
 
 export type WorkspaceMessage = {
   id: string;
@@ -145,7 +146,7 @@ export async function fetchWorkspaceThread(
         senderName: sender?.full_name ?? (isAdmin ? "Parcel" : "Contact"),
         subject: null,
         body: row.body as string,
-        isHtml: /<\/?[a-z][^>]*>/i.test(row.body as string),
+        isHtml: looksLikeHtml(row.body as string),
         pinned: (row.pinned as boolean) ?? false,
         readAt: (row.read_at as string | null) ?? null,
         deliveries: [{ channel, status: "sent" }],
@@ -259,20 +260,29 @@ export async function fetchWorkspaceThread(
   // 3. Captured calls + inbound SMS replies (Quo / OpenPhone webhook).
   //    Outbound SMS is skipped to avoid duplicating our own sent texts,
   //    which already appear as message / client_message items above.
-  const ownerProfileIds = [...profileToContact.keys()];
-  const orParts = [`and(entity_type.eq.contact,entity_id.in.(${contactIds.join(",")}))`];
+  // Only ever interpolate validated UUIDs into the PostgREST `.or()` filter,
+  // so the filter string cannot be influenced by anything but well-formed ids.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const safeContactIds = contactIds.filter((id) => UUID_RE.test(id));
+  const ownerProfileIds = [...profileToContact.keys()].filter((id) => UUID_RE.test(id));
+  const orParts: string[] = [];
+  if (safeContactIds.length > 0) {
+    orParts.push(`and(entity_type.eq.contact,entity_id.in.(${safeContactIds.join(",")}))`);
+  }
   if (ownerProfileIds.length > 0) {
     orParts.push(`and(entity_type.eq.owner,entity_id.in.(${ownerProfileIds.join(",")}))`);
   }
 
-  const { data: events } = await db
-    .from("communication_events")
-    .select(
-      "id, channel, direction, raw_transcript, duration_seconds, recording_url, quo_summary, claude_summary, entity_type, entity_id, created_at",
-    )
-    .or(orParts.join(","))
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const { data: events } = orParts.length
+    ? await db
+        .from("communication_events")
+        .select(
+          "id, channel, direction, raw_transcript, duration_seconds, recording_url, quo_summary, claude_summary, entity_type, entity_id, created_at",
+        )
+        .or(orParts.join(","))
+        .order("created_at", { ascending: false })
+        .limit(100)
+    : { data: [] };
 
   for (const e of (events ?? []) as Array<Record<string, unknown>>) {
     const channel = e.channel as string;
