@@ -4,6 +4,7 @@ import {
   searchFormSymbols,
   suggestFormSymbols,
 } from "./form-symbol-search";
+import { FORM_SYMBOLS } from "./form-symbols";
 import { resolveFormAppearance } from "./form-icon";
 
 describe("form symbol search", () => {
@@ -70,5 +71,45 @@ describe("form symbol search", () => {
     expect(values).toContain("icon:password");
     expect(values).not.toContain("icon:wrench");
     expect(values).not.toContain("emoji:1f527");
+  });
+
+  it("returns the full catalog for an empty query", () => {
+    expect(searchFormSymbols("")).toBe(FORM_SYMBOLS);
+    expect(searchFormSymbols("   ")).toBe(FORM_SYMBOLS);
+  });
+
+  it("returns no suggestions when nothing clears the confidence threshold", () => {
+    const context = buildSuggestionContext({
+      name: "Qqzz Wxyv",
+      description: null,
+      fields: [
+        { id: "a", type: "short_text", label: "Blorptang" },
+        { id: "b", type: "short_text", label: "Vghkst" },
+      ],
+    });
+
+    expect(suggestFormSymbols(context)).toEqual([]);
+  });
+
+  it("populates a reason for a strong match", () => {
+    const context = buildSuggestionContext({
+      name: "WiFi Information",
+      description: null,
+      fields: [{ id: "name", type: "short_text", label: "Network Name (SSID)" }],
+    });
+
+    const [top] = suggestFormSymbols(context);
+    expect(top?.symbol.value).toBe("icon:wifi");
+    expect(top?.reason).toMatch(/^Matched /);
+  });
+
+  it("ranks an icon ahead of an emoji that scores the same", () => {
+    // Both icon:wifi and emoji:1f4f6 match "wifi"; the emoji takes a -1 penalty
+    // and loses the kind tie-break, so the icon must come first.
+    const results = searchFormSymbols("wifi");
+    const iconIndex = results.findIndex((s) => s.value === "icon:wifi");
+    const emojiIndex = results.findIndex((s) => s.value === "emoji:1f4f6");
+    expect(iconIndex).toBeGreaterThanOrEqual(0);
+    expect(emojiIndex).toBeGreaterThan(iconIndex);
   });
 });

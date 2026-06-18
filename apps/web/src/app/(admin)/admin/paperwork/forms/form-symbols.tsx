@@ -128,7 +128,6 @@ export type FormSymbolValue = `icon:${string}` | `emoji:${string}`;
 export type FormSymbolKind = "icon" | "emoji";
 
 export type FormSymbolCategory =
-  | "Suggested"
   | "Property"
   | "Access"
   | "Utilities"

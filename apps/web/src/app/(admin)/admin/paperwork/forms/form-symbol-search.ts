@@ -29,6 +29,12 @@ export type SuggestedFormSymbol = {
 
 const WORD_RE = /[a-z0-9]+/g;
 const MAX_SUGGESTIONS = 4;
+// Scoring ladder (highest to lowest signal): an exact label match beats a
+// label-token match, which beats a prefix match, which beats a keyword/alias
+// hit, which beats a substring hit. Primary text (form name/description) is
+// weighted roughly 2x field text. Emojis take a -1 tie-break penalty so an
+// equally-relevant icon wins. MIN_SUGGESTION_SCORE sits just above a single
+// field-token match (12) so one weak field hit never surfaces a suggestion.
 const MIN_SUGGESTION_SCORE = 13;
 const STOP_WORDS = new Set([
   "and",
