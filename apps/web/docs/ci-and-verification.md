@@ -87,45 +87,12 @@ masking real status:
   a quota-related failure is visible, not silent.
 - Keep the **Vercel preview deploy as a required check** (§2) so a genuinely
   broken deploy blocks merge instead of being ignored.
-- Avoid coupling product features to Vercel-plan-specific behavior — see §6.
+- Keep scheduled work in `vercel.json` (version-controlled). `flush-scheduled-messages`
+  runs every 5 min (`*/5`), which is fine on Vercel Pro. A parallel Supabase
+  `pg_cron` copy was considered and **rejected**: it duplicates `CRON_SECRET`
+  (two copies that drift) and hides the schedule outside version control.
 
-## 6. Move scheduled work off Vercel cron → Supabase `pg_cron`
-
-`apps/web/vercel.json` schedules `flush-scheduled-messages` every 5 minutes
-(`*/5 * * * *`) — 288 runs/day and plan-frequency-dependent, unlike the other
-four daily crons. Decouple it from Vercel by scheduling it in Postgres with
-`pg_cron` + `pg_net`, which calls the existing endpoint. Apply in Supabase
-(SQL editor or a migration) — **store the secret/URL, don't hardcode them**:
-
-```sql
--- one-time: enable extensions
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-
--- every 5 minutes, POST the existing cron endpoint with the CRON_SECRET.
--- Set these once via:  alter database postgres set "app.cron_secret" = '...';
---                      alter database postgres set "app.app_url"     = 'https://www.theparcelco.com';
-select cron.schedule(
-  'flush-scheduled-messages',
-  '*/5 * * * *',
-  $$
-  select net.http_post(
-    url     := current_setting('app.app_url') || '/api/cron/flush-scheduled-messages',
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.cron_secret')
-    )
-  );
-  $$
-);
-```
-
-Then remove the `flush-scheduled-messages` entry from `vercel.json`. Now the
-schedule lives in the database and survives Vercel deploy/plan issues entirely.
-(The endpoint already authorizes via `CRON_SECRET` and fails closed when it is
-unset.)
-
-## 7. Automated PR review (Greptile / CodeRabbit / Copilot) — optional
+## 6. Automated PR review (Greptile / CodeRabbit / Copilot) — optional
 
 These bots *review* diffs for bugs and post inline comments. They do **not**
 build, test, or deploy — so they complement, but never replace, the CI gates in
