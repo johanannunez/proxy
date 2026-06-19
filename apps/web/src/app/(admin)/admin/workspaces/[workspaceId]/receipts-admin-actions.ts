@@ -147,7 +147,7 @@ export async function uploadReceiptForOwner(
   | { duplicate: true; existingReceipt: OwnerReceiptRow; signedUrl: string | null }
   | { error: string }
 > {
-  const { error: authError } = await requireAdmin();
+  const { error: authError, userId } = await requireAdmin();
   if (authError) return { error: authError };
 
   const file = formData.get("file");
@@ -156,15 +156,25 @@ export async function uploadReceiptForOwner(
   if (!ALLOWED_MIME.has(file.type)) return { error: `File type not allowed: ${file.type}` };
 
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+
+  // non-null: requireAdmin returns userId only when error is null
+  const { data: caller, error: callerErr } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", userId!)
+    .single();
+  if (callerErr || !caller?.org_id) return { error: "Could not resolve your organization." };
+
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const fileHash = createHash("sha256").update(buffer).digest("hex");
 
-  const db = untypedDatabase(svc);
   const { data: existing } = await db
     .from("owner_receipts")
     .select(RECEIPT_SELECT)
     .eq("owner_id", ownerId)
+    .eq("org_id", caller.org_id)
     .eq("file_hash", fileHash)
     .maybeSingle();
 
@@ -198,6 +208,7 @@ export async function uploadReceiptForOwner(
     .from<OwnerReceiptRow>("owner_receipts")
     .insert({
       owner_id: ownerId,
+      org_id: caller.org_id,
       created_by: ownerId,
       vendor,
       amount: aiResult?.amount ?? 0,
@@ -234,6 +245,7 @@ export async function updateReceiptFieldAdmin(id: string, field: string, value: 
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
 
+  // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
     .from<{ org_id: string | null }>("profiles")
     .select("org_id")
@@ -252,6 +264,7 @@ export async function markReceiptReviewedAdmin(id: string, workspaceId: string):
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
 
+  // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
     .from<{ org_id: string | null }>("profiles")
     .select("org_id")
@@ -270,6 +283,7 @@ export async function deleteReceiptAdmin(id: string, storagePath: string | null,
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
 
+  // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
     .from<{ org_id: string | null }>("profiles")
     .select("org_id")
@@ -277,8 +291,19 @@ export async function deleteReceiptAdmin(id: string, storagePath: string | null,
     .single();
   if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
 
-  if (storagePath) {
-    await svc.storage.from("receipts").remove([storagePath]);
+  // Fetch the row scoped to caller's org so we anchor the storage delete on
+  // data we own, not the caller-supplied storagePath (which would be an IDOR).
+  // This prevents deleting another org's storage file via a caller-supplied path.
+  const { data: row } = await db
+    .from<{ storage_path: string | null }>("owner_receipts")
+    .select("storage_path")
+    .eq("id", id)
+    .eq("org_id", caller.org_id)
+    .maybeSingle();
+  if (!row) throw new Error("Receipt not found.");
+
+  if (row.storage_path) {
+    await svc.storage.from("receipts").remove([row.storage_path]);
   }
   await db.from("owner_receipts").delete().eq("id", id).eq("org_id", caller.org_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
@@ -303,11 +328,20 @@ export async function getReceiptSignedUrlAdmin(storagePath: string): Promise<str
 }
 
 export async function toggleReceiptVisibility(id: string, visible: boolean, workspaceId: string): Promise<void> {
-  const { error: authError } = await requireAdmin();
+  const { error: authError, userId } = await requireAdmin();
   if (authError) throw new Error(authError);
 
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
-  await db.from("owner_receipts").update({ visibility: visible ? "visible" : "hidden" } as unknown).eq("id", id);
+
+  // non-null: requireAdmin returns userId only when error is null
+  const { data: caller, error: callerErr } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", userId!)
+    .single();
+  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+
+  await db.from("owner_receipts").update({ visibility: visible ? "visible" : "hidden" } as unknown).eq("id", id).eq("org_id", caller.org_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
