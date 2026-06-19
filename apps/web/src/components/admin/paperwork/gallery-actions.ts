@@ -3,19 +3,19 @@
 /**
  * Lazy data loader for the Template Gallery create modal. Returns lean DTOs so
  * the client modal can render template/form cards without pulling the heavy
- * DocuSeal/schema payloads. Admin-gated; reads the caller's org only.
+ * DocuSeal/schema payloads. Admin-gated; reads the caller's agency only.
  */
 
 import { headers } from "next/headers";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { listDocumentTemplates } from "@/lib/admin/document-templates";
 import { listForms } from "@/lib/admin/forms";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 
 export type GallerySignature = {
   id: string;
   name: string;
-  /** "yours" = an org override; "proxy" = a system/Proxy-library template. */
+  /** "yours" = an agency override; "proxy" = a system/Proxy-library template. */
   group: "yours" | "proxy";
   /** Seed for the deterministic preview accent. */
   seed: string;
@@ -40,9 +40,9 @@ export type GalleryData = {
 
 export async function loadGalleryData(): Promise<GalleryData> {
   await requireAdminUser();
-  // Resolve the org from the trusted request header, never from the client,
-  // so the modal can only ever read the caller's own org.
-  const orgId = (await headers()).get("x-org-id") ?? PROXY_ORG_ID;
+  // Resolve the agency from the trusted request header, never from the client,
+  // so the modal can only ever read the caller's own agency.
+  const orgId = (await headers()).get("x-org-id") ?? DEFAULT_AGENCY_ID;
 
   const [templates, forms] = await Promise.all([
     listDocumentTemplates(orgId),
@@ -52,7 +52,7 @@ export async function loadGalleryData(): Promise<GalleryData> {
   const signatures: GallerySignature[] = templates.map((t) => ({
     id: t.id,
     name: t.title ?? t.display_name,
-    group: t.org_id === null ? "proxy" : "yours",
+    group: t.agency_id === null ? "proxy" : "yours",
     seed: t.document_key,
     category: t.category,
     isReady: t.docuseal_template_id !== null && t.is_active,

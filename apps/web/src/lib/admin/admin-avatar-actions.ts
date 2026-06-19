@@ -57,16 +57,16 @@ export async function uploadAdminAvatar(args: {
   const db = untypedDatabase(svc);
 
   const { data: target } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", args.targetProfileId)
     .single();
   const { data: me } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", callerUserId!)
     .single();
-  if (!target?.org_id || !me?.org_id || target.org_id !== me.org_id) {
+  if (!target?.agency_id || !me?.agency_id || target.agency_id !== me.agency_id) {
     return { error: "You can only manage avatars within your organization." };
   }
 
@@ -164,16 +164,16 @@ export async function removeAdminAvatar(
   const db = untypedDatabase(svc);
 
   const { data: target } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", targetProfileId)
     .single();
   const { data: me } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", callerUserId!)
     .single();
-  if (!target?.org_id || !me?.org_id || target.org_id !== me.org_id) {
+  if (!target?.agency_id || !me?.agency_id || target.agency_id !== me.agency_id) {
     return { error: "You can only manage avatars within your organization." };
   }
 

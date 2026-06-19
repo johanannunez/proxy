@@ -67,7 +67,7 @@ export async function createFormAction(
   const { userId, error } = await requireAdmin();
   if (error || !userId) return { ok: false, error: error ?? "Unauthorized." };
 
-  const form = await createForm({ org_id: orgId, name, created_by: userId });
+  const form = await createForm({ agency_id: orgId, name, created_by: userId });
   if (!form) return { ok: false, error: "Failed to create form." };
 
   revalidatePath("/admin/paperwork/forms");
@@ -85,7 +85,7 @@ export async function createFormWithFieldsAction(
 
   const schema: FormSchema = { version: 1, fields, settings: {} };
   const form = await createForm({
-    org_id: orgId,
+    agency_id: orgId,
     name,
     created_by: userId,
     schema,
@@ -243,7 +243,7 @@ export async function uploadFormCoverAction(
 
   const previousPath = form.schema.settings.cover?.imagePath ?? null;
   const ext = coverFileExt(fileValue.type);
-  const path = `${form.org_id}/${form.id}/${crypto.randomUUID()}.${ext}`;
+  const path = `${form.agency_id}/${form.id}/${crypto.randomUUID()}.${ext}`;
   const bytes = Buffer.from(await fileValue.arrayBuffer());
   const service = createServiceClient();
 

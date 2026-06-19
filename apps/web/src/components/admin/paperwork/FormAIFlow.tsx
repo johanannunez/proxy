@@ -221,7 +221,7 @@ export function FormAIFlow({ onExit: _onExit, onCreated, onStepChange }: Props) 
   // Build a full Form object for FormRenderer preview (only schema.fields + schema.settings are read).
   const liveForm = useMemo<Form>(() => ({
     id: "",
-    org_id: "",
+    agency_id: "",
     name: formName,
     description: null,
     schema: { version: 1, fields, settings: {} },

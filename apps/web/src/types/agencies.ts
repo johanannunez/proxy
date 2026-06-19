@@ -1,28 +1,28 @@
-export type OrgPlanTier = "starter" | "pro" | "white_label";
-export type OrgMemberRole = "org_owner" | "org_admin" | "org_member" | "org_viewer";
+export type AgencyPlanTier = "starter" | "pro" | "white_label";
+export type AgencyMemberRole = "org_owner" | "org_admin" | "org_member" | "org_viewer";
 
-export interface Organization {
+export interface Agency {
   id: string;
   name: string;
   slug: string;
-  plan_tier: OrgPlanTier;
+  plan_tier: AgencyPlanTier;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export interface OrganizationMember {
+export interface AgencyMember {
   id: string;
-  org_id: string;
+  agency_id: string;
   profile_id: string;
-  role: OrgMemberRole;
+  role: AgencyMemberRole;
   invited_by: string | null;
   joined_at: string;
 }
 
-export interface OrganizationBranding {
-  org_id: string;
+export interface AgencyBranding {
+  agency_id: string;
   logo_url: string | null;
   favicon_url: string | null;
   primary_color: string;
@@ -36,8 +36,8 @@ export interface OrganizationBranding {
   updated_at: string;
 }
 
-export interface OrganizationSettings {
-  org_id: string;
+export interface AgencySettings {
+  agency_id: string;
   features: Record<string, boolean>;
   limits: {
     max_workspaces: number; // -1 = unlimited
@@ -47,4 +47,4 @@ export interface OrganizationSettings {
   };
 }
 
-export const PROXY_ORG_ID = "00000000-0000-0000-0000-000000000001";
+export const DEFAULT_AGENCY_ID = "00000000-0000-0000-0000-000000000001";

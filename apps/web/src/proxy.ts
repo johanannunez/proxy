@@ -4,7 +4,7 @@ import type { Database } from "@/types/supabase";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { verifyApiToken } from "@/lib/api-tokens";
 import { taskToVTodo, generateETag, parseVTodoStatus } from "@/lib/caldav-utils";
-import { resolveOrgForRequestHost } from "@/lib/organizations/cache";
+import { resolveOrgForRequestHost } from "@/lib/agencies/cache";
 
 /**
  * Proxy proxy (formerly middleware): CalDAV server + session refresh + route protection.

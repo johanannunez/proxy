@@ -109,7 +109,7 @@ export type FormSchema = {
 
 export type Form = {
   id: string;
-  org_id: string;
+  agency_id: string;
   name: string;
   description: string | null;
   schema: FormSchema;
@@ -132,7 +132,7 @@ export type Form = {
 };
 
 export type CreateFormInput = {
-  org_id: string;
+  agency_id: string;
   name: string;
   description?: string;
   schema?: FormSchema;

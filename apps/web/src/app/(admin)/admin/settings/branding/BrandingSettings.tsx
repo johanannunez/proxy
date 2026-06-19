@@ -7,12 +7,12 @@ import {
   Image as ImageIcon,
   WarningCircle,
 } from "@phosphor-icons/react";
-import type { OrganizationBranding } from "@/types/organizations";
+import type { AgencyBranding } from "@/types/agencies";
 import { saveBrandingSettings } from "./branding-actions";
 import styles from "./BrandingSettings.module.css";
 
 interface BrandingSettingsProps {
-  branding: OrganizationBranding | null;
+  branding: AgencyBranding | null;
   isWhiteLabel: boolean;
 }
 

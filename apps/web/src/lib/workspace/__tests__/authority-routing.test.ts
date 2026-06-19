@@ -34,7 +34,7 @@ const mockGetActive = vi.mocked(getActiveWorkspaceAuthority);
 const fakeActiveAuthority = {
   id: "auth-1",
   workspace_id: "ws-1",
-  org_id: "org-1",
+  agency_id: "org-1",
   governance_mode: "workspace" as const,
   status: "active" as const,
   docuseal_submission_id: null,
@@ -46,7 +46,7 @@ const fakeActiveAuthority = {
 const fakePerPropertyAuthority = {
   id: "auth-2",
   workspace_id: "ws-1",
-  org_id: "org-1",
+  agency_id: "org-1",
   governance_mode: "per_property" as const,
   status: "active" as const,
   docuseal_submission_id: null,

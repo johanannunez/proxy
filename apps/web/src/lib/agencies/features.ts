@@ -1,4 +1,4 @@
-import type { OrgPlanTier } from "@/types/organizations";
+import type { AgencyPlanTier } from "@/types/agencies";
 
 /**
  * Plan-tier feature flags (Sub-phase B3).
@@ -19,7 +19,7 @@ export type PlanFeature =
   | "template_marketplace_publish"
   | "advanced_analytics";
 
-export const PLAN_FEATURES: Record<OrgPlanTier, Record<PlanFeature, boolean>> = {
+export const PLAN_FEATURES: Record<AgencyPlanTier, Record<PlanFeature, boolean>> = {
   starter: {
     conditional_forms: false,
     automated_reminders: false,
@@ -52,16 +52,16 @@ export const PLAN_FEATURES: Record<OrgPlanTier, Record<PlanFeature, boolean>> = 
   },
 };
 
-export function hasFeature(tier: OrgPlanTier, feature: PlanFeature): boolean {
+export function hasFeature(tier: AgencyPlanTier, feature: PlanFeature): boolean {
   return PLAN_FEATURES[tier][feature] ?? false;
 }
 
 /**
  * Plan limits seeded into `organization_settings.limits` at signup.
- * `-1` means unlimited, matching the OrganizationSettings type contract.
+ * `-1` means unlimited, matching the AgencySettings type contract.
  */
 export const PLAN_LIMITS: Record<
-  OrgPlanTier,
+  AgencyPlanTier,
   {
     max_workspaces: number;
     max_members: number;

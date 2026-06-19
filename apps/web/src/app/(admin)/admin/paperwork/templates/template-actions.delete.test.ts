@@ -62,7 +62,7 @@ const { docTemplates, docuseal, adminClient } = mocks;
 
 const customTemplate = {
   id: "t1",
-  org_id: "org-1",
+  agency_id: "org-1",
   document_key: "custom_key",
   display_name: "Custom",
   is_system: false,

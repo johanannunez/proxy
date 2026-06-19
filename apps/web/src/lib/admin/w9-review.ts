@@ -92,7 +92,7 @@ export async function getW9SignedUrlForReview(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: meProfile } = await (service as any)
     .from("profiles")
-    .select("org_id")
+    .select("agency_id")
     .eq("id", actor.profileId)
     .maybeSingle();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,13 +100,13 @@ export async function getW9SignedUrlForReview(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? await (service as any)
         .from("profiles")
-        .select("org_id")
+        .select("agency_id")
         .eq("id", documentOwnerId)
         .maybeSingle()
     : { data: null };
 
-  const meOrgId = (meProfile as { org_id: string | null } | null)?.org_id;
-  const ownerOrgId = (ownerProfile as { org_id: string | null } | null)?.org_id;
+  const meOrgId = (meProfile as { agency_id: string | null } | null)?.agency_id;
+  const ownerOrgId = (ownerProfile as { agency_id: string | null } | null)?.agency_id;
 
   if (!ownerProfile || !meOrgId || !ownerOrgId || ownerOrgId !== meOrgId) {
     throw new Error("Not authorized to access this document.");

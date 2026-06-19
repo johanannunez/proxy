@@ -144,7 +144,7 @@ export async function saveWorkspaceAuthority(
     .from("workspace_authority")
     .insert({
       workspace_id: input.workspaceId,
-      org_id: input.orgId,
+      agency_id: input.orgId,
       governance_mode: input.governanceMode,
       status: "draft",
     })

@@ -33,7 +33,7 @@ function candidate(overrides: Partial<ReminderCandidate> = {}): ReminderCandidat
     document_key: "w9",
     document_title: "W-9 Tax Form",
     workspace_id: "ws-1",
-    org_id: "00000000-0000-0000-0000-000000000001",
+    agency_id: "00000000-0000-0000-0000-000000000001",
     round: 1,
     config_days: 3,
     ...overrides,

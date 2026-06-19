@@ -39,7 +39,7 @@ async function getCurrentProfileAndWorkspace() {
 
   const { data: workspace } = await db
     .from("workspaces")
-    .select("id, name, type, org_id")
+    .select("id, name, type, agency_id")
     .eq("id", p.workspace_id)
     .single();
 
@@ -47,7 +47,7 @@ async function getCurrentProfileAndWorkspace() {
     id: string;
     name: string;
     type: string;
-    org_id: string;
+    agency_id: string;
   } | null;
   if (!w) return null;
 
@@ -64,7 +64,7 @@ export async function saveAuthorityConfigAction(
 
   const authorityId = await saveWorkspaceAuthority({
     workspaceId: ctx.workspace.id,
-    orgId: ctx.workspace.org_id,
+    orgId: ctx.workspace.agency_id,
     governanceMode,
     configs,
   });
@@ -157,7 +157,7 @@ async function ensureAuthorityAddendumTemplate(): Promise<number | null> {
     .from("document_templates")
     .select("docuseal_template_id")
     .eq("document_key", AUTHORITY_ADDENDUM_DOCUMENT_KEY)
-    .is("org_id", null)
+    .is("agency_id", null)
     .eq("is_active", true)
     .not("docuseal_template_id", "is", null)
     .maybeSingle();
@@ -182,7 +182,7 @@ async function ensureAuthorityAddendumTemplate(): Promise<number | null> {
 
   const { error: upsertErr } = await db.from("document_templates").upsert(
     {
-      org_id: null,
+      agency_id: null,
       document_key: AUTHORITY_ADDENDUM_DOCUMENT_KEY,
       display_name: "Decision Authority Addendum",
       description: "Workspace governance addendum signed by all co-owners.",
@@ -193,7 +193,7 @@ async function ensureAuthorityAddendumTemplate(): Promise<number | null> {
       is_system: true,
       is_active: true,
     },
-    { onConflict: "document_key,org_id", ignoreDuplicates: false },
+    { onConflict: "document_key,agency_id", ignoreDuplicates: false },
   );
 
   if (upsertErr) {

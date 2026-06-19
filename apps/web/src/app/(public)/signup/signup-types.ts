@@ -1,4 +1,4 @@
-import type { OrgPlanTier } from "@/types/organizations";
+import type { AgencyPlanTier } from "@/types/agencies";
 
 /**
  * Client-safe types and display catalog for the signup flow (Sub-phase B3).
@@ -40,7 +40,7 @@ export type CreateSubscriptionResult = {
 };
 
 export type PlanCard = {
-  tier: OrgPlanTier;
+  tier: AgencyPlanTier;
   name: string;
   /** Monthly display price in dollars; null = free. Must match the Stripe price. */
   priceMonthly: number | null;

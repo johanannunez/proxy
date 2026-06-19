@@ -1,4 +1,4 @@
-import type { OrgPlanTier } from "@/types/organizations";
+import type { AgencyPlanTier } from "@/types/agencies";
 
 /**
  * Client-safe billing summary types for /admin/settings/billing.
@@ -19,7 +19,7 @@ export type OrgBillingSummary = {
   orgId: string;
   orgName: string;
   orgSlug: string;
-  planTier: OrgPlanTier;
+  planTier: AgencyPlanTier;
   hasStripeCustomer: boolean;
   stripeConfigured: boolean;
   nextInvoice: {
@@ -30,7 +30,7 @@ export type OrgBillingSummary = {
   invoices: OrgInvoiceSummary[];
 };
 
-export const PLAN_TIER_LABELS: Record<OrgPlanTier, string> = {
+export const PLAN_TIER_LABELS: Record<AgencyPlanTier, string> = {
   starter: "Starter",
   pro: "Pro",
   white_label: "White-label",

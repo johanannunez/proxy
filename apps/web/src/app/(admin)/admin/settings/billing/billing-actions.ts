@@ -6,14 +6,14 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { fetchOrgForBilling } from "@/lib/billing/org-billing";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 
 type RedirectResult = { url?: string; error?: string };
 
 /**
  * Server actions are directly callable endpoints, so each one re-checks that
- * the caller is allowed to manage this org's billing: either Proxy staff
- * (profiles.role = admin) or an org_owner/org_admin member of the org.
+ * the caller is allowed to manage this agency's billing: either Proxy staff
+ * (profiles.role = admin) or an org_owner/org_admin member of the agency.
  */
 async function requireBillingAccess(orgId: string): Promise<string | null> {
   const supabase = await createClient();
@@ -31,9 +31,9 @@ async function requireBillingAccess(orgId: string): Promise<string | null> {
 
   const service = createServiceClient();
   const { data: membership } = await untypedDatabase(service)
-    .from<{ role: string }>("organization_members")
+    .from<{ role: string }>("agency_members")
     .select("role")
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .eq("profile_id", user.id)
     .maybeSingle();
 
@@ -45,7 +45,7 @@ async function requireBillingAccess(orgId: string): Promise<string | null> {
 
 async function resolveOrgId(): Promise<string> {
   const headerList = await headers();
-  return headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  return headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
 }
 
 async function resolveOrigin(): Promise<string> {

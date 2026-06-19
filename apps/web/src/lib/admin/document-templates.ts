@@ -14,8 +14,8 @@ function db(): DB {
 }
 
 /**
- * List all active templates visible to an org: system templates + org-specific ones.
- * For v1 (no orgs table), orgId is unused — all templates are system-level.
+ * List all active templates visible to an agency: system templates + agency-specific ones.
+ * For v1 (no agencies table), orgId is unused — all templates are system-level.
  */
 export async function listDocumentTemplates(orgId?: string): Promise<DocumentTemplate[]> {
   let query = db()
@@ -27,9 +27,9 @@ export async function listDocumentTemplates(orgId?: string): Promise<DocumentTem
     .order("display_name");
 
   if (orgId) {
-    query = query.or(`org_id.is.null,org_id.eq.${orgId}`);
+    query = query.or(`agency_id.is.null,agency_id.eq.${orgId}`);
   } else {
-    query = query.is("org_id", null);
+    query = query.is("agency_id", null);
   }
 
   const { data, error } = await query;
@@ -65,18 +65,18 @@ export async function resolveTemplateId(
 ): Promise<number | null> {
   let query = db()
     .from("document_templates")
-    .select("docuseal_template_id, org_id")
+    .select("docuseal_template_id, agency_id")
     .eq("document_key", documentKey)
     .eq("is_active", true);
 
   if (orgId) {
-    query = query.or(`org_id.is.null,org_id.eq.${orgId}`);
+    query = query.or(`agency_id.is.null,agency_id.eq.${orgId}`);
   } else {
-    query = query.is("org_id", null);
+    query = query.is("agency_id", null);
   }
 
-  // Prefer tenant row (org_id not null) over system row.
-  query = query.order("org_id", { ascending: false, nullsFirst: false }).limit(1);
+  // Prefer tenant row (agency_id not null) over system row.
+  query = query.order("agency_id", { ascending: false, nullsFirst: false }).limit(1);
 
   const { data } = await query.maybeSingle();
   const row = data as { docuseal_template_id: number | null } | null;
@@ -99,9 +99,9 @@ export async function isSignatureDocumentKey(
     .limit(1);
 
   if (orgId) {
-    query = query.or(`org_id.is.null,org_id.eq.${orgId}`);
+    query = query.or(`agency_id.is.null,agency_id.eq.${orgId}`);
   } else {
-    query = query.is("org_id", null);
+    query = query.is("agency_id", null);
   }
 
   const { data } = await query.maybeSingle();
@@ -218,7 +218,7 @@ export async function createDocumentTemplateRecord(
   const { data, error } = await db()
     .from("document_templates")
     .insert({
-      org_id: input.org_id ?? null,
+      agency_id: input.agency_id ?? null,
       document_key: input.document_key,
       display_name: input.display_name,
       description: input.description ?? null,
@@ -267,9 +267,9 @@ export async function deleteDocumentTemplateRecord(id: string): Promise<boolean>
 }
 
 /**
- * Remove the reminder cadence keyed to this (org, document_key) so a later
+ * Remove the reminder cadence keyed to this (agency, document_key) so a later
  * template reusing the key does not inherit stale cadence. No-op for system
- * templates: document_reminder_config.org_id is NOT NULL, so org_id=null rows
+ * templates: document_reminder_config.agency_id is NOT NULL, so agency_id=null rows
  * have no config to clear.
  */
 export async function deleteReminderConfigForKey(
@@ -280,7 +280,7 @@ export async function deleteReminderConfigForKey(
   const { error } = await db()
     .from("document_reminder_config")
     .delete()
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .eq("document_key", documentKey);
   if (error) {
     console.error("[document-templates] delete reminder config:", error.message);

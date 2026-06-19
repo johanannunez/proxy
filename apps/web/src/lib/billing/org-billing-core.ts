@@ -1,7 +1,7 @@
-import type { OrgPlanTier } from "@/types/organizations";
+import type { AgencyPlanTier } from "@/types/agencies";
 
 /**
- * Pure org-subscription mapping logic (Sub-phase B3).
+ * Pure agency-subscription mapping logic (Sub-phase B3).
  *
  * Kept free of Stripe SDK and Supabase imports so it unit-tests without any
  * network or mocks. The impure wrapper that talks to the database lives in
@@ -26,7 +26,7 @@ export type OrgSubscriptionLike = {
 export function planTierForPriceId(
   priceId: string | null | undefined,
   env: StripePriceEnv,
-): Extract<OrgPlanTier, "pro" | "white_label"> | null {
+): Extract<AgencyPlanTier, "pro" | "white_label"> | null {
   if (!priceId) return null;
   if (env.proPriceId && priceId === env.proPriceId) return "pro";
   if (env.whiteLabelPriceId && priceId === env.whiteLabelPriceId) {
@@ -40,7 +40,7 @@ export type OrgSubscriptionUpdate = {
   update: {
     stripe_subscription_id: string | null;
     stripe_customer_id?: string;
-    plan_tier?: OrgPlanTier;
+    plan_tier?: AgencyPlanTier;
   };
 };
 
@@ -48,9 +48,9 @@ const ENDED_STATUSES = new Set(["canceled", "incomplete_expired"]);
 const ENTITLED_STATUSES = new Set(["active", "trialing"]);
 
 /**
- * Decides what (if anything) to write back to the organizations row for a
+ * Decides what (if anything) to write back to the agencies row for a
  * subscription event. Returns null for subscriptions that do not belong to
- * an org (e.g. legacy per-owner workspace subscriptions).
+ * an agency (e.g. legacy per-owner workspace subscriptions).
  *
  * Rules:
  * - canceled/expired: downgrade to starter, detach the subscription.
@@ -78,7 +78,7 @@ export function orgUpdateForSubscription(
 
   const base: OrgSubscriptionUpdate["update"] = {
     stripe_subscription_id: sub.id,
-    // Checkout-created subscriptions are how an org first gets a customer;
+    // Checkout-created subscriptions are how an agency first gets a customer;
     // capture it so the billing page and portal work afterwards.
     ...(sub.customer ? { stripe_customer_id: sub.customer } : {}),
   };

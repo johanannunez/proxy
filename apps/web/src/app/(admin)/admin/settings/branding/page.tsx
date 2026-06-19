@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
-import { PROXY_ORG_ID, type OrganizationBranding } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID, type AgencyBranding } from "@/types/agencies";
 import { BrandingSettings } from "./BrandingSettings";
 
 export const metadata: Metadata = {
@@ -13,14 +13,14 @@ export const dynamic = "force-dynamic";
 
 export default async function BrandingSettingsPage() {
   const headerList = await headers();
-  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const orgId = headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
   const planTier = headerList.get("x-org-plan") ?? "starter";
 
   const service = createServiceClient();
   const { data: branding } = await untypedDatabase(service)
-    .from<OrganizationBranding>("organization_branding")
+    .from<AgencyBranding>("organization_branding")
     .select("*")
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .maybeSingle();
 
   return (

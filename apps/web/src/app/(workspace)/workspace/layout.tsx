@@ -18,8 +18,8 @@ import { ImpersonationBanner } from "@/components/workspace/ImpersonationBanner"
 import { WorkspaceMain } from "@/components/workspace/WorkspaceMainContent";
 import { getWorkspaceNotificationPreferences } from "@/lib/workspace/notification-preferences-server";
 import { untypedDatabase } from "@/lib/supabase/untyped";
-import type { OrganizationBranding } from "@/types/organizations";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import type { AgencyBranding } from "@/types/agencies";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 import { SignOutButton } from "./SignOutButton";
 
 /** Inline unread count query (cannot call "use server" actions from server components) */
@@ -86,12 +86,12 @@ export default async function WorkspaceLayout({
   // Fetch org branding to inject CSS custom properties for white-label orgs.
   // The x-org-id header is set by middleware from the request hostname.
   const headerList = await headers();
-  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const orgId = headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
   const service = createServiceClient();
   const { data: orgBranding } = await untypedDatabase(service)
-    .from<OrganizationBranding>("organization_branding")
+    .from<AgencyBranding>("organization_branding")
     .select("primary_color, accent_color")
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .maybeSingle();
 
   // Only inject inline CSS vars when the org has custom colors set.

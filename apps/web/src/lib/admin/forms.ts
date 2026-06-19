@@ -181,7 +181,7 @@ export async function listForms(orgId: string): Promise<FormWithCount[]> {
   const { data, error } = await db()
     .from("forms")
     .select("*, form_responses(count)")
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .order("created_at", { ascending: false });
   if (error) {
     console.error("[forms] list:", error.message);
@@ -212,7 +212,7 @@ export async function createForm(input: CreateFormInput): Promise<Form | null> {
   const { data, error } = await db()
     .from("forms")
     .insert({
-      org_id: input.org_id,
+      agency_id: input.agency_id,
       name: input.name,
       description: input.description ?? null,
       schema,
@@ -253,7 +253,7 @@ export async function duplicateForm(id: string, createdBy?: string): Promise<For
   const { data, error } = await db()
     .from("forms")
     .insert({
-      org_id: source.org_id,
+      agency_id: source.agency_id,
       name: `${source.name} (copy)`,
       description: source.description,
       schema: source.schema,
@@ -409,9 +409,9 @@ export async function listRespondentProfiles(orgId: string): Promise<RespondentP
   const { data, error } = await db()
     .from("form_responses")
     .select(
-      "respondent_profile_id, profiles:respondent_profile_id(full_name), forms!inner(org_id)",
+      "respondent_profile_id, profiles:respondent_profile_id(full_name), forms!inner(agency_id)",
     )
-    .eq("forms.org_id", orgId)
+    .eq("forms.agency_id", orgId)
     .not("respondent_profile_id", "is", null);
   if (error) return [];
   const seen = new Set<string>();
@@ -437,8 +437,8 @@ export async function listPropertyOptionsForForms(
    
   const { data, error } = await db()
     .from("form_responses")
-    .select("property_id, properties:property_id(name), forms!inner(org_id)")
-    .eq("forms.org_id", orgId)
+    .select("property_id, properties:property_id(name), forms!inner(agency_id)")
+    .eq("forms.agency_id", orgId)
     .not("property_id", "is", null);
   if (error) return [];
   const seen = new Set<string>();
@@ -474,9 +474,9 @@ export async function getRespondentCrossFormData(
   let q = db()
     .from("form_responses")
     .select(
-      "id, form_id, submitted_at, completed_at, data, property_id, forms!inner(org_id)",
+      "id, form_id, submitted_at, completed_at, data, property_id, forms!inner(agency_id)",
     )
-    .eq("forms.org_id", orgId)
+    .eq("forms.agency_id", orgId)
     .eq("respondent_profile_id", profileId);
   if (propertyId) q = q.eq("property_id", propertyId);
   const { data, error } = await q.order("submitted_at", { ascending: false });
@@ -507,9 +507,9 @@ export async function listAllFormResponsesForOrg(
     .from("form_responses")
     .select(
       `id, form_id, respondent_profile_id, property_id, data, submitted_at, completed_at,
-       forms:form_id!inner(name, org_id)`,
+       forms:form_id!inner(name, agency_id)`,
     )
-    .eq("forms.org_id", orgId)
+    .eq("forms.agency_id", orgId)
     .order("submitted_at", { ascending: false })
     .limit(limit);
   if (error) {

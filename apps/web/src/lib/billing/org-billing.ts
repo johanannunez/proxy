@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
-import type { Organization } from "@/types/organizations";
+import type { Agency } from "@/types/agencies";
 import {
   orgUpdateForSubscription,
   stripePriceEnv,
@@ -14,10 +14,10 @@ import type {
 } from "./org-billing-types";
 
 /**
- * Webhook-side sync: keeps organizations.plan_tier and
- * organizations.stripe_subscription_id aligned with the Stripe subscription
+ * Webhook-side sync: keeps agencies.plan_tier and
+ * agencies.stripe_subscription_id aligned with the Stripe subscription
  * lifecycle. Decision logic is pure (org-billing-core.ts); this wrapper only
- * performs the database write with the service client, since organizations
+ * performs the database write with the service client, since agencies
  * rows are not writable under RLS.
  */
 export async function syncOrgSubscriptionFromStripe(
@@ -37,7 +37,7 @@ export async function syncOrgSubscriptionFromStripe(
 
   const supabase = createServiceClient();
   const { error } = await untypedDatabase(supabase)
-    .from("organizations")
+    .from("agencies")
     .update(decision.update)
     .eq("id", decision.orgId);
   if (error) {
@@ -51,10 +51,10 @@ export async function syncOrgSubscriptionFromStripe(
 
 export async function fetchOrgForBilling(
   orgId: string,
-): Promise<Organization | null> {
+): Promise<Agency | null> {
   const supabase = createServiceClient();
   const { data } = await untypedDatabase(supabase)
-    .from<Organization>("organizations")
+    .from<Agency>("agencies")
     .select("*")
     .eq("id", orgId)
     .maybeSingle();
@@ -64,7 +64,7 @@ export async function fetchOrgForBilling(
 /**
  * Billing summary for /admin/settings/billing. Every Stripe call degrades to
  * null/empty so the page renders cleanly when billing is not configured or
- * the org has no Stripe customer yet (Starter orgs).
+ * the agency has no Stripe customer yet (Starter agencies).
  */
 export async function fetchOrgBillingSummary(
   orgId: string,

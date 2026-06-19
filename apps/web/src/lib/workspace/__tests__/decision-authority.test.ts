@@ -62,7 +62,7 @@ describe("getActiveWorkspaceAuthority", () => {
     const fakeAuthority = {
       id: "auth-1",
       workspace_id: "ws-1",
-      org_id: "org-1",
+      agency_id: "org-1",
       governance_mode: "workspace",
       status: "active",
       docuseal_submission_id: null,
@@ -118,7 +118,7 @@ describe("getCurrentWorkspaceAuthority", () => {
     const fakeAuthority = {
       id: "auth-1",
       workspace_id: "ws-1",
-      org_id: "org-1",
+      agency_id: "org-1",
       governance_mode: "workspace",
       status: "pending_signatures",
       docuseal_submission_id: "sub-1",

@@ -1,42 +1,42 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { untypedDatabase } from "@/lib/supabase/untyped";
-import type { Organization, OrganizationBranding } from "@/types/organizations";
+import type { Agency, AgencyBranding } from "@/types/agencies";
 
 /**
- * Org-layer query helpers (Sub-phase B1).
+ * Agency-layer query helpers (Sub-phase B1).
  *
- * The organizations tables are newer than the generated Supabase types, so
+ * The agencies tables are newer than the generated Supabase types, so
  * queries go through the untyped client wrapper with explicit row interfaces
- * from `@/types/organizations`.
+ * from `@/types/agencies`.
  */
 
-export async function getOrgBySlug(slug: string): Promise<Organization | null> {
+export async function getOrgBySlug(slug: string): Promise<Agency | null> {
   const supabase = await createClient();
   const { data } = await untypedDatabase(supabase)
-    .from<Organization>("organizations")
+    .from<Agency>("agencies")
     .select("*")
     .eq("slug", slug)
     .single();
   return data;
 }
 
-export async function getOrgByCustomDomain(domain: string): Promise<Organization | null> {
+export async function getOrgByCustomDomain(domain: string): Promise<Agency | null> {
   const supabase = await createClient();
   const { data } = await untypedDatabase(supabase)
-    .from<Organization>("organizations")
+    .from<Agency>("agencies")
     .select("*, organization_branding!inner(custom_domain)")
     .eq("organization_branding.custom_domain", domain)
     .single();
   return data;
 }
 
-export async function getOrgBranding(orgId: string): Promise<OrganizationBranding | null> {
+export async function getOrgBranding(orgId: string): Promise<AgencyBranding | null> {
   const supabase = await createClient();
   const { data } = await untypedDatabase(supabase)
-    .from<OrganizationBranding>("organization_branding")
+    .from<AgencyBranding>("organization_branding")
     .select("*")
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .single();
   return data;
 }

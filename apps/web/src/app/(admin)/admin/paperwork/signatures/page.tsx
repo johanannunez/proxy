@@ -8,7 +8,7 @@ import { fetchDocumentsHubData } from "@/lib/admin/documents-hub";
 import { fetchActionQueue } from "@/lib/admin/action-queue";
 import { getTemplatePreviewUrl } from "@/lib/signing/docuseal";
 import { SECURE_DOC_TYPES, type SecureDocKey } from "@/lib/admin/documents-hub-shared";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 import { PaperworkShell } from "../PaperworkShell";
 import { SignaturesHub } from "./SignaturesHub";
 import type { SendRecipient, UnifiedTemplate } from "../templates/unified-types";
@@ -27,7 +27,7 @@ const secureKeys = Object.keys(SECURE_DOC_TYPES) as SecureDocKey[];
  */
 export default async function SignaturesPage() {
   const headerList = await headers();
-  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const orgId = headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
 
   const [signatureTemplates, sendCounts, owners, actionQueue] = await Promise.all([
     listDocumentTemplates(),

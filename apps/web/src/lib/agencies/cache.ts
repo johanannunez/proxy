@@ -12,24 +12,24 @@
  * build time. It never reaches the client bundle: only proxy.ts and server
  * code import it, and it reads SUPABASE_SECRET_KEY which does not exist in
  * client bundles. Lookups use a dedicated supabase-js service client (the same
- * pattern the CalDAV handler in src/proxy.ts uses) because organizations rows
+ * pattern the CalDAV handler in src/proxy.ts uses) because agencies rows
  * are not anonymously readable under RLS.
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { untypedDatabase } from "@/lib/supabase/untyped";
-import { PROXY_ORG_ID, type OrgPlanTier } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID, type AgencyPlanTier } from "@/types/agencies";
 import { classifyHost } from "./host";
 
 export interface ResolvedOrg {
   id: string;
   slug: string;
-  planTier: OrgPlanTier;
+  planTier: AgencyPlanTier;
 }
 
-/** The Proxy org context served on all first-party hosts, with no DB lookup. */
+/** The Proxy agency context served on all first-party hosts, with no DB lookup. */
 export const PROXY_DEFAULT_ORG: ResolvedOrg = {
-  id: PROXY_ORG_ID,
+  id: DEFAULT_AGENCY_ID,
   slug: "proxy",
   planTier: "white_label",
 };
@@ -84,12 +84,12 @@ function getServiceClient(): SupabaseClient {
 interface OrgRow {
   id: string;
   slug: string;
-  plan_tier: OrgPlanTier;
+  plan_tier: AgencyPlanTier;
 }
 
 async function fetchOrgBySlug(slug: string): Promise<ResolvedOrg | null> {
   const { data } = await untypedDatabase(getServiceClient())
-    .from<OrgRow>("organizations")
+    .from<OrgRow>("agencies")
     .select("id, slug, plan_tier")
     .eq("slug", slug)
     .maybeSingle();
@@ -98,7 +98,7 @@ async function fetchOrgBySlug(slug: string): Promise<ResolvedOrg | null> {
 
 async function fetchOrgByCustomDomain(domain: string): Promise<ResolvedOrg | null> {
   const { data } = await untypedDatabase(getServiceClient())
-    .from<OrgRow>("organizations")
+    .from<OrgRow>("agencies")
     .select("id, slug, plan_tier, organization_branding!inner(custom_domain)")
     .eq("organization_branding.custom_domain", domain)
     .maybeSingle();
@@ -106,12 +106,12 @@ async function fetchOrgByCustomDomain(domain: string): Promise<ResolvedOrg | nul
 }
 
 /**
- * Resolve the organization context for a request hostname.
+ * Resolve the agency context for a request hostname.
  *
  * Returns:
- *   - the Proxy org for all first-party hosts (no lookup),
- *   - the tenant org for a known subdomain or custom domain,
- *   - the Proxy org for an UNKNOWN custom domain (previews, tunnels, and
+ *   - the Proxy agency for all first-party hosts (no lookup),
+ *   - the tenant agency for a known subdomain or custom domain,
+ *   - the Proxy agency for an UNKNOWN custom domain (previews, tunnels, and
  *     misconfigured DNS must never hard-fail the whole site),
  *   - null only for an unknown *.myproxyhost.com subdomain, which the proxy
  *     redirects to the main site.

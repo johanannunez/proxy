@@ -16,7 +16,7 @@ import type { Form, FormField } from "@/lib/admin/forms-types";
 function buildForm(fields: FormField[]): Form {
   return {
     id: "form-1",
-    org_id: "org-1",
+    agency_id: "org-1",
     name: "Test form",
     description: null,
     schema: {

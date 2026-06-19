@@ -5,9 +5,9 @@ import {
   hasFeature,
   type PlanFeature,
 } from "../features";
-import type { OrgPlanTier } from "@/types/organizations";
+import type { AgencyPlanTier } from "@/types/agencies";
 
-const ALL_TIERS: OrgPlanTier[] = ["starter", "pro", "white_label"];
+const ALL_TIERS: AgencyPlanTier[] = ["starter", "pro", "white_label"];
 
 const ALL_FEATURES: PlanFeature[] = [
   "conditional_forms",

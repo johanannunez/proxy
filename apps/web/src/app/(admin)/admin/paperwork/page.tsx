@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { fetchActionQueue } from "@/lib/admin/action-queue";
 import { fetchWorkspaceStatusBoard } from "@/lib/admin/status-board";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 import { PaperworkShell } from "./PaperworkShell";
 import { StatusBoardTab } from "./StatusBoardTab";
 
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function PaperworkStatusPage() {
   const headerList = await headers();
-  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const orgId = headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
 
   const [actionQueue, statusBoard] = await Promise.all([
     fetchActionQueue(),

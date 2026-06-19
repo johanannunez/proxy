@@ -33,8 +33,8 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe, type Stripe as StripeJs } from "@stripe/stripe-js";
 import { CustomSelect } from "@/components/admin/CustomSelect";
-import { isValidOrgSlug, normalizeOrgSlug, RESERVED_ORG_SLUGS } from "@/lib/organizations/slug";
-import type { OrgPlanTier } from "@/types/organizations";
+import { isValidOrgSlug, normalizeOrgSlug, RESERVED_ORG_SLUGS } from "@/lib/agencies/slug";
+import type { AgencyPlanTier } from "@/types/agencies";
 import {
   checkSubdomainAvailability,
   createOrganization,
@@ -60,7 +60,7 @@ export type BillingConfig = {
 type SignupSuccess = {
   orgId: string;
   slug: string;
-  planTier: OrgPlanTier;
+  planTier: AgencyPlanTier;
   requiresEmailConfirmation: boolean;
 };
 
@@ -118,7 +118,7 @@ export function SignupFlow({ billing }: { billing: BillingConfig }) {
   /** True once the user types in the slug field directly; stops prefill. */
   const [slugEdited, setSlugEdited] = useState(false);
   const [slugCheck, setSlugCheck] = useState<SubdomainCheck>({ state: "idle" });
-  const [planTier, setPlanTier] = useState<OrgPlanTier>("pro");
+  const [planTier, setPlanTier] = useState<AgencyPlanTier>("pro");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SignupSuccess | null>(null);
@@ -193,7 +193,7 @@ export function SignupFlow({ billing }: { billing: BillingConfig }) {
   }, [company.slug]);
 
   const submitOrganization = useCallback(
-    async (tier: OrgPlanTier) => {
+    async (tier: AgencyPlanTier) => {
       if (createdOrgRef.current) return createdOrgRef.current;
       const result = await createOrganization({
         name: company.companyName,
@@ -216,7 +216,7 @@ export function SignupFlow({ billing }: { billing: BillingConfig }) {
   );
 
   const finishOnPlan = useCallback(
-    async (tier: OrgPlanTier) => {
+    async (tier: AgencyPlanTier) => {
       setSubmitting(true);
       setSubmitError(null);
       try {
@@ -716,8 +716,8 @@ function StepPlan({
   onBack,
   onContinue,
 }: {
-  planTier: OrgPlanTier;
-  onSelect: (tier: OrgPlanTier) => void;
+  planTier: AgencyPlanTier;
+  onSelect: (tier: AgencyPlanTier) => void;
   submitting: boolean;
   submitError: string | null;
   onBack: () => void;
@@ -820,7 +820,7 @@ function StepPayment({
   planTier: "pro" | "white_label";
   companySlug: string;
   submitOrganization: (
-    tier: OrgPlanTier,
+    tier: AgencyPlanTier,
   ) => Promise<{ orgId: string; requiresEmailConfirmation: boolean }>;
   onSuccess: (requiresEmailConfirmation: boolean, orgId: string) => void;
   onBack: () => void;

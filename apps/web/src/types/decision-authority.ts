@@ -28,7 +28,7 @@ export type AuthorityStatus = "draft" | "pending_signatures" | "active" | "super
 export interface WorkspaceAuthority {
   id: string;
   workspace_id: string;
-  org_id: string;
+  agency_id: string;
   governance_mode: GovernanceMode;
   status: AuthorityStatus;
   docuseal_submission_id: string | null;

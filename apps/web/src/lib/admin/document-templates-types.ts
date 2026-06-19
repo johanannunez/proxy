@@ -16,7 +16,7 @@ export type TemplateSettings = {
 
 export type DocumentTemplate = {
   id: string;
-  org_id: string | null;
+  agency_id: string | null;
   document_key: string;
   display_name: string;
   description: string | null;
@@ -50,7 +50,7 @@ export type DocumentTemplate = {
 };
 
 export type CreateDocumentTemplateInput = {
-  org_id?: string;
+  agency_id?: string;
   document_key: string;
   display_name: string;
   description?: string;

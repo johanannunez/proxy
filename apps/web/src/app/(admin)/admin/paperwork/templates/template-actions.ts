@@ -418,7 +418,7 @@ export async function forkSystemTemplate(
   }
 
   const record = await createDocumentTemplateRecord({
-    org_id: orgId,
+    agency_id: orgId,
     document_key: source.document_key,
     display_name: source.display_name,
     description: source.description ?? undefined,
@@ -509,7 +509,7 @@ export async function deleteTemplate(
   // Clean up dependent state only AFTER the row is actually gone, so a failed
   // row delete never orphans the reminder cadence. Both are best-effort; a
   // DocuSeal outage must not fail an already-committed local delete.
-  await deleteReminderConfigForKey(template.org_id, template.document_key);
+  await deleteReminderConfigForKey(template.agency_id, template.document_key);
   if (template.docuseal_template_id) {
     await archiveDocuSealTemplate(template.docuseal_template_id);
   }

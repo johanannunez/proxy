@@ -160,11 +160,11 @@ export async function uploadReceiptForOwner(
 
   // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", userId!)
     .single();
-  if (callerErr || !caller?.org_id) return { error: "Could not resolve your organization." };
+  if (callerErr || !caller?.agency_id) return { error: "Could not resolve your organization." };
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -174,7 +174,7 @@ export async function uploadReceiptForOwner(
     .from("owner_receipts")
     .select(RECEIPT_SELECT)
     .eq("owner_id", ownerId)
-    .eq("org_id", caller.org_id)
+    .eq("agency_id", caller.agency_id)
     .eq("file_hash", fileHash)
     .maybeSingle();
 
@@ -208,7 +208,7 @@ export async function uploadReceiptForOwner(
     .from<OwnerReceiptRow>("owner_receipts")
     .insert({
       owner_id: ownerId,
-      org_id: caller.org_id,
+      agency_id: caller.agency_id,
       created_by: ownerId,
       vendor,
       amount: aiResult?.amount ?? 0,
@@ -247,13 +247,13 @@ export async function updateReceiptFieldAdmin(id: string, field: string, value: 
 
   // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", userId!)
     .single();
-  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+  if (callerErr || !caller?.agency_id) throw new Error("Could not resolve your organization.");
 
-  await db.from("owner_receipts").update({ [field]: value } as unknown).eq("id", id).eq("org_id", caller.org_id);
+  await db.from("owner_receipts").update({ [field]: value } as unknown).eq("id", id).eq("agency_id", caller.agency_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
 
@@ -266,13 +266,13 @@ export async function markReceiptReviewedAdmin(id: string, workspaceId: string):
 
   // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", userId!)
     .single();
-  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+  if (callerErr || !caller?.agency_id) throw new Error("Could not resolve your organization.");
 
-  await db.from("owner_receipts").update({ reviewed_at: new Date().toISOString() } as unknown).eq("id", id).eq("org_id", caller.org_id);
+  await db.from("owner_receipts").update({ reviewed_at: new Date().toISOString() } as unknown).eq("id", id).eq("agency_id", caller.agency_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
 
@@ -285,11 +285,11 @@ export async function deleteReceiptAdmin(id: string, storagePath: string | null,
 
   // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", userId!)
     .single();
-  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+  if (callerErr || !caller?.agency_id) throw new Error("Could not resolve your organization.");
 
   // Fetch the row scoped to caller's org so we anchor the storage delete on
   // data we own, not the caller-supplied storagePath (which would be an IDOR).
@@ -298,14 +298,14 @@ export async function deleteReceiptAdmin(id: string, storagePath: string | null,
     .from<{ storage_path: string | null }>("owner_receipts")
     .select("storage_path")
     .eq("id", id)
-    .eq("org_id", caller.org_id)
+    .eq("agency_id", caller.agency_id)
     .maybeSingle();
   if (!row) throw new Error("Receipt not found.");
 
   if (row.storage_path) {
     await svc.storage.from("receipts").remove([row.storage_path]);
   }
-  await db.from("owner_receipts").delete().eq("id", id).eq("org_id", caller.org_id);
+  await db.from("owner_receipts").delete().eq("id", id).eq("agency_id", caller.agency_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
 
@@ -317,18 +317,18 @@ export async function getReceiptSignedUrlAdmin(storagePath: string): Promise<str
   const db = untypedDatabase(svc);
   // non-null: requireAdmin returns userId only when error is null
   const { data: caller } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", userId!)
     .single();
-  if (!caller?.org_id) return null;
+  if (!caller?.agency_id) return null;
   // Verify the path belongs to a receipt row IN THE CALLER'S OWN ORG before issuing a URL,
   // so a caller-supplied path cannot mint a signed URL for another org's file.
   const { data: receipt } = await db
     .from("owner_receipts")
     .select("id")
     .eq("storage_path", storagePath)
-    .eq("org_id", caller.org_id)
+    .eq("agency_id", caller.agency_id)
     .maybeSingle();
   if (!receipt) return null;
 
@@ -345,12 +345,12 @@ export async function toggleReceiptVisibility(id: string, visible: boolean, work
 
   // non-null: requireAdmin returns userId only when error is null
   const { data: caller, error: callerErr } = await db
-    .from<{ org_id: string | null }>("profiles")
-    .select("org_id")
+    .from<{ agency_id: string | null }>("profiles")
+    .select("agency_id")
     .eq("id", userId!)
     .single();
-  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+  if (callerErr || !caller?.agency_id) throw new Error("Could not resolve your organization.");
 
-  await db.from("owner_receipts").update({ visibility: visible ? "visible" : "hidden" } as unknown).eq("id", id).eq("org_id", caller.org_id);
+  await db.from("owner_receipts").update({ visibility: visible ? "visible" : "hidden" } as unknown).eq("id", id).eq("agency_id", caller.agency_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }

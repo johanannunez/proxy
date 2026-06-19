@@ -23,7 +23,7 @@ export interface ReminderCandidate {
   document_key: string;
   document_title: string;
   workspace_id: string | null;
-  org_id: string;
+  agency_id: string;
   /** Which reminder round to send (1, 2, or 3). */
   round: number;
   /** Days since creation at which this round fires. */

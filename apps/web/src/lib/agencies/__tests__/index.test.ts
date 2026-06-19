@@ -24,7 +24,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { getOrgBySlug, getOrgByCustomDomain, getOrgBranding } from "../index";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 
 beforeEach(() => {
   fromMock.mockClear();
@@ -39,12 +39,12 @@ describe("getOrgBySlug", () => {
     });
     const result = await getOrgBySlug("unknown-slug-xyz");
     expect(result).toBeNull();
-    expect(fromMock).toHaveBeenCalledWith("organizations");
+    expect(fromMock).toHaveBeenCalledWith("agencies");
   });
 
-  it("returns the organization row for a known slug", async () => {
-    const proxyOrg = {
-      id: PROXY_ORG_ID,
+  it("returns the agency row for a known slug", async () => {
+    const proxyAgency = {
+      id: DEFAULT_AGENCY_ID,
       name: "Proxy",
       slug: "proxy",
       plan_tier: "white_label",
@@ -53,21 +53,21 @@ describe("getOrgBySlug", () => {
       created_at: "2026-06-10T00:00:00Z",
       updated_at: "2026-06-10T00:00:00Z",
     };
-    singleMock.mockResolvedValue({ data: proxyOrg, error: null });
+    singleMock.mockResolvedValue({ data: proxyAgency, error: null });
     const result = await getOrgBySlug("proxy");
-    expect(result).toEqual(proxyOrg);
+    expect(result).toEqual(proxyAgency);
   });
 });
 
 describe("getOrgByCustomDomain", () => {
-  it("returns null when no org owns the domain", async () => {
+  it("returns null when no agency owns the domain", async () => {
     singleMock.mockResolvedValue({
       data: null,
       error: { message: "no rows", code: "PGRST116" },
     });
     const result = await getOrgByCustomDomain("portal.unknown.com");
     expect(result).toBeNull();
-    expect(fromMock).toHaveBeenCalledWith("organizations");
+    expect(fromMock).toHaveBeenCalledWith("agencies");
   });
 });
 
@@ -82,9 +82,9 @@ describe("getOrgBranding", () => {
     expect(fromMock).toHaveBeenCalledWith("organization_branding");
   });
 
-  it("returns the branding row for an org", async () => {
+  it("returns the branding row for an agency", async () => {
     const branding = {
-      org_id: PROXY_ORG_ID,
+      agency_id: DEFAULT_AGENCY_ID,
       logo_url: null,
       favicon_url: null,
       primary_color: "#0F172A",
@@ -98,7 +98,7 @@ describe("getOrgBranding", () => {
       updated_at: "2026-06-10T00:00:00Z",
     };
     singleMock.mockResolvedValue({ data: branding, error: null });
-    const result = await getOrgBranding(PROXY_ORG_ID);
+    const result = await getOrgBranding(DEFAULT_AGENCY_ID);
     expect(result).toEqual(branding);
   });
 });

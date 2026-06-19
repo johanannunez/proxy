@@ -29,7 +29,7 @@ type WorkspaceDbRow = {
   id: string;
   name: string;
   type: string | null;
-  org_id: string;
+  agency_id: string;
 };
 
 type ProfileDbRow = {
@@ -167,8 +167,8 @@ export async function fetchWorkspaceStatusBoard(orgId: string): Promise<StatusBo
   // 1. All workspaces for this org
   const { data: workspacesRaw, error: wsErr } = await client
     .from("workspaces")
-    .select("id, name, type, org_id")
-    .eq("org_id", orgId);
+    .select("id, name, type, agency_id")
+    .eq("agency_id", orgId);
 
   if (wsErr) {
     console.error("[status-board] workspaces fetch:", wsErr.message);

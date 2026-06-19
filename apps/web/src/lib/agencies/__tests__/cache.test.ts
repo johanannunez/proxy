@@ -20,7 +20,7 @@ import {
   PROXY_DEFAULT_ORG,
   ORG_CACHE_TTL_MS,
 } from "../cache";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 
 beforeEach(() => {
   maybeSingleMock.mockReset();
@@ -56,10 +56,10 @@ describe("TtlCache", () => {
 });
 
 describe("resolveOrgForRequestHost", () => {
-  it("returns the Proxy org for first-party hosts without any lookup", async () => {
+  it("returns the Proxy agency for first-party hosts without any lookup", async () => {
     const org = await resolveOrgForRequestHost("www.myproxyhost.com");
     expect(org).toEqual(PROXY_DEFAULT_ORG);
-    expect(org?.id).toBe(PROXY_ORG_ID);
+    expect(org?.id).toBe(DEFAULT_AGENCY_ID);
     expect(createClientMock).not.toHaveBeenCalled();
   });
 
@@ -71,7 +71,7 @@ describe("resolveOrgForRequestHost", () => {
 
     const first = await resolveOrgForRequestHost("acme.myproxyhost.com");
     expect(first).toEqual({ id: "org-2", slug: "acme", planTier: "pro" });
-    expect(fromMock).toHaveBeenCalledWith("organizations");
+    expect(fromMock).toHaveBeenCalledWith("agencies");
     expect(maybeSingleMock).toHaveBeenCalledTimes(1);
 
     // Second request within the TTL: served from cache, no second lookup.
@@ -86,7 +86,7 @@ describe("resolveOrgForRequestHost", () => {
     expect(org).toBeNull();
   });
 
-  it("falls back to the Proxy org for an unknown custom domain", async () => {
+  it("falls back to the Proxy agency for an unknown custom domain", async () => {
     maybeSingleMock.mockResolvedValue({ data: null, error: null });
     const org = await resolveOrgForRequestHost("portal.unknown-company.com");
     expect(org).toEqual(PROXY_DEFAULT_ORG);

@@ -9,7 +9,7 @@ import {
 import { getDocumentTemplate, templateHasBeenSent } from "@/lib/admin/document-templates";
 import { getTemplateFields } from "@/lib/signing/docuseal";
 import { computeCoverage } from "@/lib/signing/field-coverage";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 import { PaperworkShell } from "../../PaperworkShell";
 import { FormTemplateDetail } from "./FormTemplateDetail";
 import { SignatureTemplateDetail } from "./SignatureTemplateDetail";
@@ -30,7 +30,7 @@ type Props = {
 export default async function TemplateDetailPage({ params, searchParams }: Props) {
   const [{ id }, { tab }] = await Promise.all([params, searchParams]);
   const headerList = await headers();
-  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const orgId = headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
 
   const form = await getForm(id);
 

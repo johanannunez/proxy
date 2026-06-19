@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 import { createClient } from "@/lib/supabase/server";
-import { PROXY_ORG_ID } from "@/types/organizations";
+import { DEFAULT_AGENCY_ID } from "@/types/agencies";
 import { pushBrandingToDocuSeal } from "@/lib/signing/docuseal-branding";
 
 export type BrandingActionResult = { success: true } | { success: false; error: string };
@@ -26,9 +26,9 @@ async function requireBrandingAccess(orgId: string): Promise<string | null> {
 
   const service = createServiceClient();
   const { data: membership } = await untypedDatabase(service)
-    .from<{ role: string }>("organization_members")
+    .from<{ role: string }>("agency_members")
     .select("role")
-    .eq("org_id", orgId)
+    .eq("agency_id", orgId)
     .eq("profile_id", user.id)
     .maybeSingle();
 
@@ -50,7 +50,7 @@ export async function saveBrandingSettings(
   customDomain: string | null,
 ): Promise<BrandingActionResult> {
   const headerList = await headers();
-  const orgId = headerList.get("x-org-id") ?? PROXY_ORG_ID;
+  const orgId = headerList.get("x-org-id") ?? DEFAULT_AGENCY_ID;
 
   const denied = await requireBrandingAccess(orgId);
   if (denied) return { success: false, error: denied };
@@ -66,7 +66,7 @@ export async function saveBrandingSettings(
   const normalizedDomain = customDomain?.trim().toLowerCase() || null;
   if (normalizedDomain) {
     const { data: org } = await untypedDatabase(createServiceClient())
-      .from<{ plan_tier: string }>("organizations")
+      .from<{ plan_tier: string }>("agencies")
       .select("plan_tier")
       .eq("id", orgId)
       .maybeSingle();
@@ -83,10 +83,10 @@ export async function saveBrandingSettings(
 
   if (normalizedDomain) {
     const { data: taken } = await db
-      .from<{ org_id: string }>("organization_branding")
-      .select("org_id")
+      .from<{ agency_id: string }>("organization_branding")
+      .select("agency_id")
       .eq("custom_domain", normalizedDomain)
-      .neq("org_id", orgId)
+      .neq("agency_id", orgId)
       .maybeSingle();
     if (taken) {
       return { success: false, error: "That domain is already connected to another workspace." };
@@ -94,16 +94,16 @@ export async function saveBrandingSettings(
   }
 
   const { error } = await db
-    .from<{ org_id: string }>("organization_branding")
+    .from<{ agency_id: string }>("organization_branding")
     .upsert(
       {
-        org_id: orgId,
+        agency_id: orgId,
         logo_url: logoUrl ?? null,
         primary_color: primaryColor,
         accent_color: accentColor,
         custom_domain: normalizedDomain,
       },
-      { onConflict: "org_id" },
+      { onConflict: "agency_id" },
     );
 
   if (error) {
@@ -111,7 +111,7 @@ export async function saveBrandingSettings(
     return { success: false, error: "Failed to save branding. Please try again." };
   }
 
-  // Push logo and primary color to DocuSeal so signing pages inherit the org's
+  // Push logo and primary color to DocuSeal so signing pages inherit the agency's
   // brand. Errors are swallowed in pushBrandingToDocuSeal — never block the save.
   await pushBrandingToDocuSeal(logoUrl, primaryColor);
 
