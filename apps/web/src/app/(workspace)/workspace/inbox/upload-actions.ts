@@ -1,5 +1,6 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 const AI_SYSTEM_PROMPT = `You analyze documents and images for a property management company. Classify the document and provide a brief, useful summary.
@@ -42,8 +43,37 @@ export async function analyzeAttachment(args: {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return;
 
+  // Require an authenticated caller who can actually read this message (RLS-scoped).
+  // Closes the unauthenticated cross-tenant write: a caller can only touch a message
+  // their own session is allowed to see.
+  const rls = await createClient();
+  const {
+    data: { user },
+  } = await rls.auth.getUser();
+  if (!user) return;
+
+  const { data: ownedMsg } = await rls
+    .from("messages")
+    .select("id, metadata")
+    .eq("id", args.messageId)
+    .maybeSingle();
+  if (!ownedMsg) return;
+
+  // Only ever fetch a URL that is already a recorded attachment on this message. This prevents
+  // SSRF via an attacker-supplied fileUrl pointing at an internal or arbitrary endpoint.
+  const existingMeta = (ownedMsg.metadata ?? {}) as Record<string, unknown>;
+  const attachments = (existingMeta.attachments ?? []) as Array<Record<string, unknown>>;
+  if (!attachments.some((att) => att.url === args.fileUrl)) return;
+
+  let target: URL;
   try {
-    // Fetch the file from the public URL
+    target = new URL(args.fileUrl);
+  } catch {
+    return;
+  }
+  if (target.protocol !== "https:") return;
+
+  try {
     const response = await fetch(args.fileUrl);
     if (!response.ok) return;
 
@@ -53,20 +83,9 @@ export async function analyzeAttachment(args: {
     const aiResult = await callClaudeHaiku(apiKey, buffer, args.fileType, args.fileName);
     if (!aiResult) return;
 
-    // Update the message metadata with the AI summary
+    // Service role write is now authorized: the access + attachment checks above have already
+    // confirmed the caller owns this message and the url is one of its attachments.
     const svc = createServiceClient();
-    const { data: msg } = await svc
-      .from("messages")
-      .select("metadata")
-      .eq("id", args.messageId)
-      .single();
-
-    if (!msg) return;
-
-    const existingMeta = (msg.metadata ?? {}) as Record<string, unknown>;
-    const attachments = (existingMeta.attachments ?? []) as Array<Record<string, unknown>>;
-
-    // Find the matching attachment and add the AI data
     const updated = attachments.map((att) => {
       if (att.url === args.fileUrl) {
         return {
