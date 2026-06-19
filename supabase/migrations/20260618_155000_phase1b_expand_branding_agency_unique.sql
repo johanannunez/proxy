@@ -1,0 +1,23 @@
+-- ============================================================================
+-- Phase 1B EXPAND supplement: give the organization_branding upsert a valid
+-- ON CONFLICT arbiter on the mirror agency_id column DURING THE CUTOVER WINDOW.
+--
+-- WHY: the swept code changes saveBrandingSettings to upsert with
+-- `onConflict: "agency_id"`. Postgres resolves the ON CONFLICT arbiter at PLAN
+-- time and throws 42P10 if no unique index matches the conflict target — on the
+-- FIRST call, conflict or not. The base EXPAND added agency_id as a lean mirror
+-- with no unique index, so without this the branding save (logo/colors/custom
+-- domain) is hard-broken for every tenant between "deploy swept code" and
+-- "run contract". The original code used `onConflict: "org_id"`, matched by
+-- organization_branding_pkey on {org_id}.
+--
+-- agency_id mirrors the NOT NULL primary key org_id (kept equal by the sync
+-- trigger), so it is unique and non-null on every existing row; a plain unique
+-- index builds cleanly.
+--
+-- The CONTRACT drops the mirror agency_id column (which drops this index) and
+-- then RENAMEs org_id -> agency_id, moving the real pkey onto agency_id — so the
+-- arbiter is restored permanently and this temp index needs no manual cleanup.
+-- ============================================================================
+create unique index if not exists organization_branding_agency_id_key
+  on public.organization_branding (agency_id);
