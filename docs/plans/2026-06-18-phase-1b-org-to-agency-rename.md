@@ -47,19 +47,22 @@ Verify: every tenant table reads identically on `org_id` and `agency_id`; the cu
 
 Then merge → push → deploy. Both names still resolve (mirror columns + compat views), so no breakage.
 
-## Migration 2 — CONTRACT-A (recreate policies on agency vocabulary; both columns still present)
+## Migration 2 — CONTRACT (rename-based; **no** policy regeneration)
 
-1. Create agency-named helpers `is_agency_admin(uuid)`, `is_agency_member(uuid)` (SECURITY DEFINER), `current_agency_id()` — bodies query `agency_members.agency_id`. Match the originals' grants (revoke from `anon` where the originals do).
-2. Generate + apply `DROP POLICY … ; CREATE POLICY …` for every policy referencing the org vocabulary, swapping (in order) `is_org_admin`→`is_agency_admin`, `is_org_member`→`is_agency_member`, then word-bounded `org_id`→`agency_id` (also fixes `current_org_id`), and the 3 table refs `organizations`→`agencies` / `organization_members`→`agency_members`. The DDL is generated from `pg_policies`, reviewed, then applied.
-3. **Verify isolation BEFORE dropping anything**: authenticated non-member sees 0 rows on `tax_profiles`, `w9_access_log`, and a sample of tenant tables. `org_id` still exists, so a bad regen is revertible with no data loss.
+> **Why no `DROP/CREATE POLICY`:** Postgres stores RLS expressions, FK definitions, and indexes as parsed node trees keyed by column `attnum` and function OID, not by text. `RENAME COLUMN`, `RENAME TABLE`, and `ALTER FUNCTION … RENAME` therefore make all 139 column-policies, 136 helper-policies, 112 FKs, 115 indexes, and the 3 subquery refs **auto-follow**. We empirically confirm this (throwaway table + function + policy → rename → read `pg_policies`) before relying on it. This removes the cross-tenant-leak risk of a generated policy swap entirely.
 
-## Migration 3 — CONTRACT-B (drop old; final state)
+Run as **one explicit transaction** (confirm `apply_migration` does not already wrap; no `CREATE INDEX CONCURRENTLY` is used, so a single tx is legal):
 
 1. Drop the 114 sync triggers + `sync_org_agency_id()`.
-2. Per table: `ALTER TABLE t DROP COLUMN agency_id;` then `ALTER TABLE t RENAME COLUMN org_id TO agency_id;` (preserves FK/NOT NULL/indexes).
-3. Drop org-named helpers `is_org_admin`/`is_org_member`/`current_org_id`.
-4. Drop compat views `organizations`/`organization_members` (gated on code grep = 0).
-5. Verify: code grep for `org_id`/`organizations`/`organization_members` = 0 in-scope; isolation probe = 0; `tsc` 0; suite green; Supabase advisors clean.
+2. Per table (catalog-driven `DO` loop): `ALTER TABLE t DROP COLUMN agency_id;` (the mirror — no policy/FK/index references it) then `ALTER TABLE t RENAME COLUMN org_id TO agency_id;` (FK/NOT NULL/indexes/policies auto-follow). Includes `agency_members.org_id` → `agency_id`.
+3. `CREATE OR REPLACE` the helper bodies (`is_org_admin`/`is_org_member`/`current_org_id`) to read `agency_members.agency_id` (their `prosrc` is text and does **not** auto-follow), then `ALTER FUNCTION is_org_admin(uuid) RENAME TO is_agency_admin;` (+ `is_org_member`→`is_agency_member`, `current_org_id`→`current_agency_id`). The 136 helper-policies auto-follow by OID. Renames preserve grants.
+4. Rewrite any **other** object whose body text-references `org_id`/`organizations` (the all-definitions scan below finds them — `prosrc`, views, CHECK/DEFAULT, trigger functions do not auto-follow).
+5. Drop compat views `organizations`/`organization_members` (gated on code grep = 0 — no deployed code may still reference them).
+6. `COMMIT`.
+
+Verify: cross-agency isolation probe (authenticated non-member) = 0 rows on `tax_profiles`, `w9_access_log`, and a sample of tenant tables; code grep for `org_id`/`organizations`/`organization_members` = 0 in-scope; `tsc` 0; suite green; Supabase advisors clean.
+
+**Branch dry-run option:** the contract (unlike the additive EXPAND) is where a Supabase preview-branch rehearsal earns its cost — it would catch a missed grant or `prosrc` ref empirically rather than on live traffic. Offer this to the user before applying the contract.
 
 ## Constraints
 
