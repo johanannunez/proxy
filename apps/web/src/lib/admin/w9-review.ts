@@ -71,6 +71,47 @@ export async function getW9SignedUrlForReview(
     return { ok: false, error: "storagePath or signedDocumentId is required." };
   }
 
+  // Resolve the document's owner_id so we can compare org membership
+  // before minting a signed URL. The `documents` table carries owner_id
+  // directly; storage paths are prefixed with {ownerProfileId}/ per
+  // uploadW9Pdf in w9-storage.ts.
+  let documentOwnerId: string | null = null;
+  if (input.signedDocumentId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: docRow } = await (service as any)
+      .from("documents")
+      .select("owner_id")
+      .eq("id", input.signedDocumentId)
+      .maybeSingle();
+    documentOwnerId = (docRow as { owner_id: string } | null)?.owner_id ?? null;
+  } else if (input.storagePath) {
+    // Storage path format: {ownerProfileId}/w9-{timestamp}-{entropy}-{filename}
+    documentOwnerId = input.storagePath.split("/")[0] ?? null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: meProfile } = await (service as any)
+    .from("profiles")
+    .select("org_id")
+    .eq("id", actor.profileId)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: ownerProfile } = documentOwnerId
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? await (service as any)
+        .from("profiles")
+        .select("org_id")
+        .eq("id", documentOwnerId)
+        .maybeSingle()
+    : { data: null };
+
+  const meOrgId = (meProfile as { org_id: string | null } | null)?.org_id;
+  const ownerOrgId = (ownerProfile as { org_id: string | null } | null)?.org_id;
+
+  if (!ownerProfile || !meOrgId || !ownerOrgId || ownerOrgId !== meOrgId) {
+    throw new Error("Not authorized to access this document.");
+  }
+
   const result = await generateW9SignedUrl(service, {
     access: {
       accessorProfileId: actor.profileId,
