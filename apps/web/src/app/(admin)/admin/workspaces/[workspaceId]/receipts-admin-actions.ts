@@ -310,16 +310,25 @@ export async function deleteReceiptAdmin(id: string, storagePath: string | null,
 }
 
 export async function getReceiptSignedUrlAdmin(storagePath: string): Promise<string | null> {
-  const { error: authError } = await requireAdmin();
+  const { error: authError, userId } = await requireAdmin();
   if (authError) return null;
 
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
-  // Verify the path belongs to an actual receipt row before issuing a URL.
+  // non-null: requireAdmin returns userId only when error is null
+  const { data: caller } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", userId!)
+    .single();
+  if (!caller?.org_id) return null;
+  // Verify the path belongs to a receipt row IN THE CALLER'S OWN ORG before issuing a URL,
+  // so a caller-supplied path cannot mint a signed URL for another org's file.
   const { data: receipt } = await db
     .from("owner_receipts")
     .select("id")
     .eq("storage_path", storagePath)
+    .eq("org_id", caller.org_id)
     .maybeSingle();
   if (!receipt) return null;
 
