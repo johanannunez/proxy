@@ -20,19 +20,19 @@ const EDITABLE_FIELDS = new Set([
   "claim_provider", "claim_reference", "reimbursed_at",
 ]);
 
-async function requireAdmin(): Promise<{ error: string | null }> {
+async function requireAdmin(): Promise<{ error: string | null; userId: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "You must be signed in." };
+  if (!user) return { error: "You must be signed in.", userId: null };
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
   if ((profile as { role: string } | null)?.role !== "admin") {
-    return { error: "Admin access required." };
+    return { error: "Admin access required.", userId: null };
   }
-  return { error: null };
+  return { error: null, userId: user.id };
 }
 
 const AI_SYSTEM_PROMPT = `You analyze receipts and financial documents for a short-term rental property management company.
@@ -226,37 +226,61 @@ export async function uploadReceiptForOwner(
 }
 
 export async function updateReceiptFieldAdmin(id: string, field: string, value: unknown, workspaceId: string): Promise<void> {
-  const { error: authError } = await requireAdmin();
+  const { error: authError, userId } = await requireAdmin();
   if (authError) throw new Error(authError);
 
   if (!EDITABLE_FIELDS.has(field)) throw new Error(`Field '${field}' is not editable.`);
 
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
-  await db.from("owner_receipts").update({ [field]: value } as unknown).eq("id", id);
+
+  const { data: caller, error: callerErr } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", userId!)
+    .single();
+  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+
+  await db.from("owner_receipts").update({ [field]: value } as unknown).eq("id", id).eq("org_id", caller.org_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
 
 export async function markReceiptReviewedAdmin(id: string, workspaceId: string): Promise<void> {
-  const { error: authError } = await requireAdmin();
+  const { error: authError, userId } = await requireAdmin();
   if (authError) throw new Error(authError);
 
   const svc = createServiceClient();
   const db = untypedDatabase(svc);
-  await db.from("owner_receipts").update({ reviewed_at: new Date().toISOString() } as unknown).eq("id", id);
+
+  const { data: caller, error: callerErr } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", userId!)
+    .single();
+  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+
+  await db.from("owner_receipts").update({ reviewed_at: new Date().toISOString() } as unknown).eq("id", id).eq("org_id", caller.org_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
 
 export async function deleteReceiptAdmin(id: string, storagePath: string | null, workspaceId: string): Promise<void> {
-  const { error: authError } = await requireAdmin();
+  const { error: authError, userId } = await requireAdmin();
   if (authError) throw new Error(authError);
 
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+
+  const { data: caller, error: callerErr } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", userId!)
+    .single();
+  if (callerErr || !caller?.org_id) throw new Error("Could not resolve your organization.");
+
   if (storagePath) {
     await svc.storage.from("receipts").remove([storagePath]);
   }
-  const db = untypedDatabase(svc);
-  await db.from("owner_receipts").delete().eq("id", id);
+  await db.from("owner_receipts").delete().eq("id", id).eq("org_id", caller.org_id);
   revalidatePath(`/admin/workspaces/${workspaceId}`);
 }
 

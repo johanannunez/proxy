@@ -5,11 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 
-// Verify the caller is an admin. Returns an error string or null.
-async function checkAdmin(): Promise<string | null> {
+// Verify the caller is an admin. Returns { error, userId }.
+async function checkAdmin(): Promise<{ error: string | null; userId: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return "Not authenticated";
+  if (!user) return { error: "Not authenticated", userId: null };
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -17,7 +17,8 @@ async function checkAdmin(): Promise<string | null> {
     .eq("id", user.id)
     .single();
 
-  return profile?.role === "admin" ? null : "Admin access required.";
+  if (profile?.role !== "admin") return { error: "Admin access required.", userId: null };
+  return { error: null, userId: user.id };
 }
 
 /**
@@ -38,7 +39,7 @@ export async function uploadAdminAvatar(args: {
   originalBase64: string;
   croppedBase64: string;
 }): Promise<{ success?: boolean; avatarUrl?: string; error?: string }> {
-  const authError = await checkAdmin();
+  const { error: authError, userId: callerUserId } = await checkAdmin();
   if (authError) return { error: authError };
 
   const croppedMatch = args.croppedBase64.match(/^data:image\/(\w+);base64,(.+)$/);
@@ -53,6 +54,21 @@ export async function uploadAdminAvatar(args: {
 
   // Service client bypasses storage RLS so the admin can write to any user's folder.
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+
+  const { data: target } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", args.targetProfileId)
+    .single();
+  const { data: me } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", callerUserId!)
+    .single();
+  if (!target?.org_id || !me?.org_id || target.org_id !== me.org_id) {
+    return { error: "You can only manage avatars within your organization." };
+  }
 
   const [croppedResult] = await Promise.all([
     svc.storage
@@ -85,7 +101,6 @@ export async function uploadAdminAvatar(args: {
   await svc.from("profiles").update({ avatar_url: publicUrl }).eq("id", pid);
 
   // Sync to the linked contact row so the header/sidebar also reflect the new photo.
-  const db = untypedDatabase(svc);
   const { data: contactRow } = await db
     .from<{ id: string; workspace_id: string | null }>("contacts")
     .select("id, workspace_id")
@@ -116,7 +131,7 @@ export async function getAdminOriginalAvatar(
   targetProfileId: string,
   fallbackUrl?: string | null,
 ): Promise<{ url: string | null }> {
-  const authError = await checkAdmin();
+  const { error: authError } = await checkAdmin();
   if (authError) return { url: fallbackUrl ?? null };
 
   const svc = createServiceClient();
@@ -142,10 +157,25 @@ export async function getAdminOriginalAvatar(
 export async function removeAdminAvatar(
   targetProfileId: string,
 ): Promise<{ success?: boolean; error?: string }> {
-  const authError = await checkAdmin();
+  const { error: authError, userId: callerUserId } = await checkAdmin();
   if (authError) return { error: authError };
 
   const svc = createServiceClient();
+  const db = untypedDatabase(svc);
+
+  const { data: target } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", targetProfileId)
+    .single();
+  const { data: me } = await db
+    .from<{ org_id: string | null }>("profiles")
+    .select("org_id")
+    .eq("id", callerUserId!)
+    .single();
+  if (!target?.org_id || !me?.org_id || target.org_id !== me.org_id) {
+    return { error: "You can only manage avatars within your organization." };
+  }
 
   await svc.from("profiles").update({ avatar_url: null }).eq("id", targetProfileId);
 
@@ -156,7 +186,6 @@ export async function removeAdminAvatar(
   await svc.storage.from("avatars").remove(filesToDelete);
 
   // Sync to linked contact.
-  const db = untypedDatabase(svc);
   const { data: contactRow } = await db
     .from<{ id: string; workspace_id: string | null }>("contacts")
     .select("id, workspace_id")
