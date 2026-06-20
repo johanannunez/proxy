@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Lora } from "next/font/google";
 import { LoginForm } from "./LoginForm";
 import { AuthLeftPanel } from "@/components/auth/AuthLeftPanel";
+import { PlatformLoginScreen } from "@/components/platform/PlatformLoginScreen";
 
 const lora = Lora({
   subsets: ["latin"],
@@ -25,6 +26,12 @@ export default async function LoginPage({
   searchParams: SearchParams;
 }) {
   const { redirect } = await searchParams;
+
+  // Heading to the super-admin console → show the platform sign-in, not the owner
+  // "your workspace" login. (proxy.ts already gates the destination itself.)
+  if (redirect && (redirect === "/platform" || redirect.startsWith("/platform/"))) {
+    return <PlatformLoginScreen redirectTo={redirect} />;
+  }
 
   return (
     <div className={`${lora.variable} auth-page-root auth-page-grid`}>
