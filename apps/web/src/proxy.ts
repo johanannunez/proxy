@@ -5,6 +5,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { verifyApiToken } from "@/lib/api-tokens";
 import { taskToVTodo, generateETag, parseVTodoStatus } from "@/lib/caldav-utils";
 import { resolveOrgForRequestHost } from "@/lib/agencies/cache";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 /**
  * Proxy proxy (formerly middleware): CalDAV server + session refresh + route protection.
@@ -18,8 +19,9 @@ import { resolveOrgForRequestHost } from "@/lib/agencies/cache";
  *   3. Refresh the Supabase session cookie on every request.
  *   4. Subdomain routing: app.myproxyhost.com serves the authenticated workspace;
  *      www.myproxyhost.com serves the marketing site and login.
- *   5. Gate /workspace/* and /admin/* behind authentication.
- *   6. Redirect non-admins away from /admin.
+ *   5. Gate /workspace/*, /admin/* and /platform/* behind authentication.
+ *   6. Redirect non-admins away from /admin, and non-superadmins away from
+ *      /platform (the platform-staff "wall", gated on profiles.platform_role).
  *   7. Redirect already-logged-in users away from /login and /signup.
  */
 export async function proxy(request: NextRequest) {
@@ -100,8 +102,23 @@ export async function proxy(request: NextRequest) {
 
   const isWorkspaceRoute = pathname.startsWith("/workspace");
   const isAdminRoute = pathname.startsWith("/admin");
-  const isAppRoute = isWorkspaceRoute || isAdminRoute;
+  const isPlatformRoute = pathname.startsWith("/platform");
+  const isAppRoute = isWorkspaceRoute || isAdminRoute || isPlatformRoute;
   const isAuthPage = pathname === "/" || pathname === "/login" || pathname === "/signup";
+
+  // Platform staff (super-admin) is gated on profiles.platform_role, which the
+  // generated types still lag, so the read goes through the untyped client.
+  // Returns the redirect destination for a non-superadmin, or null to allow.
+  // Only called inside branches where the user is already known authenticated.
+  const platformGateRedirect = async (userId: string): Promise<string | null> => {
+    const { data } = await untypedDatabase(supabase)
+      .from<{ role: string | null; platform_role: string | null }>("profiles")
+      .select("role, platform_role")
+      .eq("id", userId)
+      .maybeSingle();
+    if (data?.platform_role === "superadmin") return null;
+    return data?.role === "admin" ? "/admin" : "/workspace/home";
+  };
 
   // ── app.myproxyhost.com ────────────────────────────────────────────────────
   if (isApp) {
@@ -129,14 +146,25 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    // Super-admin wall: only platform superadmins may reach /platform/*.
+    if (isPlatformRoute) {
+      const dest = await platformGateRedirect(user.id);
+      if (dest) {
+        const url = request.nextUrl.clone();
+        url.pathname = dest;
+        return NextResponse.redirect(url);
+      }
+    }
+
     // Two-factor gate on protected routes (enrolled-but-unverified, or admins
-    // missing a factor). Runs before letting the request through.
+    // and platform staff missing a factor). Runs before letting the request
+    // through.
     if (isAppRoute) {
       const mfaRedirect = await evaluateMfaGate(
         supabase,
         request,
         pathname,
-        isAdminRoute,
+        isAdminRoute || isPlatformRoute,
       );
       if (mfaRedirect) return mfaRedirect;
     }
@@ -208,13 +236,23 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Super-admin wall (dev/localhost): only platform superadmins reach /platform/*.
+  if (isPlatformRoute && user) {
+    const dest = await platformGateRedirect(user.id);
+    if (dest) {
+      const url = request.nextUrl.clone();
+      url.pathname = dest;
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Two-factor gate on protected routes (dev/localhost).
   if (isAppRoute && user) {
     const mfaRedirect = await evaluateMfaGate(
       supabase,
       request,
       pathname,
-      isAdminRoute,
+      isAdminRoute || isPlatformRoute,
     );
     if (mfaRedirect) return mfaRedirect;
   }
