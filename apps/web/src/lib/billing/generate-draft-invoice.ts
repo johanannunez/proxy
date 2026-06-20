@@ -182,6 +182,18 @@ export async function generateDraftInvoiceForSchedule(args: {
       .select("id")
       .single();
 
+    // The SELECT guard above is not atomic with this INSERT, so a concurrent
+    // writer (cron + manual click) can race past it. The partial unique index
+    // billing_invoices_schedule_date_unique is the real authority: a duplicate
+    // surfaces as a 23505 unique violation, which we treat as already_exists
+    // (the other writer won) rather than an error — no duplicate is created.
+    if (invoiceError?.code === "23505") {
+      return {
+        ok: false,
+        code: "already_exists",
+        message: "A draft already exists for this schedule date.",
+      };
+    }
     if (invoiceError || !invoice) {
       throw new Error(invoiceError?.message ?? "Could not create invoice draft.");
     }
@@ -218,7 +230,11 @@ export async function generateDraftInvoiceForSchedule(args: {
     const { error: lineError } = await db.from("billing_invoice_lines").insert(invoiceLines);
     if (lineError) throw new Error(lineError.message);
 
-    await db
+    // Advance next_invoice_date so this period is not regenerated. If this fails
+    // silently the schedule would freeze (every future run finds the draft now
+    // exists and returns already_exists, never advancing), so surface the error
+    // instead of leaving the schedule stuck.
+    const { error: advanceError } = await db
       .from("billing_schedules")
       .update({
         next_invoice_date: toDateOnly(
@@ -226,6 +242,11 @@ export async function generateDraftInvoiceForSchedule(args: {
         ),
       })
       .eq("id", schedule.id);
+    if (advanceError) {
+      throw new Error(
+        `Invoice ${invoice.id} created but advancing the schedule failed: ${advanceError.message}`,
+      );
+    }
 
     return { ok: true, invoiceId: invoice.id };
   } catch (error) {
