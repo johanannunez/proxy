@@ -23,6 +23,14 @@
     {
       "path": "/api/cron/document-reminders",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/hospitable-sync",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/billing-schedules",
+      "schedule": "0 7 * * *"
     }
   ]
 }
