@@ -1,0 +1,85 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--pc-text-2);
+}
+
+.swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.swatchAgencies { background: var(--pc-accent); }
+.swatchOwners { background: var(--pc-text-3); }
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+}
+
+.col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.bars {
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+}
+
+.bar {
+  width: 11px;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  transition: height 500ms var(--pc-ease);
+}
+
+.barAgencies {
+  background: var(--pc-accent-grad);
+  box-shadow: 0 0 10px rgba(2, 170, 235, 0.3);
+}
+
+.barOwners {
+  background: var(--pc-surface-3);
+  border: 1px solid var(--pc-border-strong);
+}
+
+.colLabel {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-size: 9.5px;
+  color: var(--pc-text-3);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar { transition: none; }
+}
+
+@media (max-width: 560px) {
+  .colLabel { font-size: 8.5px; }
+  .bar { width: 8px; }
+}

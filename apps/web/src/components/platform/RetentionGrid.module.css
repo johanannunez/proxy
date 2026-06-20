@@ -1,0 +1,116 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--pc-accent-tint);
+  border: 1px solid var(--pc-accent-line);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--pc-text);
+}
+
+.bannerIcon {
+  color: var(--pc-accent);
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: right;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-text-3);
+  padding: 0 0 10px;
+}
+
+.thCohort {
+  text-align: left !important;
+}
+
+.thNum {
+  min-width: 84px;
+}
+
+.table tbody tr {
+  border-top: 1px solid var(--pc-border);
+}
+
+.cohortCell {
+  padding: 11px 0;
+  text-align: left;
+}
+
+.cohortLabel {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--pc-text);
+}
+
+.sizeCell {
+  text-align: right;
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--pc-text-2);
+  padding: 11px 0;
+}
+
+.cell {
+  text-align: right;
+  padding: 11px 0;
+  vertical-align: middle;
+}
+
+.cellValue {
+  display: inline-block;
+  min-width: 52px;
+  text-align: center;
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pc-text);
+  padding: 5px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--pc-border);
+}
+
+.cellPending {
+  background: var(--pc-surface-2);
+  color: var(--pc-text-3);
+}
+
+.cellSub {
+  display: block;
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--pc-text-3);
+  margin-top: 4px;
+  text-align: center;
+  min-width: 52px;
+}
+
+.source {
+  font-size: 11.5px;
+  color: var(--pc-text-3);
+  line-height: 1.5;
+}

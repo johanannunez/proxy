@@ -209,6 +209,59 @@
   --dash-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+/* ─── Platform Console Tokens ("Mission Control") ───
+   The super-admin Platform Console is a self-contained, always-dark OLED surface
+   that deliberately inverts the agency-admin's warm off-white. It does NOT depend
+   on the global `.dark` class — these tokens are scoped to [data-platform-root]
+   (mirroring the [data-admin-root] precedent above) so every console CSS Module
+   resolves them regardless of the app theme. Brand tokens are mode-independent and
+   used directly for the single cyan→blue accent. */
+[data-platform-root] {
+  --pc-canvas: #070809;          /* near-OLED black canvas */
+  --pc-surface: #0e1014;         /* base card */
+  --pc-surface-2: #14171d;       /* elevated / hover */
+  --pc-surface-3: #1a1e26;       /* floating / popover / active rail */
+  --pc-border: rgba(255, 255, 255, 0.07);
+  --pc-border-strong: rgba(255, 255, 255, 0.12);
+  --pc-text: #e8eaed;            /* primary  (~13:1 on canvas, AAA) */
+  --pc-text-2: #9aa3ad;          /* secondary */
+  --pc-text-3: #5f6772;          /* tertiary / mono labels */
+  --pc-accent: #02aaeb;          /* = --color-brand-light */
+  --pc-accent-deep: #1b77be;     /* = --color-brand */
+  --pc-accent-grad: linear-gradient(135deg, #02aaeb, #1b77be);
+  --pc-accent-tint: rgba(2, 170, 235, 0.08);
+  --pc-accent-tint-2: rgba(2, 170, 235, 0.14);
+  --pc-accent-line: rgba(2, 170, 235, 0.20);
+  --pc-glow: 0 0 26px rgba(2, 170, 235, 0.22);  /* reserved for the hero only */
+  --pc-success: #22c55e;
+  --pc-success-tint: rgba(34, 197, 94, 0.12);
+  --pc-warn: #f5a623;
+  --pc-warn-tint: rgba(245, 166, 35, 0.12);
+  --pc-danger: #ef4444;
+  --pc-danger-tint: rgba(239, 68, 68, 0.12);
+  --pc-radius: 14px;
+  --pc-radius-sm: 9px;
+  --pc-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.45);
+  --pc-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.55), 0 16px 40px rgba(0, 0, 0, 0.5);
+  --pc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  background: var(--pc-canvas);
+  color: var(--pc-text);
+  color-scheme: dark;
+  font-family: var(--font-sans);
+}
+
+/* Console hides scrollbars but keeps scroll, like the admin area. */
+[data-platform-root] *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+[data-platform-root] * { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Console uses tabular mono figures for all data. */
+[data-platform-root] .pc-mono {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
 /* ─── Landing Page Tokens (marketing hero/pricing surfaces) ───
    The marketing landing and pricing pages are art-directed bespoke surfaces
    built with inline styles, so they cannot use Tailwind `dark:` variants.
