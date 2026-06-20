@@ -67,12 +67,17 @@ export async function POST(req: Request) {
         if (firstPayment) {
           const distinctId =
             firstPayment.payingProfileId ?? `agency:${firstPayment.agencyId}`;
-          await captureServerEvent(distinctId, "first_payment", {
-            agency_id: firstPayment.agencyId,
-            amount_cents: firstPayment.amountCents,
-            workspace_id: firstPayment.workspaceId,
-            billing_invoice_id: firstPayment.billingInvoiceId,
-          });
+          await captureServerEvent(
+            distinctId,
+            "first_payment",
+            {
+              agency_id: firstPayment.agencyId,
+              amount_cents: firstPayment.amountCents,
+              workspace_id: firstPayment.workspaceId,
+              billing_invoice_id: firstPayment.billingInvoiceId,
+            },
+            { agency: firstPayment.agencyId },
+          );
         }
         break;
       }
@@ -112,10 +117,15 @@ export async function POST(req: Request) {
         if (event.type === "customer.subscription.deleted") {
           const agencyId = subscription.metadata?.org_id;
           if (agencyId) {
-            await captureServerEvent(`agency:${agencyId}`, "churn", {
-              agency_id: agencyId,
-              mrr_cents: monthlyMrrCents(subscription.items?.data ?? []),
-            });
+            await captureServerEvent(
+              `agency:${agencyId}`,
+              "churn",
+              {
+                agency_id: agencyId,
+                mrr_cents: monthlyMrrCents(subscription.items?.data ?? []),
+              },
+              { agency: agencyId },
+            );
           }
         }
         break;
