@@ -1,0 +1,174 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.cardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pc-accent);
+  text-decoration: none;
+}
+.cardLink:hover { color: var(--pc-accent-deep); }
+.cardLink:focus-visible { outline: 2px solid var(--pc-accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ── System health glance ── */
+.healthGlance {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.healthOverall {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.healthOverallText {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pc-text);
+}
+
+.healthStats {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.healthStat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--pc-border);
+}
+
+.healthStat dt {
+  font-size: 13px;
+  color: var(--pc-text-2);
+}
+
+.healthStat dd {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pc-text);
+}
+
+/* ── Agency list ── */
+.agencyList {
+  display: flex;
+  flex-direction: column;
+}
+
+.agencyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 8px;
+  margin: 0 -8px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 140ms var(--pc-ease);
+}
+.agencyRow:not(:last-child) {
+  border-bottom: 1px solid var(--pc-border);
+}
+.agencyRow:hover {
+  background: var(--pc-surface-2);
+}
+.agencyRow:focus-visible {
+  outline: 2px solid var(--pc-accent);
+  outline-offset: -2px;
+}
+
+.agencyMark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--pc-accent-grad);
+}
+
+.agencyMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.agencyName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pc-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agencySub {
+  font-size: 12px;
+  color: var(--pc-text-3);
+}
+
+.agencyRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.agencyActive {
+  font-size: 11px;
+  color: var(--pc-text-3);
+}
+
+.agencyArrow {
+  color: var(--pc-text-3);
+  flex: 0 0 auto;
+}
+.agencyRow:hover .agencyArrow {
+  color: var(--pc-accent);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1180px) {
+  .kpis { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 960px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 440px) {
+  .kpis { grid-template-columns: 1fr; }
+}

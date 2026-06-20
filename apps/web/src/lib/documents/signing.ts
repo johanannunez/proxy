@@ -237,20 +237,50 @@ export type DocuSealEvent = {
 };
 
 /**
- * Apply a DocuSeal webhook event: mark the matching signer signed, then move the
- * spine document through the status machine and reconcile requests.
+ * A document_signers row that transitioned to `signed` during this event.
+ * Surfaced (not consumed here) so the webhook route can emit the activation-funnel
+ * PostHog events without re-deriving the transition. `isAgencyFirstSign` is the
+ * agency's first-ever completed signature, matching the console funnel's "first
+ * document signed" step (a document_signers row with signed_at).
  */
-export async function applyDocuSealEvent(event: DocuSealEvent): Promise<void> {
-  if (!event.submissionId) return;
+export type SignedTransition = {
+  agencyId: string | null;
+  signerProfileId: string | null;
+  signerEmail: string | null;
+  documentId: string;
+  isAgencyFirstSign: boolean;
+};
+
+export type DocuSealApplyResult = {
+  signed: SignedTransition | null;
+};
+
+type SignerRow = {
+  id: string;
+  document_id: string;
+  role: string;
+  status: string;
+  signer_email: string | null;
+  signer_profile_id: string | null;
+  agency_id: string | null;
+};
+
+/**
+ * Apply a DocuSeal webhook event: mark the matching signer signed, then move the
+ * spine document through the status machine and reconcile requests. Returns the
+ * signer transition (if any) for best-effort analytics in the route.
+ */
+export async function applyDocuSealEvent(event: DocuSealEvent): Promise<DocuSealApplyResult> {
+  if (!event.submissionId) return { signed: null };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = createServiceClient() as any;
 
   const { data: signerRows } = await db
     .from("document_signers")
-    .select("id, document_id, role, status, signer_email")
+    .select("id, document_id, role, status, signer_email, signer_profile_id, agency_id")
     .eq("boldsign_document_id", String(event.submissionId));
-  const signers = (signerRows ?? []) as Array<{ id: string; document_id: string; role: string; status: string; signer_email: string | null }>;
-  if (signers.length === 0) return;
+  const signers = (signerRows ?? []) as SignerRow[];
+  if (signers.length === 0) return { signed: null };
 
   const documentId = signers[0].document_id;
 
@@ -262,28 +292,32 @@ export async function applyDocuSealEvent(event: DocuSealEvent): Promise<void> {
       event_type: event.eventType,
       occurred_at: event.completedAt ?? new Date().toISOString(),
     });
-    return;
+    return { signed: null };
   }
 
   // Expiry: move status and exit.
   if (event.eventType === "submission.expired") {
     await db.from("documents").update({ status: "expired" }).eq("id", documentId);
-    return;
+    return { signed: null };
   }
 
   // Declined: move to action_required.
   if (event.eventType === "form.declined") {
     await db.from("documents").update({ status: "action_required" }).eq("id", documentId);
-    return;
+    return { signed: null };
   }
 
   const isCompletion = event.eventType === "form.completed" || event.eventType === "submission.completed";
 
+  // The signer row (if any) that flips to signed on THIS event. Captured so the
+  // route can emit the activation-funnel events for exactly this transition.
+  let signedRow: SignerRow | null = null;
   if (isCompletion && event.email) {
     const match = signers.find((s) => s.signer_email?.toLowerCase() === event.email?.toLowerCase());
     if (match && match.status !== "signed") {
       await db.from("document_signers").update({ status: "signed", signed_at: event.completedAt ?? new Date().toISOString() }).eq("id", match.id);
       match.status = "signed";
+      signedRow = match;
     }
   }
 
@@ -312,6 +346,37 @@ export async function applyDocuSealEvent(event: DocuSealEvent): Promise<void> {
     const { data: docRow } = await db.from("documents").select("owner_id").eq("id", documentId).maybeSingle();
     if (docRow?.owner_id) await syncSpineForOwner(docRow.owner_id as string);
   }
+
+  // Activation-funnel transition (M3). Analytics-only: a failure here must never
+  // disturb the signing status machine above, so the first-ever lookup is
+  // wrapped and the route's capture is itself best-effort.
+  if (!signedRow) return { signed: null };
+
+  let isAgencyFirstSign = false;
+  try {
+    if (signedRow.agency_id) {
+      const { data: prior } = await db
+        .from("document_signers")
+        .select("id")
+        .eq("agency_id", signedRow.agency_id)
+        .not("signed_at", "is", null)
+        .neq("id", signedRow.id)
+        .limit(1);
+      isAgencyFirstSign = ((prior ?? []) as unknown[]).length === 0;
+    }
+  } catch (err) {
+    console.error("[signing] first-sign lookup failed:", err instanceof Error ? err.message : err);
+  }
+
+  return {
+    signed: {
+      agencyId: signedRow.agency_id,
+      signerProfileId: signedRow.signer_profile_id,
+      signerEmail: signedRow.signer_email,
+      documentId,
+      isAgencyFirstSign,
+    },
+  };
 }
 
 /* ─── internals ─── */

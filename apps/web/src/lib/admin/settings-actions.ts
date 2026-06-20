@@ -9,7 +9,14 @@ export type ActionResult = { ok: true } | { ok: false; error: string };
 const BusinessEntitySchema = z.object({
   workspaceId: z.string().uuid(),
   name: z.string().trim().min(1).max(200),
-  type: z.enum(["LLC", "S-Corp", "C-Corp", "Sole Proprietor", "Partnership", ""]),
+  // workspaces.type has no DB constraint and some existing rows hold legacy
+  // values (e.g. "family"). The settings form (BusinessEntitySection) only
+  // offers the canonical values — individual/llc/s_corp/c_corp/trust/partnership
+  // — for new selections, so it is the enforcement point. The action accepts any
+  // short string so a legacy value round-trips instead of failing the whole save
+  // when an unrelated field (name/EIN/notes) is edited. Legacy values are
+  // normalized separately.
+  type: z.string().trim().max(40),
   ein: z.string().trim().max(20),
   notes: z.string().trim().max(4000),
 });

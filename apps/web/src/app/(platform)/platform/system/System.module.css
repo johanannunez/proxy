@@ -1,0 +1,227 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── Overall banner ── */
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border-radius: var(--pc-radius);
+  border: 1px solid var(--pc-border);
+  box-shadow: var(--pc-shadow);
+  background: var(--pc-surface);
+}
+.bannerOk {
+  border-color: var(--pc-accent-line);
+  background: linear-gradient(135deg, var(--pc-accent-tint), var(--pc-surface) 62%);
+}
+.bannerWarn {
+  border-color: var(--pc-warn);
+  background: linear-gradient(135deg, var(--pc-warn-tint), var(--pc-surface) 62%);
+}
+.bannerLead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.bannerHeadline {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pc-text);
+}
+.bannerMeta {
+  font-size: 13px;
+  color: var(--pc-text-2);
+}
+.bannerMeta .pc-mono {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pc-text);
+}
+
+/* ── Integrations grid ── */
+.integrationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.integrationCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: var(--pc-radius-sm);
+  border: 1px solid var(--pc-border);
+  background: var(--pc-surface-2);
+  transition: border-color 160ms var(--pc-ease);
+}
+.integrationCard:hover {
+  border-color: var(--pc-border-strong);
+}
+
+.integrationIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: var(--pc-accent-tint);
+  color: var(--pc-accent);
+}
+
+.integrationMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.integrationName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pc-text);
+}
+.integrationCategory {
+  font-size: 12px;
+  color: var(--pc-text-3);
+}
+
+.integrationStatus {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+.integrationStatusText {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pc-text-3);
+  white-space: nowrap;
+}
+.integrationStatusOn {
+  color: var(--pc-text-2);
+}
+
+/* ── Scheduled jobs list ── */
+.cronList {
+  display: flex;
+  flex-direction: column;
+}
+
+.cronRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  margin: 0 -8px;
+  border-radius: 10px;
+  transition: background 140ms var(--pc-ease);
+}
+.cronRow:not(:last-child) {
+  border-bottom: 1px solid var(--pc-border);
+}
+.cronRow:hover {
+  background: var(--pc-surface-2);
+}
+
+.cronIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: var(--pc-accent-tint);
+  color: var(--pc-accent);
+}
+
+.cronMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.cronName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pc-text);
+}
+.cronCadence {
+  font-size: 12px;
+  color: var(--pc-text-3);
+}
+
+.cronRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.cronLastRun {
+  font-size: 12px;
+  color: var(--pc-text-2);
+}
+
+/* ── Operational scope ── */
+.scopeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.scopeFootnote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--pc-text-3);
+}
+.scopeFootnote svg {
+  color: var(--pc-accent);
+  flex: 0 0 auto;
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .integrationGrid {
+    grid-template-columns: 1fr;
+  }
+  .scopeGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .cronRow {
+    align-items: flex-start;
+  }
+  .cronRight {
+    align-items: flex-start;
+  }
+  .integrationCard {
+    flex-wrap: wrap;
+  }
+  .integrationStatus {
+    width: 100%;
+    padding-left: 44px;
+  }
+}

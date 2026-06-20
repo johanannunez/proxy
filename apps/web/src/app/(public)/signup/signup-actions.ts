@@ -8,6 +8,7 @@ import { untypedDatabase } from "@/lib/supabase/untyped";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { isValidOrgSlug } from "@/lib/agencies/slug";
 import { PLAN_FEATURES, PLAN_LIMITS } from "@/lib/agencies/features";
+import { captureServerEvent } from "@/lib/analytics";
 import type { AgencyPlanTier } from "@/types/agencies";
 import type {
   CreateOrgResult,
@@ -159,6 +160,18 @@ export async function createOrganization(params: {
     await db.from("agencies").delete().eq("id", org.id);
     return failure("We could not finish setting up your workspace. Please try again.");
   }
+
+  // Activation-funnel signals (M3). The account and its agency are created
+  // together here, so both milestones fire with the new user as distinct_id and
+  // the agency as a property. Best-effort; never blocks signup.
+  await captureServerEvent(user.id, "signup", {
+    agency_id: org.id,
+    plan_tier: params.planTier,
+  });
+  await captureServerEvent(user.id, "workspace_created", {
+    agency_id: org.id,
+    plan_tier: params.planTier,
+  });
 
   // 5. Paid plans attach Stripe in createStripeSubscription (step 4).
   return {

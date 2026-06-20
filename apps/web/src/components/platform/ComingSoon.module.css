@@ -1,0 +1,78 @@
+.wrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 64px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 520px;
+  width: 100%;
+  padding: 32px;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(2, 170, 235, 0.06), transparent 55%),
+    var(--pc-surface);
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius);
+  box-shadow: var(--pc-shadow);
+}
+
+.iconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--pc-accent-tint);
+  color: var(--pc-accent);
+}
+
+.badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pc-accent);
+  background: var(--pc-accent-tint);
+  border: 1px solid var(--pc-accent-line);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.title {
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pc-text);
+}
+
+.description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--pc-text-2);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--pc-text);
+}
+
+.check {
+  color: var(--pc-accent);
+  flex: 0 0 auto;
+}

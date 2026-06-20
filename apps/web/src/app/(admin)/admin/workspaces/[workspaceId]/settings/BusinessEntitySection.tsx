@@ -7,19 +7,21 @@ import s from "./PersonalInfoSection.module.css";
 import x from "./SettingsShared.module.css";
 import { updateWorkspaceBusinessEntity } from "@/lib/admin/settings-actions";
 
-const BUSINESS_ENTITY_TYPES = [
-  "",
-  "LLC",
-  "S-Corp",
-  "C-Corp",
-  "Sole Proprietor",
-  "Partnership",
+// Values mirror the workspaces.type values written on creation (WorkspaceForm)
+// and the admin display maps (WorkspaceDetailShell). Storing the display string
+// here is the bug this list fixes: "LLC" never matched the lowercase "llc" the
+// rest of the app keys on, so the entity type rendered without a label.
+const BUSINESS_ENTITY_TYPE_OPTIONS = [
+  { value: "", label: "Not specified" },
+  { value: "individual", label: "Individual" },
+  { value: "llc", label: "LLC" },
+  { value: "partnership", label: "Partnership" },
+  { value: "trust", label: "Trust" },
+  { value: "s_corp", label: "S Corporation" },
+  { value: "c_corp", label: "C Corporation" },
 ] as const;
 
-const BUSINESS_ENTITY_TYPE_OPTIONS = BUSINESS_ENTITY_TYPES.map((value) => ({
-  value,
-  label: value || "Not specified",
-}));
+type BusinessEntityType = (typeof BUSINESS_ENTITY_TYPE_OPTIONS)[number]["value"];
 
 export type CoOwner = {
   id: string;
@@ -59,7 +61,7 @@ export function BusinessEntitySection({ workspace, coOwners }: Props) {
       const res = await updateWorkspaceBusinessEntity({
         workspaceId: workspace.id,
         name: name.trim(),
-        type: (type as (typeof BUSINESS_ENTITY_TYPES)[number]) || "",
+        type: type as BusinessEntityType,
         ein: ein.trim(),
         notes: notes.trim(),
       });
@@ -112,7 +114,7 @@ export function BusinessEntitySection({ workspace, coOwners }: Props) {
               <CustomSelect
                 value={type}
                 onChange={setType}
-                options={BUSINESS_ENTITY_TYPE_OPTIONS}
+                options={[...BUSINESS_ENTITY_TYPE_OPTIONS]}
               />
             </div>
           </div>

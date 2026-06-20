@@ -5,6 +5,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { verifyApiToken } from "@/lib/api-tokens";
 import { taskToVTodo, generateETag, parseVTodoStatus } from "@/lib/caldav-utils";
 import { resolveOrgForRequestHost } from "@/lib/agencies/cache";
+import { resolvePlatformGateDest } from "@/lib/platform/gate";
+import { untypedDatabase } from "@/lib/supabase/untyped";
 
 /**
  * Proxy proxy (formerly middleware): CalDAV server + session refresh + route protection.
@@ -18,8 +20,9 @@ import { resolveOrgForRequestHost } from "@/lib/agencies/cache";
  *   3. Refresh the Supabase session cookie on every request.
  *   4. Subdomain routing: app.myproxyhost.com serves the authenticated workspace;
  *      www.myproxyhost.com serves the marketing site and login.
- *   5. Gate /workspace/* and /admin/* behind authentication.
- *   6. Redirect non-admins away from /admin.
+ *   5. Gate /workspace/*, /admin/* and /platform/* behind authentication.
+ *   6. Redirect non-admins away from /admin, and non-superadmins away from
+ *      /platform (the platform-staff "wall", gated on profiles.platform_role).
  *   7. Redirect already-logged-in users away from /login and /signup.
  */
 export async function proxy(request: NextRequest) {
@@ -65,8 +68,24 @@ export async function proxy(request: NextRequest) {
 
   const isApp = hostname === "app.myproxyhost.com";
   const isWww = hostname === "www.myproxyhost.com";
-  // Widen auth cookies to .myproxyhost.com so they are shared between www. and app.
-  const cookieDomain = isApp || isWww ? ".myproxyhost.com" : undefined;
+  const isPlatformProdHost = hostname === "platform.myproxyhost.com";
+  // Dev-only: macOS does not resolve *.localhost, so platform.lvh.me (which
+  // publicly resolves to 127.0.0.1) is supported alongside platform.localhost for
+  // local subdomain testing. Inert in production.
+  const isPlatformDevHost =
+    process.env.NODE_ENV === "development" &&
+    (hostname === "platform.localhost" || hostname === "platform.lvh.me");
+  const isPlatformHost = isPlatformProdHost || isPlatformDevHost;
+  // Widen auth cookies to .myproxyhost.com so they are shared between www., app.,
+  // and platform. (one signed-in session across all first-party hosts).
+  const cookieDomain = isApp || isWww || isPlatformProdHost ? ".myproxyhost.com" : undefined;
+  // Where to send a request that must leave the platform host (login, MFA, or a
+  // non-superadmin bounce). In prod these are the dedicated hosts; in dev the
+  // bare host (platform.lvh.me -> lvh.me, platform.localhost -> localhost) serves
+  // the product and auth screens.
+  const devBareOrigin = `http://${hostname.replace(/^platform\./, "")}:${request.nextUrl.port || "4000"}`;
+  const appOrigin = isPlatformProdHost ? "https://app.myproxyhost.com" : devBareOrigin;
+  const loginOrigin = isPlatformProdHost ? "https://www.myproxyhost.com" : devBareOrigin;
 
   let proxyResponse = NextResponse.next({ request });
 
@@ -100,8 +119,82 @@ export async function proxy(request: NextRequest) {
 
   const isWorkspaceRoute = pathname.startsWith("/workspace");
   const isAdminRoute = pathname.startsWith("/admin");
-  const isAppRoute = isWorkspaceRoute || isAdminRoute;
+  const isPlatformRoute = pathname.startsWith("/platform");
+  const isAppRoute = isWorkspaceRoute || isAdminRoute || isPlatformRoute;
   const isAuthPage = pathname === "/" || pathname === "/login" || pathname === "/signup";
+
+  // Platform staff (super-admin) is gated on profiles.platform_role, which the
+  // generated types still lag, so the read goes through the untyped client.
+  // Returns the redirect destination for a non-superadmin, or null to allow.
+  // Only called inside branches where the user is already known authenticated.
+  const platformGateRedirect = async (userId: string): Promise<string | null> => {
+    const { data } = await untypedDatabase(supabase)
+      .from<{ role: string | null; platform_role: string | null }>("profiles")
+      .select("role, platform_role")
+      .eq("id", userId)
+      .maybeSingle();
+    return resolvePlatformGateDest(data);
+  };
+
+  // ── platform.myproxyhost.com (super-admin console) ──────────────────────────
+  // The console route group lives at /platform/*. This host serves it on its own
+  // origin and reinforces the platform-vs-tenant wall. Auth, MFA, and the
+  // non-superadmin bounce all leave this host for the app/www host (absolute
+  // redirects), because their screens live there and a path-relative redirect
+  // would re-enter this branch and get the /platform rewrite.
+  if (isPlatformHost) {
+    // Infra + auth paths pass through untouched (the API, RSC payloads, auth
+    // callbacks, the 2FA screens). Only console-bound requests get the wall and
+    // the rewrite, so the auth endpoints stay reachable when there is no session.
+    if (isMfaExempt(pathname)) {
+      return proxyResponse;
+    }
+
+    const returnPath =
+      pathname === "/platform" || pathname.startsWith("/platform/") ? pathname : "/platform";
+
+    if (!user) {
+      return NextResponse.redirect(
+        `${loginOrigin}/login?redirect=${encodeURIComponent(returnPath)}`,
+      );
+    }
+
+    // Super-admin wall: a non-superadmin is sent to the product, on the app host.
+    const dest = await platformGateRedirect(user.id);
+    if (dest) {
+      return NextResponse.redirect(`${appOrigin}${dest}`);
+    }
+
+    // MFA gate (platform staff are admin-level). Rebuild any redirect as absolute
+    // to the app host so the verify/enroll screens render there, not here.
+    const mfa = await evaluateMfaGate(supabase, request, pathname, true);
+    if (mfa) {
+      const loc = mfa.headers.get("location");
+      if (loc) {
+        const target = new URL(loc);
+        return NextResponse.redirect(`${appOrigin}${target.pathname}${target.search}`);
+      }
+      return mfa;
+    }
+
+    // Serve the console. Prefix non-console, non-exempt paths with /platform so
+    // the route group resolves (and root-relative links read as clean subdomain
+    // URLs), while leaving /api, /_next, /auth, the 2FA screens, and paths that
+    // are already /platform/* untouched.
+    if (
+      pathname !== "/platform" &&
+      !pathname.startsWith("/platform/") &&
+      !isMfaExempt(pathname)
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname === "/" ? "/platform" : `/platform${pathname}`;
+      const rewritten = NextResponse.rewrite(url, { request });
+      proxyResponse.cookies.getAll().forEach((c) => rewritten.cookies.set(c.name, c.value, c));
+      return rewritten;
+    }
+
+    return proxyResponse;
+  }
 
   // ── app.myproxyhost.com ────────────────────────────────────────────────────
   if (isApp) {
@@ -129,14 +222,25 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    // Super-admin wall: only platform superadmins may reach /platform/*.
+    if (isPlatformRoute) {
+      const dest = await platformGateRedirect(user.id);
+      if (dest) {
+        const url = request.nextUrl.clone();
+        url.pathname = dest;
+        return NextResponse.redirect(url);
+      }
+    }
+
     // Two-factor gate on protected routes (enrolled-but-unverified, or admins
-    // missing a factor). Runs before letting the request through.
+    // and platform staff missing a factor). Runs before letting the request
+    // through.
     if (isAppRoute) {
       const mfaRedirect = await evaluateMfaGate(
         supabase,
         request,
         pathname,
-        isAdminRoute,
+        isAdminRoute || isPlatformRoute,
       );
       if (mfaRedirect) return mfaRedirect;
     }
@@ -208,13 +312,23 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Super-admin wall (dev/localhost): only platform superadmins reach /platform/*.
+  if (isPlatformRoute && user) {
+    const dest = await platformGateRedirect(user.id);
+    if (dest) {
+      const url = request.nextUrl.clone();
+      url.pathname = dest;
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Two-factor gate on protected routes (dev/localhost).
   if (isAppRoute && user) {
     const mfaRedirect = await evaluateMfaGate(
       supabase,
       request,
       pathname,
-      isAdminRoute,
+      isAdminRoute || isPlatformRoute,
     );
     if (mfaRedirect) return mfaRedirect;
   }

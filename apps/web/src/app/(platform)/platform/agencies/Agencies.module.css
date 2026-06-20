@@ -1,0 +1,207 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+/* ── Directory list (CSS grid "table" so it reflows without a real table) ── */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.listHead,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) repeat(4, 0.8fr) 1.2fr 1.1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.listHead {
+  padding: 0 10px 10px;
+  border-bottom: 1px solid var(--pc-border);
+}
+
+.listHead span {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pc-text-3);
+}
+
+.row {
+  padding: 13px 10px;
+  margin: 0 -10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 140ms var(--pc-ease);
+}
+.row:not(:last-child) {
+  border-bottom: 1px solid var(--pc-border);
+}
+.row:hover {
+  background: var(--pc-surface-2);
+}
+.row:focus-visible {
+  outline: 2px solid var(--pc-accent);
+  outline-offset: -2px;
+}
+
+/* ── Columns ── */
+.colAgency {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.colCounts {
+  font-size: 14px;
+  color: var(--pc-text);
+  text-align: right;
+}
+.listHead .colCounts {
+  text-align: right;
+}
+
+.colMrr {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.colActive {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.activeText {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--pc-text-3);
+  white-space: nowrap;
+}
+
+.arrow {
+  color: var(--pc-text-3);
+  flex: 0 0 auto;
+}
+.row:hover .arrow {
+  color: var(--pc-accent);
+}
+
+/* ── Agency identity cell ── */
+.mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-sora), var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--pc-accent-grad);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pc-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.planRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.billing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.billingText {
+  font-size: 11.5px;
+  color: var(--pc-text-3);
+}
+
+/* ── Responsive: drop low-value columns, then stack into cards ── */
+@media (max-width: 1180px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 960px) {
+  .listHead,
+  .row {
+    grid-template-columns: minmax(0, 2fr) 0.8fr 0.8fr 1.2fr 1.1fr;
+  }
+  /* Hide members + owners count columns at this width */
+  .listHead .colCounts:nth-of-type(2),
+  .listHead .colCounts:nth-of-type(3),
+  .row .colCounts:nth-of-type(2),
+  .row .colCounts:nth-of-type(3) {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .kpis { grid-template-columns: 1fr; }
+
+  .listHead {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "agency agency"
+      "active mrr";
+    row-gap: 12px;
+    align-items: start;
+  }
+
+  .colAgency {
+    grid-area: agency;
+  }
+
+  /* Hide the individual numeric columns on mobile; they live on the detail view */
+  .colCounts {
+    display: none;
+  }
+
+  .colMrr {
+    grid-area: mrr;
+    align-self: center;
+  }
+
+  .colActive {
+    grid-area: active;
+    justify-content: flex-start;
+    align-self: center;
+  }
+}
