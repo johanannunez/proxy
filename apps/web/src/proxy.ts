@@ -222,7 +222,9 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    // Super-admin wall: only platform superadmins may reach /platform/*.
+    // Super-admin wall + canonical host: the console lives on platform.; a
+    // non-superadmin is bounced to the product, a superadmin is sent to the
+    // platform host (prefix stripped so the subdomain URL stays clean).
     if (isPlatformRoute) {
       const dest = await platformGateRedirect(user.id);
       if (dest) {
@@ -230,6 +232,9 @@ export async function proxy(request: NextRequest) {
         url.pathname = dest;
         return NextResponse.redirect(url);
       }
+      return NextResponse.redirect(
+        `https://platform.myproxyhost.com${pathname.replace(/^\/platform/, "") || "/"}${request.nextUrl.search}`,
+      );
     }
 
     // Two-factor gate on protected routes (enrolled-but-unverified, or admins
@@ -272,7 +277,12 @@ export async function proxy(request: NextRequest) {
         url.searchParams.set("redirect", pathname);
         return NextResponse.redirect(url);
       }
-      // Authenticated user on www. hitting app routes → move them to app.
+      // Authenticated: the console is canonical on platform.; everything else on app.
+      if (isPlatformRoute) {
+        return NextResponse.redirect(
+          `https://platform.myproxyhost.com${pathname.replace(/^\/platform/, "") || "/"}${request.nextUrl.search}`,
+        );
+      }
       return NextResponse.redirect(
         `https://app.myproxyhost.com${pathname}${request.nextUrl.search}`,
       );

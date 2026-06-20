@@ -86,15 +86,20 @@ export async function POST(request: NextRequest) {
       signed.signerProfileId ??
       signed.signerEmail ??
       (signed.agencyId ? `agency:${signed.agencyId}` : "");
-    await captureServerEvent(distinctId, "document_signed", {
-      agency_id: signed.agencyId,
-      document_id: signed.documentId,
-    });
+    const groups = signed.agencyId ? { agency: signed.agencyId } : undefined;
+    await captureServerEvent(
+      distinctId,
+      "document_signed",
+      { agency_id: signed.agencyId, document_id: signed.documentId },
+      groups,
+    );
     if (signed.isAgencyFirstSign) {
-      await captureServerEvent(distinctId, "first_sign", {
-        agency_id: signed.agencyId,
-        document_id: signed.documentId,
-      });
+      await captureServerEvent(
+        distinctId,
+        "first_sign",
+        { agency_id: signed.agencyId, document_id: signed.documentId },
+        groups,
+      );
     }
   }
 

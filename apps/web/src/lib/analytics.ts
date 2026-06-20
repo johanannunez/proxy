@@ -38,6 +38,7 @@ export async function captureServerEvent(
   distinctId: string,
   event: string,
   properties?: Record<string, unknown>,
+  groups?: Record<string, string>,
 ): Promise<void> {
   if (!distinctId) return;
   try {
@@ -45,7 +46,12 @@ export async function captureServerEvent(
     // escape into the calling request path (e.g. signup, invite).
     const ph = getClient();
     if (!ph) return;
-    ph.capture({ distinctId, event, properties });
+    // `groups` attaches the event to a PostHog group (we use the `agency` group
+    // type). The activation funnel is agency-grain — distinct_id deliberately
+    // differs per step (agency owner signs up; the client signs and pays) — so
+    // the funnel can only connect by aggregating on the agency group, never by
+    // person. Mirrors getActivationFunnel's distinct-agency counting.
+    ph.capture({ distinctId, event, properties, groups });
     await ph.flush();
   } catch {
     // Analytics is best-effort and must never break the calling request.

@@ -237,12 +237,17 @@ export async function inviteContact(args: {
 
   // Activation-funnel signal (M3). Attributed to the inviting admin with
   // agency_id, so PostHog can compute "first invite" per agency. Best-effort.
-  await captureServerEvent(actorId, "owner_invited", {
-    agency_id: contact.agency_id,
-    invited_profile_id: profileId,
-    contact_id: contactId,
-    emailed,
-  });
+  await captureServerEvent(
+    actorId,
+    "owner_invited",
+    {
+      agency_id: contact.agency_id,
+      invited_profile_id: profileId,
+      contact_id: contactId,
+      emailed,
+    },
+    contact.agency_id ? { agency: contact.agency_id } : undefined,
+  );
 
   revalidatePath("/admin/workspaces");
   revalidatePath("/admin/people");

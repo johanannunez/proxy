@@ -1,5 +1,7 @@
 "use server";
 
+import "server-only";
+
 import { headers } from "next/headers";
 import type Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -164,14 +166,18 @@ export async function createOrganization(params: {
   // Activation-funnel signals (M3). The account and its agency are created
   // together here, so both milestones fire with the new user as distinct_id and
   // the agency as a property. Best-effort; never blocks signup.
-  await captureServerEvent(user.id, "signup", {
-    agency_id: org.id,
-    plan_tier: params.planTier,
-  });
-  await captureServerEvent(user.id, "workspace_created", {
-    agency_id: org.id,
-    plan_tier: params.planTier,
-  });
+  await captureServerEvent(
+    user.id,
+    "signup",
+    { agency_id: org.id, plan_tier: params.planTier },
+    { agency: org.id },
+  );
+  await captureServerEvent(
+    user.id,
+    "workspace_created",
+    { agency_id: org.id, plan_tier: params.planTier },
+    { agency: org.id },
+  );
 
   // 5. Paid plans attach Stripe in createStripeSubscription (step 4).
   return {
