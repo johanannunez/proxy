@@ -110,6 +110,7 @@
     "plaid": "^41.4.0",
     "platejs": "^53.1.2",
     "posthog-js": "^1.367.0",
+    "posthog-node": "^5.38.2",
     "qrcode.react": "^4.2.0",
     "react": "19.2.3",
     "react-day-picker": "^10.0.1",
