@@ -36,7 +36,10 @@ export async function POST() {
   }
 
   return Response.json({
-    message: "Payouts generated successfully",
+    message:
+      result.upserted === 0
+        ? "No bookings found"
+        : "Payouts generated successfully",
     upserted: result.upserted,
   });
 }

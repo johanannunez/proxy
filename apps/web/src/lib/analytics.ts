@@ -39,9 +39,12 @@ export async function captureServerEvent(
   event: string,
   properties?: Record<string, unknown>,
 ): Promise<void> {
-  const ph = getClient();
-  if (!ph || !distinctId) return;
+  if (!distinctId) return;
   try {
+    // getClient() is inside the try: a PostHog constructor throw must never
+    // escape into the calling request path (e.g. signup, invite).
+    const ph = getClient();
+    if (!ph) return;
     ph.capture({ distinctId, event, properties });
     await ph.flush();
   } catch {

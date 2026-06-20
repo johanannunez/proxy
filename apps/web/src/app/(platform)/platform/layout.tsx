@@ -20,7 +20,10 @@ export default async function PlatformLayout({
 }) {
   const platformRole = await getPlatformRole();
   if (platformRole !== "superadmin") {
-    redirect("/workspace/home");
+    // Redirect to "/" and let the canonical post-login routing send them to the
+    // right panel (admins -> /admin, owners -> /workspace/home), instead of
+    // hardcoding a destination here that could dead-end an agency admin.
+    redirect("/");
   }
 
   return <>{children}</>;

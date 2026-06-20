@@ -43,9 +43,11 @@ export async function GET(request: NextRequest) {
 
   const result = await syncFromHospitable(actor.id);
 
-  // Best-effort audit trail of what an unattended sync created/changed. Never
-  // fail the cron on a logging error.
-  untypedDatabase(createServiceClient())
+  // Audit trail of what an unattended sync created/changed. Awaited so it is
+  // sent before the serverless function freezes on response (a fire-and-forget
+  // insert would be dropped), and wrapped so a logging failure never fails the
+  // cron.
+  await untypedDatabase(createServiceClient())
     .from("activity_log")
     .insert({
       actor_id: actor.id,
