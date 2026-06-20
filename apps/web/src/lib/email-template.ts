@@ -275,6 +275,64 @@ export function buildFollowUpDigestEmail(args: {
   return { subject, html };
 }
 
+export function buildInviteEmail(args: {
+  ownerName?: string;
+  inviteLink: string;
+}) {
+  const safeLink = escapeHtml(args.inviteLink);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>You are invited to your Proxy owner workspace</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${BG_LIGHT}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="padding: 24px 12px; background-color: ${BG_LIGHT};">
+    <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #edf0f3; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.07);">
+      <div style="padding: 30px 36px 22px; border-bottom: 1px solid #eef2f7;">
+        <a href="${PORTAL_URL}" style="font-size: 21px; font-weight: 800; color: ${TEXT_PRIMARY}; text-decoration: none; letter-spacing: -0.4px;">
+          Proxy<span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: ${BRAND_BLUE}; margin-left: 9px;">Owner Workspace</span>
+        </a>
+      </div>
+
+      <div style="padding: 30px 36px 8px;">
+        <div style="font-size: 15px; line-height: 1.7; color: ${TEXT_PRIMARY};">
+          ${args.ownerName ? `<p style="margin: 0 0 14px;">Hi ${escapeHtml(args.ownerName)},</p>` : ""}
+          <p style="margin: 0 0 14px;">Your Proxy owner workspace is ready. It is your private home for everything we manage together: your properties, documents to review and sign, your finances, and direct messages with our team.</p>
+          <p style="margin: 0;">Click below to set up your account and take a look.</p>
+        </div>
+      </div>
+
+      <div style="padding: 26px 36px 12px; text-align: center;">
+        <a href="${safeLink}" style="display: inline-block; padding: 13px 26px; border-radius: 10px; background: ${BRAND_BLUE}; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800;">
+          Set up your account
+        </a>
+      </div>
+
+      <div style="padding: 4px 36px 8px;">
+        <p style="margin: 0 0 6px; font-size: 12px; color: ${TEXT_SECONDARY};">Or paste this link into your browser:</p>
+        <p style="margin: 0; font-size: 12px; line-height: 1.5; word-break: break-all;"><a href="${safeLink}" style="color: ${BRAND_DARK};">${safeLink}</a></p>
+      </div>
+
+      <div style="padding: 14px 36px 28px;">
+        <div style="border: 1px solid #e5edf5; border-radius: 12px; background: #f8fbfd; padding: 14px 16px;">
+          <p style="margin: 0 0 5px; font-size: 12px; font-weight: 800; color: ${TEXT_PRIMARY};">Secure one-time link</p>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${TEXT_SECONDARY};">This link is just for you and expires after a short time. If you were not expecting this invitation, you can safely ignore this email.</p>
+        </div>
+      </div>
+
+      <div style="padding: 22px 36px; border-top: 1px solid #eef2f7; text-align: center; background: #fbfbfc;">
+        <p style="font-size: 12px; color: ${TEXT_SECONDARY}; margin: 0 0 5px; line-height: 1.5;">Sent by Proxy.</p>
+        <p style="font-size: 12px; color: ${TEXT_SECONDARY}; margin: 0; line-height: 1.5;">If something looks off, reply to this email and we will help.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 function escapeHtml(str: string) {
   return str
     .replace(/&/g, "&amp;")
