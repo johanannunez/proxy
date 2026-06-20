@@ -1,0 +1,26 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .kpis { grid-template-columns: 1fr; }
+}
