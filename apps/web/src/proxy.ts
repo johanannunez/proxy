@@ -5,6 +5,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { verifyApiToken } from "@/lib/api-tokens";
 import { taskToVTodo, generateETag, parseVTodoStatus } from "@/lib/caldav-utils";
 import { resolveOrgForRequestHost } from "@/lib/agencies/cache";
+import { resolvePlatformGateDest } from "@/lib/platform/gate";
 import { untypedDatabase } from "@/lib/supabase/untyped";
 
 /**
@@ -132,8 +133,7 @@ export async function proxy(request: NextRequest) {
       .select("role, platform_role")
       .eq("id", userId)
       .maybeSingle();
-    if (data?.platform_role === "superadmin") return null;
-    return data?.role === "admin" ? "/admin" : "/workspace/home";
+    return resolvePlatformGateDest(data);
   };
 
   // ── platform.myproxyhost.com (super-admin console) ──────────────────────────
