@@ -325,6 +325,99 @@ export async function syncWorkspaceInvoiceFromStripe(inv: Stripe.Invoice): Promi
     .eq("id", invoiceRow.id);
 }
 
+/**
+ * First-payment signal for the M3 activation funnel. Returns the data the Stripe
+ * webhook needs to emit a `first_payment` event ONLY when this paid Stripe invoice
+ * is the agency's first paid `billing_invoices` row — the exact definition the
+ * super-admin console's funnel uses (status='paid'). The legacy per-owner
+ * subscription lives in the `invoices`/`subscriptions` tables, never
+ * `billing_invoices`, so it can never trip this — consistent with the hero MRR
+ * excluding it. Best-effort: any error resolves to null (no event), never throws
+ * into the webhook.
+ */
+export type FirstAgencyPayment = {
+  agencyId: string;
+  workspaceId: string;
+  billingInvoiceId: string;
+  amountCents: number;
+  payingProfileId: string | null;
+};
+
+type BillingInvoicePaymentRow = {
+  id: string;
+  agency_id: string | null;
+  workspace_id: string;
+  total_cents: number;
+  status: string;
+};
+
+export async function detectFirstAgencyPayment(
+  inv: Stripe.Invoice,
+): Promise<FirstAgencyPayment | null> {
+  try {
+    if (!inv.id) return null;
+    const supabase = createServiceClient();
+    const db = untypedDatabase(supabase);
+
+    // Resolve the billing_invoices row this Stripe invoice synced (same lookup
+    // order as syncWorkspaceInvoiceFromStripe): our metadata id, else stripe id.
+    const billingInvoiceId = inv.metadata?.proxy_billing_invoice_id;
+    let row: BillingInvoicePaymentRow | null = null;
+    if (billingInvoiceId) {
+      const { data } = await db
+        .from<BillingInvoicePaymentRow>("billing_invoices")
+        .select("id, agency_id, workspace_id, total_cents, status")
+        .eq("id", billingInvoiceId)
+        .maybeSingle();
+      row = data;
+    }
+    if (!row) {
+      const { data } = await db
+        .from<BillingInvoicePaymentRow>("billing_invoices")
+        .select("id, agency_id, workspace_id, total_cents, status")
+        .eq("stripe_invoice_id", inv.id)
+        .maybeSingle();
+      row = data;
+    }
+
+    // Only act on a row that is actually paid and attributable to an agency.
+    if (!row || row.status !== "paid" || !row.agency_id) return null;
+
+    // First-ever paid billing_invoices row for this agency? (exclude self)
+    const { data: prior } = await db
+      .from<{ id: string }[]>("billing_invoices")
+      .select("id")
+      .eq("agency_id", row.agency_id)
+      .eq("status", "paid")
+      .neq("id", row.id)
+      .limit(1);
+    if ((prior ?? []).length > 0) return null;
+
+    // The paying owner = the workspace's owner profile (distinct_id), when present.
+    const { data: owners } = await db
+      .from<{ id: string }[]>("profiles")
+      .select("id")
+      .eq("workspace_id", row.workspace_id)
+      .eq("role", "owner")
+      .limit(1);
+    const payingProfileId = owners?.[0]?.id ?? null;
+
+    return {
+      agencyId: row.agency_id,
+      workspaceId: row.workspace_id,
+      billingInvoiceId: row.id,
+      amountCents: row.total_cents,
+      payingProfileId,
+    };
+  } catch (err) {
+    console.error(
+      "[stripe-workspace] detectFirstAgencyPayment failed:",
+      err instanceof Error ? err.message : err,
+    );
+    return null;
+  }
+}
+
 export async function recordWorkspaceBillingStripeEvent(event: Stripe.Event): Promise<void> {
   const object = event.data.object as { metadata?: Stripe.Metadata; id?: string };
   const workspaceId = object.metadata?.proxy_workspace_id ?? null;

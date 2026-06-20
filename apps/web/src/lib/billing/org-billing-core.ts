@@ -96,3 +96,40 @@ export function stripePriceEnv(): StripePriceEnv {
     whiteLabelPriceId: process.env.STRIPE_WHITE_LABEL_PRICE_ID ?? null,
   };
 }
+
+/** Structural subset of a Stripe subscription item this module reads for MRR. */
+export type SubscriptionItemLike = {
+  quantity?: number | null;
+  price?: {
+    unit_amount?: number | null;
+    recurring?: { interval?: string | null; interval_count?: number | null } | null;
+  } | null;
+};
+
+const PERIODS_PER_YEAR: Record<string, number> = {
+  day: 365,
+  week: 52,
+  month: 12,
+  year: 1,
+};
+
+/**
+ * Normalize a subscription's recurring price to a monthly amount in cents (MRR).
+ * Used by the Stripe webhook to attach the prior MRR to a `churn` event. Kept
+ * pure (structural input, no Stripe SDK) so it unit-tests without mocks; the
+ * caller passes `subscription.items.data`.
+ */
+export function monthlyMrrCents(items: SubscriptionItemLike[]): number {
+  let cents = 0;
+  for (const item of items) {
+    const unit = item.price?.unit_amount ?? 0;
+    const quantity = item.quantity ?? 1;
+    const interval = item.price?.recurring?.interval ?? "month";
+    const intervalCount = item.price?.recurring?.interval_count ?? 1;
+    const periodsPerYear = PERIODS_PER_YEAR[interval] ?? 12;
+    // amount per year = price-per-period * periods-per-year / interval_count.
+    const annual = (unit * quantity * periodsPerYear) / (intervalCount || 1);
+    cents += annual / 12;
+  }
+  return Math.round(cents);
+}

@@ -1,7 +1,12 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { applyDocuSealEvent, type DocuSealEvent } from "@/lib/documents/signing";
+import {
+  applyDocuSealEvent,
+  type DocuSealApplyResult,
+  type DocuSealEvent,
+} from "@/lib/documents/signing";
 import { activateWorkspaceAuthority } from "@/lib/workspace/decision-authority";
+import { captureServerEvent } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +61,9 @@ export async function POST(request: NextRequest) {
     signedPdfUrl: typeof signedPdfUrl === "string" ? signedPdfUrl : null,
   };
 
+  let applyResult: DocuSealApplyResult = { signed: null };
   try {
-    await applyDocuSealEvent(event);
+    applyResult = await applyDocuSealEvent(event);
     if (payload.event_type === "submission.completed" && submissionId !== null) {
       await activateWorkspaceAuthority(
         String(submissionId),
@@ -68,6 +74,28 @@ export async function POST(request: NextRequest) {
     console.error("[docuseal-webhook] apply failed:", err instanceof Error ? err.message : err);
     // 200 so DocuSeal doesn't hammer retries on a transient app error we've logged.
     return NextResponse.json({ ok: false }, { status: 200 });
+  }
+
+  // Activation-funnel signals (M3). Emitted after the signing work commits, so a
+  // PostHog hiccup can never affect the webhook result. captureServerEvent is
+  // best-effort and never throws. distinct_id prefers the signer's profile id;
+  // the countersigner row has none, so it falls back to a stable identifier.
+  const signed = applyResult.signed;
+  if (signed) {
+    const distinctId =
+      signed.signerProfileId ??
+      signed.signerEmail ??
+      (signed.agencyId ? `agency:${signed.agencyId}` : "");
+    await captureServerEvent(distinctId, "document_signed", {
+      agency_id: signed.agencyId,
+      document_id: signed.documentId,
+    });
+    if (signed.isAgencyFirstSign) {
+      await captureServerEvent(distinctId, "first_sign", {
+        agency_id: signed.agencyId,
+        document_id: signed.documentId,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });
