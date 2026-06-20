@@ -9,7 +9,11 @@ export type ActionResult = { ok: true } | { ok: false; error: string };
 const BusinessEntitySchema = z.object({
   workspaceId: z.string().uuid(),
   name: z.string().trim().min(1).max(200),
-  type: z.enum(["LLC", "S-Corp", "C-Corp", "Sole Proprietor", "Partnership", ""]),
+  // Canonical workspaces.type values, matching the create form (WorkspaceForm)
+  // and the display maps in WorkspaceDetailShell / WorkspaceDetailSidebar. The
+  // settings form previously sent display strings ("LLC", "S-Corp"), which the
+  // rest of the app could not match, so saved values rendered without a label.
+  type: z.enum(["", "individual", "llc", "s_corp", "c_corp", "trust", "partnership"]),
   ein: z.string().trim().max(20),
   notes: z.string().trim().max(4000),
 });
