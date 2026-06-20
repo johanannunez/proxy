@@ -23,6 +23,7 @@ import {
   Receipt,
   Pulse,
   Buildings,
+  MapTrifold,
 } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { AdminSidebarFooter } from "@/components/admin/AdminSidebarFooter";
@@ -85,6 +86,7 @@ const navEntries: NavEntry[] = [
     storageKey: "nav-operations-expanded",
     items: [
       { href: "/admin/properties", label: "Properties", icon: <DoorOpen size={16} weight="duotone" />, matchPrefix: "/admin/properties" },
+      { href: "/admin/map", label: "Map", icon: <MapTrifold size={16} weight="duotone" />, matchPrefix: "/admin/map" },
       { href: "/admin/paperwork", label: "Paperwork", icon: <Files size={16} weight="duotone" />, matchPrefix: "/admin/paperwork" },
       { href: "/admin/projects", label: "Projects", icon: <FolderOpen size={16} weight="duotone" />, matchPrefix: "/admin/projects" },
       { href: "/admin/guest-pulse", label: "Pulse", icon: <Pulse size={16} weight="duotone" />, matchPrefix: "/admin/guest-pulse" },
@@ -874,7 +876,7 @@ const adminRailItems: Array<{
     href: "/admin/properties",
     icon: <Buildings size={20} weight="duotone" />,
     label: "Operations",
-    matchPrefixes: ["/admin/properties", "/admin/paperwork", "/admin/projects", "/admin/guest-pulse"],
+    matchPrefixes: ["/admin/properties", "/admin/map", "/admin/paperwork", "/admin/projects", "/admin/guest-pulse"],
   },
   { href: "/admin/finances", icon: <Receipt size={20} weight="duotone" />, label: "Finances", matchPrefix: "/admin/finances" },
 ];

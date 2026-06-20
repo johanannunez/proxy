@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTransition, useState, useRef, useEffect, type CSSProperties } from "react";
 import {
   GearSix, UserSwitch, Power, Sun, Moon, Monitor, Question, CaretUp,
+  CreditCard, Palette,
 } from "@phosphor-icons/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { signOut } from "@/app/(workspace)/workspace/actions";
@@ -133,6 +134,28 @@ export function AdminSidebarFooter({
           >
             <GearSix size={15} weight="duotone" style={{ color: "rgba(255,255,255,0.38)", flexShrink: 0 }} />
             Account settings
+          </Link>
+
+          <Link
+            href="/admin/settings/billing"
+            onClick={() => setOpen(false)}
+            style={item}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.9)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.68)"; }}
+          >
+            <CreditCard size={15} weight="duotone" style={{ color: "rgba(255,255,255,0.38)", flexShrink: 0 }} />
+            Billing
+          </Link>
+
+          <Link
+            href="/admin/settings/branding"
+            onClick={() => setOpen(false)}
+            style={item}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.9)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.68)"; }}
+          >
+            <Palette size={15} weight="duotone" style={{ color: "rgba(255,255,255,0.38)", flexShrink: 0 }} />
+            Branding
           </Link>
 
           <Link
