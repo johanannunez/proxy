@@ -8,6 +8,14 @@ describe("classifyHost", () => {
     expect(classifyHost("myproxyhost.com")).toEqual({ kind: "default" });
   });
 
+  it("reserves platform. and admin. as first-party (never claimable by a tenant)", () => {
+    // These short-circuit to the Proxy org before any slug lookup, so an agency
+    // can never hold platform.myproxyhost.com or admin.myproxyhost.com.
+    expect(classifyHost("platform.myproxyhost.com")).toEqual({ kind: "default" });
+    expect(classifyHost("admin.myproxyhost.com")).toEqual({ kind: "default" });
+    expect(classifyHost("PLATFORM.myproxyhost.com")).toEqual({ kind: "default" });
+  });
+
   it("treats local development hosts as default, with or without port", () => {
     expect(classifyHost("localhost")).toEqual({ kind: "default" });
     expect(classifyHost("localhost:4000")).toEqual({ kind: "default" });

@@ -15,8 +15,15 @@
 const APEX_DOMAIN = "myproxyhost.com";
 const SUBDOMAIN_SUFFIX = `.${APEX_DOMAIN}`;
 
-/** Subdomains that belong to Proxy itself and never resolve to a tenant. */
-const RESERVED_SUBDOMAINS = new Set(["www", "app"]);
+/**
+ * Subdomains that belong to Proxy itself and never resolve to a tenant. These
+ * short-circuit to the Proxy org before any slug lookup, which also makes them
+ * unclaimable by an agency (a takeover vector once tenant subdomains go live):
+ *   - www / app: the marketing site and the authenticated product.
+ *   - platform: the super-admin Platform Console.
+ *   - admin: reserved so no tenant can ever hold admin.myproxyhost.com.
+ */
+const RESERVED_SUBDOMAINS = new Set(["www", "app", "platform", "admin"]);
 
 /** Local development hosts always serve the Proxy org. */
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);

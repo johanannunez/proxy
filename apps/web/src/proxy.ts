@@ -67,8 +67,24 @@ export async function proxy(request: NextRequest) {
 
   const isApp = hostname === "app.myproxyhost.com";
   const isWww = hostname === "www.myproxyhost.com";
-  // Widen auth cookies to .myproxyhost.com so they are shared between www. and app.
-  const cookieDomain = isApp || isWww ? ".myproxyhost.com" : undefined;
+  const isPlatformProdHost = hostname === "platform.myproxyhost.com";
+  // Dev-only: macOS does not resolve *.localhost, so platform.lvh.me (which
+  // publicly resolves to 127.0.0.1) is supported alongside platform.localhost for
+  // local subdomain testing. Inert in production.
+  const isPlatformDevHost =
+    process.env.NODE_ENV === "development" &&
+    (hostname === "platform.localhost" || hostname === "platform.lvh.me");
+  const isPlatformHost = isPlatformProdHost || isPlatformDevHost;
+  // Widen auth cookies to .myproxyhost.com so they are shared between www., app.,
+  // and platform. (one signed-in session across all first-party hosts).
+  const cookieDomain = isApp || isWww || isPlatformProdHost ? ".myproxyhost.com" : undefined;
+  // Where to send a request that must leave the platform host (login, MFA, or a
+  // non-superadmin bounce). In prod these are the dedicated hosts; in dev the
+  // bare host (platform.lvh.me -> lvh.me, platform.localhost -> localhost) serves
+  // the product and auth screens.
+  const devBareOrigin = `http://${hostname.replace(/^platform\./, "")}:${request.nextUrl.port || "4000"}`;
+  const appOrigin = isPlatformProdHost ? "https://app.myproxyhost.com" : devBareOrigin;
+  const loginOrigin = isPlatformProdHost ? "https://www.myproxyhost.com" : devBareOrigin;
 
   let proxyResponse = NextResponse.next({ request });
 
@@ -119,6 +135,66 @@ export async function proxy(request: NextRequest) {
     if (data?.platform_role === "superadmin") return null;
     return data?.role === "admin" ? "/admin" : "/workspace/home";
   };
+
+  // ── platform.myproxyhost.com (super-admin console) ──────────────────────────
+  // The console route group lives at /platform/*. This host serves it on its own
+  // origin and reinforces the platform-vs-tenant wall. Auth, MFA, and the
+  // non-superadmin bounce all leave this host for the app/www host (absolute
+  // redirects), because their screens live there and a path-relative redirect
+  // would re-enter this branch and get the /platform rewrite.
+  if (isPlatformHost) {
+    // Infra + auth paths pass through untouched (the API, RSC payloads, auth
+    // callbacks, the 2FA screens). Only console-bound requests get the wall and
+    // the rewrite, so the auth endpoints stay reachable when there is no session.
+    if (isMfaExempt(pathname)) {
+      return proxyResponse;
+    }
+
+    const returnPath =
+      pathname === "/platform" || pathname.startsWith("/platform/") ? pathname : "/platform";
+
+    if (!user) {
+      return NextResponse.redirect(
+        `${loginOrigin}/login?redirect=${encodeURIComponent(returnPath)}`,
+      );
+    }
+
+    // Super-admin wall: a non-superadmin is sent to the product, on the app host.
+    const dest = await platformGateRedirect(user.id);
+    if (dest) {
+      return NextResponse.redirect(`${appOrigin}${dest}`);
+    }
+
+    // MFA gate (platform staff are admin-level). Rebuild any redirect as absolute
+    // to the app host so the verify/enroll screens render there, not here.
+    const mfa = await evaluateMfaGate(supabase, request, pathname, true);
+    if (mfa) {
+      const loc = mfa.headers.get("location");
+      if (loc) {
+        const target = new URL(loc);
+        return NextResponse.redirect(`${appOrigin}${target.pathname}${target.search}`);
+      }
+      return mfa;
+    }
+
+    // Serve the console. Prefix non-console, non-exempt paths with /platform so
+    // the route group resolves (and root-relative links read as clean subdomain
+    // URLs), while leaving /api, /_next, /auth, the 2FA screens, and paths that
+    // are already /platform/* untouched.
+    if (
+      pathname !== "/platform" &&
+      !pathname.startsWith("/platform/") &&
+      !isMfaExempt(pathname)
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname === "/" ? "/platform" : `/platform${pathname}`;
+      const rewritten = NextResponse.rewrite(url, { request });
+      proxyResponse.cookies.getAll().forEach((c) => rewritten.cookies.set(c.name, c.value, c));
+      return rewritten;
+    }
+
+    return proxyResponse;
+  }
 
   // ── app.myproxyhost.com ────────────────────────────────────────────────────
   if (isApp) {
