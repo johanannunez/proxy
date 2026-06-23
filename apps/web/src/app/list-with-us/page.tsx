@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FrostedNav from "@/components/FrostedNav";
+import { SiteHeader } from "@/components/site-header/SiteHeader";
 import DarkFooter from "@/components/DarkFooter";
 import RevenueCalculator from "@/components/RevenueCalculator";
 import OwnerTestimonials from "@/components/OwnerTestimonials";
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export default function ListWithUsPage() {
   return (
     <>
-      <FrostedNav />
+      <SiteHeader overHero />
       <main id="main-content">
         <ListWithUsHero />
         <ListWithUsBenefits />

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import FrostedNav from "@/components/FrostedNav";
+import { SiteHeader } from "@/components/site-header/SiteHeader";
 import DarkFooter from "@/components/DarkFooter";
 import { BLOG_POSTS, getPostBySlug } from "@/data/blog-posts";
 
@@ -113,7 +113,7 @@ export default async function BlogPostPage({
 
   return (
     <>
-      <FrostedNav />
+      <SiteHeader />
       <main className="min-h-screen bg-surface pt-[120px] pb-24">
         <script
           type="application/ld+json"

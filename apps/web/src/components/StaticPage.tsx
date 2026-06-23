@@ -1,4 +1,4 @@
-import FrostedNav from "@/components/FrostedNav";
+import { SiteHeader } from "@/components/site-header/SiteHeader";
 import DarkFooter from "@/components/DarkFooter";
 
 interface StaticPageProps {
@@ -9,7 +9,7 @@ interface StaticPageProps {
 export default function StaticPage({ title, children }: StaticPageProps) {
   return (
     <>
-      <FrostedNav transparent={false} />
+      <SiteHeader />
       <main className="min-h-screen bg-surface pt-[120px] pb-24">
         <div className="mx-auto max-w-[720px] px-6 md:px-12">
           <h1 className="text-h1 text-text-primary">{title}</h1>

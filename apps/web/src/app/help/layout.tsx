@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FrostedNav from "@/components/FrostedNav";
+import { SiteHeader } from "@/components/site-header/SiteHeader";
 import DarkFooter from "@/components/DarkFooter";
 
 export const metadata: Metadata = {
@@ -25,7 +25,7 @@ export default function HelpLayout({
 }) {
   return (
     <>
-      <FrostedNav />
+      <SiteHeader />
       {children}
       <DarkFooter />
     </>
