@@ -489,6 +489,10 @@ async function evaluateMfaGate(
 // CalDAV handler (Fantastical integration)
 // ---------------------------------------------------------------------------
 
+// Service role bypass is safe here: the caller is authenticated via
+// verifyApiToken (Basic-auth Bearer token hashed against api_tokens),
+// and every downstream CalDAV query in this file scopes with
+// `.eq("created_by", profileId)`. See apps/web/docs/rls-audit.md.
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

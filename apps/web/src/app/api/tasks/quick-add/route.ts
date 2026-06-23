@@ -13,6 +13,9 @@ export async function POST(request: Request) {
   }
   const token = authHeader.slice(7);
 
+  // Service role bypass is safe: verifyApiToken resolves the caller's
+  // profileId from the hashed Bearer token, and the insert below
+  // carries `created_by: result.profileId`. See apps/web/docs/rls-audit.md.
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SECRET_KEY!,
