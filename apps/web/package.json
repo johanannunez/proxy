@@ -82,7 +82,7 @@
     "@tiptap/extension-text-style": "^3.22.3",
     "@tiptap/extension-underline": "^3.22.3",
     "@tiptap/pm": "^3.22.3",
-    "@tiptap/react": "^3.22.3",
+    "@tiptap/react": "^3.22.5",
     "@tiptap/starter-kit": "^3.22.3",
     "@udecode/cn": "^52.3.4",
     "@udecode/plate": "^49.0.0",
